@@ -1,0 +1,77 @@
+name: Deploy Reverse Proxy to VPS
+
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - 'reverse-proxy/**'
+      - '.github/workflows/deploy-reverse-proxy.yml'
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    name: Deploy to VPS
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup SSH
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.VPS_SSH_KEY }}
+
+      - name: Add VPS to known hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H ${{ secrets.VPS_HOST }} >> ~/.ssh/known_hosts
+
+      - name: Copy files to VPS
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} "mkdir -p ~/quiz-sprint/reverse-proxy"
+          scp -r reverse-proxy/* ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }}:~/quiz-sprint/reverse-proxy/
+
+      - name: Create .env file on VPS
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd ~/quiz-sprint/reverse-proxy
+            cat > .env << 'ENVEOF'
+          DOMAIN=${{ secrets.DOMAIN }}
+          VITE_PORT=${{ secrets.VITE_PORT }}
+          ENVEOF
+          EOF
+
+      - name: Deploy with Docker Compose
+        run: |
+          ssh ${{ secrets.VPS_USER }}@${{ secrets.VPS_HOST }} << 'EOF'
+            cd ~/quiz-sprint/reverse-proxy
+
+            # Pull latest Caddy image
+            docker-compose pull
+
+            # Deploy with zero-downtime
+            docker-compose up -d --remove-orphans
+
+            # Clean up old images
+            docker image prune -f
+
+            # Show status
+            docker-compose ps
+          EOF
+
+      - name: Health check
+        run: |
+          sleep 5
+          curl -f https://${{ secrets.DOMAIN }} || exit 1
+
+      - name: Notify deployment status
+        if: always()
+        run: |
+          if [ "${{ job.status }}" == "success" ]; then
+            echo "✅ Deployment successful to https://${{ secrets.DOMAIN }}"
+          else
+            echo "❌ Deployment failed"
+            exit 1
+          fi
