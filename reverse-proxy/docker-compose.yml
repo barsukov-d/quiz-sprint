@@ -1,0 +1,25 @@
+version: '3.8'
+
+services:
+  caddy:
+    image: caddy:2-alpine
+    container_name: tma-reverse-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"  # HTTP/3 support
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile
+      - ./caddy/data:/data
+      - ./caddy/config:/config
+    networks:
+      - tma-network
+    environment:
+      - DOMAIN=${DOMAIN:-localhost}
+      - VITE_PORT=${VITE_PORT:-5173}
+
+networks:
+  tma-network:
+    name: tma-network
+    driver: bridge
