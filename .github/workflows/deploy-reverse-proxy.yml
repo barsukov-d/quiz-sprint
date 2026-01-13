@@ -49,6 +49,10 @@ jobs:
             set -e  # Exit on any error
             cd ~/quiz-sprint/reverse-proxy
 
+            # Stop and remove existing containers to avoid conflicts
+            echo "🛑 Stopping existing containers..."
+            docker compose down --remove-orphans || true
+
             # Pull latest Caddy image
             echo "📦 Pulling latest Caddy image..."
             docker compose pull
