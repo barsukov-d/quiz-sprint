@@ -14,16 +14,14 @@ export default defineConfig({
   },
   server: {
     host: true, // Allow external connections
+    port: 5173,
+    strictPort: true,
     allowedHosts: [
       '.trycloudflare.com',
       'localhost',
       'dev.quiz-sprint-tma.online', // Development subdomain
       'quiz-sprint-tma.online', // Production domain
     ],
-    hmr: {
-      protocol: 'wss',
-      host: 'dev.quiz-sprint-tma.online',
-      clientPort: 443,
-    },
+    // HMR configuration for Caddy reverse proxy
   },
 })
