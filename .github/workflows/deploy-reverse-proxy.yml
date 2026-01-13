@@ -49,16 +49,16 @@ jobs:
             cd ~/quiz-sprint/reverse-proxy
 
             # Pull latest Caddy image
-            docker-compose pull
+            docker compose pull
 
             # Deploy with zero-downtime
-            docker-compose up -d --remove-orphans
+            docker compose up -d --remove-orphans
 
             # Clean up old images
             docker image prune -f
 
             # Show status
-            docker-compose ps
+            docker compose ps
           EOF
 
       - name: Health check
