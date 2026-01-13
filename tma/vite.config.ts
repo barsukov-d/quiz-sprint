@@ -14,6 +14,16 @@ export default defineConfig({
   },
   server: {
     host: true, // Allow external connections
-    allowedHosts: ['.trycloudflare.com', 'localhost', 'quiz-sprint-tma.online'],
+    allowedHosts: [
+      '.trycloudflare.com',
+      'localhost',
+      'dev.quiz-sprint-tma.online', // Development subdomain
+      'quiz-sprint-tma.online', // Production domain
+    ],
+    hmr: {
+      protocol: 'wss',
+      host: 'dev.quiz-sprint-tma.online',
+      clientPort: 443,
+    },
   },
 })
