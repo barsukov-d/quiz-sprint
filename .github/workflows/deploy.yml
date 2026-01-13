@@ -1,110 +1,85 @@
-name: Build and Deploy TMA
+name: Deploy TMA
 
 on:
   workflow_dispatch:
     inputs:
       environment:
-        description: 'Deploy to environment'
+        description: "Deploy to"
         required: true
         type: choice
         options:
           - staging
           - production
-          - staging-then-production
+      artifact:
+        description: "Artifact name (leave empty for latest build)"
+        required: false
+        type: string
 
 jobs:
   # ===========================================
-  # Quality Checks - всегда выполняется первым
+  # Find and download artifact
   # ===========================================
-  quality-checks:
-    name: Quality Checks
+  prepare:
+    name: Prepare Deployment
     runs-on: ubuntu-latest
+    outputs:
+      artifact_name: ${{ steps.find.outputs.artifact_name }}
 
     steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Get pnpm store directory
-        shell: bash
-        run: |
-          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
-
-      - name: Setup pnpm cache
-        uses: actions/cache@v4
-        with:
-          path: ${{ env.STORE_PATH }}
-          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
-          restore-keys: |
-            ${{ runner.os }}-pnpm-store-
-
-      - name: Install dependencies
-        working-directory: ./tma
-        run: pnpm install --frozen-lockfile
-
-      - name: Type check
-        working-directory: ./tma
-        run: pnpm type-check
-
-      - name: Lint
-        working-directory: ./tma
-        run: pnpm lint
-
-  # ===========================================
-  # Build - собираем ОДИН РАЗ, сохраняем артефакт
-  # ===========================================
-  build:
-    name: Build
-    runs-on: ubuntu-latest
-    needs: quality-checks
-
-    steps:
-      - name: Checkout code
-        uses: actions/checkout@v4
-
-      - name: Setup Node.js
-        uses: actions/setup-node@v4
-        with:
-          node-version: "22"
-
-      - name: Setup pnpm
-        uses: pnpm/action-setup@v4
-        with:
-          version: 9
-
-      - name: Install dependencies
-        working-directory: ./tma
-        run: pnpm install --frozen-lockfile
-
-      - name: Build application
-        working-directory: ./tma
-        run: pnpm build
+      - name: Find artifact
+        id: find
         env:
-          NODE_ENV: production
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          if [ -n "${{ github.event.inputs.artifact }}" ]; then
+            # Используем указанный артефакт
+            echo "artifact_name=${{ github.event.inputs.artifact }}" >> $GITHUB_OUTPUT
+            echo "Using specified artifact: ${{ github.event.inputs.artifact }}"
+          else
+            # Находим последний артефакт
+            LATEST=$(gh api repos/${{ github.repository }}/actions/artifacts \
+              --jq '.artifacts | map(select(.name | startswith("tma-build-"))) | sort_by(.created_at) | reverse | .[0].name')
 
-      - name: Upload build artifact
+            if [ -z "$LATEST" ] || [ "$LATEST" = "null" ]; then
+              echo "::error::No build artifacts found. Run 'Build TMA' workflow first."
+              exit 1
+            fi
+
+            echo "artifact_name=$LATEST" >> $GITHUB_OUTPUT
+            echo "Using latest artifact: $LATEST"
+          fi
+
+      - name: Download artifact from Build workflow
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          ARTIFACT_NAME="${{ steps.find.outputs.artifact_name }}"
+          echo "Downloading artifact: $ARTIFACT_NAME"
+
+          # Получаем ID артефакта
+          ARTIFACT_ID=$(gh api repos/${{ github.repository }}/actions/artifacts \
+            --jq ".artifacts[] | select(.name == \"$ARTIFACT_NAME\") | .id")
+
+          if [ -z "$ARTIFACT_ID" ]; then
+            echo "::error::Artifact not found: $ARTIFACT_NAME"
+            exit 1
+          fi
+
+          echo "Artifact ID: $ARTIFACT_ID"
+
+          # Скачиваем артефакт
+          gh api repos/${{ github.repository }}/actions/artifacts/$ARTIFACT_ID/zip > artifact.zip
+          mkdir -p dist
+          unzip artifact.zip -d dist/
+          echo "Artifact contents:"
+          ls -la dist/
+
+      - name: Upload for next jobs
         uses: actions/upload-artifact@v4
         with:
-          name: tma-build-${{ github.sha }}
-          path: tma/dist/
-          retention-days: 30
-          if-no-files-found: error
-
-      - name: Build summary
-        run: |
-          echo "### Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Artifact:** tma-build-${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Built at:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+          name: deploy-artifact
+          path: dist/
+          retention-days: 1
 
   # ===========================================
   # Deploy to Staging
@@ -112,21 +87,18 @@ jobs:
   deploy-staging:
     name: Deploy to Staging
     runs-on: ubuntu-latest
-    needs: build
-    if: ${{ github.event.inputs.environment == 'staging' || github.event.inputs.environment == 'staging-then-production' }}
+    needs: prepare
+    if: ${{ github.event.inputs.environment == 'staging' }}
     environment:
       name: staging
       url: https://staging.quiz-sprint-tma.online
 
     steps:
-      - name: Download build artifact
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: tma-build-${{ github.sha }}
+          name: deploy-artifact
           path: dist/
-
-      - name: Display artifact contents
-        run: ls -la dist/
 
       - name: Deploy to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -150,12 +122,12 @@ jobs:
 
       - name: Health check
         run: |
-          sleep 5
+          sleep 3
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://staging.quiz-sprint-tma.online)
-          if [ "$RESPONSE" = "200" ] || [ "$RESPONSE" = "304" ]; then
-            echo "✅ Staging health check passed (HTTP $RESPONSE)"
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Staging health check passed"
           else
-            echo "❌ Staging health check failed (HTTP $RESPONSE)"
+            echo "::error::Health check failed (HTTP $RESPONSE)"
             exit 1
           fi
 
@@ -165,25 +137,18 @@ jobs:
   deploy-production:
     name: Deploy to Production
     runs-on: ubuntu-latest
-    needs: [build, deploy-staging]
-    # Запускается если выбран production ИЛИ staging-then-production (после staging)
-    if: |
-      always() &&
-      (github.event.inputs.environment == 'production' ||
-       (github.event.inputs.environment == 'staging-then-production' && needs.deploy-staging.result == 'success'))
+    needs: prepare
+    if: ${{ github.event.inputs.environment == 'production' }}
     environment:
       name: production
       url: https://quiz-sprint-tma.online
 
     steps:
-      - name: Download build artifact
+      - name: Download artifact
         uses: actions/download-artifact@v4
         with:
-          name: tma-build-${{ github.sha }}
+          name: deploy-artifact
           path: dist/
-
-      - name: Display artifact contents
-        run: ls -la dist/
 
       - name: Deploy to VPS
         uses: appleboy/scp-action@v0.1.7
@@ -207,65 +172,41 @@ jobs:
 
       - name: Health check
         run: |
-          sleep 5
+          sleep 3
           RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://quiz-sprint-tma.online)
-          if [ "$RESPONSE" = "200" ] || [ "$RESPONSE" = "304" ]; then
-            echo "✅ Production health check passed (HTTP $RESPONSE)"
+          if [ "$RESPONSE" = "200" ]; then
+            echo "✅ Production health check passed"
           else
-            echo "❌ Production health check failed (HTTP $RESPONSE)"
+            echo "::error::Health check failed (HTTP $RESPONSE)"
             exit 1
           fi
 
   # ===========================================
-  # Notify - отправляем уведомление в Telegram
+  # Notify
   # ===========================================
   notify:
-    name: Send Notification
+    name: Notify
     runs-on: ubuntu-latest
-    needs: [deploy-staging, deploy-production]
-    if: always()
+    needs: [prepare, deploy-staging, deploy-production]
+    if: always() && (needs.deploy-staging.result == 'success' || needs.deploy-production.result == 'success' || needs.deploy-staging.result == 'failure' || needs.deploy-production.result == 'failure')
 
     steps:
-      - name: Determine deployment result
-        id: result
-        run: |
-          STAGING_RESULT="${{ needs.deploy-staging.result }}"
-          PROD_RESULT="${{ needs.deploy-production.result }}"
-          ENV="${{ github.event.inputs.environment }}"
-
-          if [ "$ENV" = "staging" ]; then
-            echo "status=$STAGING_RESULT" >> $GITHUB_OUTPUT
-            echo "env=Staging" >> $GITHUB_OUTPUT
-            echo "url=https://staging.quiz-sprint-tma.online" >> $GITHUB_OUTPUT
-          elif [ "$ENV" = "production" ]; then
-            echo "status=$PROD_RESULT" >> $GITHUB_OUTPUT
-            echo "env=Production" >> $GITHUB_OUTPUT
-            echo "url=https://quiz-sprint-tma.online" >> $GITHUB_OUTPUT
-          else
-            # staging-then-production
-            if [ "$PROD_RESULT" = "success" ]; then
-              echo "status=success" >> $GITHUB_OUTPUT
-              echo "env=Staging + Production" >> $GITHUB_OUTPUT
-              echo "url=https://quiz-sprint-tma.online" >> $GITHUB_OUTPUT
-            elif [ "$STAGING_RESULT" = "success" ] && [ "$PROD_RESULT" = "skipped" ]; then
-              echo "status=success" >> $GITHUB_OUTPUT
-              echo "env=Staging" >> $GITHUB_OUTPUT
-              echo "url=https://staging.quiz-sprint-tma.online" >> $GITHUB_OUTPUT
-            else
-              echo "status=failure" >> $GITHUB_OUTPUT
-              echo "env=$ENV" >> $GITHUB_OUTPUT
-              echo "url=" >> $GITHUB_OUTPUT
-            fi
-          fi
-
       - name: Send Telegram notification
         env:
-          STATUS: ${{ steps.result.outputs.status }}
-          ENV: ${{ steps.result.outputs.env }}
-          URL: ${{ steps.result.outputs.url }}
-          COMMIT_SHA: ${{ github.sha }}
+          STAGING_RESULT: ${{ needs.deploy-staging.result }}
+          PROD_RESULT: ${{ needs.deploy-production.result }}
+          ENV: ${{ github.event.inputs.environment }}
+          ARTIFACT: ${{ needs.prepare.outputs.artifact_name }}
           ACTOR: ${{ github.actor }}
         run: |
+          if [ "$ENV" = "staging" ]; then
+            STATUS="$STAGING_RESULT"
+            URL="https://staging.quiz-sprint-tma.online"
+          else
+            STATUS="$PROD_RESULT"
+            URL="https://quiz-sprint-tma.online"
+          fi
+
           if [ "$STATUS" = "success" ]; then
             EMOJI="✅"
             TITLE="Deployment successful!"
@@ -274,9 +215,9 @@ jobs:
             TITLE="Deployment failed!"
           fi
 
-          MESSAGE="${EMOJI} <b>${TITLE}</b>%0A%0A🌍 Environment: ${ENV}%0A🌐 URL: ${URL}%0A👤 By: ${ACTOR}%0A📝 Commit: ${COMMIT_SHA:0:7}%0A🏷️ Artifact: tma-build-${COMMIT_SHA:0:7}"
+          MESSAGE="${EMOJI} <b>${TITLE}</b>%0A%0A🌍 Environment: ${ENV}%0A🌐 URL: ${URL}%0A📦 Artifact: ${ARTIFACT}%0A👤 By: ${ACTOR}"
 
           curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
             -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
             -d text="$MESSAGE" \
-            -d parse_mode="HTML" || echo "⚠️ Telegram notification failed"
+            -d parse_mode="HTML" || echo "Telegram notification failed"
