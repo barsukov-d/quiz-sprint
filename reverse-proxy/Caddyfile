@@ -8,7 +8,8 @@
 # Replace with your actual domain
 {$DOMAIN:localhost} {
     # Reverse proxy to Vite dev server
-    reverse_proxy host.docker.internal:{$VITE_PORT:5173} {
+    # Use localhost when running with network_mode: host
+    reverse_proxy localhost:{$VITE_PORT:5173} {
         # WebSocket support for HMR (Hot Module Replacement)
         header_up Upgrade {>Upgrade}
         header_up Connection {>Connection}
