@@ -1,156 +1,106 @@
-# Reverse Proxy for TMA Development
+# Reverse Proxy Setup (Development Only)
 
-Docker + Caddy reverse proxy with automatic HTTPS for Telegram Mini App development.
-
-## Features
-
-- ✅ Automatic HTTPS with Let's Encrypt
-- ✅ Auto-renewal of SSL certificates
-- ✅ WebSocket support for Vite HMR (Hot Module Replacement)
-- ✅ HTTP/3 support
-- ✅ Gzip compression
-- ✅ JSON access logs
-
-## Prerequisites
-
-1. **Docker and Docker Compose** installed
-2. **Domain name** pointed to your VPS (e.g., `tma.yourdomain.com`)
-3. **Ports 80 and 443** open on your VPS firewall
-
-## Setup
-
-### 1. Configure Environment
-
-```bash
-cd reverse-proxy
-cp .env.example .env
-```
-
-Edit `.env`:
-```bash
-DOMAIN=tma.yourdomain.com  # Replace with your actual domain
-VITE_PORT=5173             # Keep default or change if needed
-```
-
-### 2. Update Caddyfile Email
-
-Edit `Caddyfile` and replace `your-email@example.com` with your actual email:
-```
-{
-    email your-actual-email@example.com
-}
-```
-
-### 3. Start Vite Dev Server
-
-Make sure your TMA Vite dev server is running:
-```bash
-cd ../tma
-npm run dev
-# Should be running on http://localhost:5173
-```
-
-### 4. Start Caddy Reverse Proxy
-
-```bash
-cd ../reverse-proxy
-docker-compose up -d
-```
-
-### 5. Verify
-
-Check logs:
-```bash
-docker-compose logs -f caddy
-```
-
-Your TMA should now be accessible at `https://tma.yourdomain.com`
-
-## Usage
-
-### Start Proxy
-```bash
-docker-compose up -d
-```
-
-### Stop Proxy
-```bash
-docker-compose down
-```
-
-### Restart Proxy
-```bash
-docker-compose restart
-```
-
-### View Logs
-```bash
-docker-compose logs -f caddy
-```
-
-### Access Logs
-```bash
-docker exec tma-reverse-proxy cat /data/access.log
-```
-
-## Testing with Let's Encrypt Staging
-
-To avoid rate limits during testing, uncomment this line in `Caddyfile`:
-```
-acme_ca https://acme-staging-v02.api.letsencrypt.org/directory
-```
-
-**Note:** Staging certificates will show browser warnings. Remove this line for production.
-
-## Updating BotFather
-
-Once running, update your bot's Web App URL in @BotFather:
-```
-/myapps → Select your bot → Edit Web App URL
-https://tma.yourdomain.com
-```
-
-## Troubleshooting
-
-### Certificate Issues
-```bash
-# Remove old certificates and restart
-docker-compose down
-rm -rf caddy/data/*
-docker-compose up -d
-```
-
-### Connection Refused
-- Ensure Vite dev server is running on port 5173
-- Check `host.docker.internal` resolves (macOS/Windows) or use host network mode on Linux
-
-### Domain Not Resolving
-```bash
-# Test DNS
-dig tma.yourdomain.com
-# Should point to your VPS IP
-```
+This reverse proxy is configured **for development purposes only**. It allows you to develop your TMA locally on your MacBook while exposing it via HTTPS for Telegram WebView testing.
 
 ## Architecture
 
 ```
-Internet → Caddy (Docker) → host.docker.internal:5173 → Vite Dev Server
-           ↓
-        Let's Encrypt
-        (Auto HTTPS)
+MacBook (Vite Dev)  →  SSH Tunnel  →  VPS (Caddy)  →  HTTPS Domain
+localhost:5173      →  Port 5173    →  quiz-sprint-tma.online
 ```
+
+## Important Notes
+
+⚠️ **Development Only** - This setup is NOT for production:
+- No load balancing
+- No redundancy
+- Requires active SSH tunnel from your MacBook
+- Single point of failure (your MacBook)
+
+✅ **For Development:**
+- Hot reload works perfectly
+- Fast iteration cycle
+- No need to deploy TMA to VPS
+- Develop on your local machine
+
+## Daily Usage
+
+### Start Development:
+1. On MacBook: Start Vite (`cd ~/projects/quiz-sprint/tma && pnpm dev`)
+2. On MacBook: Start tunnel (`cd ~/projects/quiz-sprint && ./tunnel-to-vps.sh`)
+3. Access: `https://quiz-sprint-tma.online`
+
+### Stop Development:
+1. Press `Ctrl+C` on tunnel terminal
+2. Press `Ctrl+C` on Vite terminal
+
+The reverse proxy on VPS keeps running 24/7, ready for your next dev session.
+
+## Configuration
+
+### Caddyfile
+- Configured for `localhost:5173` (tunnel endpoint)
+- HTTPS automatic via Let's Encrypt
+- WebSocket support for Vite HMR
+- Gzip compression enabled
+
+### docker-compose.yml
+- Uses `network_mode: host` to access localhost services
+- Auto-restart enabled (VPS reboots)
+- Persistent SSL certificates in `./caddy/data`
+
+## When to Modify
+
+Only modify this reverse proxy when:
+- Changing domain
+- Adding more dev ports (staging, etc.)
+- Adjusting SSL settings
+- Adding CORS headers
+
+For TMA code changes, just edit locally and Vite will hot-reload!
+
+## Production Deployment
+
+When ready for production, you'll need:
+1. Deploy TMA build to VPS (not dev server)
+2. Separate production Caddy config
+3. Process manager (PM2, systemd)
+4. Monitoring & logging
+5. Separate environment (production subdomain/domain)
+
+See issue `quiz-sprint-ahq` in Beads tracker for multi-environment setup.
+
+## Troubleshooting
+
+**502 Bad Gateway:**
+- Check tunnel is running: `ps aux | grep "ssh.*5173"`
+- Check Vite is running: `curl http://localhost:5173`
+- Restart tunnel: `./tunnel-to-vps.sh`
+
+**SSL Certificate Issues:**
+- Check Caddy logs: `docker compose logs caddy`
+- Verify email in Caddyfile: `barsukov.d@gmail.com`
+- Check domain DNS points to VPS IP
+
+**Port Conflicts:**
+- Only one dev session at a time (port 5173)
+- If port busy: `lsof -i :5173` and kill process
 
 ## Files
 
-- `docker-compose.yml` - Docker Compose configuration
-- `Caddyfile` - Caddy reverse proxy configuration
-- `.env` - Environment variables (create from .env.example)
-- `caddy/data/` - Caddy data directory (certificates, etc.)
-- `caddy/config/` - Caddy configuration directory
+```
+reverse-proxy/
+├── Caddyfile              # Reverse proxy config
+├── docker-compose.yml     # Docker container config
+├── .env.example           # Environment template
+├── caddy/
+│   ├── data/              # SSL certificates (auto-generated)
+│   └── config/            # Caddy config cache
+└── README.md             # This file
+```
 
-## Security Notes
+## See Also
 
-- Let's Encrypt rate limits: 50 certificates per domain per week
-- Use staging server for testing
-- Certificates auto-renew 30 days before expiration
-- Access logs stored in `/data/access.log` inside container
+- `TUNNEL-SETUP.md` - Full SSH tunnel documentation
+- `COMMANDS.md` - Common commands reference
+- `.github/workflows/deploy-reverse-proxy.yml` - Auto-deployment config
