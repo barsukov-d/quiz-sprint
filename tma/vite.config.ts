@@ -14,6 +14,6 @@ export default defineConfig({
   },
   server: {
     host: true, // Allow external connections
-    allowedHosts: ['.trycloudflare.com', 'localhost'],
+    allowedHosts: ['.trycloudflare.com', 'localhost', 'quiz-sprint-tma.online'],
   },
 })
