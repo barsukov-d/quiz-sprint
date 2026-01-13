@@ -3,28 +3,22 @@
     email barsukov.d@gmail.com
 }
 
-# Production environment (main domain)
+# Production environment (main domain) - Static files
 quiz-sprint-tma.online {
-    # Reverse proxy to production Vite server on port 5173
-    reverse_proxy localhost:5173 {
-        # WebSocket support for HMR (Hot Module Replacement)
-        header_up Upgrade {>Upgrade}
-        header_up Connection {>Connection}
-    }
+    root * /var/www/tma/production
+    file_server
+    try_files {path} /index.html
 
-    # Enable gzip compression
     encode gzip
 
-    # Logs
     log {
         output file /data/access-prod.log
         format json
     }
 }
 
-# Development environment
+# Development environment - Chisel tunnel with HMR
 dev.quiz-sprint-tma.online {
-    # Reverse proxy to dev server on port 5174
     reverse_proxy localhost:5174 {
         header_up Upgrade {>Upgrade}
         header_up Connection {>Connection}
@@ -38,13 +32,11 @@ dev.quiz-sprint-tma.online {
     }
 }
 
-# Staging environment
+# Staging environment - Static files
 staging.quiz-sprint-tma.online {
-    # Reverse proxy to staging server on port 5175
-    reverse_proxy localhost:5175 {
-        header_up Upgrade {>Upgrade}
-        header_up Connection {>Connection}
-    }
+    root * /var/www/tma/staging
+    file_server
+    try_files {path} /index.html
 
     encode gzip
 

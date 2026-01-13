@@ -10,6 +10,7 @@ services:
       - ./Caddyfile:/etc/caddy/Caddyfile
       - ./caddy/data:/data
       - ./caddy/config:/config
+      - /var/www/tma:/var/www/tma:ro
     environment:
       - DOMAIN=${DOMAIN:-localhost}
       - VITE_PORT=${VITE_PORT:-5173}
