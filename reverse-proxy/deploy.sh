@@ -20,7 +20,7 @@ if ! command -v docker &> /dev/null; then
 fi
 
 # Check if Docker Compose is installed
-if ! command -v docker-compose &> /dev/null; then
+if ! docker compose version &> /dev/null; then
     echo -e "${RED}❌ Docker Compose is not installed${NC}"
     exit 1
 fi
@@ -49,24 +49,24 @@ if [ -z "$DOMAIN" ]; then
 fi
 
 echo -e "${GREEN}📦 Pulling latest Caddy image...${NC}"
-docker-compose pull
+docker compose pull
 
 echo -e "${GREEN}🔄 Deploying containers...${NC}"
-docker-compose up -d --remove-orphans
+docker compose up -d --remove-orphans
 
 echo -e "${GREEN}🧹 Cleaning up old images...${NC}"
 docker image prune -f
 
 echo -e "${GREEN}📊 Container status:${NC}"
-docker-compose ps
+docker compose ps
 
 echo -e "${GREEN}📝 Viewing logs (last 20 lines):${NC}"
-docker-compose logs --tail=20 caddy
+docker compose logs --tail=20 caddy
 
 echo ""
 echo -e "${GREEN}✅ Deployment complete!${NC}"
 echo -e "${GREEN}🌐 Your reverse proxy should be available at: https://${DOMAIN}${NC}"
 echo ""
-echo -e "${YELLOW}To view logs: docker-compose logs -f caddy${NC}"
-echo -e "${YELLOW}To stop: docker-compose down${NC}"
-echo -e "${YELLOW}To restart: docker-compose restart${NC}"
+echo -e "${YELLOW}To view logs: docker compose logs -f caddy${NC}"
+echo -e "${YELLOW}To stop: docker compose down${NC}"
+echo -e "${YELLOW}To restart: docker compose restart${NC}"
