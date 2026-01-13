@@ -1,0 +1,282 @@
+name: Build and Deploy TMA
+
+on:
+  workflow_dispatch:
+    inputs:
+      environment:
+        description: 'Deploy to environment'
+        required: true
+        type: choice
+        options:
+          - staging
+          - production
+          - staging-then-production
+
+jobs:
+  # ===========================================
+  # Quality Checks - всегда выполняется первым
+  # ===========================================
+  quality-checks:
+    name: Quality Checks
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Get pnpm store directory
+        shell: bash
+        run: |
+          echo "STORE_PATH=$(pnpm store path --silent)" >> $GITHUB_ENV
+
+      - name: Setup pnpm cache
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.STORE_PATH }}
+          key: ${{ runner.os }}-pnpm-store-${{ hashFiles('**/pnpm-lock.yaml') }}
+          restore-keys: |
+            ${{ runner.os }}-pnpm-store-
+
+      - name: Install dependencies
+        working-directory: ./tma
+        run: pnpm install --frozen-lockfile
+
+      - name: Type check
+        working-directory: ./tma
+        run: pnpm type-check
+
+      - name: Lint
+        working-directory: ./tma
+        run: pnpm lint
+
+  # ===========================================
+  # Build - собираем ОДИН РАЗ, сохраняем артефакт
+  # ===========================================
+  build:
+    name: Build
+    runs-on: ubuntu-latest
+    needs: quality-checks
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9
+
+      - name: Install dependencies
+        working-directory: ./tma
+        run: pnpm install --frozen-lockfile
+
+      - name: Build application
+        working-directory: ./tma
+        run: pnpm build
+        env:
+          NODE_ENV: production
+
+      - name: Upload build artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: tma-build-${{ github.sha }}
+          path: tma/dist/
+          retention-days: 30
+          if-no-files-found: error
+
+      - name: Build summary
+        run: |
+          echo "### Build Summary" >> $GITHUB_STEP_SUMMARY
+          echo "- **Commit:** ${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Artifact:** tma-build-${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Built at:** $(date -u)" >> $GITHUB_STEP_SUMMARY
+
+  # ===========================================
+  # Deploy to Staging
+  # ===========================================
+  deploy-staging:
+    name: Deploy to Staging
+    runs-on: ubuntu-latest
+    needs: build
+    if: ${{ github.event.inputs.environment == 'staging' || github.event.inputs.environment == 'staging-then-production' }}
+    environment:
+      name: staging
+      url: https://staging.quiz-sprint-tma.online
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tma-build-${{ github.sha }}
+          path: dist/
+
+      - name: Display artifact contents
+        run: ls -la dist/
+
+      - name: Deploy to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "dist/*"
+          target: "/var/www/tma/staging/"
+          strip_components: 1
+          rm: true
+
+      - name: Set permissions
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            chown -R www-data:www-data /var/www/tma/staging
+
+      - name: Health check
+        run: |
+          sleep 5
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://staging.quiz-sprint-tma.online)
+          if [ "$RESPONSE" = "200" ] || [ "$RESPONSE" = "304" ]; then
+            echo "✅ Staging health check passed (HTTP $RESPONSE)"
+          else
+            echo "❌ Staging health check failed (HTTP $RESPONSE)"
+            exit 1
+          fi
+
+  # ===========================================
+  # Deploy to Production
+  # ===========================================
+  deploy-production:
+    name: Deploy to Production
+    runs-on: ubuntu-latest
+    needs: [build, deploy-staging]
+    # Запускается если выбран production ИЛИ staging-then-production (после staging)
+    if: |
+      always() &&
+      (github.event.inputs.environment == 'production' ||
+       (github.event.inputs.environment == 'staging-then-production' && needs.deploy-staging.result == 'success'))
+    environment:
+      name: production
+      url: https://quiz-sprint-tma.online
+
+    steps:
+      - name: Download build artifact
+        uses: actions/download-artifact@v4
+        with:
+          name: tma-build-${{ github.sha }}
+          path: dist/
+
+      - name: Display artifact contents
+        run: ls -la dist/
+
+      - name: Deploy to VPS
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          source: "dist/*"
+          target: "/var/www/tma/production/"
+          strip_components: 1
+          rm: true
+
+      - name: Set permissions
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            chown -R www-data:www-data /var/www/tma/production
+
+      - name: Health check
+        run: |
+          sleep 5
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://quiz-sprint-tma.online)
+          if [ "$RESPONSE" = "200" ] || [ "$RESPONSE" = "304" ]; then
+            echo "✅ Production health check passed (HTTP $RESPONSE)"
+          else
+            echo "❌ Production health check failed (HTTP $RESPONSE)"
+            exit 1
+          fi
+
+  # ===========================================
+  # Notify - отправляем уведомление в Telegram
+  # ===========================================
+  notify:
+    name: Send Notification
+    runs-on: ubuntu-latest
+    needs: [deploy-staging, deploy-production]
+    if: always()
+
+    steps:
+      - name: Determine deployment result
+        id: result
+        run: |
+          STAGING_RESULT="${{ needs.deploy-staging.result }}"
+          PROD_RESULT="${{ needs.deploy-production.result }}"
+          ENV="${{ github.event.inputs.environment }}"
+
+          if [ "$ENV" = "staging" ]; then
+            echo "status=$STAGING_RESULT" >> $GITHUB_OUTPUT
+            echo "env=Staging" >> $GITHUB_OUTPUT
+            echo "url=https://staging.quiz-sprint-tma.online" >> $GITHUB_OUTPUT
+          elif [ "$ENV" = "production" ]; then
+            echo "status=$PROD_RESULT" >> $GITHUB_OUTPUT
+            echo "env=Production" >> $GITHUB_OUTPUT
+            echo "url=https://quiz-sprint-tma.online" >> $GITHUB_OUTPUT
+          else
+            # staging-then-production
+            if [ "$PROD_RESULT" = "success" ]; then
+              echo "status=success" >> $GITHUB_OUTPUT
+              echo "env=Staging + Production" >> $GITHUB_OUTPUT
+              echo "url=https://quiz-sprint-tma.online" >> $GITHUB_OUTPUT
+            elif [ "$STAGING_RESULT" = "success" ] && [ "$PROD_RESULT" = "skipped" ]; then
+              echo "status=success" >> $GITHUB_OUTPUT
+              echo "env=Staging" >> $GITHUB_OUTPUT
+              echo "url=https://staging.quiz-sprint-tma.online" >> $GITHUB_OUTPUT
+            else
+              echo "status=failure" >> $GITHUB_OUTPUT
+              echo "env=$ENV" >> $GITHUB_OUTPUT
+              echo "url=" >> $GITHUB_OUTPUT
+            fi
+          fi
+
+      - name: Send Telegram notification
+        env:
+          STATUS: ${{ steps.result.outputs.status }}
+          ENV: ${{ steps.result.outputs.env }}
+          URL: ${{ steps.result.outputs.url }}
+          COMMIT_SHA: ${{ github.sha }}
+          ACTOR: ${{ github.actor }}
+        run: |
+          if [ "$STATUS" = "success" ]; then
+            EMOJI="✅"
+            TITLE="Deployment successful!"
+          else
+            EMOJI="❌"
+            TITLE="Deployment failed!"
+          fi
+
+          MESSAGE="${EMOJI} <b>${TITLE}</b>%0A%0A🌍 Environment: ${ENV}%0A🌐 URL: ${URL}%0A👤 By: ${ACTOR}%0A📝 Commit: ${COMMIT_SHA:0:7}%0A🏷️ Artifact: tma-build-${COMMIT_SHA:0:7}"
+
+          curl -s -X POST "https://api.telegram.org/bot${{ secrets.TELEGRAM_BOT_TOKEN }}/sendMessage" \
+            -d chat_id="${{ secrets.TELEGRAM_CHAT_ID }}" \
+            -d text="$MESSAGE" \
+            -d parse_mode="HTML" || echo "⚠️ Telegram notification failed"
