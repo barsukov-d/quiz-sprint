@@ -1,0 +1,82 @@
+package main
+
+import (
+	"log"
+	"os"
+
+	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v2/middleware/cors"
+	"github.com/gofiber/fiber/v2/middleware/logger"
+	"github.com/gofiber/fiber/v2/middleware/recover"
+	"github.com/joho/godotenv"
+
+	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/routes"
+)
+
+func main() {
+	// Load environment variables
+	if err := godotenv.Load(); err != nil {
+		log.Println("No .env file found, using system environment variables")
+	}
+
+	// Create Fiber app
+	app := fiber.New(fiber.Config{
+		AppName:      "Quiz Sprint API",
+		ServerHeader: "Quiz Sprint",
+		ErrorHandler: errorHandler,
+	})
+
+	// Middleware
+	app.Use(recover.New())
+	app.Use(logger.New(logger.Config{
+		Format: "[${time}] ${status} - ${latency} ${method} ${path}\n",
+	}))
+	app.Use(cors.New(cors.Config{
+		AllowOrigins:     getEnv("CORS_ORIGINS", "*"),
+		AllowMethods:     "GET,POST,PUT,DELETE,OPTIONS",
+		AllowHeaders:     "Origin,Content-Type,Accept,Authorization",
+		AllowCredentials: true,
+	}))
+
+	// Health check
+	app.Get("/health", func(c *fiber.Ctx) error {
+		return c.JSON(fiber.Map{
+			"status":  "ok",
+			"service": "quiz-sprint-api",
+		})
+	})
+
+	// Setup routes
+	routes.SetupRoutes(app)
+
+	// Start server
+	port := getEnv("PORT", "3000")
+	log.Printf("🚀 Server starting on port %s", port)
+	if err := app.Listen(":" + port); err != nil {
+		log.Fatalf("Failed to start server: %v", err)
+	}
+}
+
+func errorHandler(c *fiber.Ctx, err error) error {
+	code := fiber.StatusInternalServerError
+	message := "Internal Server Error"
+
+	if e, ok := err.(*fiber.Error); ok {
+		code = e.Code
+		message = e.Message
+	}
+
+	return c.Status(code).JSON(fiber.Map{
+		"error": fiber.Map{
+			"code":    code,
+			"message": message,
+		},
+	})
+}
+
+func getEnv(key, defaultValue string) string {
+	if value := os.Getenv(key); value != "" {
+		return value
+	}
+	return defaultValue
+}
