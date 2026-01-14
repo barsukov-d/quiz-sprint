@@ -19,24 +19,37 @@ backend/
 │   └── main.go                 # Server initialization
 ├── internal/
 │   ├── domain/                 # Domain layer (pure Go, no dependencies)
+│   │   ├── shared/             # Shared domain primitives
+│   │   │   └── id.go           # Generic ID value object
 │   │   └── quiz/
-│   │       ├── quiz.go         # Domain models (Quiz, Question, Answer, Session)
+│   │       ├── value_objects.go # QuizID, Points, TimeLimit, etc.
+│   │       ├── entity.go       # Question, Answer entities
+│   │       ├── aggregate.go    # Quiz, QuizSession aggregates
+│   │       ├── events.go       # Domain events
 │   │       ├── errors.go       # Domain errors
-│   │       └── repository.go   # Repository interface
+│   │       └── repository.go   # Repository interfaces
 │   ├── application/            # Application layer (use cases)
 │   │   └── quiz/
+│   │       ├── dto.go          # Input/Output DTOs
+│   │       ├── mapper.go       # Domain → DTO mappers
 │   │       ├── start_quiz.go   # StartQuiz use case
 │   │       ├── submit_answer.go # SubmitAnswer use case
 │   │       └── get_leaderboard.go # GetLeaderboard use case
 │   └── infrastructure/         # Infrastructure layer
 │       ├── http/
-│       │   ├── handlers/       # Fiber HTTP handlers
+│       │   ├── handlers/       # Thin Fiber HTTP handlers
 │       │   └── routes/         # Route configuration
-│       └── persistence/        # Repository implementations
-│           └── memory_repository.go # In-memory (for dev)
-├── pkg/                        # Shared utilities
-├── .env.example                # Environment variables template
+│       ├── persistence/        # Repository implementations
+│       │   └── memory/         # In-memory repositories
+│       └── messaging/          # EventBus implementation
+├── migrations/                 # Database migrations
+│   └── init.sql                # Initial schema
+├── Dockerfile                  # Multi-stage Docker build
+├── docker-compose.yml          # Production stack
+├── docker-compose.dev.yml      # Dev stack (DB + Redis + UIs)
+├── .env.docker                 # Docker env template
 ├── go.mod                      # Go modules
+├── ARCHITECTURE.md             # DDD + Clean Architecture rules
 └── README.md                   # This file
 ```
 
@@ -86,7 +99,70 @@ POST   /api/v1/quiz/session/:sessionId/answer # Submit answer
 GET    /ws/leaderboard/:id       # Real-time leaderboard updates
 ```
 
-## Running Locally
+## Running with Docker (Recommended)
+
+### Development Stack
+
+Start PostgreSQL, Redis, and admin UIs:
+
+```bash
+cd backend
+
+# Start services
+docker compose -f docker-compose.dev.yml up -d
+
+# Run Go API locally with hot reload
+go run cmd/api/main.go
+```
+
+**Available services:**
+- PostgreSQL: `localhost:5432`
+- Redis: `localhost:6379`
+- Adminer (DB UI): `http://localhost:8080`
+- Redis Commander: `http://localhost:8081`
+
+### Production Stack
+
+Run everything in Docker:
+
+```bash
+cd backend
+
+# Create .env from template
+cp .env.docker .env
+# Edit .env with production values
+
+# Build and start
+docker compose up -d --build
+
+# Check status
+docker compose ps
+docker compose logs -f api
+```
+
+### Docker Commands
+
+```bash
+# Stop all services
+docker compose down
+
+# Stop and remove volumes (⚠️ deletes data)
+docker compose down -v
+
+# Rebuild API image
+docker compose build api
+
+# View logs
+docker compose logs -f
+
+# Access PostgreSQL
+docker compose exec postgres psql -U quiz_user -d quiz_sprint
+
+# Access Redis
+docker compose exec redis redis-cli
+```
+
+## Running Locally (Without Docker)
 
 ### Prerequisites
 - Go 1.23+
@@ -159,25 +235,53 @@ go test -cover ./...
 
 See [CLAUDE.md](../CLAUDE.md#backend-deployment) for full deployment guide.
 
-### Quick Deploy via GitHub Actions
+### Quick Deploy via GitHub Actions (Docker)
 
-1. Push code to `main` branch
-2. Go to Actions → "Build Backend" → Run workflow
-3. Go to Actions → "Deploy Backend" → Select environment → Run workflow
+1. Go to Actions → "Deploy Backend (Docker)"
+2. Select environment (staging/production)
+3. Run workflow
+
+The workflow:
+- Builds Docker image
+- Pushes to GitHub Container Registry (ghcr.io)
+- SSHs to VPS and pulls/deploys the image
+- Runs health check
 
 ### VPS Setup (First Time)
 
 ```bash
-# On VPS
-sudo ./infrastructure/scripts/setup-backend.sh
+# On VPS - create directories
+sudo mkdir -p /opt/quiz-sprint/{staging,production}
+sudo chown -R $USER:$USER /opt/quiz-sprint
+
+# Install Docker
+curl -fsSL https://get.docker.com | sh
+sudo usermod -aG docker $USER
 ```
 
-This sets up:
-- Docker + Docker Compose
-- PostgreSQL + Redis containers
-- systemd services
-- nginx reverse proxy
-- User and directories
+### Manual Docker Deployment
+
+```bash
+# On VPS
+cd /opt/quiz-sprint/production
+
+# Create .env
+cat > .env <<EOF
+ENV=production
+DB_USER=quiz_user
+DB_PASSWORD=STRONG_PASSWORD
+DB_NAME=quiz_sprint
+CORS_ORIGINS=https://quiz-sprint-tma.online
+TELEGRAM_BOT_TOKEN=your_token
+EOF
+
+# Login to GitHub Container Registry
+echo $GITHUB_TOKEN | docker login ghcr.io -u USERNAME --password-stdin
+
+# Pull and run
+docker pull ghcr.io/OWNER/quiz-sprint/quiz-sprint-api:production-latest
+docker compose up -d
+```
 
 ## Environment Variables
 
