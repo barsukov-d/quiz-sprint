@@ -1,0 +1,5 @@
+{
+  "apiUrl": "/api",
+  "environment": "staging",
+  "debug": true
+}

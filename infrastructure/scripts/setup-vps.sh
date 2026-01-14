@@ -31,13 +31,15 @@ chown -R www-data:www-data /var/www/tma
 echo "⚙️ Copying Nginx configurations..."
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 cp "$SCRIPT_DIR/../nginx/ssl-params.conf" /etc/nginx/snippets/ssl-params.conf
-cp "$SCRIPT_DIR/../nginx/sites-available/staging.conf" /etc/nginx/sites-available/staging
+cp "$SCRIPT_DIR/../nginx/sites-available/staging.conf" /etc/nginx/sites-available/staging-temp
 cp "$SCRIPT_DIR/../nginx/sites-available/production.conf" /etc/nginx/sites-available/production
+cp "$SCRIPT_DIR/../nginx/sites-available/dev.conf" /etc/nginx/sites-available/dev-tma
 
 # 6. Включение сайтов
 echo "🔗 Enabling sites..."
-ln -sf /etc/nginx/sites-available/staging /etc/nginx/sites-enabled/
-ln -sf /etc/nginx/sites-available/production /etc/nginx/sites-enabled/
+ln -sf /etc/nginx/sites-available/staging-temp /etc/nginx/sites-enabled/staging
+ln -sf /etc/nginx/sites-available/production /etc/nginx/sites-enabled/production
+ln -sf /etc/nginx/sites-available/dev-tma /etc/nginx/sites-enabled/dev-tma
 
 # 7. Удаление default сайта
 if [ -f /etc/nginx/sites-enabled/default ]; then

@@ -24,17 +24,19 @@ fi
 
 # Копирование конфигураций
 echo "📦 Copying configuration files..."
-scp "$NGINX_DIR/sites-available/staging.conf" $VPS_USER@$VPS_HOST:/etc/nginx/sites-available/staging
+scp "$NGINX_DIR/sites-available/staging.conf" $VPS_USER@$VPS_HOST:/etc/nginx/sites-available/staging-temp
 scp "$NGINX_DIR/sites-available/production.conf" $VPS_USER@$VPS_HOST:/etc/nginx/sites-available/production
+scp "$NGINX_DIR/sites-available/dev.conf" $VPS_USER@$VPS_HOST:/etc/nginx/sites-available/dev-tma
 scp "$NGINX_DIR/ssl-params.conf" $VPS_USER@$VPS_HOST:/etc/nginx/snippets/ssl-params.conf
 
 echo "🔗 Enabling sites and testing..."
 
 # Тест и перезагрузка на VPS
 ssh $VPS_USER@$VPS_HOST << 'EOF'
-# Включение сайтов
-ln -sf /etc/nginx/sites-available/staging /etc/nginx/sites-enabled/
-ln -sf /etc/nginx/sites-available/production /etc/nginx/sites-enabled/
+# Включение сайтов (symlinks уже должны существовать, просто обновляем конфиги)
+ln -sf /etc/nginx/sites-available/staging-temp /etc/nginx/sites-enabled/staging
+ln -sf /etc/nginx/sites-available/production /etc/nginx/sites-enabled/production
+ln -sf /etc/nginx/sites-available/dev-tma /etc/nginx/sites-enabled/dev-tma
 
 # Тест конфигурации
 if nginx -t; then
