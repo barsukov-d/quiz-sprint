@@ -1,0 +1,36 @@
+[Unit]
+Description=Quiz Sprint API - Staging
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=quiz-sprint
+Group=quiz-sprint
+WorkingDirectory=/opt/quiz-sprint/staging
+ExecStart=/opt/quiz-sprint/staging/quiz-sprint-api
+Restart=on-failure
+RestartSec=5s
+
+# Environment
+Environment="ENV=staging"
+EnvironmentFile=/opt/quiz-sprint/staging/.env
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/quiz-sprint/staging
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=quiz-sprint-api-staging
+
+# Limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target

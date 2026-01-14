@@ -1,0 +1,36 @@
+[Unit]
+Description=Quiz Sprint API - Production
+After=network.target postgresql.service
+Wants=postgresql.service
+
+[Service]
+Type=simple
+User=quiz-sprint
+Group=quiz-sprint
+WorkingDirectory=/opt/quiz-sprint/production
+ExecStart=/opt/quiz-sprint/production/quiz-sprint-api
+Restart=on-failure
+RestartSec=5s
+
+# Environment
+Environment="ENV=production"
+EnvironmentFile=/opt/quiz-sprint/production/.env
+
+# Security
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ReadWritePaths=/opt/quiz-sprint/production
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=quiz-sprint-api-production
+
+# Limits
+LimitNOFILE=65536
+LimitNPROC=4096
+
+[Install]
+WantedBy=multi-user.target
