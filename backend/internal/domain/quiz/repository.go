@@ -1,36 +1,75 @@
 package quiz
 
 import (
-	"context"
-	"time"
-
-	"github.com/google/uuid"
+	"github.com/barsukov/quiz-sprint/backend/internal/domain/shared"
 )
 
 // QuizRepository defines the interface for quiz persistence
+// NOTE: No context.Context - domain layer is pure
+// Infrastructure implementations add context internally
 type QuizRepository interface {
-	// Quiz operations
-	FindByID(ctx context.Context, id uuid.UUID) (*Quiz, error)
-	FindAll(ctx context.Context) ([]Quiz, error)
-	Save(ctx context.Context, quiz *Quiz) error
-	Delete(ctx context.Context, id uuid.UUID) error
+	// FindByID retrieves a quiz by its ID
+	FindByID(id QuizID) (*Quiz, error)
 
-	// Session operations
-	FindSessionByID(ctx context.Context, id uuid.UUID) (*QuizSession, error)
-	FindActiveSessionByUserAndQuiz(ctx context.Context, userID string, quizID uuid.UUID) (*QuizSession, error)
-	SaveSession(ctx context.Context, session *QuizSession) error
-	UpdateSession(ctx context.Context, session *QuizSession) error
+	// FindAll retrieves all quizzes
+	FindAll() ([]Quiz, error)
 
-	// Leaderboard operations
-	GetLeaderboard(ctx context.Context, quizID uuid.UUID, limit int) ([]LeaderboardEntry, error)
+	// Save persists a quiz (create or update)
+	Save(quiz *Quiz) error
+
+	// Delete removes a quiz by ID
+	Delete(id QuizID) error
+}
+
+// SessionRepository defines the interface for quiz session persistence
+type SessionRepository interface {
+	// FindByID retrieves a session by its ID
+	FindByID(id SessionID) (*QuizSession, error)
+
+	// FindActiveByUserAndQuiz finds an active session for a user and quiz
+	FindActiveByUserAndQuiz(userID shared.UserID, quizID QuizID) (*QuizSession, error)
+
+	// Save persists a session (create or update)
+	Save(session *QuizSession) error
 }
 
 // LeaderboardEntry represents a leaderboard entry
+// This is a read model (CQRS pattern)
 type LeaderboardEntry struct {
-	UserID    string    `json:"userId"`
-	Username  string    `json:"username"`
-	Score     int       `json:"score"`
-	Rank      int       `json:"rank"`
-	QuizID    uuid.UUID `json:"quizId"`
-	CompletedAt time.Time `json:"completedAt"`
+	userID      shared.UserID
+	username    string
+	score       Points
+	rank        int
+	quizID      QuizID
+	completedAt int64
+}
+
+// NewLeaderboardEntry creates a new leaderboard entry
+func NewLeaderboardEntry(userID shared.UserID, username string, score Points, rank int, quizID QuizID, completedAt int64) LeaderboardEntry {
+	return LeaderboardEntry{
+		userID:      userID,
+		username:    username,
+		score:       score,
+		rank:        rank,
+		quizID:      quizID,
+		completedAt: completedAt,
+	}
+}
+
+// Getters
+func (le LeaderboardEntry) UserID() shared.UserID { return le.userID }
+func (le LeaderboardEntry) Username() string      { return le.username }
+func (le LeaderboardEntry) Score() Points         { return le.score }
+func (le LeaderboardEntry) Rank() int             { return le.rank }
+func (le LeaderboardEntry) QuizID() QuizID        { return le.quizID }
+func (le LeaderboardEntry) CompletedAt() int64    { return le.completedAt }
+
+// LeaderboardRepository defines the interface for leaderboard queries
+// Separate from SessionRepository (CQRS: read model)
+type LeaderboardRepository interface {
+	// GetLeaderboard retrieves top scores for a quiz
+	GetLeaderboard(quizID QuizID, limit int) ([]LeaderboardEntry, error)
+
+	// GetUserRank retrieves a user's rank in a quiz leaderboard
+	GetUserRank(quizID QuizID, userID shared.UserID) (int, error)
 }

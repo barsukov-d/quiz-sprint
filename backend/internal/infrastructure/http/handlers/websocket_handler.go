@@ -6,7 +6,6 @@ import (
 	"sync"
 
 	"github.com/gofiber/websocket/v2"
-	"github.com/google/uuid"
 
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
 )
@@ -14,34 +13,34 @@ import (
 // WebSocketHub manages WebSocket connections and broadcasts
 type WebSocketHub struct {
 	// Quiz ID -> list of connections
-	connections map[uuid.UUID]map[*websocket.Conn]bool
-	broadcast   chan BroadcastMessage
-	register    chan ConnectionRequest
-	unregister  chan ConnectionRequest
-	mu          sync.RWMutex
-	repo        quiz.QuizRepository
+	connections     map[string]map[*websocket.Conn]bool
+	broadcast       chan BroadcastMessage
+	register        chan ConnectionRequest
+	unregister      chan ConnectionRequest
+	mu              sync.RWMutex
+	leaderboardRepo quiz.LeaderboardRepository
 }
 
 // ConnectionRequest represents a WebSocket connection request
 type ConnectionRequest struct {
-	QuizID uuid.UUID
+	QuizID string
 	Conn   *websocket.Conn
 }
 
 // BroadcastMessage represents a message to broadcast
 type BroadcastMessage struct {
-	QuizID uuid.UUID
+	QuizID string
 	Data   interface{}
 }
 
 // NewWebSocketHub creates a new WebSocket hub
-func NewWebSocketHub(repo quiz.QuizRepository) *WebSocketHub {
+func NewWebSocketHub(leaderboardRepo quiz.LeaderboardRepository) *WebSocketHub {
 	hub := &WebSocketHub{
-		connections: make(map[uuid.UUID]map[*websocket.Conn]bool),
-		broadcast:   make(chan BroadcastMessage, 256),
-		register:    make(chan ConnectionRequest),
-		unregister:  make(chan ConnectionRequest),
-		repo:        repo,
+		connections:     make(map[string]map[*websocket.Conn]bool),
+		broadcast:       make(chan BroadcastMessage, 256),
+		register:        make(chan ConnectionRequest),
+		unregister:      make(chan ConnectionRequest),
+		leaderboardRepo: leaderboardRepo,
 	}
 
 	go hub.run()
@@ -94,26 +93,46 @@ func (h *WebSocketHub) run() {
 }
 
 // BroadcastLeaderboardUpdate sends leaderboard update to all connected clients
-func (h *WebSocketHub) BroadcastLeaderboardUpdate(quizID uuid.UUID) {
-	entries, err := h.repo.GetLeaderboard(nil, quizID, 10)
+func (h *WebSocketHub) BroadcastLeaderboardUpdate(quizIDStr string) {
+	quizID, err := quiz.NewQuizIDFromString(quizIDStr)
+	if err != nil {
+		log.Printf("Invalid quiz ID: %v", err)
+		return
+	}
+
+	entries, err := h.leaderboardRepo.GetLeaderboard(quizID, 10)
 	if err != nil {
 		log.Printf("Failed to get leaderboard: %v", err)
 		return
 	}
 
+	// Convert to simple DTOs for JSON
+	leaderboardDTOs := make([]map[string]interface{}, 0, len(entries))
+	for _, entry := range entries {
+		leaderboardDTOs = append(leaderboardDTOs, map[string]interface{}{
+			"userId":      entry.UserID().String(),
+			"username":    entry.Username(),
+			"score":       entry.Score().Value(),
+			"rank":        entry.Rank(),
+			"completedAt": entry.CompletedAt(),
+		})
+	}
+
 	h.broadcast <- BroadcastMessage{
-		QuizID: quizID,
+		QuizID: quizIDStr,
 		Data: map[string]interface{}{
 			"type": "leaderboard_update",
-			"data": entries,
+			"data": leaderboardDTOs,
 		},
 	}
 }
 
 // HandleLeaderboardWebSocket handles WebSocket connections for leaderboard
 func (h *WebSocketHub) HandleLeaderboardWebSocket(c *websocket.Conn) {
-	quizIDParam := c.Params("id")
-	quizID, err := uuid.Parse(quizIDParam)
+	quizIDStr := c.Params("id")
+
+	// Validate quiz ID format
+	quizID, err := quiz.NewQuizIDFromString(quizIDStr)
 	if err != nil {
 		log.Printf("Invalid quiz ID: %v", err)
 		c.Close()
@@ -122,16 +141,27 @@ func (h *WebSocketHub) HandleLeaderboardWebSocket(c *websocket.Conn) {
 
 	// Register connection
 	h.register <- ConnectionRequest{
-		QuizID: quizID,
+		QuizID: quizIDStr,
 		Conn:   c,
 	}
 
 	// Send initial leaderboard
-	entries, err := h.repo.GetLeaderboard(nil, quizID, 10)
+	entries, err := h.leaderboardRepo.GetLeaderboard(quizID, 10)
 	if err == nil {
+		leaderboardDTOs := make([]map[string]interface{}, 0, len(entries))
+		for _, entry := range entries {
+			leaderboardDTOs = append(leaderboardDTOs, map[string]interface{}{
+				"userId":      entry.UserID().String(),
+				"username":    entry.Username(),
+				"score":       entry.Score().Value(),
+				"rank":        entry.Rank(),
+				"completedAt": entry.CompletedAt(),
+			})
+		}
+
 		initialData := map[string]interface{}{
 			"type": "leaderboard_update",
-			"data": entries,
+			"data": leaderboardDTOs,
 		}
 		if jsonData, err := json.Marshal(initialData); err == nil {
 			c.WriteMessage(websocket.TextMessage, jsonData)
@@ -141,7 +171,7 @@ func (h *WebSocketHub) HandleLeaderboardWebSocket(c *websocket.Conn) {
 	// Clean up on disconnect
 	defer func() {
 		h.unregister <- ConnectionRequest{
-			QuizID: quizID,
+			QuizID: quizIDStr,
 			Conn:   c,
 		}
 	}()

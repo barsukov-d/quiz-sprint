@@ -1,78 +1,92 @@
 package quiz
 
 import (
-	"context"
 	"time"
 
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
-	"github.com/google/uuid"
+	"github.com/barsukov/quiz-sprint/backend/internal/domain/shared"
 )
-
-// StartQuizCommand contains the data needed to start a quiz
-type StartQuizCommand struct {
-	QuizID uuid.UUID
-	UserID string
-}
-
-// StartQuizResult contains the result of starting a quiz
-type StartQuizResult struct {
-	Session *quiz.QuizSession
-	Quiz    *quiz.Quiz
-}
 
 // StartQuizUseCase handles the business logic for starting a quiz
 type StartQuizUseCase struct {
-	repo quiz.QuizRepository
+	quizRepo    quiz.QuizRepository
+	sessionRepo quiz.SessionRepository
+	eventBus    quiz.EventBus
 }
 
 // NewStartQuizUseCase creates a new StartQuizUseCase
-func NewStartQuizUseCase(repo quiz.QuizRepository) *StartQuizUseCase {
-	return &StartQuizUseCase{repo: repo}
+func NewStartQuizUseCase(
+	quizRepo quiz.QuizRepository,
+	sessionRepo quiz.SessionRepository,
+	eventBus quiz.EventBus,
+) *StartQuizUseCase {
+	return &StartQuizUseCase{
+		quizRepo:    quizRepo,
+		sessionRepo: sessionRepo,
+		eventBus:    eventBus,
+	}
 }
 
 // Execute starts a quiz session
-func (uc *StartQuizUseCase) Execute(ctx context.Context, cmd StartQuizCommand) (*StartQuizResult, error) {
-	// Validate user ID
-	if cmd.UserID == "" {
-		return nil, quiz.ErrInvalidUserID
-	}
-
-	// Get the quiz
-	quizData, err := uc.repo.FindByID(ctx, cmd.QuizID)
+func (uc *StartQuizUseCase) Execute(input StartQuizInput) (StartQuizOutput, error) {
+	// 1. Validate and convert input to domain types
+	quizID, err := quiz.NewQuizIDFromString(input.QuizID)
 	if err != nil {
-		return nil, err
+		return StartQuizOutput{}, err
 	}
 
-	// Validate quiz can be started
-	if !quizData.CanStart() {
-		return nil, quiz.ErrQuizCannotStart
+	userID, err := shared.NewUserID(input.UserID)
+	if err != nil {
+		return StartQuizOutput{}, err
 	}
 
-	// Check for existing active session
-	existingSession, err := uc.repo.FindActiveSessionByUserAndQuiz(ctx, cmd.UserID, cmd.QuizID)
+	// 2. Load quiz aggregate
+	quizAggregate, err := uc.quizRepo.FindByID(quizID)
+	if err != nil {
+		return StartQuizOutput{}, err
+	}
+
+	// 3. Apply business rules (delegate to domain)
+	if err := quizAggregate.CanStart(); err != nil {
+		return StartQuizOutput{}, err
+	}
+
+	// 4. Check for existing active session
+	existingSession, err := uc.sessionRepo.FindActiveByUserAndQuiz(userID, quizID)
 	if err == nil && existingSession != nil {
-		return nil, quiz.ErrSessionAlreadyExists
+		return StartQuizOutput{}, quiz.ErrSessionAlreadyExists
 	}
 
-	// Create new session
-	session := &quiz.QuizSession{
-		ID:              uuid.New(),
-		QuizID:          cmd.QuizID,
-		UserID:          cmd.UserID,
-		CurrentQuestion: 0,
-		Score:           0,
-		Answers:         make([]quiz.UserAnswer, 0),
-		StartedAt:       time.Now(),
-		Status:          quiz.SessionStatusActive,
+	// 5. Create new session aggregate
+	sessionID := quiz.NewSessionID()
+	now := time.Now().Unix()
+
+	session, err := quiz.NewQuizSession(sessionID, quizID, userID, now)
+	if err != nil {
+		return StartQuizOutput{}, err
 	}
 
-	// Save session
-	if err := uc.repo.SaveSession(ctx, session); err != nil {
-		return nil, err
+	// 6. Persist session
+	if err := uc.sessionRepo.Save(session); err != nil {
+		return StartQuizOutput{}, err
 	}
 
-	return &StartQuizResult{
-		Session: session,
-		Quiz:    quizData,
+	// 7. Publish domain events
+	if uc.eventBus != nil {
+		uc.eventBus.Publish(session.Events()...)
+	}
+
+	// 8. Get first question
+	firstQuestion, err := quizAggregate.GetQuestionByIndex(0)
+	if err != nil {
+		return StartQuizOutput{}, err
+	}
+
+	// 9. Return DTO (not domain models!)
+	return StartQuizOutput{
+		Session:        ToSessionDTO(session),
+		FirstQuestion:  ToQuestionDTO(firstQuestion),
+		TotalQuestions: quizAggregate.QuestionsCount(),
+		TimeLimit:      quizAggregate.TimeLimit().Seconds(),
 	}, nil
 }

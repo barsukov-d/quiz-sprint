@@ -1,138 +1,129 @@
 package quiz
 
 import (
-	"context"
 	"time"
 
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
-	"github.com/google/uuid"
+	"github.com/barsukov/quiz-sprint/backend/internal/domain/shared"
 )
-
-// SubmitAnswerCommand contains the data needed to submit an answer
-type SubmitAnswerCommand struct {
-	SessionID  uuid.UUID
-	QuestionID uuid.UUID
-	AnswerID   uuid.UUID
-	UserID     string
-}
-
-// SubmitAnswerResult contains the result of submitting an answer
-type SubmitAnswerResult struct {
-	IsCorrect       bool
-	Points          int
-	TotalScore      int
-	IsQuizCompleted bool
-	NextQuestion    *quiz.Question
-}
 
 // SubmitAnswerUseCase handles the business logic for submitting an answer
 type SubmitAnswerUseCase struct {
-	repo quiz.QuizRepository
+	quizRepo    quiz.QuizRepository
+	sessionRepo quiz.SessionRepository
+	eventBus    quiz.EventBus
 }
 
 // NewSubmitAnswerUseCase creates a new SubmitAnswerUseCase
-func NewSubmitAnswerUseCase(repo quiz.QuizRepository) *SubmitAnswerUseCase {
-	return &SubmitAnswerUseCase{repo: repo}
+func NewSubmitAnswerUseCase(
+	quizRepo quiz.QuizRepository,
+	sessionRepo quiz.SessionRepository,
+	eventBus quiz.EventBus,
+) *SubmitAnswerUseCase {
+	return &SubmitAnswerUseCase{
+		quizRepo:    quizRepo,
+		sessionRepo: sessionRepo,
+		eventBus:    eventBus,
+	}
 }
 
 // Execute submits an answer for a quiz question
-func (uc *SubmitAnswerUseCase) Execute(ctx context.Context, cmd SubmitAnswerCommand) (*SubmitAnswerResult, error) {
-	// Get session
-	session, err := uc.repo.FindSessionByID(ctx, cmd.SessionID)
+func (uc *SubmitAnswerUseCase) Execute(input SubmitAnswerInput) (SubmitAnswerOutput, error) {
+	// 1. Validate and convert input to domain types
+	sessionID, err := quiz.NewSessionIDFromString(input.SessionID)
 	if err != nil {
-		return nil, err
+		return SubmitAnswerOutput{}, err
 	}
 
-	// Validate session belongs to user
-	if session.UserID != cmd.UserID {
-		return nil, quiz.ErrUnauthorized
-	}
-
-	// Validate session is active
-	if session.Status != quiz.SessionStatusActive {
-		return nil, quiz.ErrSessionCompleted
-	}
-
-	// Get quiz
-	quizData, err := uc.repo.FindByID(ctx, session.QuizID)
+	questionID, err := quiz.NewQuestionIDFromString(input.QuestionID)
 	if err != nil {
-		return nil, err
+		return SubmitAnswerOutput{}, err
 	}
 
-	// Find the question
-	var question *quiz.Question
-	for i := range quizData.Questions {
-		if quizData.Questions[i].ID == cmd.QuestionID {
-			question = &quizData.Questions[i]
-			break
-		}
+	answerID, err := quiz.NewAnswerIDFromString(input.AnswerID)
+	if err != nil {
+		return SubmitAnswerOutput{}, err
 	}
 
-	if question == nil {
-		return nil, quiz.ErrQuestionNotFound
+	userID, err := shared.NewUserID(input.UserID)
+	if err != nil {
+		return SubmitAnswerOutput{}, err
 	}
 
-	// Check if already answered
-	for _, answer := range session.Answers {
-		if answer.QuestionID == cmd.QuestionID {
-			return nil, quiz.ErrAlreadyAnswered
-		}
+	// 2. Load session aggregate
+	session, err := uc.sessionRepo.FindByID(sessionID)
+	if err != nil {
+		return SubmitAnswerOutput{}, err
 	}
 
-	// Find the selected answer
-	var selectedAnswer *quiz.Answer
-	for i := range question.Answers {
-		if question.Answers[i].ID == cmd.AnswerID {
-			selectedAnswer = &question.Answers[i]
-			break
-		}
+	// 3. Validate session belongs to user
+	if !session.UserID().Equals(userID) {
+		return SubmitAnswerOutput{}, quiz.ErrUnauthorized
 	}
 
-	if selectedAnswer == nil {
-		return nil, quiz.ErrAnswerNotFound
+	// 4. Load quiz aggregate
+	quizAggregate, err := uc.quizRepo.FindByID(session.QuizID())
+	if err != nil {
+		return SubmitAnswerOutput{}, err
 	}
 
-	// Calculate points
-	points := 0
-	if selectedAnswer.IsCorrect {
-		points = question.Points
-		session.Score += points
+	// 5. Get the question
+	question, err := quizAggregate.GetQuestion(questionID)
+	if err != nil {
+		return SubmitAnswerOutput{}, err
 	}
 
-	// Record answer
-	userAnswer := quiz.UserAnswer{
-		QuestionID: cmd.QuestionID,
-		AnswerID:   cmd.AnswerID,
-		IsCorrect:  selectedAnswer.IsCorrect,
-		Points:     points,
-		AnsweredAt: time.Now(),
+	// 6. Submit answer (domain business logic)
+	now := time.Now().Unix()
+	if err := session.SubmitAnswer(question, answerID, now); err != nil {
+		return SubmitAnswerOutput{}, err
 	}
 
-	session.Answers = append(session.Answers, userAnswer)
-	session.CurrentQuestion++
-
-	// Check if quiz is completed
-	isCompleted := session.CurrentQuestion >= len(quizData.Questions)
-	var nextQuestion *quiz.Question
-
+	// 7. Check if quiz is completed
+	isCompleted := session.CurrentQuestion() >= quizAggregate.QuestionsCount()
 	if isCompleted {
-		session.Status = quiz.SessionStatusCompleted
-		now := time.Now()
-		session.CompletedAt = &now
-	} else {
-		nextQuestion = session.GetNextQuestion(quizData)
+		if err := session.Complete(now); err != nil {
+			return SubmitAnswerOutput{}, err
+		}
 	}
 
-	// Update session
-	if err := uc.repo.UpdateSession(ctx, session); err != nil {
-		return nil, err
+	// 8. Persist session
+	if err := uc.sessionRepo.Save(session); err != nil {
+		return SubmitAnswerOutput{}, err
 	}
 
-	return &SubmitAnswerResult{
-		IsCorrect:       selectedAnswer.IsCorrect,
-		Points:          points,
-		TotalScore:      session.Score,
+	// 9. Publish domain events
+	if uc.eventBus != nil {
+		uc.eventBus.Publish(session.Events()...)
+	}
+
+	// 10. Get the submitted answer details
+	answer, _ := question.GetAnswer(answerID)
+
+	// 11. Build output
+	output := SubmitAnswerOutput{
+		IsCorrect:       answer.IsCorrect(),
+		CorrectAnswerID: FindCorrectAnswerID(question),
+		PointsEarned:    0,
+		TotalScore:      session.Score().Value(),
 		IsQuizCompleted: isCompleted,
-		NextQuestion:    nextQuestion,
-	}, nil
+	}
+
+	if answer.IsCorrect() {
+		output.PointsEarned = question.Points().Value()
+	}
+
+	// 12. Include next question or final result
+	if isCompleted {
+		finalResult := BuildFinalResult(session, quizAggregate)
+		output.FinalResult = &finalResult
+	} else {
+		nextQuestion, err := quizAggregate.GetQuestionByIndex(session.CurrentQuestion())
+		if err == nil {
+			dto := ToQuestionDTO(nextQuestion)
+			output.NextQuestion = &dto
+		}
+	}
+
+	return output, nil
 }

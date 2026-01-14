@@ -1,37 +1,47 @@
 package quiz
 
 import (
-	"context"
-
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
-	"github.com/google/uuid"
 )
-
-// GetLeaderboardQuery contains the parameters for getting leaderboard
-type GetLeaderboardQuery struct {
-	QuizID uuid.UUID
-	Limit  int
-}
 
 // GetLeaderboardUseCase handles the business logic for getting leaderboard
 type GetLeaderboardUseCase struct {
-	repo quiz.QuizRepository
+	leaderboardRepo quiz.LeaderboardRepository
 }
 
 // NewGetLeaderboardUseCase creates a new GetLeaderboardUseCase
-func NewGetLeaderboardUseCase(repo quiz.QuizRepository) *GetLeaderboardUseCase {
-	return &GetLeaderboardUseCase{repo: repo}
+func NewGetLeaderboardUseCase(leaderboardRepo quiz.LeaderboardRepository) *GetLeaderboardUseCase {
+	return &GetLeaderboardUseCase{
+		leaderboardRepo: leaderboardRepo,
+	}
 }
 
-// Execute retrieves the leaderboard
-func (uc *GetLeaderboardUseCase) Execute(ctx context.Context, query GetLeaderboardQuery) ([]quiz.LeaderboardEntry, error) {
-	if query.Limit <= 0 {
-		query.Limit = 10
+// Execute retrieves the leaderboard for a quiz
+func (uc *GetLeaderboardUseCase) Execute(input GetLeaderboardInput) (GetLeaderboardOutput, error) {
+	// 1. Validate input
+	quizID, err := quiz.NewQuizIDFromString(input.QuizID)
+	if err != nil {
+		return GetLeaderboardOutput{}, err
 	}
 
-	if query.Limit > 100 {
-		query.Limit = 100
+	// 2. Normalize limit
+	limit := input.Limit
+	if limit <= 0 {
+		limit = 10
+	}
+	if limit > 100 {
+		limit = 100
 	}
 
-	return uc.repo.GetLeaderboard(ctx, query.QuizID, query.Limit)
+	// 3. Get leaderboard from repository
+	entries, err := uc.leaderboardRepo.GetLeaderboard(quizID, limit)
+	if err != nil {
+		return GetLeaderboardOutput{}, err
+	}
+
+	// 4. Return DTOs
+	return GetLeaderboardOutput{
+		QuizID:  input.QuizID,
+		Entries: ToLeaderboardEntriesDTO(entries),
+	}, nil
 }

@@ -4,18 +4,52 @@ import (
 	"github.com/gofiber/fiber/v2"
 	"github.com/gofiber/websocket/v2"
 
+	appQuiz "github.com/barsukov/quiz-sprint/backend/internal/application/quiz"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/handlers"
-	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence"
+	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/messaging"
+	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence/memory"
 )
 
 // SetupRoutes configures all application routes
 func SetupRoutes(app *fiber.App) {
-	// Initialize repository (in-memory for now)
-	quizRepo := persistence.NewMemoryQuizRepository()
+	// ========================================
+	// Infrastructure Layer: Repositories
+	// ========================================
+	quizRepo := memory.NewQuizRepository()
+	sessionRepo := memory.NewSessionRepository()
+	leaderboardRepo := memory.NewLeaderboardRepository(sessionRepo)
 
-	// Initialize handlers
-	quizHandler := handlers.NewQuizHandler(quizRepo)
-	wsHub := handlers.NewWebSocketHub(quizRepo)
+	// ========================================
+	// Infrastructure Layer: Event Bus
+	// ========================================
+	eventBus := messaging.NewInMemoryEventBus()
+	loggingEventBus := messaging.NewLoggingEventBus(eventBus)
+
+	// ========================================
+	// Application Layer: Use Cases
+	// ========================================
+	listQuizzesUC := appQuiz.NewListQuizzesUseCase(quizRepo)
+	getQuizUC := appQuiz.NewGetQuizUseCase(quizRepo)
+	startQuizUC := appQuiz.NewStartQuizUseCase(quizRepo, sessionRepo, loggingEventBus)
+	submitAnswerUC := appQuiz.NewSubmitAnswerUseCase(quizRepo, sessionRepo, loggingEventBus)
+	getLeaderboardUC := appQuiz.NewGetLeaderboardUseCase(leaderboardRepo)
+
+	// ========================================
+	// Infrastructure Layer: HTTP Handlers
+	// ========================================
+	quizHandler := handlers.NewQuizHandler(
+		listQuizzesUC,
+		getQuizUC,
+		startQuizUC,
+		submitAnswerUC,
+		getLeaderboardUC,
+	)
+
+	wsHub := handlers.NewWebSocketHub(leaderboardRepo)
+
+	// ========================================
+	// Routes
+	// ========================================
 
 	// API v1 routes
 	api := app.Group("/api")
