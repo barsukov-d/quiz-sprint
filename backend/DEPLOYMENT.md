@@ -78,20 +78,23 @@ quiz-sprint-redis       Up                  0.0.0.0:6379->6379/tcp
 
 ### 6. Configure GitHub Secrets
 
-Add these secrets in GitHub repository settings:
+Go to **GitHub repository → Settings → Secrets and variables → Actions → New repository secret**
 
-**Existing:**
-- `VPS_HOST` - VPS IP address
-- `VPS_USER` - SSH user (usually `root`)
-- `VPS_SSH_KEY` - Private SSH key
-- `TELEGRAM_BOT_TOKEN` - Bot token
-- `TELEGRAM_CHAT_ID` - Chat ID for notifications
+Add these secrets:
 
-**New for Backend:**
-- `STAGING_DB_USER` → `quiz_user_staging`
-- `STAGING_DB_PASSWORD` → Your staging password
-- `PROD_DB_USER` → `quiz_user_production`
-- `PROD_DB_PASSWORD` → Your production password
+| Secret Name | Description | Example |
+|-------------|-------------|---------|
+| `VPS_HOST` | VPS IP address or domain | `123.45.67.89` |
+| `VPS_USER` | SSH user | `root` |
+| `VPS_SSH_KEY` | Private SSH key (full content) | `-----BEGIN OPENSSH PRIVATE KEY-----...` |
+| `STAGING_DB_USER` | Staging database user | `quiz_user` |
+| `STAGING_DB_PASSWORD` | Staging database password | `strong_password_123` |
+| `PROD_DB_USER` | Production database user | `quiz_user` |
+| `PROD_DB_PASSWORD` | Production database password | `strong_password_456` |
+| `TELEGRAM_BOT_TOKEN` | Telegram bot token for notifications | `123456:ABC-DEF...` |
+| `TELEGRAM_CHAT_ID` | Telegram chat ID for notifications | `-1001234567890` |
+
+**Note:** `GITHUB_TOKEN` is automatically provided by GitHub Actions, no need to create it.
 
 ### 7. Deploy via GitHub Actions
 
@@ -126,18 +129,39 @@ Expected response:
 
 ## Deployment Workflow
 
-### Via GitHub Actions (Recommended)
+### Via GitHub Actions with Docker (Recommended)
 
-**Step 1: Build**
+The backend uses **Docker containers** for deployment. The workflow:
+
+1. **Builds Docker image** from `backend/Dockerfile`
+2. **Pushes to GitHub Container Registry** (ghcr.io)
+3. **Deploys to VPS** by pulling image and running with docker-compose
+
+**Step 1: Trigger Deployment**
 ```bash
-# Automatic on push to main branch with backend changes
-# Or manually trigger "Build Backend" workflow
+# Go to GitHub Actions tab
+# Run "Deploy Backend (Docker)" workflow
+# Select environment: staging or production
 ```
 
-**Step 2: Deploy**
+**Step 2: Verify**
 ```bash
-# Manually trigger "Deploy Backend" workflow
-# Select environment: staging or production
+# On VPS, check running containers
+ssh root@your-vps
+cd /opt/quiz-sprint/staging  # or production
+docker compose ps
+
+# Should show:
+# - quiz-sprint-api-staging (or production)
+# - quiz-sprint-postgres-staging
+# - quiz-sprint-redis-staging
+```
+
+**Step 3: Test**
+```bash
+# Test health endpoint
+curl https://staging.quiz-sprint-tma.online/api/health
+curl https://quiz-sprint-tma.online/api/health  # production
 ```
 
 ### Manual Deployment
@@ -191,7 +215,7 @@ journalctl -u quiz-sprint-api-staging -n 100
 ### Docker Compose Commands
 
 ```bash
-cd /opt/quiz-sprint
+cd /opt/quiz-sprint/staging  # or production
 
 # Start containers
 docker compose up -d
@@ -202,11 +226,36 @@ docker compose down
 # View logs
 docker compose logs -f
 
+# View API logs only
+docker compose logs -f api
+
 # Restart specific service
-docker compose restart postgres
+docker compose restart api
 
 # Check status
 docker compose ps
+
+# Check resource usage
+docker stats quiz-sprint-api-staging
+
+# Access container shell
+docker exec -it quiz-sprint-api-staging sh
+```
+
+### Docker Management
+
+```bash
+# List all images
+docker images | grep quiz-sprint
+
+# Remove old images (cleanup)
+docker image prune -a
+
+# Check disk usage
+docker system df
+
+# Clean up unused resources
+docker system prune -a
 ```
 
 ## Monitoring

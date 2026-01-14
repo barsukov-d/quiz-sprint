@@ -108,7 +108,6 @@ jobs:
 
             # Update docker-compose with correct image
             cat > docker-compose.yml <<EOF
-            version: '3.8'
             services:
               api:
                 image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:staging-latest
@@ -236,7 +235,6 @@ jobs:
 
             # Update docker-compose with correct image
             cat > docker-compose.yml <<EOF
-            version: '3.8'
             services:
               api:
                 image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:production-latest

@@ -1,5 +1,3 @@
-version: '3.8'
-
 # ==========================================
 # Development Docker Compose
 # ==========================================
@@ -12,7 +10,7 @@ services:
   # PostgreSQL Database (Development)
   # ----------------------------------------
   postgres:
-    image: postgres:16-alpine
+    image: postgres:15
     container_name: quiz-sprint-postgres-dev
     restart: unless-stopped
     ports:

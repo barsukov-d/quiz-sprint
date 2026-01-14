@@ -10,6 +10,7 @@ Go backend API for Quiz Sprint TMA built with **Fiber**, **DDD architecture**, a
 - **PostgreSQL 16** - Primary database
 - **Redis 7** - Caching (optional)
 - **Domain-Driven Design** - Clean architecture
+- **Docker** - Containerization for development and production
 
 ## Project Structure
 
@@ -52,6 +53,29 @@ backend/
 ├── ARCHITECTURE.md             # DDD + Clean Architecture rules
 └── README.md                   # This file
 ```
+
+## Quick Start
+
+Get up and running in 2 minutes:
+
+```bash
+# 1. Start Docker services (PostgreSQL + Redis + Admin UIs)
+docker compose -f docker-compose.dev.yml up -d
+
+# 2. Run Go API
+go run cmd/api/main.go
+
+# 3. Test API
+curl http://localhost:3000/health
+curl http://localhost:3000/api/v1/quiz
+```
+
+**Services running:**
+- 🐹 Go API: http://localhost:3000
+- 🐘 PostgreSQL: localhost:5432
+- 🔴 Redis: localhost:6379
+- 🎨 Adminer (DB UI): http://localhost:8080
+- 📊 Redis Commander: http://localhost:8081
 
 ## DDD Layers
 
@@ -120,6 +144,13 @@ go run cmd/api/main.go
 - Redis: `localhost:6379`
 - Adminer (DB UI): `http://localhost:8080`
 - Redis Commander: `http://localhost:8081`
+- Go API: `http://localhost:3000`
+
+**Adminer credentials:**
+- Server: `postgres`
+- Username: `quiz_user`
+- Password: `quiz_password_dev`
+- Database: `quiz_sprint_dev`
 
 ### Production Stack
 
@@ -198,15 +229,36 @@ Server starts on `http://localhost:3000`
 ```bash
 # Health check
 curl http://localhost:3000/health
+# Response: {"service":"quiz-sprint-api","status":"ok"}
 
 # Get all quizzes
 curl http://localhost:3000/api/v1/quiz
+# Response: {"data":[{"id":"...","title":"Go Programming Basics",...}]}
 
-# Start a quiz
+# Get quiz by ID
+curl http://localhost:3000/api/v1/quiz/<quiz-id>
+
+# Start a quiz session
 curl -X POST http://localhost:3000/api/v1/quiz/<quiz-id>/start \
   -H "Content-Type: application/json" \
   -d '{"userId": "telegram_user_123"}'
+# Response: Returns session ID and first question
+
+# Submit an answer
+curl -X POST http://localhost:3000/api/v1/quiz/session/<session-id>/answer \
+  -H "Content-Type: application/json" \
+  -d '{"answerId": "<answer-id>"}'
+
+# Get leaderboard
+curl http://localhost:3000/api/v1/quiz/<quiz-id>/leaderboard
 ```
+
+**✅ Verified Endpoints (Jan 14, 2026):**
+- ✅ `GET /health` - Returns service status
+- ✅ `GET /api/v1/quiz` - Lists all quizzes from PostgreSQL
+- ✅ `GET /api/v1/quiz/:id` - Returns quiz details
+- ✅ `POST /api/v1/quiz/:id/start` - Creates session and returns first question
+- ✅ `GET /api/v1/quiz/:id/leaderboard` - Returns leaderboard
 
 ## Development
 
@@ -233,19 +285,38 @@ go test -cover ./...
 
 ## Deployment
 
-See [CLAUDE.md](../CLAUDE.md#backend-deployment) for full deployment guide.
+See [DEPLOYMENT.md](./DEPLOYMENT.md) for complete deployment guide.
 
 ### Quick Deploy via GitHub Actions (Docker)
 
-1. Go to Actions → "Deploy Backend (Docker)"
-2. Select environment (staging/production)
-3. Run workflow
+**Prerequisites:**
+- VPS configured (see [DEPLOYMENT.md](./DEPLOYMENT.md))
+- GitHub Secrets configured (VPS_HOST, VPS_USER, VPS_SSH_KEY, DB credentials)
+- Docker installed on VPS
 
-The workflow:
-- Builds Docker image
-- Pushes to GitHub Container Registry (ghcr.io)
-- SSHs to VPS and pulls/deploys the image
-- Runs health check
+**Deploy Steps:**
+
+1. **Go to GitHub Actions** → "Deploy Backend (Docker)"
+2. **Click "Run workflow"**
+3. **Select environment:** staging or production
+4. **Wait for deployment** (5-10 minutes)
+
+The workflow automatically:
+- ✅ Builds Docker image from `Dockerfile`
+- ✅ Pushes to GitHub Container Registry (ghcr.io)
+- ✅ SSHs to VPS and creates docker-compose.yml
+- ✅ Pulls and starts containers (API + PostgreSQL + Redis)
+- ✅ Runs health check
+- ✅ Sends Telegram notification
+
+**Verify deployment:**
+```bash
+# Staging
+curl https://staging.quiz-sprint-tma.online/api/health
+
+# Production
+curl https://quiz-sprint-tma.online/api/health
+```
 
 ### VPS Setup (First Time)
 
