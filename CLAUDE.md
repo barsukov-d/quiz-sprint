@@ -35,6 +35,14 @@ pnpm test:unit                              # Run Vitest unit tests
 pnpm test:e2e                               # Run Playwright E2E tests
 pnpm test:e2e --project=chromium            # Run E2E on specific browser
 npx playwright install                       # Install browser drivers (first run)
+
+# Telegram Mini App Setup
+pnpm add @telegram-apps/sdk @telegram-apps/sdk-vue    # Official TMA SDK
+pnpm add -D eruda                                      # Mobile debugging console
+pnpm add pinia                                         # State management
+pnpm add @vueuse/core                                  # Vue composables
+pnpm add -D tailwindcss postcss autoprefixer          # Utility CSS (optional)
+pnpm add @iconify/vue                                  # Icons (optional)
 ```
 
 ### Backend (Go API)
@@ -57,6 +65,10 @@ go mod tidy                                  # Clean up dependencies
 
 # Formatting
 go fmt ./...                                 # Format code
+
+# Swagger Documentation
+~/go/bin/swag init -g cmd/api/main.go -o docs  # Generate Swagger docs
+# Access Swagger UI at: http://localhost:3000/swagger/index.html
 ```
 
 ## Architecture
@@ -123,6 +135,20 @@ The CI/CD uses a two-stage workflow for both frontend and backend:
 - ESLint + Oxlint + Prettier (code quality)
 - pnpm 9 (package manager)
 - Node.js ^20.19.0 || >=22.12.0
+
+**Telegram Mini App (TMA) Stack:**
+- `@telegram-apps/sdk` - Official Telegram Mini Apps SDK (initialization, theme, events)
+- `@telegram-apps/sdk-vue` - Vue 3 bindings for TMA SDK (composables)
+- `@vkruglikov/react-telegram-web-app` - Alternative TMA library (optional)
+- `eruda` - Mobile debugging console (dev tool for testing in Telegram)
+- `vconsole` - Alternative mobile console (optional)
+
+**Recommended additions for TMA:**
+- `@tanstack/vue-query` or `@vueuse/core` - Data fetching and state management
+- `pinia` - State management (for quiz session, user data)
+- `@vueuse/core` - Vue composables utilities (useLocalStorage, useWebSocket)
+- `tailwindcss` or `unocss` - Utility-first CSS (better than plain CSS for TMA)
+- `@iconify/vue` - Icon components (Telegram-style icons)
 
 ### Backend
 - Go 1.23

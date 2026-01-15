@@ -1,0 +1,231 @@
+basePath: /api/v1
+definitions:
+  handlers.StartQuizRequest:
+    properties:
+      userId:
+        type: string
+    type: object
+  handlers.SubmitAnswerRequest:
+    properties:
+      answerId:
+        type: string
+      questionId:
+        type: string
+      userId:
+        type: string
+    type: object
+host: localhost:3000
+info:
+  contact:
+    email: support@quiz-sprint-tma.online
+    name: API Support
+    url: https://quiz-sprint-tma.online/support
+  description: Quiz Sprint TMA Backend API - A Telegram Mini App for interactive quizzes
+  license:
+    name: MIT
+    url: https://opensource.org/licenses/MIT
+  termsOfService: https://quiz-sprint-tma.online/terms
+  title: Quiz Sprint API
+  version: "1.0"
+paths:
+  /quiz:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all available quizzes with basic information
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of quizzes
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: List all quizzes
+      tags:
+      - quiz
+  /quiz/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Get detailed quiz information including questions, answers (without
+        correct answer indicators), and top 3 leaderboard scores
+      parameters:
+      - description: Quiz ID
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Quiz details with questions and top scores
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid quiz ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Quiz not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get quiz details
+      tags:
+      - quiz
+  /quiz/{id}/leaderboard:
+    get:
+      consumes:
+      - application/json
+      description: Get the leaderboard for a specific quiz with top scores
+      parameters:
+      - description: Quiz ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Number of entries to return (default 10)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Leaderboard entries
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid quiz ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Quiz not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Get quiz leaderboard
+      tags:
+      - quiz
+  /quiz/{id}/start:
+    post:
+      consumes:
+      - application/json
+      description: Create a new quiz session for a user and return the first question
+      parameters:
+      - description: Quiz ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Start quiz request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.StartQuizRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Quiz session started with first question
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request or quiz ID
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Quiz not found
+          schema:
+            additionalProperties: true
+            type: object
+        "409":
+          description: Active session already exists
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Start a quiz session
+      tags:
+      - quiz
+  /quiz/session/{sessionId}/answer:
+    post:
+      consumes:
+      - application/json
+      description: Submit an answer for a question in an active quiz session
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: Submit answer request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/handlers.SubmitAnswerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Answer result with correctness, points, and next question or
+            final result
+          schema:
+            additionalProperties: true
+            type: object
+        "400":
+          description: Invalid request, session completed, or already answered
+          schema:
+            additionalProperties: true
+            type: object
+        "401":
+          description: Unauthorized - user mismatch
+          schema:
+            additionalProperties: true
+            type: object
+        "404":
+          description: Session, question, or answer not found
+          schema:
+            additionalProperties: true
+            type: object
+        "500":
+          description: Internal server error
+          schema:
+            additionalProperties: true
+            type: object
+      summary: Submit an answer
+      tags:
+      - quiz
+schemes:
+- http
+- https
+swagger: "2.0"

@@ -8,6 +8,8 @@ import (
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/handlers"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/messaging"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence/memory"
+
+	fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
 // SetupRoutes configures all application routes
@@ -80,4 +82,7 @@ func SetupRoutes(app *fiber.App) {
 	})
 
 	ws.Get("/leaderboard/:id", websocket.New(wsHub.HandleLeaderboardWebSocket))
+
+	// Swagger documentation
+	app.Get("/swagger/*", fiberSwagger.WrapHandler)
 }

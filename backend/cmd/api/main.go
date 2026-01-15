@@ -11,7 +11,26 @@ import (
 	"github.com/joho/godotenv"
 
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/routes"
+
+	_ "github.com/barsukov/quiz-sprint/backend/docs"
 )
+
+// @title Quiz Sprint API
+// @version 1.0
+// @description Quiz Sprint TMA Backend API - A Telegram Mini App for interactive quizzes
+// @termsOfService https://quiz-sprint-tma.online/terms
+
+// @contact.name API Support
+// @contact.url https://quiz-sprint-tma.online/support
+// @contact.email support@quiz-sprint-tma.online
+
+// @license.name MIT
+// @license.url https://opensource.org/licenses/MIT
+
+// @host localhost:3000
+// @BasePath /api/v1
+
+// @schemes http https
 
 func main() {
 	// Load environment variables
