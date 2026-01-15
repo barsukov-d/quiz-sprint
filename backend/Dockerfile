@@ -1,7 +1,7 @@
 # ==========================================
-# Stage 1: Build
+# Stage 1: Base - Common dependencies
 # ==========================================
-FROM golang:1.23-alpine AS builder
+FROM golang:1.25-alpine AS base
 
 # Install build dependencies
 RUN apk add --no-cache git ca-certificates tzdata
@@ -15,6 +15,28 @@ COPY go.mod go.sum ./
 # Download dependencies
 RUN go mod download
 
+# ==========================================
+# Stage 2: Development - Hot reload
+# ==========================================
+FROM base AS development
+
+# Install air for hot reload
+RUN go install github.com/air-verse/air@latest
+
+# Copy source code (will be overridden by volume)
+COPY . .
+
+# Expose port
+EXPOSE 3000
+
+# Run with hot reload
+CMD ["air", "-c", ".air.toml"]
+
+# ==========================================
+# Stage 3: Builder - Compile binary
+# ==========================================
+FROM base AS builder
+
 # Copy source code
 COPY . .
 
@@ -27,12 +49,12 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     ./cmd/api
 
 # ==========================================
-# Stage 2: Runtime
+# Stage 4: Production - Minimal runtime
 # ==========================================
-FROM alpine:3.19
+FROM alpine:3.19 AS production
 
 # Install runtime dependencies
-RUN apk add --no-cache ca-certificates tzdata
+RUN apk add --no-cache ca-certificates tzdata wget
 
 # Create non-root user for security
 RUN addgroup -g 1000 app && \
