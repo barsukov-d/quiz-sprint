@@ -7,7 +7,7 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 Quiz Sprint TMA is a full-stack Telegram Mini App:
 - **Frontend**: Vue 3 + TypeScript + Vite (in `tma/` subdirectory)
 - **Backend**: Go + Fiber + DDD architecture (in `backend/` subdirectory)
-- **Infrastructure**: VPS with nginx, systemd, PostgreSQL, Redis
+- **Infrastructure**: VPS with nginx, Docker, Docker Compose, PostgreSQL, Redis
 
 ## Commands
 
@@ -96,15 +96,15 @@ The CI/CD uses a two-stage workflow for both frontend and backend:
 
 **Backend:**
 1. `backend-build.yml` - Builds Go binary, runs tests, uploads artifact
-2. `backend-deploy.yml` - Downloads binary, deploys to VPS, restarts systemd service
+2. `backend-docker-deploy.yml` - Builds Docker image, pushes to GHCR, deploys via docker-compose
 
 ### Environments
 
 | Environment | Frontend URL | Backend API | Backend Port | Database |
 |-------------|-------------|-------------|--------------|----------|
 | Development | `dev.quiz-sprint-tma.online` | Local tunnel | 5173 | In-memory |
-| Staging | `staging.quiz-sprint-tma.online` | `/api`, `/ws` | 3001 | PostgreSQL staging |
-| Production | `quiz-sprint-tma.online` | `/api`, `/ws` | 3000 | PostgreSQL production |
+| Staging | `staging.quiz-sprint-tma.online` | `/api`, `/ws` | 3001 (Docker) | PostgreSQL (Docker) |
+| Production | `quiz-sprint-tma.online` | `/api`, `/ws` | 3000 (Docker) | PostgreSQL (Docker) |
 
 **API Endpoints:**
 - REST API: `https://<domain>/api/v1/*`
@@ -128,10 +128,9 @@ The CI/CD uses a two-stage workflow for both frontend and backend:
 - Go 1.23
 - Fiber v2 (web framework)
 - WebSocket support (gofiber/websocket)
-- PostgreSQL 16 (database)
-- Redis 7 (caching, optional)
-- Docker + Docker Compose (database containers)
-- systemd (process management)
+- PostgreSQL 16 (database, runs in Docker)
+- Redis 7 (caching, runs in Docker)
+- Docker + Docker Compose (containerized deployment)
 
 ### Infrastructure
 - nginx (reverse proxy, SSL termination)
@@ -148,51 +147,40 @@ The CI/CD uses a two-stage workflow for both frontend and backend:
 
 ## Backend Deployment
 
-### First-Time VPS Setup
-
-```bash
-# SSH into VPS
-ssh root@your-vps-ip
-
-# Clone repo and run setup
-git clone <repo-url>
-cd quiz-sprint/infrastructure/scripts
-sudo ./setup-backend.sh
-
-# Edit database passwords
-nano /opt/quiz-sprint/.env
-
-# Start databases
-cd /opt/quiz-sprint
-docker compose up -d
-
-# Verify
-docker compose ps
-systemctl status quiz-sprint-api-staging
-systemctl status quiz-sprint-api-production
-```
-
-### Deployment via GitHub Actions
+### Deployment via GitHub Actions (Docker)
 
 1. Go to Actions tab
-2. Run "Build Backend" workflow (builds binary)
-3. Run "Deploy Backend" workflow:
+2. Run "Deploy Backend (Docker)" workflow:
    - Select environment (staging/production)
-   - Select artifact (or leave empty for latest)
-4. Health check will run automatically
+   - Builds Docker image and pushes to GitHub Container Registry
+   - Deploys via docker-compose on VPS
+3. Health check will run automatically
+
+The workflow automatically:
+- Builds the Docker image with the Go API
+- Pushes to `ghcr.io/<repo>/quiz-sprint-api`
+- Generates `docker-compose.yml` with API + PostgreSQL + Redis
+- Pulls and starts all containers on VPS
+- Runs health check
 
 ### Manual Deployment (if needed)
 
 ```bash
 # On VPS
 cd /opt/quiz-sprint/staging  # or production
-systemctl stop quiz-sprint-api-staging
-# Replace binary
-systemctl start quiz-sprint-api-staging
-systemctl status quiz-sprint-api-staging
 
-# Check logs
-journalctl -u quiz-sprint-api-staging -f
+# Check running containers
+docker compose ps
+
+# View logs
+docker compose logs -f api
+
+# Restart services
+docker compose restart api
+
+# Full restart (including DB)
+docker compose down
+docker compose up -d
 ```
 
 ### Backend API Structure
