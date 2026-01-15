@@ -11,26 +11,29 @@ import (
 // QuizHandler handles HTTP requests for quizzes
 // NOTE: This is a THIN adapter - no business logic here!
 type QuizHandler struct {
-	listQuizzesUC   *appQuiz.ListQuizzesUseCase
-	getQuizUC       *appQuiz.GetQuizUseCase
-	startQuizUC     *appQuiz.StartQuizUseCase
-	submitAnswerUC  *appQuiz.SubmitAnswerUseCase
-	getLeaderboardUC *appQuiz.GetLeaderboardUseCase
+	listQuizzesUC      *appQuiz.ListQuizzesUseCase
+	getQuizUC          *appQuiz.GetQuizUseCase
+	getQuizDetailsUC   *appQuiz.GetQuizDetailsUseCase
+	startQuizUC        *appQuiz.StartQuizUseCase
+	submitAnswerUC     *appQuiz.SubmitAnswerUseCase
+	getLeaderboardUC   *appQuiz.GetLeaderboardUseCase
 }
 
 // NewQuizHandler creates a new QuizHandler
 func NewQuizHandler(
 	listQuizzesUC *appQuiz.ListQuizzesUseCase,
 	getQuizUC *appQuiz.GetQuizUseCase,
+	getQuizDetailsUC *appQuiz.GetQuizDetailsUseCase,
 	startQuizUC *appQuiz.StartQuizUseCase,
 	submitAnswerUC *appQuiz.SubmitAnswerUseCase,
 	getLeaderboardUC *appQuiz.GetLeaderboardUseCase,
 ) *QuizHandler {
 	return &QuizHandler{
-		listQuizzesUC:   listQuizzesUC,
-		getQuizUC:       getQuizUC,
-		startQuizUC:     startQuizUC,
-		submitAnswerUC:  submitAnswerUC,
+		listQuizzesUC:    listQuizzesUC,
+		getQuizUC:        getQuizUC,
+		getQuizDetailsUC: getQuizDetailsUC,
+		startQuizUC:      startQuizUC,
+		submitAnswerUC:   submitAnswerUC,
 		getLeaderboardUC: getLeaderboardUC,
 	}
 }
@@ -70,12 +73,13 @@ func (h *QuizHandler) GetAllQuizzes(c *fiber.Ctx) error {
 }
 
 // GetQuizByID handles GET /api/v1/quiz/:id
+// Returns quiz details with questions (but not correct answers) and top scores
 func (h *QuizHandler) GetQuizByID(c *fiber.Ctx) error {
 	// 1. Extract path parameter
 	quizID := c.Params("id")
 
 	// 2. Execute use case
-	output, err := h.getQuizUC.Execute(appQuiz.GetQuizInput{
+	output, err := h.getQuizDetailsUC.Execute(appQuiz.GetQuizDetailsInput{
 		QuizID: quizID,
 	})
 	if err != nil {
@@ -84,7 +88,7 @@ func (h *QuizHandler) GetQuizByID(c *fiber.Ctx) error {
 
 	// 3. Return response
 	return c.JSON(fiber.Map{
-		"data": output.Quiz,
+		"data": output,
 	})
 }
 

@@ -30,6 +30,7 @@ func SetupRoutes(app *fiber.App) {
 	// ========================================
 	listQuizzesUC := appQuiz.NewListQuizzesUseCase(quizRepo)
 	getQuizUC := appQuiz.NewGetQuizUseCase(quizRepo)
+	getQuizDetailsUC := appQuiz.NewGetQuizDetailsUseCase(quizRepo, leaderboardRepo)
 	startQuizUC := appQuiz.NewStartQuizUseCase(quizRepo, sessionRepo, loggingEventBus)
 	submitAnswerUC := appQuiz.NewSubmitAnswerUseCase(quizRepo, sessionRepo, loggingEventBus)
 	getLeaderboardUC := appQuiz.NewGetLeaderboardUseCase(leaderboardRepo)
@@ -40,6 +41,7 @@ func SetupRoutes(app *fiber.App) {
 	quizHandler := handlers.NewQuizHandler(
 		listQuizzesUC,
 		getQuizUC,
+		getQuizDetailsUC,
 		startQuizUC,
 		submitAnswerUC,
 		getLeaderboardUC,
