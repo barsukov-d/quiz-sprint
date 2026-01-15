@@ -49,11 +49,29 @@ pnpm add @iconify/vue                                  # Icons (optional)
 All commands run from the `backend/` directory:
 
 ```bash
-# Development
+# Development (Recommended - Docker with hot reload)
+docker compose -f docker-compose.dev.yml up        # Start all services
+docker compose -f docker-compose.dev.yml up -d     # Start in background
+docker compose -f docker-compose.dev.yml down      # Stop all services
+docker compose -f docker-compose.dev.yml down -v   # Stop and remove volumes (clean slate)
+docker compose -f docker-compose.dev.yml logs -f api  # View API logs
+
+# Services available:
+# - API: http://localhost:3000 (with hot reload via air)
+# - PostgreSQL: localhost:5432 (quiz_user/quiz_password_dev/quiz_sprint_dev)
+# - Redis: localhost:6379
+# - Adminer (DB UI): http://localhost:8080
+# - Redis Commander: http://localhost:8081
+# - Swagger UI: http://localhost:3000/swagger/index.html
+
+# Local Development (Alternative - without Docker)
 go run cmd/api/main.go                      # Start dev server (port 3000)
+# Note: Requires PostgreSQL and Redis running locally or via docker-compose.dev.yml
 
 # Building
 go build -o quiz-sprint-api cmd/api/main.go # Build binary
+docker build -t quiz-sprint-api .           # Build production Docker image
+docker build -t quiz-sprint-api --target development .  # Build dev image
 
 # Testing
 go test ./...                                # Run all tests
@@ -68,7 +86,10 @@ go fmt ./...                                 # Format code
 
 # Swagger Documentation
 ~/go/bin/swag init -g cmd/api/main.go -o docs  # Generate Swagger docs
-# Access Swagger UI at: http://localhost:3000/swagger/index.html
+
+# Database
+docker compose -f docker-compose.dev.yml exec postgres psql -U quiz_user -d quiz_sprint_dev
+# Run migrations: docker compose -f docker-compose.dev.yml exec api go run migrations/migrate.go
 ```
 
 ## Architecture
@@ -151,7 +172,7 @@ The CI/CD uses a two-stage workflow for both frontend and backend:
 - `@iconify/vue` - Icon components (Telegram-style icons)
 
 ### Backend
-- Go 1.23
+- Go 1.25
 - Fiber v2 (web framework)
 - WebSocket support (gofiber/websocket)
 - PostgreSQL 16 (database, runs in Docker)
