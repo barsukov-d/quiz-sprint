@@ -11,26 +11,29 @@ import (
 // QuizHandler handles HTTP requests for quizzes
 // NOTE: This is a THIN adapter - no business logic here!
 type QuizHandler struct {
-	listQuizzesUC   *appQuiz.ListQuizzesUseCase
-	getQuizUC       *appQuiz.GetQuizUseCase
-	startQuizUC     *appQuiz.StartQuizUseCase
-	submitAnswerUC  *appQuiz.SubmitAnswerUseCase
-	getLeaderboardUC *appQuiz.GetLeaderboardUseCase
+	listQuizzesUC      *appQuiz.ListQuizzesUseCase
+	getQuizUC          *appQuiz.GetQuizUseCase
+	getQuizDetailsUC   *appQuiz.GetQuizDetailsUseCase
+	startQuizUC        *appQuiz.StartQuizUseCase
+	submitAnswerUC     *appQuiz.SubmitAnswerUseCase
+	getLeaderboardUC   *appQuiz.GetLeaderboardUseCase
 }
 
 // NewQuizHandler creates a new QuizHandler
 func NewQuizHandler(
 	listQuizzesUC *appQuiz.ListQuizzesUseCase,
 	getQuizUC *appQuiz.GetQuizUseCase,
+	getQuizDetailsUC *appQuiz.GetQuizDetailsUseCase,
 	startQuizUC *appQuiz.StartQuizUseCase,
 	submitAnswerUC *appQuiz.SubmitAnswerUseCase,
 	getLeaderboardUC *appQuiz.GetLeaderboardUseCase,
 ) *QuizHandler {
 	return &QuizHandler{
-		listQuizzesUC:   listQuizzesUC,
-		getQuizUC:       getQuizUC,
-		startQuizUC:     startQuizUC,
-		submitAnswerUC:  submitAnswerUC,
+		listQuizzesUC:    listQuizzesUC,
+		getQuizUC:        getQuizUC,
+		getQuizDetailsUC: getQuizDetailsUC,
+		startQuizUC:      startQuizUC,
+		submitAnswerUC:   submitAnswerUC,
 		getLeaderboardUC: getLeaderboardUC,
 	}
 }
@@ -56,6 +59,14 @@ type SubmitAnswerRequest struct {
 // ========================================
 
 // GetAllQuizzes handles GET /api/v1/quiz
+// @Summary List all quizzes
+// @Description Get a list of all available quizzes with basic information
+// @Tags quiz
+// @Accept json
+// @Produce json
+// @Success 200 {object} map[string]interface{} "List of quizzes"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /quiz [get]
 func (h *QuizHandler) GetAllQuizzes(c *fiber.Ctx) error {
 	// 1. Execute use case
 	output, err := h.listQuizzesUC.Execute(appQuiz.ListQuizzesInput{})
@@ -70,12 +81,24 @@ func (h *QuizHandler) GetAllQuizzes(c *fiber.Ctx) error {
 }
 
 // GetQuizByID handles GET /api/v1/quiz/:id
+// Returns quiz details with questions (but not correct answers) and top scores
+// @Summary Get quiz details
+// @Description Get detailed quiz information including questions, answers (without correct answer indicators), and top 3 leaderboard scores
+// @Tags quiz
+// @Accept json
+// @Produce json
+// @Param id path string true "Quiz ID"
+// @Success 200 {object} map[string]interface{} "Quiz details with questions and top scores"
+// @Failure 400 {object} map[string]interface{} "Invalid quiz ID"
+// @Failure 404 {object} map[string]interface{} "Quiz not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /quiz/{id} [get]
 func (h *QuizHandler) GetQuizByID(c *fiber.Ctx) error {
 	// 1. Extract path parameter
 	quizID := c.Params("id")
 
 	// 2. Execute use case
-	output, err := h.getQuizUC.Execute(appQuiz.GetQuizInput{
+	output, err := h.getQuizDetailsUC.Execute(appQuiz.GetQuizDetailsInput{
 		QuizID: quizID,
 	})
 	if err != nil {
@@ -84,11 +107,24 @@ func (h *QuizHandler) GetQuizByID(c *fiber.Ctx) error {
 
 	// 3. Return response
 	return c.JSON(fiber.Map{
-		"data": output.Quiz,
+		"data": output,
 	})
 }
 
 // StartQuiz handles POST /api/v1/quiz/:id/start
+// @Summary Start a quiz session
+// @Description Create a new quiz session for a user and return the first question
+// @Tags quiz
+// @Accept json
+// @Produce json
+// @Param id path string true "Quiz ID"
+// @Param request body StartQuizRequest true "Start quiz request"
+// @Success 201 {object} map[string]interface{} "Quiz session started with first question"
+// @Failure 400 {object} map[string]interface{} "Invalid request or quiz ID"
+// @Failure 404 {object} map[string]interface{} "Quiz not found"
+// @Failure 409 {object} map[string]interface{} "Active session already exists"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /quiz/{id}/start [post]
 func (h *QuizHandler) StartQuiz(c *fiber.Ctx) error {
 	// 1. Parse request body
 	var req StartQuizRequest
@@ -117,6 +153,19 @@ func (h *QuizHandler) StartQuiz(c *fiber.Ctx) error {
 }
 
 // SubmitAnswer handles POST /api/v1/quiz/session/:sessionId/answer
+// @Summary Submit an answer
+// @Description Submit an answer for a question in an active quiz session
+// @Tags quiz
+// @Accept json
+// @Produce json
+// @Param sessionId path string true "Session ID"
+// @Param request body SubmitAnswerRequest true "Submit answer request"
+// @Success 200 {object} map[string]interface{} "Answer result with correctness, points, and next question or final result"
+// @Failure 400 {object} map[string]interface{} "Invalid request, session completed, or already answered"
+// @Failure 401 {object} map[string]interface{} "Unauthorized - user mismatch"
+// @Failure 404 {object} map[string]interface{} "Session, question, or answer not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /quiz/session/{sessionId}/answer [post]
 func (h *QuizHandler) SubmitAnswer(c *fiber.Ctx) error {
 	// 1. Parse request body
 	var req SubmitAnswerRequest
@@ -153,6 +202,18 @@ func (h *QuizHandler) SubmitAnswer(c *fiber.Ctx) error {
 }
 
 // GetLeaderboard handles GET /api/v1/quiz/:id/leaderboard
+// @Summary Get quiz leaderboard
+// @Description Get the leaderboard for a specific quiz with top scores
+// @Tags quiz
+// @Accept json
+// @Produce json
+// @Param id path string true "Quiz ID"
+// @Param limit query int false "Number of entries to return (default 10)"
+// @Success 200 {object} map[string]interface{} "Leaderboard entries"
+// @Failure 400 {object} map[string]interface{} "Invalid quiz ID"
+// @Failure 404 {object} map[string]interface{} "Quiz not found"
+// @Failure 500 {object} map[string]interface{} "Internal server error"
+// @Router /quiz/{id}/leaderboard [get]
 func (h *QuizHandler) GetLeaderboard(c *fiber.Ctx) error {
 	// 1. Extract query parameters
 	limit := c.QueryInt("limit", 10)

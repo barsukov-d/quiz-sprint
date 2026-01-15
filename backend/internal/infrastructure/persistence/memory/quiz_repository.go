@@ -3,7 +3,6 @@ package memory
 import (
 	"sort"
 	"sync"
-	"time"
 
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/shared"
@@ -24,57 +23,7 @@ func NewQuizRepository() *QuizRepository {
 	return repo
 }
 
-func (r *QuizRepository) seedData() {
-	// Create sample quiz
-	now := time.Now().Unix()
-
-	quizID := quiz.NewQuizID()
-	title, _ := quiz.NewQuizTitle("Go Programming Basics")
-	timeLimit, _ := quiz.NewTimeLimit(30)
-	passingScore, _ := quiz.NewPassingScore(70)
-
-	sampleQuiz, _ := quiz.NewQuiz(quizID, title, "Test your knowledge of Go", timeLimit, passingScore, now)
-
-	// Add questions
-	q1Text, _ := quiz.NewQuestionText("What is a goroutine?")
-	q1Points, _ := quiz.NewPoints(10)
-	q1, _ := quiz.NewQuestion(quiz.NewQuestionID(), q1Text, q1Points, 1)
-
-	a1Text, _ := quiz.NewAnswerText("A lightweight thread")
-	a1, _ := quiz.NewAnswer(quiz.NewAnswerID(), a1Text, true, 1)
-	q1.AddAnswer(*a1)
-
-	a2Text, _ := quiz.NewAnswerText("A function")
-	a2, _ := quiz.NewAnswer(quiz.NewAnswerID(), a2Text, false, 2)
-	q1.AddAnswer(*a2)
-
-	a3Text, _ := quiz.NewAnswerText("A variable")
-	a3, _ := quiz.NewAnswer(quiz.NewAnswerID(), a3Text, false, 3)
-	q1.AddAnswer(*a3)
-
-	sampleQuiz.AddQuestion(*q1)
-
-	// Second question
-	q2Text, _ := quiz.NewQuestionText("Which keyword is used for error handling?")
-	q2Points, _ := quiz.NewPoints(10)
-	q2, _ := quiz.NewQuestion(quiz.NewQuestionID(), q2Text, q2Points, 2)
-
-	b1Text, _ := quiz.NewAnswerText("try")
-	b1, _ := quiz.NewAnswer(quiz.NewAnswerID(), b1Text, false, 1)
-	q2.AddAnswer(*b1)
-
-	b2Text, _ := quiz.NewAnswerText("catch")
-	b2, _ := quiz.NewAnswer(quiz.NewAnswerID(), b2Text, false, 2)
-	q2.AddAnswer(*b2)
-
-	b3Text, _ := quiz.NewAnswerText("defer")
-	b3, _ := quiz.NewAnswer(quiz.NewAnswerID(), b3Text, true, 3)
-	q2.AddAnswer(*b3)
-
-	sampleQuiz.AddQuestion(*q2)
-
-	r.quizzes[quizID.String()] = sampleQuiz
-}
+// seedData is implemented in seed_data.go
 
 // FindByID retrieves a quiz by ID
 func (r *QuizRepository) FindByID(id quiz.QuizID) (*quiz.Quiz, error) {

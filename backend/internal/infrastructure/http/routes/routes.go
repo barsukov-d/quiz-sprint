@@ -8,6 +8,8 @@ import (
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/handlers"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/messaging"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence/memory"
+
+	fiberSwagger "github.com/swaggo/fiber-swagger"
 )
 
 // SetupRoutes configures all application routes
@@ -30,6 +32,7 @@ func SetupRoutes(app *fiber.App) {
 	// ========================================
 	listQuizzesUC := appQuiz.NewListQuizzesUseCase(quizRepo)
 	getQuizUC := appQuiz.NewGetQuizUseCase(quizRepo)
+	getQuizDetailsUC := appQuiz.NewGetQuizDetailsUseCase(quizRepo, leaderboardRepo)
 	startQuizUC := appQuiz.NewStartQuizUseCase(quizRepo, sessionRepo, loggingEventBus)
 	submitAnswerUC := appQuiz.NewSubmitAnswerUseCase(quizRepo, sessionRepo, loggingEventBus)
 	getLeaderboardUC := appQuiz.NewGetLeaderboardUseCase(leaderboardRepo)
@@ -40,6 +43,7 @@ func SetupRoutes(app *fiber.App) {
 	quizHandler := handlers.NewQuizHandler(
 		listQuizzesUC,
 		getQuizUC,
+		getQuizDetailsUC,
 		startQuizUC,
 		submitAnswerUC,
 		getLeaderboardUC,
@@ -78,4 +82,7 @@ func SetupRoutes(app *fiber.App) {
 	})
 
 	ws.Get("/leaderboard/:id", websocket.New(wsHub.HandleLeaderboardWebSocket))
+
+	// Swagger documentation
+	app.Get("/swagger/*", fiberSwagger.WrapHandler)
 }

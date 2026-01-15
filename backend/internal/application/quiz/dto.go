@@ -158,3 +158,19 @@ type ListQuizzesInput struct {
 type ListQuizzesOutput struct {
 	Quizzes []QuizDTO `json:"quizzes"`
 }
+
+// ========================================
+// GetQuizDetails Use Case
+// ========================================
+
+// GetQuizDetailsInput is the input DTO for GetQuizDetails use case
+type GetQuizDetailsInput struct {
+	QuizID string `json:"quizId"`
+}
+
+// GetQuizDetailsOutput is the output DTO for GetQuizDetails use case
+// Includes questions with answers (but not which answer is correct!)
+type GetQuizDetailsOutput struct {
+	Quiz      QuizDetailDTO         `json:"quiz"`
+	TopScores []LeaderboardEntryDTO `json:"topScores"`
+}
