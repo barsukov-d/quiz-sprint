@@ -41,3 +41,6 @@ playwright-report/
 # Auto-generated type declarations
 auto-imports.d.ts
 components.d.ts
+
+# Kubb сгенерированный код
+src/api/generated/

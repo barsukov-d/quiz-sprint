@@ -39,15 +39,13 @@
                     "200": {
                         "description": "List of quizzes",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ListQuizzesResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -88,36 +86,31 @@
                     "200": {
                         "description": "Answer result with correctness, points, and next question or final result",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.SubmitAnswerResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request, session completed, or already answered",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized - user mismatch",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Session, question, or answer not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -149,29 +142,25 @@
                     "200": {
                         "description": "Quiz details with questions and top scores",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.GetQuizDetailsResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid quiz ID",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Quiz not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -209,29 +198,25 @@
                     "200": {
                         "description": "Leaderboard entries",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.GetLeaderboardResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid quiz ID",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Quiz not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -272,36 +257,31 @@
                     "201": {
                         "description": "Quiz session started with first question",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.StartQuizResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request or quiz ID",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Quiz not found",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Active session already exists",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "type": "object",
-                            "additionalProperties": true
+                            "$ref": "#/definitions/handlers.ErrorResponse"
                         }
                     }
                 }
@@ -309,11 +289,289 @@
         }
     },
     "definitions": {
+        "handlers.AnswerDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.ErrorDetail": {
+            "type": "object",
+            "properties": {
+                "code": {
+                    "type": "integer"
+                },
+                "message": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.ErrorResponse": {
+            "type": "object",
+            "properties": {
+                "error": {
+                    "$ref": "#/definitions/handlers.ErrorDetail"
+                }
+            }
+        },
+        "handlers.FinalResultDTO": {
+            "type": "object",
+            "properties": {
+                "correctCount": {
+                    "type": "integer"
+                },
+                "maxScore": {
+                    "type": "integer"
+                },
+                "passed": {
+                    "type": "boolean"
+                },
+                "percentage": {
+                    "type": "integer"
+                },
+                "questionsCount": {
+                    "type": "integer"
+                },
+                "totalScore": {
+                    "type": "integer"
+                }
+            }
+        },
+        "handlers.GetLeaderboardResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.LeaderboardEntryDTO"
+                    }
+                }
+            }
+        },
+        "handlers.GetQuizDetailsData": {
+            "type": "object",
+            "properties": {
+                "quiz": {
+                    "$ref": "#/definitions/handlers.QuizDetailDTO"
+                },
+                "topScores": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.LeaderboardEntryDTO"
+                    }
+                }
+            }
+        },
+        "handlers.GetQuizDetailsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/handlers.GetQuizDetailsData"
+                }
+            }
+        },
+        "handlers.LeaderboardEntryDTO": {
+            "type": "object",
+            "properties": {
+                "completedAt": {
+                    "type": "integer"
+                },
+                "rank": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "userId": {
+                    "type": "string"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.ListQuizzesResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.QuizDTO"
+                    }
+                }
+            }
+        },
+        "handlers.QuestionDTO": {
+            "type": "object",
+            "properties": {
+                "answers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.AnswerDTO"
+                    }
+                },
+                "id": {
+                    "type": "string"
+                },
+                "points": {
+                    "type": "integer"
+                },
+                "position": {
+                    "type": "integer"
+                },
+                "text": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.QuizDTO": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "passingScore": {
+                    "type": "integer"
+                },
+                "questionsCount": {
+                    "type": "integer"
+                },
+                "timeLimit": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.QuizDetailDTO": {
+            "type": "object",
+            "properties": {
+                "createdAt": {
+                    "type": "integer"
+                },
+                "description": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "passingScore": {
+                    "type": "integer"
+                },
+                "questions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/handlers.QuestionDTO"
+                    }
+                },
+                "timeLimit": {
+                    "type": "integer"
+                },
+                "title": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.SessionDTO": {
+            "type": "object",
+            "properties": {
+                "completedAt": {
+                    "type": "integer"
+                },
+                "currentQuestion": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "quizId": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "startedAt": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "handlers.StartQuizData": {
+            "type": "object",
+            "properties": {
+                "firstQuestion": {
+                    "$ref": "#/definitions/handlers.QuestionDTO"
+                },
+                "session": {
+                    "$ref": "#/definitions/handlers.SessionDTO"
+                },
+                "timeLimit": {
+                    "type": "integer"
+                },
+                "totalQuestions": {
+                    "type": "integer"
+                }
+            }
+        },
         "handlers.StartQuizRequest": {
             "type": "object",
             "properties": {
                 "userId": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.StartQuizResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/handlers.StartQuizData"
+                }
+            }
+        },
+        "handlers.SubmitAnswerData": {
+            "type": "object",
+            "properties": {
+                "correctAnswerId": {
+                    "type": "string"
+                },
+                "finalResult": {
+                    "$ref": "#/definitions/handlers.FinalResultDTO"
+                },
+                "isCorrect": {
+                    "type": "boolean"
+                },
+                "isQuizCompleted": {
+                    "type": "boolean"
+                },
+                "nextQuestion": {
+                    "$ref": "#/definitions/handlers.QuestionDTO"
+                },
+                "pointsEarned": {
+                    "type": "integer"
+                },
+                "totalScore": {
+                    "type": "integer"
                 }
             }
         },
@@ -328,6 +586,14 @@
                 },
                 "userId": {
                     "type": "string"
+                }
+            }
+        },
+        "handlers.SubmitAnswerResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/handlers.SubmitAnswerData"
                 }
             }
         }

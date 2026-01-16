@@ -1,9 +1,189 @@
 basePath: /api/v1
 definitions:
+  handlers.AnswerDTO:
+    properties:
+      id:
+        type: string
+      position:
+        type: integer
+      text:
+        type: string
+    type: object
+  handlers.ErrorDetail:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    type: object
+  handlers.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/handlers.ErrorDetail'
+    type: object
+  handlers.FinalResultDTO:
+    properties:
+      correctCount:
+        type: integer
+      maxScore:
+        type: integer
+      passed:
+        type: boolean
+      percentage:
+        type: integer
+      questionsCount:
+        type: integer
+      totalScore:
+        type: integer
+    type: object
+  handlers.GetLeaderboardResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/handlers.LeaderboardEntryDTO'
+        type: array
+    type: object
+  handlers.GetQuizDetailsData:
+    properties:
+      quiz:
+        $ref: '#/definitions/handlers.QuizDetailDTO'
+      topScores:
+        items:
+          $ref: '#/definitions/handlers.LeaderboardEntryDTO'
+        type: array
+    type: object
+  handlers.GetQuizDetailsResponse:
+    properties:
+      data:
+        $ref: '#/definitions/handlers.GetQuizDetailsData'
+    type: object
+  handlers.LeaderboardEntryDTO:
+    properties:
+      completedAt:
+        type: integer
+      rank:
+        type: integer
+      score:
+        type: integer
+      userId:
+        type: string
+      username:
+        type: string
+    type: object
+  handlers.ListQuizzesResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/handlers.QuizDTO'
+        type: array
+    type: object
+  handlers.QuestionDTO:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/handlers.AnswerDTO'
+        type: array
+      id:
+        type: string
+      points:
+        type: integer
+      position:
+        type: integer
+      text:
+        type: string
+    type: object
+  handlers.QuizDTO:
+    properties:
+      createdAt:
+        type: integer
+      description:
+        type: string
+      id:
+        type: string
+      passingScore:
+        type: integer
+      questionsCount:
+        type: integer
+      timeLimit:
+        type: integer
+      title:
+        type: string
+    type: object
+  handlers.QuizDetailDTO:
+    properties:
+      createdAt:
+        type: integer
+      description:
+        type: string
+      id:
+        type: string
+      passingScore:
+        type: integer
+      questions:
+        items:
+          $ref: '#/definitions/handlers.QuestionDTO'
+        type: array
+      timeLimit:
+        type: integer
+      title:
+        type: string
+    type: object
+  handlers.SessionDTO:
+    properties:
+      completedAt:
+        type: integer
+      currentQuestion:
+        type: integer
+      id:
+        type: string
+      quizId:
+        type: string
+      score:
+        type: integer
+      startedAt:
+        type: integer
+      status:
+        type: string
+      userId:
+        type: string
+    type: object
+  handlers.StartQuizData:
+    properties:
+      firstQuestion:
+        $ref: '#/definitions/handlers.QuestionDTO'
+      session:
+        $ref: '#/definitions/handlers.SessionDTO'
+      timeLimit:
+        type: integer
+      totalQuestions:
+        type: integer
+    type: object
   handlers.StartQuizRequest:
     properties:
       userId:
         type: string
+    type: object
+  handlers.StartQuizResponse:
+    properties:
+      data:
+        $ref: '#/definitions/handlers.StartQuizData'
+    type: object
+  handlers.SubmitAnswerData:
+    properties:
+      correctAnswerId:
+        type: string
+      finalResult:
+        $ref: '#/definitions/handlers.FinalResultDTO'
+      isCorrect:
+        type: boolean
+      isQuizCompleted:
+        type: boolean
+      nextQuestion:
+        $ref: '#/definitions/handlers.QuestionDTO'
+      pointsEarned:
+        type: integer
+      totalScore:
+        type: integer
     type: object
   handlers.SubmitAnswerRequest:
     properties:
@@ -13,6 +193,11 @@ definitions:
         type: string
       userId:
         type: string
+    type: object
+  handlers.SubmitAnswerResponse:
+    properties:
+      data:
+        $ref: '#/definitions/handlers.SubmitAnswerData'
     type: object
 host: localhost:3000
 info:
@@ -39,13 +224,11 @@ paths:
         "200":
           description: List of quizzes
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ListQuizzesResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: List all quizzes
       tags:
       - quiz
@@ -67,23 +250,19 @@ paths:
         "200":
           description: Quiz details with questions and top scores
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.GetQuizDetailsResponse'
         "400":
           description: Invalid quiz ID
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "404":
           description: Quiz not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: Get quiz details
       tags:
       - quiz
@@ -108,23 +287,19 @@ paths:
         "200":
           description: Leaderboard entries
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.GetLeaderboardResponse'
         "400":
           description: Invalid quiz ID
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "404":
           description: Quiz not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: Get quiz leaderboard
       tags:
       - quiz
@@ -151,28 +326,23 @@ paths:
         "201":
           description: Quiz session started with first question
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.StartQuizResponse'
         "400":
           description: Invalid request or quiz ID
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "404":
           description: Quiz not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "409":
           description: Active session already exists
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: Start a quiz session
       tags:
       - quiz
@@ -200,28 +370,23 @@ paths:
           description: Answer result with correctness, points, and next question or
             final result
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.SubmitAnswerResponse'
         "400":
           description: Invalid request, session completed, or already answered
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "401":
           description: Unauthorized - user mismatch
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "404":
           description: Session, question, or answer not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/handlers.ErrorResponse'
       summary: Submit an answer
       tags:
       - quiz

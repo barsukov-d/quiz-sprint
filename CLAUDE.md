@@ -36,6 +36,9 @@ pnpm test:e2e                               # Run Playwright E2E tests
 pnpm test:e2e --project=chromium            # Run E2E on specific browser
 npx playwright install                       # Install browser drivers (first run)
 
+# API Code Generation (from Swagger/OpenAPI)
+pnpm run generate:api     # Generate TypeScript types and Vue Query hooks from backend Swagger
+
 # Telegram Mini App Setup
 pnpm add @telegram-apps/sdk @telegram-apps/sdk-vue    # Official TMA SDK
 pnpm add -D eruda                                      # Mobile debugging console
@@ -86,6 +89,7 @@ go fmt ./...                                 # Format code
 
 # Swagger Documentation
 ~/go/bin/swag init -g cmd/api/main.go -o docs  # Generate Swagger docs
+# After updating Swagger, regenerate frontend types: cd ../tma && pnpm run generate:api
 
 # Database
 docker compose -f docker-compose.dev.yml exec postgres psql -U quiz_user -d quiz_sprint_dev
@@ -106,19 +110,38 @@ docker compose -f docker-compose.dev.yml exec postgres psql -U quiz_user -d quiz
 - `App.vue` - Root component
 - `router/` - Vue Router configuration
 - `views/` - Page components
+- `api/client.ts` - Axios client with runtime hostname detection for API URLs
+- `api/generated/` - Auto-generated TypeScript types and Vue Query hooks (from Swagger)
 - `__tests__/` - Vitest unit tests
+
+**API Code Generation:**
+The frontend uses [Kubb v4](https://kubb.dev/) to auto-generate TypeScript types and Vue Query hooks from the backend's Swagger/OpenAPI spec:
+- **Types**: `src/api/generated/types/` - TypeScript interfaces from Swagger schemas
+- **Hooks**: `src/api/generated/hooks/` - Vue Query hooks (useGetQuiz, usePostQuizIdStart, etc.)
+- **Schemas**: `src/api/generated/schemas/` - Zod validation schemas
+- **Config**: `kubb.config.ts` - Generation configuration
+- **Trigger**: Run `pnpm run generate:api` after backend Swagger changes
 
 ### Backend Structure (`backend/`)
 - `cmd/api/` - Application entry point
 - `internal/domain/` - Domain models, business rules, repository interfaces (pure Go)
 - `internal/application/` - Use cases (StartQuiz, SubmitAnswer, GetLeaderboard)
 - `internal/infrastructure/` - HTTP handlers, WebSocket, persistence implementations
+  - `http/handlers/` - Fiber HTTP handlers with Swagger annotations
+  - `http/handlers/swagger_models.go` - Response DTOs for Swagger (concrete types, not map[string]interface{})
+- `docs/` - Auto-generated Swagger documentation (swagger.json, swagger.yaml)
 - `pkg/` - Shared utilities
 
 Backend follows **Domain-Driven Design (DDD)** with clean architecture:
 - Domain layer: Pure business logic, no dependencies
 - Application layer: Use cases coordinating domain objects
-- Infrastructure layer: Fiber HTTP handlers, WebSocket hub, in-memory repository
+- Infrastructure layer: Fiber HTTP handlers, WebSocket hub, PostgreSQL/Redis persistence
+
+**Swagger/OpenAPI Integration:**
+- Uses [swaggo/swag](https://github.com/swaggo/swag) for Go annotations
+- All handlers in `internal/infrastructure/http/handlers/` have Swagger comments
+- Response types are defined in `swagger_models.go` for type safety
+- Frontend auto-generates TypeScript types from `docs/swagger.json`
 
 ### Build Once, Deploy Many
 The CI/CD uses a two-stage workflow for both frontend and backend:
@@ -135,7 +158,7 @@ The CI/CD uses a two-stage workflow for both frontend and backend:
 
 | Environment | Frontend URL | Backend API | Backend Port | Database |
 |-------------|-------------|-------------|--------------|----------|
-| Development | `dev.quiz-sprint-tma.online` | Local tunnel | 5173 | In-memory |
+| Development | `dev.quiz-sprint-tma.online` | Local tunnel | 3000 (local) | PostgreSQL (Docker) |
 | Staging | `staging.quiz-sprint-tma.online` | `/api`, `/ws` | 3001 (Docker) | PostgreSQL (Docker) |
 | Production | `quiz-sprint-tma.online` | `/api`, `/ws` | 3000 (Docker) | PostgreSQL (Docker) |
 
@@ -143,6 +166,31 @@ The CI/CD uses a two-stage workflow for both frontend and backend:
 - REST API: `https://<domain>/api/v1/*`
 - WebSocket: `wss://<domain>/ws/leaderboard/:id`
 - Health: `https://<domain>/api/health`
+
+### Development Tunnel Setup
+
+For TMA development, you need HTTPS (Telegram requires it). Use SSH tunnels to expose localhost to your VPS with nginx reverse proxy:
+
+**Setup:**
+1. Start backend locally: `cd backend && go run cmd/api/main.go` (port 3000)
+2. Start frontend locally: `cd tma && pnpm dev` (port 5173)
+3. Start backend tunnel: `./dev-tunnel/start-backend-tunnel.sh` (forwards localhost:3000 → VPS:3000)
+4. Start frontend tunnel: `./dev-tunnel/start-frontend-tunnel.sh` (forwards localhost:5173 → VPS:5173)
+5. Access TMA at: `https://dev.quiz-sprint-tma.online`
+
+**How it works:**
+- Frontend client (`src/api/client.ts`) detects `window.location.hostname` at runtime
+- When accessed via `dev.quiz-sprint-tma.online`, it uses `https://dev.quiz-sprint-tma.online/api/v1`
+- nginx on VPS proxies `/api/*` → `localhost:3000` and `/` → `localhost:5173`
+- SSH tunnels forward VPS ports to your MacBook's localhost
+
+**Environment Variables:**
+- `.env.development` - Used when running `pnpm dev` locally (localhost URLs)
+- `.env.local` - For tunnel development (overrides .env.development, but runtime detection is more reliable)
+- `.env.staging` - Staging environment
+- `.env.production` - Production environment
+
+All env files include `/api/v1` and `/ws` suffixes in base URLs.
 
 ## Tech Stack
 
@@ -241,6 +289,42 @@ docker compose up -d
 
 **WebSocket:**
 - `GET /ws/leaderboard/:id` - Real-time leaderboard updates
+
+## Swagger → TypeScript Type Generation Workflow
+
+When you update backend API handlers, follow this workflow to keep frontend types in sync:
+
+1. **Update Go Handler** - Add/modify endpoint in `backend/internal/infrastructure/http/handlers/`
+2. **Add Swagger Annotations** - Use swaggo comments with concrete types from `swagger_models.go`
+3. **Generate Swagger Docs** - Run `swag init -g cmd/api/main.go -o docs` in `backend/`
+4. **Generate TypeScript Types** - Run `pnpm run generate:api` in `tma/`
+5. **Use Generated Hooks** - Import from `@/api/generated/hooks/`
+
+**Example:**
+```go
+// In swagger_models.go - Define response DTO
+type GetQuizDetailsResponse struct {
+    Data GetQuizDetailsData `json:"data"`
+}
+
+// In quiz_handler.go - Use in Swagger annotation
+// @Success 200 {object} handlers.GetQuizDetailsResponse "Quiz details"
+```
+
+**Generated TypeScript:**
+```typescript
+// Auto-generated in src/api/generated/hooks/quizController/useGetQuizId.ts
+import { useGetQuizId } from '@/api'
+
+const { data, isLoading, error } = useGetQuizId({ id: quizId })
+// data is typed as GetQuizDetailsResponse
+```
+
+**Important:**
+- Always use concrete types in `swagger_models.go`, never `map[string]interface{}`
+- Response wrapper format: `{ data: ActualData }` for consistency
+- Kubb config uses `dataReturnType: 'data'` but response still has `.data` property
+- Frontend components must access `response.data` (e.g., `quizzes?.data`)
 
 ## Workflow Requirements (from AGENTS.md)
 
