@@ -1,15 +1,15 @@
 package routes
 
 import (
-	"github.com/gofiber/fiber/v2"
-	"github.com/gofiber/websocket/v2"
+	"github.com/gofiber/contrib/v3/websocket"
+	"github.com/gofiber/fiber/v3"
 
 	appQuiz "github.com/barsukov/quiz-sprint/backend/internal/application/quiz"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/handlers"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/messaging"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence/memory"
 
-	fiberSwagger "github.com/swaggo/fiber-swagger"
+	"github.com/gofiber/contrib/v3/swaggo"
 )
 
 // SetupRoutes configures all application routes
@@ -74,7 +74,7 @@ func SetupRoutes(app *fiber.App) {
 	ws := app.Group("/ws")
 
 	// WebSocket upgrade middleware
-	ws.Use("/", func(c *fiber.Ctx) error {
+	ws.Use("/", func(c fiber.Ctx) error {
 		if websocket.IsWebSocketUpgrade(c) {
 			return c.Next()
 		}
@@ -84,5 +84,7 @@ func SetupRoutes(app *fiber.App) {
 	ws.Get("/leaderboard/:id", websocket.New(wsHub.HandleLeaderboardWebSocket))
 
 	// Swagger documentation
-	app.Get("/swagger/*", fiberSwagger.WrapHandler)
+	app.Get("/swagger/*", swaggo.New(swaggo.Config{
+		URL: "/swagger/doc.json",
+	}))
 }

@@ -1,0 +1,5 @@
+// .swaggo - swag v2 configuration file
+// This file is auto-detected by swag init
+//
+// Note: With --parseInternal flag, type names include full package path
+// (internal_infrastructure_http_handlers.QuizDTO) which is expected behavior.

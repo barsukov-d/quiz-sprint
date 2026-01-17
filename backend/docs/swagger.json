@@ -39,13 +39,13 @@
                     "200": {
                         "description": "List of quizzes",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ListQuizzesResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ListQuizzesResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     }
                 }
@@ -78,7 +78,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.SubmitAnswerRequest"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.SubmitAnswerRequest"
                         }
                     }
                 ],
@@ -86,31 +86,31 @@
                     "200": {
                         "description": "Answer result with correctness, points, and next question or final result",
                         "schema": {
-                            "$ref": "#/definitions/handlers.SubmitAnswerResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.SubmitAnswerResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request, session completed, or already answered",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     },
                     "401": {
                         "description": "Unauthorized - user mismatch",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Session, question, or answer not found",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     }
                 }
@@ -142,25 +142,25 @@
                     "200": {
                         "description": "Quiz details with questions and top scores",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetQuizDetailsResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetQuizDetailsResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid quiz ID",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Quiz not found",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     }
                 }
@@ -198,25 +198,25 @@
                     "200": {
                         "description": "Leaderboard entries",
                         "schema": {
-                            "$ref": "#/definitions/handlers.GetLeaderboardResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetLeaderboardResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid quiz ID",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Quiz not found",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     }
                 }
@@ -249,7 +249,7 @@
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/handlers.StartQuizRequest"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.StartQuizRequest"
                         }
                     }
                 ],
@@ -257,31 +257,31 @@
                     "201": {
                         "description": "Quiz session started with first question",
                         "schema": {
-                            "$ref": "#/definitions/handlers.StartQuizResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.StartQuizResponse"
                         }
                     },
                     "400": {
                         "description": "Invalid request or quiz ID",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     },
                     "404": {
                         "description": "Quiz not found",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     },
                     "409": {
                         "description": "Active session already exists",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     },
                     "500": {
                         "description": "Internal server error",
                         "schema": {
-                            "$ref": "#/definitions/handlers.ErrorResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     }
                 }
@@ -289,8 +289,13 @@
         }
     },
     "definitions": {
-        "handlers.AnswerDTO": {
+        "internal_infrastructure_http_handlers.AnswerDTO": {
             "type": "object",
+            "required": [
+                "id",
+                "position",
+                "text"
+            ],
             "properties": {
                 "id": {
                     "type": "string"
@@ -303,8 +308,12 @@
                 }
             }
         },
-        "handlers.ErrorDetail": {
+        "internal_infrastructure_http_handlers.ErrorDetail": {
             "type": "object",
+            "required": [
+                "code",
+                "message"
+            ],
             "properties": {
                 "code": {
                     "type": "integer"
@@ -314,16 +323,27 @@
                 }
             }
         },
-        "handlers.ErrorResponse": {
+        "internal_infrastructure_http_handlers.ErrorResponse": {
             "type": "object",
+            "required": [
+                "error"
+            ],
             "properties": {
                 "error": {
-                    "$ref": "#/definitions/handlers.ErrorDetail"
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorDetail"
                 }
             }
         },
-        "handlers.FinalResultDTO": {
+        "internal_infrastructure_http_handlers.FinalResultDTO": {
             "type": "object",
+            "required": [
+                "correctCount",
+                "maxScore",
+                "passed",
+                "percentage",
+                "questionsCount",
+                "totalScore"
+            ],
             "properties": {
                 "correctCount": {
                     "type": "integer"
@@ -345,41 +365,58 @@
                 }
             }
         },
-        "handlers.GetLeaderboardResponse": {
+        "internal_infrastructure_http_handlers.GetLeaderboardResponse": {
             "type": "object",
+            "required": [
+                "data"
+            ],
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.LeaderboardEntryDTO"
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO"
                     }
                 }
             }
         },
-        "handlers.GetQuizDetailsData": {
+        "internal_infrastructure_http_handlers.GetQuizDetailsData": {
             "type": "object",
+            "required": [
+                "quiz",
+                "topScores"
+            ],
             "properties": {
                 "quiz": {
-                    "$ref": "#/definitions/handlers.QuizDetailDTO"
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuizDetailDTO"
                 },
                 "topScores": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.LeaderboardEntryDTO"
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO"
                     }
                 }
             }
         },
-        "handlers.GetQuizDetailsResponse": {
+        "internal_infrastructure_http_handlers.GetQuizDetailsResponse": {
             "type": "object",
+            "required": [
+                "data"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/handlers.GetQuizDetailsData"
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.GetQuizDetailsData"
                 }
             }
         },
-        "handlers.LeaderboardEntryDTO": {
+        "internal_infrastructure_http_handlers.LeaderboardEntryDTO": {
             "type": "object",
+            "required": [
+                "completedAt",
+                "rank",
+                "score",
+                "userId",
+                "username"
+            ],
             "properties": {
                 "completedAt": {
                     "type": "integer"
@@ -398,24 +435,34 @@
                 }
             }
         },
-        "handlers.ListQuizzesResponse": {
+        "internal_infrastructure_http_handlers.ListQuizzesResponse": {
             "type": "object",
+            "required": [
+                "data"
+            ],
             "properties": {
                 "data": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.QuizDTO"
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.QuizDTO"
                     }
                 }
             }
         },
-        "handlers.QuestionDTO": {
+        "internal_infrastructure_http_handlers.QuestionDTO": {
             "type": "object",
+            "required": [
+                "answers",
+                "id",
+                "points",
+                "position",
+                "text"
+            ],
             "properties": {
                 "answers": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.AnswerDTO"
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.AnswerDTO"
                     }
                 },
                 "id": {
@@ -432,8 +479,16 @@
                 }
             }
         },
-        "handlers.QuizDTO": {
+        "internal_infrastructure_http_handlers.QuizDTO": {
             "type": "object",
+            "required": [
+                "createdAt",
+                "id",
+                "passingScore",
+                "questionsCount",
+                "timeLimit",
+                "title"
+            ],
             "properties": {
                 "createdAt": {
                     "type": "integer"
@@ -458,8 +513,16 @@
                 }
             }
         },
-        "handlers.QuizDetailDTO": {
+        "internal_infrastructure_http_handlers.QuizDetailDTO": {
             "type": "object",
+            "required": [
+                "createdAt",
+                "id",
+                "passingScore",
+                "questions",
+                "timeLimit",
+                "title"
+            ],
             "properties": {
                 "createdAt": {
                     "type": "integer"
@@ -476,7 +539,7 @@
                 "questions": {
                     "type": "array",
                     "items": {
-                        "$ref": "#/definitions/handlers.QuestionDTO"
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
                     }
                 },
                 "timeLimit": {
@@ -487,8 +550,17 @@
                 }
             }
         },
-        "handlers.SessionDTO": {
+        "internal_infrastructure_http_handlers.SessionDTO": {
             "type": "object",
+            "required": [
+                "currentQuestion",
+                "id",
+                "quizId",
+                "score",
+                "startedAt",
+                "status",
+                "userId"
+            ],
             "properties": {
                 "completedAt": {
                     "type": "integer"
@@ -516,14 +588,20 @@
                 }
             }
         },
-        "handlers.StartQuizData": {
+        "internal_infrastructure_http_handlers.StartQuizData": {
             "type": "object",
+            "required": [
+                "firstQuestion",
+                "session",
+                "timeLimit",
+                "totalQuestions"
+            ],
             "properties": {
                 "firstQuestion": {
-                    "$ref": "#/definitions/handlers.QuestionDTO"
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
                 },
                 "session": {
-                    "$ref": "#/definitions/handlers.SessionDTO"
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.SessionDTO"
                 },
                 "timeLimit": {
                     "type": "integer"
@@ -533,30 +611,43 @@
                 }
             }
         },
-        "handlers.StartQuizRequest": {
+        "internal_infrastructure_http_handlers.StartQuizRequest": {
             "type": "object",
+            "required": [
+                "userId"
+            ],
             "properties": {
                 "userId": {
                     "type": "string"
                 }
             }
         },
-        "handlers.StartQuizResponse": {
+        "internal_infrastructure_http_handlers.StartQuizResponse": {
             "type": "object",
+            "required": [
+                "data"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/handlers.StartQuizData"
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.StartQuizData"
                 }
             }
         },
-        "handlers.SubmitAnswerData": {
+        "internal_infrastructure_http_handlers.SubmitAnswerData": {
             "type": "object",
+            "required": [
+                "correctAnswerId",
+                "isCorrect",
+                "isQuizCompleted",
+                "pointsEarned",
+                "totalScore"
+            ],
             "properties": {
                 "correctAnswerId": {
                     "type": "string"
                 },
                 "finalResult": {
-                    "$ref": "#/definitions/handlers.FinalResultDTO"
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.FinalResultDTO"
                 },
                 "isCorrect": {
                     "type": "boolean"
@@ -565,7 +656,7 @@
                     "type": "boolean"
                 },
                 "nextQuestion": {
-                    "$ref": "#/definitions/handlers.QuestionDTO"
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
                 },
                 "pointsEarned": {
                     "type": "integer"
@@ -575,8 +666,13 @@
                 }
             }
         },
-        "handlers.SubmitAnswerRequest": {
+        "internal_infrastructure_http_handlers.SubmitAnswerRequest": {
             "type": "object",
+            "required": [
+                "answerId",
+                "questionId",
+                "userId"
+            ],
             "properties": {
                 "answerId": {
                     "type": "string"
@@ -589,11 +685,14 @@
                 }
             }
         },
-        "handlers.SubmitAnswerResponse": {
+        "internal_infrastructure_http_handlers.SubmitAnswerResponse": {
             "type": "object",
+            "required": [
+                "data"
+            ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/handlers.SubmitAnswerData"
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.SubmitAnswerData"
                 }
             }
         }

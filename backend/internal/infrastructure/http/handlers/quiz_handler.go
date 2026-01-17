@@ -1,7 +1,7 @@
 package handlers
 
 import (
-	"github.com/gofiber/fiber/v2"
+	"github.com/gofiber/fiber/v3"
 
 	appQuiz "github.com/barsukov/quiz-sprint/backend/internal/application/quiz"
 	domainQuiz "github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
@@ -11,12 +11,12 @@ import (
 // QuizHandler handles HTTP requests for quizzes
 // NOTE: This is a THIN adapter - no business logic here!
 type QuizHandler struct {
-	listQuizzesUC      *appQuiz.ListQuizzesUseCase
-	getQuizUC          *appQuiz.GetQuizUseCase
-	getQuizDetailsUC   *appQuiz.GetQuizDetailsUseCase
-	startQuizUC        *appQuiz.StartQuizUseCase
-	submitAnswerUC     *appQuiz.SubmitAnswerUseCase
-	getLeaderboardUC   *appQuiz.GetLeaderboardUseCase
+	listQuizzesUC    *appQuiz.ListQuizzesUseCase
+	getQuizUC        *appQuiz.GetQuizUseCase
+	getQuizDetailsUC *appQuiz.GetQuizDetailsUseCase
+	startQuizUC      *appQuiz.StartQuizUseCase
+	submitAnswerUC   *appQuiz.SubmitAnswerUseCase
+	getLeaderboardUC *appQuiz.GetLeaderboardUseCase
 }
 
 // NewQuizHandler creates a new QuizHandler
@@ -39,24 +39,9 @@ func NewQuizHandler(
 }
 
 // ========================================
-// HTTP Request DTOs
-// ========================================
-
-// StartQuizRequest is the HTTP request body for starting a quiz
-type StartQuizRequest struct {
-	UserID string `json:"userId"`
-}
-
-// SubmitAnswerRequest is the HTTP request body for submitting an answer
-type SubmitAnswerRequest struct {
-	QuestionID string `json:"questionId"`
-	AnswerID   string `json:"answerId"`
-	UserID     string `json:"userId"`
-}
-
-// ========================================
 // Handlers (Thin Adapters)
 // ========================================
+// Note: Request DTOs moved to swagger_models.go
 
 // GetAllQuizzes handles GET /api/v1/quiz
 // @Summary List all quizzes
@@ -67,7 +52,7 @@ type SubmitAnswerRequest struct {
 // @Success 200 {object} ListQuizzesResponse "List of quizzes"
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /quiz [get]
-func (h *QuizHandler) GetAllQuizzes(c *fiber.Ctx) error {
+func (h *QuizHandler) GetAllQuizzes(c fiber.Ctx) error {
 	// 1. Execute use case
 	output, err := h.listQuizzesUC.Execute(appQuiz.ListQuizzesInput{})
 	if err != nil {
@@ -93,7 +78,7 @@ func (h *QuizHandler) GetAllQuizzes(c *fiber.Ctx) error {
 // @Failure 404 {object} ErrorResponse "Quiz not found"
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /quiz/{id} [get]
-func (h *QuizHandler) GetQuizByID(c *fiber.Ctx) error {
+func (h *QuizHandler) GetQuizByID(c fiber.Ctx) error {
 	// 1. Extract path parameter
 	quizID := c.Params("id")
 
@@ -125,10 +110,10 @@ func (h *QuizHandler) GetQuizByID(c *fiber.Ctx) error {
 // @Failure 409 {object} ErrorResponse "Active session already exists"
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /quiz/{id}/start [post]
-func (h *QuizHandler) StartQuiz(c *fiber.Ctx) error {
+func (h *QuizHandler) StartQuiz(c fiber.Ctx) error {
 	// 1. Parse request body
 	var req StartQuizRequest
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 
@@ -166,10 +151,10 @@ func (h *QuizHandler) StartQuiz(c *fiber.Ctx) error {
 // @Failure 404 {object} ErrorResponse "Session, question, or answer not found"
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /quiz/session/{sessionId}/answer [post]
-func (h *QuizHandler) SubmitAnswer(c *fiber.Ctx) error {
+func (h *QuizHandler) SubmitAnswer(c fiber.Ctx) error {
 	// 1. Parse request body
 	var req SubmitAnswerRequest
-	if err := c.BodyParser(&req); err != nil {
+	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 
@@ -214,9 +199,9 @@ func (h *QuizHandler) SubmitAnswer(c *fiber.Ctx) error {
 // @Failure 404 {object} ErrorResponse "Quiz not found"
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /quiz/{id}/leaderboard [get]
-func (h *QuizHandler) GetLeaderboard(c *fiber.Ctx) error {
+func (h *QuizHandler) GetLeaderboard(c fiber.Ctx) error {
 	// 1. Extract query parameters
-	limit := c.QueryInt("limit", 10)
+	limit := fiber.Query[int](c, "limit", 10)
 
 	// 2. Execute use case
 	output, err := h.getLeaderboardUC.Execute(appQuiz.GetLeaderboardInput{

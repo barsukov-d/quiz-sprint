@@ -18,9 +18,11 @@
     "lint:oxlint": "oxlint . --fix",
     "lint:eslint": "eslint . --fix --cache",
     "format": "prettier --write --experimental-cli src/",
+    "generate:swagger": "cd ../backend && go run github.com/swaggo/swag/v2/cmd/swag@latest init -g cmd/api/main.go --output docs --parseDependency --parseInternal",
     "generate:api": "kubb generate",
     "generate:api:http": "SWAGGER_URL=http://localhost:3000/swagger/doc.json kubb generate",
-    "generate:api:staging": "SWAGGER_URL=https://staging.quiz-sprint-tma.online/swagger/doc.json kubb generate"
+    "generate:api:staging": "SWAGGER_URL=https://staging.quiz-sprint-tma.online/swagger/doc.json kubb generate",
+    "generate:all": "pnpm run generate:swagger && pnpm run generate:api"
   },
   "dependencies": {
     "@nuxt/ui": "^4.3.0",

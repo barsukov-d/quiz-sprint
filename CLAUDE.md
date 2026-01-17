@@ -37,7 +37,9 @@ pnpm test:e2e --project=chromium            # Run E2E on specific browser
 npx playwright install                       # Install browser drivers (first run)
 
 # API Code Generation (from Swagger/OpenAPI)
-pnpm run generate:api     # Generate TypeScript types and Vue Query hooks from backend Swagger
+pnpm run generate:swagger    # Generate Swagger docs from Go code (backend)
+pnpm run generate:api        # Generate TypeScript types from Swagger
+pnpm run generate:all        # Generate both (Swagger + TypeScript)
 
 # Telegram Mini App Setup
 pnpm add @telegram-apps/sdk @telegram-apps/sdk-vue    # Official TMA SDK
@@ -87,9 +89,14 @@ go mod tidy                                  # Clean up dependencies
 # Formatting
 go fmt ./...                                 # Format code
 
-# Swagger Documentation
-~/go/bin/swag init -g cmd/api/main.go -o docs  # Generate Swagger docs
-# After updating Swagger, regenerate frontend types: cd ../tma && pnpm run generate:api
+# Swagger Generation (Makefile commands)
+make swagger                                 # Generate Swagger docs
+make swagger-install                         # Install swag CLI globally
+make dev                                     # Generate swagger + run server
+make help                                    # Show all Makefile commands
+
+# Manual Swagger generation (if needed)
+go run github.com/swaggo/swag/v2/cmd/swag@latest init --generalInfo cmd/api/main.go --output docs --parseDependency --parseInternal
 
 # Database
 docker compose -f docker-compose.dev.yml exec postgres psql -U quiz_user -d quiz_sprint_dev
@@ -226,6 +233,8 @@ All env files include `/api/v1` and `/ws` suffixes in base URLs.
 - PostgreSQL 16 (database, runs in Docker)
 - Redis 7 (caching, runs in Docker)
 - Docker + Docker Compose (containerized deployment)
+- **swaggo/swag** - Swagger/OpenAPI 2.0 documentation generator
+- **kubb** - TypeScript code generator from OpenAPI (frontend)
 
 ### Infrastructure
 - nginx (reverse proxy, SSL termination)
@@ -239,6 +248,101 @@ All env files include `/api/v1` and `/ws` suffixes in base URLs.
 - Single quotes
 - 100 character line width
 - Path alias: `@` maps to `./src`
+
+## Swagger/OpenAPI Code Generation
+
+### Overview
+
+The project uses a **code-first** approach with automatic type generation:
+
+```
+Go Handlers (with @annotations)
+    ↓ swag generates
+Swagger/OpenAPI spec (swagger.json)
+    ↓ kubb generates
+TypeScript types + Vue Query hooks
+```
+
+### Quick Commands
+
+**From `tma/` directory (Recommended):**
+```bash
+pnpm run generate:swagger    # Generate Swagger from Go code (backend)
+pnpm run generate:api        # Generate TypeScript from Swagger (frontend)
+pnpm run generate:all        # Generate both in one command ✨
+```
+
+**From `backend/` directory:**
+```bash
+make swagger                 # Generate Swagger documentation
+make help                    # Show all Makefile commands
+```
+
+### Generated Files
+
+**Backend:**
+- `backend/docs/swagger.json` - OpenAPI 2.0 specification (used by frontend)
+- `backend/docs/swagger.yaml` - YAML version
+- `backend/docs/docs.go` - Embedded Swagger UI
+
+**Frontend:**
+- `tma/src/api/generated/types/` - TypeScript type definitions
+- `tma/src/api/generated/schemas/` - Zod validation schemas
+- `tma/src/api/generated/hooks/` - Vue Query hooks (useGetQuiz, etc.)
+
+### Typical Workflow
+
+1. **Add/modify Go handler annotations:**
+```go
+// @Summary Get quiz by ID
+// @Tags quiz
+// @Param id path string true "Quiz ID"
+// @Success 200 {object} handlers.QuizDTO
+// @Router /quiz/{id} [get]
+func (h *QuizHandler) GetQuiz(c *fiber.Ctx) error {
+    // implementation
+}
+```
+
+2. **Generate Swagger + TypeScript:**
+```bash
+cd tma
+pnpm run generate:all
+```
+
+3. **Use in Vue components:**
+```typescript
+import { useGetQuizId } from '@/api/generated/hooks/quizController'
+
+const { data: quiz, isLoading } = useGetQuizId({ id: '123' })
+// quiz is fully typed with IntelliSense!
+```
+
+### Required Fields
+
+To mark fields as required (generates non-optional TypeScript types):
+
+```go
+type QuizDTO struct {
+    ID    string `json:"id" validate:"required"`       // required in TypeScript
+    Title string `json:"title" validate:"required"`    // required in TypeScript
+    Description string `json:"description"`             // optional in TypeScript
+}
+```
+
+Generated TypeScript:
+```typescript
+export type QuizDTO = {
+    id: string;          // required (no ?)
+    title: string;       // required (no ?)
+    description?: string; // optional (with ?)
+}
+```
+
+### Documentation
+
+- Detailed guide: `backend/SWAGGER.md`
+- Quick reference: `QUICKSTART.md`
 
 ## Backend Deployment
 
