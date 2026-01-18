@@ -231,6 +231,89 @@ For TMA development, you need HTTPS (Telegram requires it). Use SSH tunnels to e
 
 All env files include `/api/v1` and `/ws` suffixes in base URLs.
 
+## Documentation
+
+### Overview
+
+The project maintains comprehensive documentation in the `docs/` folder:
+
+```
+docs/
+├── DOMAIN.md                    # Domain model, DDD patterns, use cases
+├── USER_FLOW.md                 # User journey, wireframes, UX/UI spec
+└── DOCUMENTATION_WORKFLOW.md    # How to update documentation
+```
+
+### When to Update Documentation
+
+**Quick Reference:**
+
+| Type of Change | Start With | Order |
+|----------------|------------|-------|
+| 🔧 New domain logic | `DOMAIN.md` | DOMAIN → Backend → USER_FLOW → Frontend |
+| 🎨 UI/UX improvements | `USER_FLOW.md` | USER_FLOW → Frontend → DOMAIN (if needed) |
+| 🚀 Full-stack feature | Both docs | DOMAIN + USER_FLOW → Backend → Frontend |
+
+**Key Principles:**
+1. **Documentation-First** - Update docs BEFORE writing code
+2. **Commit Together** - Documentation + code in same commit
+3. **Cross-Reference** - Link between documents for consistency
+4. **Version Control** - Use changelog in docs for major changes
+
+**Example Workflow (New Feature):**
+
+```bash
+# 1. Update documentation
+vim docs/DOMAIN.md        # Add new aggregate/use case
+vim docs/USER_FLOW.md     # Add wireframes/journey
+
+# 2. Implement backend
+cd backend
+# ... implement domain, use cases, handlers ...
+make swagger              # Generate API docs
+
+# 3. Implement frontend
+cd ../tma
+pnpm run generate:api     # Generate TypeScript types
+# ... implement components ...
+
+# 4. Commit everything together
+git add docs/ backend/ tma/
+git commit -m "feat: Add category filtering
+
+- Added Category aggregate (see docs/DOMAIN.md)
+- Updated Quiz List UI (see docs/USER_FLOW.md)
+"
+```
+
+**Detailed Guide:**
+See `docs/DOCUMENTATION_WORKFLOW.md` for complete workflow, examples, and best practices.
+
+**Key Documents:**
+
+1. **`docs/DOMAIN.md`** - Domain-Driven Design documentation
+   - Bounded Contexts (Quiz Taking, Quiz Catalog, Leaderboard, Identity)
+   - Ubiquitous Language (terms, invariants)
+   - Aggregates & Entities (Quiz, QuizSession, User)
+   - Domain Events (QuizStarted, AnswerSubmitted, QuizCompleted)
+   - Use Cases with signatures
+   - Update when: new business logic, aggregates, or domain rules
+
+2. **`docs/USER_FLOW.md`** - UX/UI Specification
+   - Complete User Journey (entry to completion)
+   - Wireframes for all screens (ASCII format)
+   - UI Components (reusable elements)
+   - Interactive mechanics (animations, transitions)
+   - Edge cases & error handling
+   - Update when: new screens, UI changes, or user flows
+
+3. **`docs/DOCUMENTATION_WORKFLOW.md`** - Documentation Guide
+   - When to update each document
+   - Order of updates (domain-first vs UX-first)
+   - Examples for typical changes
+   - Checklist for new features
+   - Git hooks and automation
+
 ## Tech Stack
 
 ### Frontend
