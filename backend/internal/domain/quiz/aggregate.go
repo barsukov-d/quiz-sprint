@@ -64,6 +64,30 @@ func NewQuiz(id QuizID, title QuizTitle, description string, timeLimit TimeLimit
 	}, nil
 }
 
+// ReconstructQuiz reconstructs a Quiz from persistence (no validation)
+// Used by repository when loading from database
+func ReconstructQuiz(
+	id QuizID,
+	title QuizTitle,
+	description string,
+	timeLimit TimeLimit,
+	passingScore PassingScore,
+	createdAt int64,
+	updatedAt int64,
+) *Quiz {
+	return &Quiz{
+		id:           id,
+		title:        title,
+		description:  description,
+		timeLimit:    timeLimit,
+		passingScore: passingScore,
+		createdAt:    createdAt,
+		updatedAt:    updatedAt,
+		questions:    make([]Question, 0),
+		events:       make([]Event, 0),
+	}
+}
+
 // AddQuestion adds a question to the quiz
 func (q *Quiz) AddQuestion(question Question) error {
 	if len(q.questions) >= 50 {

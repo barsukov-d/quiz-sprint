@@ -80,6 +80,13 @@ definitions:
     required:
     - data
     type: object
+  internal_infrastructure_http_handlers.GetUserResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.UserDTO'
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.LeaderboardEntryDTO:
     properties:
       completedAt:
@@ -107,6 +114,18 @@ definitions:
         type: array
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.ListUsersResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.UserDTO'
+        type: array
+      total:
+        type: integer
+    required:
+    - data
+    - total
     type: object
   internal_infrastructure_http_handlers.QuestionDTO:
     properties:
@@ -178,6 +197,23 @@ definitions:
     - questions
     - timeLimit
     - title
+    type: object
+  internal_infrastructure_http_handlers.RegisterUserData:
+    properties:
+      isNewUser:
+        type: boolean
+      user:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.UserDTO'
+    required:
+    - isNewUser
+    - user
+    type: object
+  internal_infrastructure_http_handlers.RegisterUserResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.RegisterUserData'
+    required:
+    - data
     type: object
   internal_infrastructure_http_handlers.SessionDTO:
     properties:
@@ -278,6 +314,54 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.SubmitAnswerData'
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.UpdateUserProfileRequest:
+    properties:
+      avatarUrl:
+        type: string
+      email:
+        type: string
+      languageCode:
+        type: string
+      telegramUsername:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_infrastructure_http_handlers.UpdateUserProfileResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.UserDTO'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.UserDTO:
+    properties:
+      avatarUrl:
+        type: string
+      createdAt:
+        type: integer
+      email:
+        type: string
+      id:
+        type: string
+      isBlocked:
+        type: boolean
+      languageCode:
+        type: string
+      telegramUsername:
+        type: string
+      updatedAt:
+        type: integer
+      username:
+        type: string
+    required:
+    - createdAt
+    - id
+    - isBlocked
+    - languageCode
+    - updatedAt
+    - username
     type: object
 host: localhost:3000
 info:
@@ -470,6 +554,164 @@ paths:
       summary: Submit an answer
       tags:
       - quiz
+  /user/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve user profile by Telegram user ID
+      parameters:
+      - description: User ID (Telegram ID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetUserResponse'
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get user by ID
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      description: Update user profile information
+      parameters:
+      - description: User ID (Telegram ID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated profile data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.UpdateUserProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated user profile
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.UpdateUserProfileResponse'
+        "400":
+          description: Invalid request body or user ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Update user profile
+      tags:
+      - user
+  /user/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user from Telegram Mini App or update existing user
+        profile (idempotent). Requires valid Telegram init data in Authorization header.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User registered or updated
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.RegisterUserResponse'
+        "401":
+          description: Invalid or missing Telegram authorization
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      security:
+      - TelegramAuth: []
+      summary: Register or update user
+      tags:
+      - user
+  /user/username/{username}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve user profile by Telegram @username
+      parameters:
+      - description: Telegram username (without @)
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetUserResponse'
+        "400":
+          description: Invalid username
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get user by Telegram username
+      tags:
+      - user
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of all users
+      parameters:
+      - description: Limit (default 50, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ListUsersResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: List all users (Admin)
+      tags:
+      - user
 schemes:
 - http
 - https

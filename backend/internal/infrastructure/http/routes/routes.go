@@ -1,25 +1,48 @@
 package routes
 
 import (
+	"database/sql"
+
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
 
 	appQuiz "github.com/barsukov/quiz-sprint/backend/internal/application/quiz"
+	appUser "github.com/barsukov/quiz-sprint/backend/internal/application/user"
+	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
+	domainUser "github.com/barsukov/quiz-sprint/backend/internal/domain/user"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/handlers"
+	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/middleware"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/messaging"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence/memory"
+	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence/postgres"
 
 	"github.com/gofiber/contrib/v3/swaggo"
 )
 
 // SetupRoutes configures all application routes
-func SetupRoutes(app *fiber.App) {
+// db can be nil if PostgreSQL is not available (user endpoints will be disabled)
+func SetupRoutes(app *fiber.App, db *sql.DB) {
 	// ========================================
 	// Infrastructure Layer: Repositories
 	// ========================================
-	quizRepo := memory.NewQuizRepository()
+
+	// Quiz repository: use PostgreSQL if available, fallback to memory
+	var quizRepo quiz.QuizRepository
+	if db != nil {
+		quizRepo = postgres.NewQuizRepository(db)
+	} else {
+		quizRepo = memory.NewQuizRepository()
+	}
+
+	// Session and Leaderboard: still use memory for now
 	sessionRepo := memory.NewSessionRepository()
 	leaderboardRepo := memory.NewLeaderboardRepository(sessionRepo)
+
+	// User repository: use PostgreSQL if available
+	var userRepo domainUser.UserRepository
+	if db != nil {
+		userRepo = postgres.NewUserRepository(db)
+	}
 
 	// ========================================
 	// Infrastructure Layer: Event Bus
@@ -30,12 +53,33 @@ func SetupRoutes(app *fiber.App) {
 	// ========================================
 	// Application Layer: Use Cases
 	// ========================================
+
+	// Quiz use cases
 	listQuizzesUC := appQuiz.NewListQuizzesUseCase(quizRepo)
 	getQuizUC := appQuiz.NewGetQuizUseCase(quizRepo)
 	getQuizDetailsUC := appQuiz.NewGetQuizDetailsUseCase(quizRepo, leaderboardRepo)
 	startQuizUC := appQuiz.NewStartQuizUseCase(quizRepo, sessionRepo, loggingEventBus)
 	submitAnswerUC := appQuiz.NewSubmitAnswerUseCase(quizRepo, sessionRepo, loggingEventBus)
 	getLeaderboardUC := appQuiz.NewGetLeaderboardUseCase(leaderboardRepo)
+
+	// User use cases (only if database is available)
+	var (
+		registerUserUC      *appUser.RegisterUserUseCase
+		getUserUC           *appUser.GetUserUseCase
+		updateUserProfileUC *appUser.UpdateUserProfileUseCase
+		updateUserLanguageUC *appUser.UpdateUserLanguageUseCase
+		listUsersUC         *appUser.ListUsersUseCase
+		getUserByUsernameUC *appUser.GetUserByTelegramUsernameUseCase
+	)
+
+	if userRepo != nil {
+		registerUserUC = appUser.NewRegisterUserUseCase(userRepo)
+		getUserUC = appUser.NewGetUserUseCase(userRepo)
+		updateUserProfileUC = appUser.NewUpdateUserProfileUseCase(userRepo)
+		updateUserLanguageUC = appUser.NewUpdateUserLanguageUseCase(userRepo)
+		listUsersUC = appUser.NewListUsersUseCase(userRepo)
+		getUserByUsernameUC = appUser.NewGetUserByTelegramUsernameUseCase(userRepo)
+	}
 
 	// ========================================
 	// Infrastructure Layer: HTTP Handlers
@@ -50,6 +94,19 @@ func SetupRoutes(app *fiber.App) {
 	)
 
 	wsHub := handlers.NewWebSocketHub(leaderboardRepo)
+
+	// User handler (only if database is available)
+	var userHandler *handlers.UserHandler
+	if userRepo != nil {
+		userHandler = handlers.NewUserHandler(
+			registerUserUC,
+			getUserUC,
+			updateUserProfileUC,
+			updateUserLanguageUC,
+			listUsersUC,
+			getUserByUsernameUC,
+		)
+	}
 
 	// ========================================
 	// Routes
@@ -82,6 +139,23 @@ func SetupRoutes(app *fiber.App) {
 	})
 
 	ws.Get("/leaderboard/:id", websocket.New(wsHub.HandleLeaderboardWebSocket))
+
+	// User routes (only if database is available)
+	if userHandler != nil {
+		user := v1.Group("/user")
+
+		// Protected routes - require Telegram authentication
+		user.Post("/register", middleware.TelegramAuthMiddleware(), userHandler.RegisterUser)
+
+		// Public routes (for now - can add auth later)
+		user.Get("/:id", userHandler.GetUser)
+		user.Put("/:id", userHandler.UpdateUserProfile)
+		user.Get("/username/:username", userHandler.GetUserByTelegramUsername)
+
+		// Admin routes
+		users := v1.Group("/users")
+		users.Get("/", userHandler.ListUsers)
+	}
 
 	// Swagger documentation
 	app.Get("/swagger/*", swaggo.New(swaggo.Config{

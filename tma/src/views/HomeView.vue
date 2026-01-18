@@ -1,12 +1,35 @@
 <script setup lang="ts">
 import { useGetQuiz } from '@/api'
+import { useAuth } from '@/composables/useAuth'
 
 // Получаем квизы через сгенерированный hook
 const { data: quizzes, isLoading, isError, error, refetch } = useGetQuiz()
+
+// Получаем данные авторизованного пользователя
+const { currentUser, isAuthenticated } = useAuth()
 </script>
 
 <template>
-	<div class="container mx-auto p-4">
+	<div class="container mx-auto p-4 pt-32">
+		<!-- User Info Card -->
+		<UCard v-if="isAuthenticated && currentUser" class="mb-6">
+			<div class="flex items-center gap-4">
+				<UAvatar
+					:src="currentUser.avatarUrl"
+					:alt="currentUser.username"
+					size="lg"
+					:ui="{ rounded: 'rounded-full' }"
+				/>
+				<div>
+					<h2 class="text-xl font-semibold">{{ currentUser.username }}</h2>
+					<p v-if="currentUser.telegramUsername" class="text-sm text-gray-500">
+						{{ currentUser.telegramUsername }}
+					</p>
+					<p class="text-xs text-gray-400 mt-1">Telegram ID: {{ currentUser.id }}</p>
+				</div>
+			</div>
+		</UCard>
+
 		<h1 class="text-3xl font-bold mb-6">Quiz Sprint</h1>
 		<p class="text-gray-600 mb-8">Выберите квиз для начала</p>
 
@@ -22,9 +45,9 @@ const { data: quizzes, isLoading, isError, error, refetch } = useGetQuiz()
 				color="red"
 				variant="soft"
 				title="Ошибка загрузки"
-				:description="error?.message || 'Не удалось загрузить квизы'"
+				:description="error?.error.message || 'Не удалось загрузить квизы'"
 			/>
-			<UButton color="red" class="mt-2" @click="() => refetch()"> Попробовать снова </UButton>
+			<UButton color="red" class="mt-2" @click="refetch()"> Попробовать снова </UButton>
 		</div>
 
 		<!-- Success state with data -->
@@ -45,7 +68,7 @@ const { data: quizzes, isLoading, isError, error, refetch } = useGetQuiz()
 
 				<div class="flex items-center justify-between text-sm text-gray-500 mb-4">
 					<span>{{ quiz.questionsCount || 0 }} вопросов</span>
-					<UBadge>{{ quiz.difficulty || 'Medium' }}</UBadge>
+					<!-- <UBadge>{{ quiz. || 'Medium' }}</UBadge> -->
 				</div>
 
 				<template #footer>

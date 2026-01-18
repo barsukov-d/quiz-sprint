@@ -1,0 +1,450 @@
+package postgres
+
+import (
+	"database/sql"
+	"fmt"
+
+	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
+)
+
+// QuizRepository is a PostgreSQL implementation of quiz.QuizRepository
+type QuizRepository struct {
+	db *sql.DB
+}
+
+// NewQuizRepository creates a new PostgreSQL quiz repository
+func NewQuizRepository(db *sql.DB) *QuizRepository {
+	return &QuizRepository{db: db}
+}
+
+// FindByID retrieves a quiz by ID with all questions and answers
+func (r *QuizRepository) FindByID(id quiz.QuizID) (*quiz.Quiz, error) {
+	// Load quiz
+	quizData, err := r.loadQuiz(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Load questions with answers
+	questions, err := r.loadQuestions(id)
+	if err != nil {
+		return nil, err
+	}
+
+	// Reconstruct aggregate
+	q := quiz.ReconstructQuiz(
+		quizData.id,
+		quizData.title,
+		quizData.description,
+		quizData.timeLimit,
+		quizData.passingScore,
+		quizData.createdAt,
+		quizData.updatedAt,
+	)
+
+	// Add questions
+	for _, question := range questions {
+		if err := q.AddQuestion(question); err != nil {
+			return nil, fmt.Errorf("failed to add question: %w", err)
+		}
+	}
+
+	return q, nil
+}
+
+// FindAll retrieves all quizzes (without questions for performance)
+func (r *QuizRepository) FindAll() ([]quiz.Quiz, error) {
+	query := `
+		SELECT id, title, description, time_limit, passing_score, created_at, updated_at
+		FROM quizzes
+		ORDER BY created_at DESC
+	`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query quizzes: %w", err)
+	}
+	defer rows.Close()
+
+	var quizzes []quiz.Quiz
+
+	for rows.Next() {
+		quizData, err := r.scanQuizRow(rows)
+		if err != nil {
+			return nil, err
+		}
+
+		// Reconstruct quiz without questions
+		q := quiz.ReconstructQuiz(
+			quizData.id,
+			quizData.title,
+			quizData.description,
+			quizData.timeLimit,
+			quizData.passingScore,
+			quizData.createdAt,
+			quizData.updatedAt,
+		)
+
+		quizzes = append(quizzes, *q)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating quiz rows: %w", err)
+	}
+
+	return quizzes, nil
+}
+
+// Save stores a quiz with all its questions and answers in a transaction
+func (r *QuizRepository) Save(q *quiz.Quiz) error {
+	tx, err := r.db.Begin()
+	if err != nil {
+		return fmt.Errorf("failed to begin transaction: %w", err)
+	}
+	defer tx.Rollback()
+
+	// Save quiz
+	err = r.saveQuiz(tx, q)
+	if err != nil {
+		return err
+	}
+
+	// Delete existing questions and answers (will be re-inserted)
+	_, err = tx.Exec("DELETE FROM questions WHERE quiz_id = $1", q.ID().String())
+	if err != nil {
+		return fmt.Errorf("failed to delete existing questions: %w", err)
+	}
+
+	// Save questions and answers
+	for _, question := range q.Questions() {
+		err = r.saveQuestion(tx, q.ID(), question)
+		if err != nil {
+			return err
+		}
+	}
+
+	return tx.Commit()
+}
+
+// Delete removes a quiz (cascade will delete questions and answers)
+func (r *QuizRepository) Delete(id quiz.QuizID) error {
+	query := `DELETE FROM quizzes WHERE id = $1`
+
+	result, err := r.db.Exec(query, id.String())
+	if err != nil {
+		return fmt.Errorf("failed to delete quiz: %w", err)
+	}
+
+	rowsAffected, err := result.RowsAffected()
+	if err != nil {
+		return fmt.Errorf("failed to get rows affected: %w", err)
+	}
+
+	if rowsAffected == 0 {
+		return quiz.ErrQuizNotFound
+	}
+
+	return nil
+}
+
+// ========================================
+// Private helper methods
+// ========================================
+
+type quizData struct {
+	id           quiz.QuizID
+	title        quiz.QuizTitle
+	description  string
+	timeLimit    quiz.TimeLimit
+	passingScore quiz.PassingScore
+	createdAt    int64
+	updatedAt    int64
+}
+
+// loadQuiz loads a quiz from database (without questions)
+func (r *QuizRepository) loadQuiz(id quiz.QuizID) (*quizData, error) {
+	query := `
+		SELECT id, title, description, time_limit, passing_score, created_at, updated_at
+		FROM quizzes
+		WHERE id = $1
+	`
+
+	row := r.db.QueryRow(query, id.String())
+	return r.scanQuizRow(row)
+}
+
+// scanQuizRow scans a quiz row into quizData
+func (r *QuizRepository) scanQuizRow(scanner interface {
+	Scan(dest ...interface{}) error
+}) (*quizData, error) {
+	var (
+		idStr           string
+		title           string
+		description     sql.NullString
+		timeLimit       int
+		passingScore    int
+		createdAt       int64
+		updatedAt       int64
+	)
+
+	err := scanner.Scan(&idStr, &title, &description, &timeLimit, &passingScore, &createdAt, &updatedAt)
+	if err == sql.ErrNoRows {
+		return nil, quiz.ErrQuizNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to scan quiz: %w", err)
+	}
+
+	// Reconstruct value objects
+	quizID, err := quiz.NewQuizIDFromString(idStr)
+	if err != nil {
+		return nil, fmt.Errorf("invalid quiz ID: %w", err)
+	}
+
+	quizTitle, err := quiz.NewQuizTitle(title)
+	if err != nil {
+		return nil, fmt.Errorf("invalid quiz title: %w", err)
+	}
+
+	quizTimeLimit, err := quiz.NewTimeLimit(timeLimit)
+	if err != nil {
+		return nil, fmt.Errorf("invalid time limit: %w", err)
+	}
+
+	quizPassingScore, err := quiz.NewPassingScore(passingScore)
+	if err != nil {
+		return nil, fmt.Errorf("invalid passing score: %w", err)
+	}
+
+	desc := ""
+	if description.Valid {
+		desc = description.String
+	}
+
+	return &quizData{
+		id:           quizID,
+		title:        quizTitle,
+		description:  desc,
+		timeLimit:    quizTimeLimit,
+		passingScore: quizPassingScore,
+		createdAt:    createdAt,
+		updatedAt:    updatedAt,
+	}, nil
+}
+
+// loadQuestions loads all questions with their answers for a quiz
+func (r *QuizRepository) loadQuestions(quizID quiz.QuizID) ([]quiz.Question, error) {
+	query := `
+		SELECT id, text, points, position
+		FROM questions
+		WHERE quiz_id = $1
+		ORDER BY position ASC
+	`
+
+	rows, err := r.db.Query(query, quizID.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to query questions: %w", err)
+	}
+	defer rows.Close()
+
+	var questions []quiz.Question
+
+	for rows.Next() {
+		var (
+			idStr    string
+			text     string
+			points   int
+			position int
+		)
+
+		err := rows.Scan(&idStr, &text, &points, &position)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan question: %w", err)
+		}
+
+		// Reconstruct value objects
+		questionID, err := quiz.NewQuestionIDFromString(idStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid question ID: %w", err)
+		}
+
+		questionText, err := quiz.NewQuestionText(text)
+		if err != nil {
+			return nil, fmt.Errorf("invalid question text: %w", err)
+		}
+
+		questionPoints, err := quiz.NewPoints(points)
+		if err != nil {
+			return nil, fmt.Errorf("invalid points: %w", err)
+		}
+
+		// Create question
+		question, err := quiz.NewQuestion(questionID, questionText, questionPoints, position)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create question: %w", err)
+		}
+
+		// Load answers for this question
+		answers, err := r.loadAnswers(questionID)
+		if err != nil {
+			return nil, err
+		}
+
+		for _, answer := range answers {
+			if err := question.AddAnswer(answer); err != nil {
+				return nil, fmt.Errorf("failed to add answer: %w", err)
+			}
+		}
+
+		questions = append(questions, *question)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating question rows: %w", err)
+	}
+
+	return questions, nil
+}
+
+// loadAnswers loads all answers for a question
+func (r *QuizRepository) loadAnswers(questionID quiz.QuestionID) ([]quiz.Answer, error) {
+	query := `
+		SELECT id, text, is_correct, position
+		FROM answers
+		WHERE question_id = $1
+		ORDER BY position ASC
+	`
+
+	rows, err := r.db.Query(query, questionID.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to query answers: %w", err)
+	}
+	defer rows.Close()
+
+	var answers []quiz.Answer
+
+	for rows.Next() {
+		var (
+			idStr     string
+			text      string
+			isCorrect bool
+			position  int
+		)
+
+		err := rows.Scan(&idStr, &text, &isCorrect, &position)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan answer: %w", err)
+		}
+
+		// Reconstruct value objects
+		answerID, err := quiz.NewAnswerIDFromString(idStr)
+		if err != nil {
+			return nil, fmt.Errorf("invalid answer ID: %w", err)
+		}
+
+		answerText, err := quiz.NewAnswerText(text)
+		if err != nil {
+			return nil, fmt.Errorf("invalid answer text: %w", err)
+		}
+
+		// Create answer
+		answer, err := quiz.NewAnswer(answerID, answerText, isCorrect, position)
+		if err != nil {
+			return nil, fmt.Errorf("failed to create answer: %w", err)
+		}
+
+		answers = append(answers, *answer)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating answer rows: %w", err)
+	}
+
+	return answers, nil
+}
+
+// saveQuiz saves or updates a quiz
+func (r *QuizRepository) saveQuiz(tx *sql.Tx, q *quiz.Quiz) error {
+	query := `
+		INSERT INTO quizzes (id, title, description, time_limit, passing_score, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		ON CONFLICT (id) DO UPDATE SET
+			title = EXCLUDED.title,
+			description = EXCLUDED.description,
+			time_limit = EXCLUDED.time_limit,
+			passing_score = EXCLUDED.passing_score,
+			updated_at = EXCLUDED.updated_at
+	`
+
+	_, err := tx.Exec(
+		query,
+		q.ID().String(),
+		q.Title().String(),
+		q.Description(),
+		q.TimeLimit().Seconds(),
+		q.PassingScore().Percentage(),
+		q.CreatedAt(),
+		q.UpdatedAt(),
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to save quiz: %w", err)
+	}
+
+	return nil
+}
+
+// saveQuestion saves a question with its answers
+func (r *QuizRepository) saveQuestion(tx *sql.Tx, quizID quiz.QuizID, q quiz.Question) error {
+	// Save question
+	query := `
+		INSERT INTO questions (id, quiz_id, text, points, position)
+		VALUES ($1, $2, $3, $4, $5)
+	`
+
+	_, err := tx.Exec(
+		query,
+		q.ID().String(),
+		quizID.String(),
+		q.Text().String(),
+		q.Points().Value(),
+		q.Position(),
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to save question: %w", err)
+	}
+
+	// Save answers
+	for _, answer := range q.Answers() {
+		err = r.saveAnswer(tx, q.ID(), answer)
+		if err != nil {
+			return err
+		}
+	}
+
+	return nil
+}
+
+// saveAnswer saves an answer
+func (r *QuizRepository) saveAnswer(tx *sql.Tx, questionID quiz.QuestionID, a quiz.Answer) error {
+	query := `
+		INSERT INTO answers (id, question_id, text, is_correct, position)
+		VALUES ($1, $2, $3, $4, $5)
+	`
+
+	_, err := tx.Exec(
+		query,
+		a.ID().String(),
+		questionID.String(),
+		a.Text().String(),
+		a.IsCorrect(),
+		a.Position(),
+	)
+
+	if err != nil {
+		return fmt.Errorf("failed to save answer: %w", err)
+	}
+
+	return nil
+}

@@ -185,3 +185,89 @@ type SubmitAnswerRequest struct {
 	AnswerID   string `json:"answerId" validate:"required"`
 	UserID     string `json:"userId" validate:"required"`
 }
+
+// ========================================
+// User Models
+// ========================================
+
+// UserDTO represents a user
+type UserDTO struct {
+	ID               string `json:"id" validate:"required"`
+	Username         string `json:"username" validate:"required"`
+	TelegramUsername string `json:"telegramUsername,omitempty"`
+	Email            string `json:"email,omitempty"`
+	AvatarURL        string `json:"avatarUrl,omitempty"`
+	LanguageCode     string `json:"languageCode" validate:"required"`
+	IsBlocked        bool   `json:"isBlocked" validate:"required"`
+	CreatedAt        int64  `json:"createdAt" validate:"required"`
+	UpdatedAt        int64  `json:"updatedAt" validate:"required"`
+}
+
+// @name UserDTO
+
+// UserProfileDTO is a lightweight user profile for leaderboards
+type UserProfileDTO struct {
+	ID               string `json:"id" validate:"required"`
+	Username         string `json:"username" validate:"required"`
+	TelegramUsername string `json:"telegramUsername,omitempty"`
+	AvatarURL        string `json:"avatarUrl,omitempty"`
+}
+
+// @name UserProfileDTO
+
+// RegisterUserRequest is the HTTP request body for registering a user
+// NOTE: All fields are optional because actual user data comes from Authorization header (Telegram init data)
+// The backend extracts validated user data from the middleware
+type RegisterUserRequest struct {
+	// All fields optional - kept for backwards compatibility
+}
+
+// @name RegisterUserRequest
+
+// RegisterUserData contains user registration result
+type RegisterUserData struct {
+	User      UserDTO `json:"user" validate:"required"`
+	IsNewUser bool    `json:"isNewUser" validate:"required"`
+}
+
+// @name RegisterUserData
+
+// RegisterUserResponse wraps the register user response
+type RegisterUserResponse struct {
+	Data RegisterUserData `json:"data" validate:"required"`
+}
+
+// @name RegisterUserResponse
+
+// GetUserResponse wraps the get user response
+type GetUserResponse struct {
+	Data UserDTO `json:"data" validate:"required"`
+}
+
+// @name GetUserResponse
+
+// UpdateUserProfileRequest is the HTTP request body for updating user profile
+type UpdateUserProfileRequest struct {
+	Username         string `json:"username,omitempty"`
+	TelegramUsername string `json:"telegramUsername,omitempty"`
+	Email            string `json:"email,omitempty"`
+	AvatarURL        string `json:"avatarUrl,omitempty"`
+	LanguageCode     string `json:"languageCode,omitempty"`
+}
+
+// @name UpdateUserProfileRequest
+
+// UpdateUserProfileResponse wraps the update user profile response
+type UpdateUserProfileResponse struct {
+	Data UserDTO `json:"data" validate:"required"`
+}
+
+// @name UpdateUserProfileResponse
+
+// ListUsersResponse wraps the list users response
+type ListUsersResponse struct {
+	Data  []UserDTO `json:"data" validate:"required"`
+	Total int       `json:"total" validate:"required"`
+}
+
+// @name ListUsersResponse
