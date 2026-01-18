@@ -51,6 +51,29 @@ func (r *QuizRepository) FindAll() ([]quiz.Quiz, error) {
 	return quizzes, nil
 }
 
+// FindAllSummaries retrieves all quiz summaries
+func (r *QuizRepository) FindAllSummaries() ([]*quiz.QuizSummary, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	summaries := make([]*quiz.QuizSummary, 0, len(r.quizzes))
+	for _, q := range r.quizzes {
+		summary := quiz.NewQuizSummary(
+			q.ID(),
+			q.Title(),
+			q.Description(),
+			q.CategoryID(),
+			q.TimeLimit(),
+			q.PassingScore(),
+			q.CreatedAt(),
+			q.QuestionsCount(),
+		)
+		summaries = append(summaries, summary)
+	}
+
+	return summaries, nil
+}
+
 // Save stores a quiz
 func (r *QuizRepository) Save(q *quiz.Quiz) error {
 	r.mu.Lock()

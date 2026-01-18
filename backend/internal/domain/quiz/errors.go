@@ -8,6 +8,7 @@ var (
 	ErrInvalidQuestionID     = errors.New("invalid question ID")
 	ErrInvalidAnswerID       = errors.New("invalid answer ID")
 	ErrInvalidSessionID      = errors.New("invalid session ID")
+	ErrInvalidCategoryID     = errors.New("invalid category ID")
 	ErrInvalidTitle          = errors.New("invalid title")
 	ErrTitleTooLong          = errors.New("title too long")
 	ErrInvalidQuestionText   = errors.New("invalid question text")

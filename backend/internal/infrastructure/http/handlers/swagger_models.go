@@ -11,6 +11,7 @@ type QuizDTO struct {
 	ID             string `json:"id" validate:"required"`
 	Title          string `json:"title" validate:"required"`
 	Description    string `json:"description"`
+	CategoryID     string `json:"categoryId,omitempty"`
 	QuestionsCount int    `json:"questionsCount" validate:"required"`
 	TimeLimit      int    `json:"timeLimit" validate:"required"`
 	PassingScore   int    `json:"passingScore" validate:"required"`
@@ -24,6 +25,7 @@ type QuizDetailDTO struct {
 	ID           string        `json:"id" validate:"required"`
 	Title        string        `json:"title" validate:"required"`
 	Description  string        `json:"description"`
+	CategoryID   string        `json:"categoryId,omitempty"`
 	Questions    []QuestionDTO `json:"questions" validate:"required"`
 	TimeLimit    int           `json:"timeLimit" validate:"required"`
 	PassingScore int           `json:"passingScore" validate:"required"`

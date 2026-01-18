@@ -10,10 +10,16 @@ import (
 
 // ToQuizDTO converts a Quiz aggregate to QuizDTO
 func ToQuizDTO(q *quiz.Quiz) QuizDTO {
+	var categoryID string
+	if !q.CategoryID().IsZero() {
+		categoryID = q.CategoryID().String()
+	}
+
 	return QuizDTO{
 		ID:             q.ID().String(),
 		Title:          q.Title().String(),
 		Description:    q.Description(),
+		CategoryID:     categoryID,
 		QuestionsCount: q.QuestionsCount(),
 		TimeLimit:      q.TimeLimit().Seconds(),
 		PassingScore:   q.PassingScore().Percentage(),
@@ -23,6 +29,11 @@ func ToQuizDTO(q *quiz.Quiz) QuizDTO {
 
 // ToQuizDetailDTO converts a Quiz aggregate to QuizDetailDTO with questions
 func ToQuizDetailDTO(q *quiz.Quiz) QuizDetailDTO {
+	var categoryID string
+	if !q.CategoryID().IsZero() {
+		categoryID = q.CategoryID().String()
+	}
+
 	questions := make([]QuestionDTO, 0, q.QuestionsCount())
 	for _, question := range q.Questions() {
 		questions = append(questions, ToQuestionDTO(&question))
@@ -32,6 +43,7 @@ func ToQuizDetailDTO(q *quiz.Quiz) QuizDetailDTO {
 		ID:           q.ID().String(),
 		Title:        q.Title().String(),
 		Description:  q.Description(),
+		CategoryID:   categoryID,
 		Questions:    questions,
 		TimeLimit:    q.TimeLimit().Seconds(),
 		PassingScore: q.PassingScore().Percentage(),
@@ -105,6 +117,34 @@ func ToQuizListDTO(quizzes []quiz.Quiz) []QuizDTO {
 	dtos := make([]QuizDTO, 0, len(quizzes))
 	for _, q := range quizzes {
 		dtos = append(dtos, ToQuizDTO(&q))
+	}
+	return dtos
+}
+
+// ToQuizDTOFromSummary converts a QuizSummary to QuizDTO
+func ToQuizDTOFromSummary(s *quiz.QuizSummary) QuizDTO {
+	var categoryID string
+	if !s.CategoryID().IsZero() {
+		categoryID = s.CategoryID().String()
+	}
+
+	return QuizDTO{
+		ID:             s.ID().String(),
+		Title:          s.Title().String(),
+		Description:    s.Description(),
+		CategoryID:     categoryID,
+		QuestionsCount: s.QuestionCount(),
+		TimeLimit:      s.TimeLimit().Seconds(),
+		PassingScore:   s.PassingScore().Percentage(),
+		CreatedAt:      s.CreatedAt(),
+	}
+}
+
+// ToQuizListDTOFromSummaries converts a slice of QuizSummary objects to DTOs
+func ToQuizListDTOFromSummaries(summaries []*quiz.QuizSummary) []QuizDTO {
+	dtos := make([]QuizDTO, 0, len(summaries))
+	for _, s := range summaries {
+		dtos = append(dtos, ToQuizDTOFromSummary(s))
 	}
 	return dtos
 }

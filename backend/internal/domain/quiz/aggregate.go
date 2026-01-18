@@ -31,18 +31,21 @@ type Quiz struct {
 	id           QuizID
 	title        QuizTitle
 	description  string
+	categoryID   CategoryID
 	questions    []Question
 	timeLimit    TimeLimit
 	passingScore PassingScore
 	createdAt    int64 // Unix timestamp
 	updatedAt    int64 // Unix timestamp
+	// questionCount is a denormalized count, used when questions are not loaded
+	questionCount int
 
 	// Domain events collected during operations
 	events []Event
 }
 
 // NewQuiz creates a new Quiz aggregate
-func NewQuiz(id QuizID, title QuizTitle, description string, timeLimit TimeLimit, passingScore PassingScore, createdAt int64) (*Quiz, error) {
+func NewQuiz(id QuizID, title QuizTitle, description string, categoryID CategoryID, timeLimit TimeLimit, passingScore PassingScore, createdAt int64) (*Quiz, error) {
 	if id.IsZero() {
 		return nil, ErrInvalidQuizID
 	}
@@ -52,15 +55,17 @@ func NewQuiz(id QuizID, title QuizTitle, description string, timeLimit TimeLimit
 	}
 
 	return &Quiz{
-		id:           id,
-		title:        title,
-		description:  description,
-		timeLimit:    timeLimit,
-		passingScore: passingScore,
-		createdAt:    createdAt,
-		updatedAt:    createdAt,
-		questions:    make([]Question, 0),
-		events:       make([]Event, 0),
+		id:            id,
+		title:         title,
+		description:   description,
+		categoryID:    categoryID,
+		timeLimit:     timeLimit,
+		passingScore:  passingScore,
+		createdAt:     createdAt,
+		updatedAt:     createdAt,
+		questions:     make([]Question, 0),
+		questionCount: 0,
+		events:        make([]Event, 0),
 	}, nil
 }
 
@@ -70,21 +75,24 @@ func ReconstructQuiz(
 	id QuizID,
 	title QuizTitle,
 	description string,
+	categoryID CategoryID,
 	timeLimit TimeLimit,
 	passingScore PassingScore,
 	createdAt int64,
 	updatedAt int64,
 ) *Quiz {
 	return &Quiz{
-		id:           id,
-		title:        title,
-		description:  description,
-		timeLimit:    timeLimit,
-		passingScore: passingScore,
-		createdAt:    createdAt,
-		updatedAt:    updatedAt,
-		questions:    make([]Question, 0),
-		events:       make([]Event, 0),
+		id:            id,
+		title:         title,
+		description:   description,
+		categoryID:    categoryID,
+		timeLimit:     timeLimit,
+		passingScore:  passingScore,
+		createdAt:     createdAt,
+		updatedAt:     updatedAt,
+		questions:     make([]Question, 0),
+		questionCount: 0,
+		events:        make([]Event, 0),
 	}
 }
 
@@ -149,17 +157,26 @@ func (q *Quiz) GetQuestionByIndex(index int) (*Question, error) {
 
 // QuestionsCount returns the number of questions
 func (q *Quiz) QuestionsCount() int {
-	return len(q.questions)
+	if len(q.questions) > 0 {
+		return len(q.questions)
+	}
+	return q.questionCount
+}
+
+// SetQuestionCount sets the denormalized question count
+func (q *Quiz) SetQuestionCount(count int) {
+	q.questionCount = count
 }
 
 // Getters
-func (q *Quiz) ID() QuizID             { return q.id }
-func (q *Quiz) Title() QuizTitle       { return q.title }
-func (q *Quiz) Description() string    { return q.description }
-func (q *Quiz) TimeLimit() TimeLimit   { return q.timeLimit }
+func (q *Quiz) ID() QuizID                 { return q.id }
+func (q *Quiz) Title() QuizTitle           { return q.title }
+func (q *Quiz) Description() string        { return q.description }
+func (q *Quiz) CategoryID() CategoryID     { return q.categoryID }
+func (q *Quiz) TimeLimit() TimeLimit       { return q.timeLimit }
 func (q *Quiz) PassingScore() PassingScore { return q.passingScore }
-func (q *Quiz) CreatedAt() int64       { return q.createdAt }
-func (q *Quiz) UpdatedAt() int64       { return q.updatedAt }
+func (q *Quiz) CreatedAt() int64           { return q.createdAt }
+func (q *Quiz) UpdatedAt() int64           { return q.updatedAt }
 
 // Questions returns a copy of questions (protect internal state)
 func (q *Quiz) Questions() []Question {
@@ -183,8 +200,8 @@ type QuizSession struct {
 	currentQuestion int
 	score           Points
 	answers         []UserAnswer
-	startedAt       int64        // Unix timestamp
-	completedAt     int64        // Unix timestamp (0 if not completed)
+	startedAt       int64 // Unix timestamp
+	completedAt     int64 // Unix timestamp (0 if not completed)
 	status          SessionStatus
 
 	// Domain events collected during operations
@@ -336,14 +353,14 @@ func (qs *QuizSession) HasAnsweredQuestion(questionID QuestionID) bool {
 }
 
 // Getters
-func (qs *QuizSession) ID() SessionID          { return qs.id }
-func (qs *QuizSession) QuizID() QuizID         { return qs.quizID }
-func (qs *QuizSession) UserID() shared.UserID  { return qs.userID }
-func (qs *QuizSession) CurrentQuestion() int   { return qs.currentQuestion }
-func (qs *QuizSession) Score() Points          { return qs.score }
-func (qs *QuizSession) StartedAt() int64       { return qs.startedAt }
-func (qs *QuizSession) CompletedAt() int64     { return qs.completedAt }
-func (qs *QuizSession) Status() SessionStatus  { return qs.status }
+func (qs *QuizSession) ID() SessionID         { return qs.id }
+func (qs *QuizSession) QuizID() QuizID        { return qs.quizID }
+func (qs *QuizSession) UserID() shared.UserID { return qs.userID }
+func (qs *QuizSession) CurrentQuestion() int  { return qs.currentQuestion }
+func (qs *QuizSession) Score() Points         { return qs.score }
+func (qs *QuizSession) StartedAt() int64      { return qs.startedAt }
+func (qs *QuizSession) CompletedAt() int64    { return qs.completedAt }
+func (qs *QuizSession) Status() SessionStatus { return qs.status }
 
 // Answers returns a copy of answers (protect internal state)
 func (qs *QuizSession) Answers() []UserAnswer {

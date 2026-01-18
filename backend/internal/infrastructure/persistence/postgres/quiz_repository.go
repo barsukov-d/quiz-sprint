@@ -36,6 +36,7 @@ func (r *QuizRepository) FindByID(id quiz.QuizID) (*quiz.Quiz, error) {
 		quizData.id,
 		quizData.title,
 		quizData.description,
+		quizData.categoryID,
 		quizData.timeLimit,
 		quizData.passingScore,
 		quizData.createdAt,
@@ -55,7 +56,7 @@ func (r *QuizRepository) FindByID(id quiz.QuizID) (*quiz.Quiz, error) {
 // FindAll retrieves all quizzes (without questions for performance)
 func (r *QuizRepository) FindAll() ([]quiz.Quiz, error) {
 	query := `
-		SELECT id, title, description, time_limit, passing_score, created_at, updated_at
+		SELECT id, title, description, category_id, time_limit, passing_score, created_at, updated_at
 		FROM quizzes
 		ORDER BY created_at DESC
 	`
@@ -79,6 +80,7 @@ func (r *QuizRepository) FindAll() ([]quiz.Quiz, error) {
 			quizData.id,
 			quizData.title,
 			quizData.description,
+			quizData.categoryID,
 			quizData.timeLimit,
 			quizData.passingScore,
 			quizData.createdAt,
@@ -93,6 +95,97 @@ func (r *QuizRepository) FindAll() ([]quiz.Quiz, error) {
 	}
 
 	return quizzes, nil
+}
+
+// FindAllSummaries retrieves all quizzes and their question counts (without loading full questions for performance)
+func (r *QuizRepository) FindAllSummaries() ([]*quiz.QuizSummary, error) {
+	query := `
+		SELECT
+			q.id, q.title, q.description, q.category_id, q.time_limit, q.passing_score, q.created_at,
+			COUNT(qu.id) as question_count
+		FROM quizzes q
+		LEFT JOIN questions qu ON q.id = qu.quiz_id
+		GROUP BY q.id
+		ORDER BY q.created_at DESC
+	`
+
+	rows, err := r.db.Query(query)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query quiz summaries: %w", err)
+	}
+	defer rows.Close()
+
+	var summaries []*quiz.QuizSummary
+
+	for rows.Next() {
+		var (
+			idStr         string
+			title         string
+			description   sql.NullString
+			categoryIDStr sql.NullString
+			timeLimit     int
+			passingScore  int
+			createdAt     int64
+			questionCount int
+		)
+
+		err := rows.Scan(
+			&idStr, &title, &description, &categoryIDStr, &timeLimit,
+			&passingScore, &createdAt, &questionCount,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan quiz summary: %w", err)
+		}
+
+		// Reconstruct value objects from scanned data
+		quizID, err := quiz.NewQuizIDFromString(idStr)
+		if err != nil {
+			return nil, err
+		}
+		quizTitle, err := quiz.NewQuizTitle(title)
+		if err != nil {
+			return nil, err
+		}
+		var categoryID quiz.CategoryID
+		if categoryIDStr.Valid && categoryIDStr.String != "" {
+			categoryID, err = quiz.NewCategoryIDFromString(categoryIDStr.String)
+			if err != nil {
+				return nil, err
+			}
+		}
+		quizTimeLimit, err := quiz.NewTimeLimit(timeLimit)
+		if err != nil {
+			return nil, err
+		}
+		quizPassingScore, err := quiz.NewPassingScore(passingScore)
+		if err != nil {
+			return nil, err
+		}
+		desc := ""
+		if description.Valid {
+			desc = description.String
+		}
+
+		// Create summary object
+		summary := quiz.NewQuizSummary(
+			quizID,
+			quizTitle,
+			desc,
+			categoryID,
+			quizTimeLimit,
+			quizPassingScore,
+			createdAt,
+			questionCount,
+		)
+
+		summaries = append(summaries, summary)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating quiz summary rows: %w", err)
+	}
+
+	return summaries, nil
 }
 
 // Save stores a quiz with all its questions and answers in a transaction
@@ -155,6 +248,7 @@ type quizData struct {
 	id           quiz.QuizID
 	title        quiz.QuizTitle
 	description  string
+	categoryID   quiz.CategoryID
 	timeLimit    quiz.TimeLimit
 	passingScore quiz.PassingScore
 	createdAt    int64
@@ -164,7 +258,7 @@ type quizData struct {
 // loadQuiz loads a quiz from database (without questions)
 func (r *QuizRepository) loadQuiz(id quiz.QuizID) (*quizData, error) {
 	query := `
-		SELECT id, title, description, time_limit, passing_score, created_at, updated_at
+		SELECT id, title, description, category_id, time_limit, passing_score, created_at, updated_at
 		FROM quizzes
 		WHERE id = $1
 	`
@@ -178,16 +272,17 @@ func (r *QuizRepository) scanQuizRow(scanner interface {
 	Scan(dest ...interface{}) error
 }) (*quizData, error) {
 	var (
-		idStr           string
-		title           string
-		description     sql.NullString
-		timeLimit       int
-		passingScore    int
-		createdAt       int64
-		updatedAt       int64
+		idStr         string
+		title         string
+		description   sql.NullString
+		categoryIDStr sql.NullString
+		timeLimit     int
+		passingScore  int
+		createdAt     int64
+		updatedAt     int64
 	)
 
-	err := scanner.Scan(&idStr, &title, &description, &timeLimit, &passingScore, &createdAt, &updatedAt)
+	err := scanner.Scan(&idStr, &title, &description, &categoryIDStr, &timeLimit, &passingScore, &createdAt, &updatedAt)
 	if err == sql.ErrNoRows {
 		return nil, quiz.ErrQuizNotFound
 	}
@@ -204,6 +299,15 @@ func (r *QuizRepository) scanQuizRow(scanner interface {
 	quizTitle, err := quiz.NewQuizTitle(title)
 	if err != nil {
 		return nil, fmt.Errorf("invalid quiz title: %w", err)
+	}
+
+	// Category ID is nullable
+	var categoryID quiz.CategoryID
+	if categoryIDStr.Valid && categoryIDStr.String != "" {
+		categoryID, err = quiz.NewCategoryIDFromString(categoryIDStr.String)
+		if err != nil {
+			return nil, fmt.Errorf("invalid category ID: %w", err)
+		}
 	}
 
 	quizTimeLimit, err := quiz.NewTimeLimit(timeLimit)
@@ -225,6 +329,7 @@ func (r *QuizRepository) scanQuizRow(scanner interface {
 		id:           quizID,
 		title:        quizTitle,
 		description:  desc,
+		categoryID:   categoryID,
 		timeLimit:    quizTimeLimit,
 		passingScore: quizPassingScore,
 		createdAt:    createdAt,
@@ -366,21 +471,28 @@ func (r *QuizRepository) loadAnswers(questionID quiz.QuestionID) ([]quiz.Answer,
 // saveQuiz saves or updates a quiz
 func (r *QuizRepository) saveQuiz(tx *sql.Tx, q *quiz.Quiz) error {
 	query := `
-		INSERT INTO quizzes (id, title, description, time_limit, passing_score, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7)
+		INSERT INTO quizzes (id, title, description, category_id, time_limit, passing_score, created_at, updated_at)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (id) DO UPDATE SET
 			title = EXCLUDED.title,
 			description = EXCLUDED.description,
+			category_id = EXCLUDED.category_id,
 			time_limit = EXCLUDED.time_limit,
 			passing_score = EXCLUDED.passing_score,
 			updated_at = EXCLUDED.updated_at
 	`
+
+	var categoryIDStr interface{}
+	if !q.CategoryID().IsZero() {
+		categoryIDStr = q.CategoryID().String()
+	}
 
 	_, err := tx.Exec(
 		query,
 		q.ID().String(),
 		q.Title().String(),
 		q.Description(),
+		categoryIDStr,
 		q.TimeLimit().Seconds(),
 		q.PassingScore().Percentage(),
 		q.CreatedAt(),

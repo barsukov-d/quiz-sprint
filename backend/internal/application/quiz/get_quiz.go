@@ -50,14 +50,14 @@ func NewListQuizzesUseCase(quizRepo quiz.QuizRepository) *ListQuizzesUseCase {
 
 // Execute retrieves all quizzes
 func (uc *ListQuizzesUseCase) Execute(input ListQuizzesInput) (ListQuizzesOutput, error) {
-	// 1. Load all quizzes
-	quizzes, err := uc.quizRepo.FindAll()
+	// 1. Load all quiz summaries
+	summaries, err := uc.quizRepo.FindAllSummaries()
 	if err != nil {
 		return ListQuizzesOutput{}, err
 	}
 
 	// 2. Return DTOs
 	return ListQuizzesOutput{
-		Quizzes: ToQuizListDTO(quizzes),
+		Quizzes: ToQuizListDTOFromSummaries(summaries),
 	}, nil
 }
