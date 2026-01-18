@@ -233,6 +233,8 @@ func mapError(err error) error {
 		return fiber.NewError(fiber.StatusNotFound, "Question not found")
 	case domainQuiz.ErrAnswerNotFound:
 		return fiber.NewError(fiber.StatusNotFound, "Answer not found")
+	case domainQuiz.ErrCategoryNotFound:
+		return fiber.NewError(fiber.StatusNotFound, "Category not found")
 
 	// Bad Request errors (validation)
 	case domainQuiz.ErrInvalidQuizID,
@@ -241,7 +243,9 @@ func mapError(err error) error {
 		domainQuiz.ErrInvalidAnswerID,
 		domainQuiz.ErrInvalidTitle,
 		domainQuiz.ErrInvalidTimeLimit,
-		domainQuiz.ErrInvalidPassingScore:
+		domainQuiz.ErrInvalidPassingScore,
+		domainQuiz.ErrInvalidCategoryName,
+		domainQuiz.ErrCategoryNameTooLong:
 		return fiber.NewError(fiber.StatusBadRequest, err.Error())
 
 	case shared.ErrInvalidUserID:

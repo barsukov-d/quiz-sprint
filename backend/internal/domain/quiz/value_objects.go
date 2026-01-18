@@ -285,3 +285,24 @@ func (id CategoryID) Equals(other CategoryID) bool {
 func (id CategoryID) IsZero() bool {
 	return id.id.IsZero()
 }
+
+// CategoryName is a value object for category name
+type CategoryName struct {
+	value string
+}
+
+// NewCategoryName creates a new CategoryName value object after validation.
+func NewCategoryName(value string) (CategoryName, error) {
+	if value == "" {
+		return CategoryName{}, ErrInvalidCategoryName
+	}
+	if len(value) > 100 {
+		return CategoryName{}, ErrCategoryNameTooLong
+	}
+	return CategoryName{value: value}, nil
+}
+
+// String returns the primitive string value.
+func (n CategoryName) String() string {
+	return n.value
+}

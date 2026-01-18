@@ -6,26 +6,26 @@ package quiz
 
 // QuizDTO is a data transfer object for Quiz
 type QuizDTO struct {
-	ID             string        `json:"id"`
-	Title          string        `json:"title"`
-	Description    string        `json:"description"`
-	CategoryID     string        `json:"categoryId,omitempty"`
-	QuestionsCount int           `json:"questionsCount"`
-	TimeLimit      int           `json:"timeLimit"`
-	PassingScore   int           `json:"passingScore"`
-	CreatedAt      int64         `json:"createdAt"`
+	ID             string `json:"id"`
+	Title          string `json:"title"`
+	Description    string `json:"description"`
+	CategoryID     string `json:"categoryId,omitempty"`
+	QuestionsCount int    `json:"questionsCount"`
+	TimeLimit      int    `json:"timeLimit"`
+	PassingScore   int    `json:"passingScore"`
+	CreatedAt      int64  `json:"createdAt"`
 }
 
 // QuizDetailDTO is a detailed quiz DTO with questions
 type QuizDetailDTO struct {
-	ID             string        `json:"id"`
-	Title          string        `json:"title"`
-	Description    string        `json:"description"`
-	CategoryID     string        `json:"categoryId,omitempty"`
-	Questions      []QuestionDTO `json:"questions"`
-	TimeLimit      int           `json:"timeLimit"`
-	PassingScore   int           `json:"passingScore"`
-	CreatedAt      int64         `json:"createdAt"`
+	ID           string        `json:"id"`
+	Title        string        `json:"title"`
+	Description  string        `json:"description"`
+	CategoryID   string        `json:"categoryId,omitempty"`
+	Questions    []QuestionDTO `json:"questions"`
+	TimeLimit    int           `json:"timeLimit"`
+	PassingScore int           `json:"passingScore"`
+	CreatedAt    int64         `json:"createdAt"`
 }
 
 // QuestionDTO is a data transfer object for Question
@@ -66,6 +66,12 @@ type LeaderboardEntryDTO struct {
 	CompletedAt int64  `json:"completedAt"`
 }
 
+// CategoryDTO is a data transfer object for a Category
+type CategoryDTO struct {
+	ID   string `json:"id"`
+	Name string `json:"name"`
+}
+
 // ========================================
 // StartQuiz Use Case
 // ========================================
@@ -78,10 +84,10 @@ type StartQuizInput struct {
 
 // StartQuizOutput is the output DTO for StartQuiz use case
 type StartQuizOutput struct {
-	Session       SessionDTO    `json:"session"`
-	FirstQuestion QuestionDTO   `json:"firstQuestion"`
-	TotalQuestions int          `json:"totalQuestions"`
-	TimeLimit     int           `json:"timeLimit"`
+	Session        SessionDTO  `json:"session"`
+	FirstQuestion  QuestionDTO `json:"firstQuestion"`
+	TotalQuestions int         `json:"totalQuestions"`
+	TimeLimit      int         `json:"timeLimit"`
 }
 
 // ========================================
@@ -98,12 +104,12 @@ type SubmitAnswerInput struct {
 
 // SubmitAnswerOutput is the output DTO for SubmitAnswer use case
 type SubmitAnswerOutput struct {
-	IsCorrect       bool         `json:"isCorrect"`
-	CorrectAnswerID string       `json:"correctAnswerId"`
-	PointsEarned    int          `json:"pointsEarned"`
-	TotalScore      int          `json:"totalScore"`
-	IsQuizCompleted bool         `json:"isQuizCompleted"`
-	NextQuestion    *QuestionDTO `json:"nextQuestion,omitempty"`
+	IsCorrect       bool            `json:"isCorrect"`
+	CorrectAnswerID string          `json:"correctAnswerId"`
+	PointsEarned    int             `json:"pointsEarned"`
+	TotalScore      int             `json:"totalScore"`
+	IsQuizCompleted bool            `json:"isQuizCompleted"`
+	NextQuestion    *QuestionDTO    `json:"nextQuestion,omitempty"`
 	FinalResult     *FinalResultDTO `json:"finalResult,omitempty"`
 }
 
@@ -131,6 +137,20 @@ type GetLeaderboardInput struct {
 type GetLeaderboardOutput struct {
 	QuizID  string                `json:"quizId"`
 	Entries []LeaderboardEntryDTO `json:"entries"`
+}
+
+// ========================================
+// Category Use Cases
+// ========================================
+
+// CreateCategoryInput is the input DTO for creating a category
+type CreateCategoryInput struct {
+	Name string `json:"name"`
+}
+
+// CreateCategoryOutput is the output DTO for creating a category
+type CreateCategoryOutput struct {
+	Category CategoryDTO `json:"category"`
 }
 
 // ========================================

@@ -112,6 +112,23 @@ func ToLeaderboardEntriesDTO(entries []quiz.LeaderboardEntry) []LeaderboardEntry
 	return dtos
 }
 
+// ToCategoryDTO converts a Category aggregate to a DTO.
+func ToCategoryDTO(c *quiz.Category) CategoryDTO {
+	return CategoryDTO{
+		ID:   c.ID().String(),
+		Name: c.Name().String(),
+	}
+}
+
+// ToCategoryDTOs converts a slice of Category aggregates to DTOs.
+func ToCategoryDTOs(categories []*quiz.Category) []CategoryDTO {
+	dtos := make([]CategoryDTO, 0, len(categories))
+	for _, c := range categories {
+		dtos = append(dtos, ToCategoryDTO(c))
+	}
+	return dtos
+}
+
 // ToQuizListDTO converts a slice of Quiz aggregates to DTOs
 func ToQuizListDTO(quizzes []quiz.Quiz) []QuizDTO {
 	dtos := make([]QuizDTO, 0, len(quizzes))

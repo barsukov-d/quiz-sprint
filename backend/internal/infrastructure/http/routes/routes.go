@@ -44,6 +44,12 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		userRepo = postgres.NewUserRepository(db)
 	}
 
+	// Category repository: only available with PostgreSQL
+	var categoryRepo quiz.CategoryRepository
+	if db != nil {
+		categoryRepo = postgres.NewCategoryRepository(db)
+	}
+
 	// ========================================
 	// Infrastructure Layer: Event Bus
 	// ========================================
@@ -62,14 +68,24 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	submitAnswerUC := appQuiz.NewSubmitAnswerUseCase(quizRepo, sessionRepo, loggingEventBus)
 	getLeaderboardUC := appQuiz.NewGetLeaderboardUseCase(leaderboardRepo)
 
+	// Category use cases (only if database is available)
+	var (
+		listCategoriesUC *appQuiz.ListCategoriesUseCase
+		createCategoryUC *appQuiz.CreateCategoryUseCase
+	)
+	if categoryRepo != nil {
+		listCategoriesUC = appQuiz.NewListCategoriesUseCase(categoryRepo)
+		createCategoryUC = appQuiz.NewCreateCategoryUseCase(categoryRepo)
+	}
+
 	// User use cases (only if database is available)
 	var (
-		registerUserUC      *appUser.RegisterUserUseCase
-		getUserUC           *appUser.GetUserUseCase
-		updateUserProfileUC *appUser.UpdateUserProfileUseCase
+		registerUserUC       *appUser.RegisterUserUseCase
+		getUserUC            *appUser.GetUserUseCase
+		updateUserProfileUC  *appUser.UpdateUserProfileUseCase
 		updateUserLanguageUC *appUser.UpdateUserLanguageUseCase
-		listUsersUC         *appUser.ListUsersUseCase
-		getUserByUsernameUC *appUser.GetUserByTelegramUsernameUseCase
+		listUsersUC          *appUser.ListUsersUseCase
+		getUserByUsernameUC  *appUser.GetUserByTelegramUsernameUseCase
 	)
 
 	if userRepo != nil {
@@ -92,6 +108,12 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		submitAnswerUC,
 		getLeaderboardUC,
 	)
+
+	// Category handler (only if database is available)
+	var categoryHandler *handlers.CategoryHandler
+	if categoryRepo != nil {
+		categoryHandler = handlers.NewCategoryHandler(createCategoryUC, listCategoriesUC)
+	}
 
 	wsHub := handlers.NewWebSocketHub(leaderboardRepo)
 
@@ -126,6 +148,13 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	// Session routes
 	session := v1.Group("/quiz/session")
 	session.Post("/:sessionId/answer", quizHandler.SubmitAnswer)
+
+	// Category routes
+	if categoryHandler != nil {
+		categories := v1.Group("/categories")
+		categories.Get("/", categoryHandler.GetAllCategories)
+		categories.Post("/", categoryHandler.CreateCategory) // Maybe add auth later
+	}
 
 	// WebSocket routes
 	ws := app.Group("/ws")

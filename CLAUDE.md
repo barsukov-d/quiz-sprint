@@ -738,6 +738,20 @@ func mapUserError(err error) error {
   - ✅ SubmitAnswer - Submit answer and get feedback
   - ✅ GetLeaderboard - Get top scores
 
+#### Category Domain
+- **Category Aggregate** (`backend/internal/domain/quiz/category_aggregate.go`)
+  - ✅ Aggregate: `Category` with `ID` and `Name`.
+  - ✅ Value Objects: `CategoryID`, `CategoryName` with validation.
+- **Category Repository**
+  - ✅ Interface: `CategoryRepository` in `domain/quiz/repository.go`.
+  - ✅ Implementation: `PostgresCategoryRepository` with `Save`, `FindByID`, `FindAll`, `Delete`.
+- **Category Use Cases**
+  - ✅ `CreateCategoryUseCase` - Creates a new category.
+  - ✅ `ListCategoriesUseCase` - Retrieves all categories.
+- **API Endpoint**
+  - ✅ `GET /api/v1/categories` - Lists all categories.
+  - ✅ `POST /api/v1/categories` - Creates a new category.
+
 #### Frontend
 - **Composables** (`tma/src/composables/`)
   - ✅ `useAuth.ts` - Telegram authentication & user state management
@@ -760,12 +774,19 @@ func mapUserError(err error) error {
 ### ⚠️ In Progress / TODO
 
 #### Database
+- [x] Add `categories` table and link to `quizzes`. Foreign key is `ON DELETE SET NULL`. (See `migrations/003_add_categories.sql`)
 - ⚠️ Migrate `SessionRepository` from in-memory to PostgreSQL
 - ⚠️ Migrate `LeaderboardRepository` to PostgreSQL VIEW
+- [ ] Seed initial categories (e.g., "Programming", "History", "Movies").
 - ⚠️ Add database indexes for performance optimization
 - ⚠️ Quiz session timeout/cleanup mechanism
 
 #### Backend
+- [x] Implement `Category` aggregate and repository.
+- [x] Create `CreateCategory` and `ListCategories` use cases.
+- [x] Add `/api/v1/categories` endpoint (GET, POST).
+- [x] Update `Quiz`-related use cases to handle `category_id`.
+- [ ] Add authorization to category creation (e.g., admin-only).
 - ⚠️ Redis integration for caching
 - ⚠️ WebSocket real-time updates (infrastructure exists, needs testing)
 - ⚠️ Rate limiting middleware
@@ -782,6 +803,23 @@ func mapUserError(err error) error {
 ### 🔧 Recent Fixes (2026-01-18)
 
 #### Backend Fixes
+4. **`questionsCount` always 0 in Quiz List**
+   - **Issue:** The API endpoint `GET /api/v1/quiz` returned `questionsCount: 0` for all quizzes.
+   - **Reason:** For performance, the `QuizRepository.FindAll()` method intentionally did not load the associated questions for each quiz.
+   - **Solution:**
+     - A new read-model `QuizSummary` was introduced in the domain layer to represent the data needed for the quiz list.
+     - `QuizRepository` now has a `FindAllSummaries()` method that uses a `LEFT JOIN` with `COUNT()` to efficiently fetch quizzes with their question counts in a single query.
+     - The `ListQuizzesUseCase` was updated to use this new method.
+   - **Impact:** The bug is fixed while respecting DDD principles by not polluting the `Quiz` aggregate with concerns related to specific queries.
+5. **Implemented Category Feature (Backend)**
+   - **Feature:** Added support for quiz categories.
+   - **Changes:**
+     - Created `Category` aggregate and `CategoryName` value object.
+     - Implemented `CategoryRepository` for PostgreSQL.
+     - Added `CreateCategory` and `ListCategories` use cases.
+     - Exposed `GET /api/v1/categories` and `POST /api/v1/categories` endpoints.
+     - Added `categories` table and foreign key to `quizzes` table via `003_add_categories.sql` migration.
+
 1. **Telegram Auth Context Storage Bug**
    - **Issue:** Middleware stored init data as value, getter expected pointer → type assertion failed → nil
    - **Fix:** Changed `c.Locals("telegram_init_data", parsedData)` to `c.Locals("telegram_init_data", &parsedData)`

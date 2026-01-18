@@ -76,3 +76,11 @@ type LeaderboardRepository interface {
 	// GetUserRank retrieves a user's rank in a quiz leaderboard
 	GetUserRank(quizID QuizID, userID shared.UserID) (int, error)
 }
+
+// CategoryRepository defines the interface for category persistence
+type CategoryRepository interface {
+	FindByID(id CategoryID) (*Category, error)
+	FindAll() ([]*Category, error)
+	Save(category *Category) error
+	Delete(id CategoryID) error
+}
