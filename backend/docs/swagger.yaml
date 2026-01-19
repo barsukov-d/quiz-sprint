@@ -13,6 +13,37 @@ definitions:
     - position
     - text
     type: object
+  internal_infrastructure_http_handlers.CategoryDTO:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    required:
+    - id
+    - name
+    type: object
+  internal_infrastructure_http_handlers.CreateCategoryData:
+    properties:
+      category:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.CategoryDTO'
+    required:
+    - category
+    type: object
+  internal_infrastructure_http_handlers.CreateCategoryRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  internal_infrastructure_http_handlers.CreateCategoryResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.CreateCategoryData'
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.ErrorDetail:
     properties:
       code:
@@ -106,6 +137,15 @@ definitions:
     - userId
     - username
     type: object
+  internal_infrastructure_http_handlers.ListCategoriesResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.CategoryDTO'
+        type: array
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.ListQuizzesResponse:
     properties:
       data:
@@ -150,6 +190,8 @@ definitions:
     type: object
   internal_infrastructure_http_handlers.QuizDTO:
     properties:
+      categoryId:
+        type: string
       createdAt:
         type: integer
       description:
@@ -174,6 +216,8 @@ definitions:
     type: object
   internal_infrastructure_http_handlers.QuizDetailDTO:
     properties:
+      categoryId:
+        type: string
       createdAt:
         type: integer
       description:
@@ -377,11 +421,65 @@ info:
   title: Quiz Sprint API
   version: "1.0"
 paths:
+  /categories:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all available quiz categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of categories
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ListCategoriesResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: List all categories
+      tags:
+      - category
+    post:
+      consumes:
+      - application/json
+      description: Create a new quiz category
+      parameters:
+      - description: Category data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Category created
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.CreateCategoryResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Create a new category
+      tags:
+      - category
   /quiz:
     get:
       consumes:
       - application/json
-      description: Get a list of all available quizzes with basic information
+      description: Get a list of all available quizzes with basic information, optionally
+        filtered by category.
+      parameters:
+      - description: Category ID to filter quizzes by
+        in: query
+        name: categoryId
+        type: string
       produces:
       - application/json
       responses:
@@ -625,33 +723,7 @@ paths:
       summary: Update user profile
       tags:
       - user
-  /user/register:
-    post:
-      consumes:
-      - application/json
-      description: Register a new user from Telegram Mini App or update existing user
-        profile (idempotent). Requires valid Telegram init data in Authorization header.
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: User registered or updated
-          schema:
-            $ref: '#/definitions/internal_infrastructure_http_handlers.RegisterUserResponse'
-        "401":
-          description: Invalid or missing Telegram authorization
-          schema:
-            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
-        "500":
-          description: Internal server error
-          schema:
-            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
-      security:
-      - TelegramAuth: []
-      summary: Register or update user
-      tags:
-      - user
-  /user/username/{username}:
+  /user/by-username/{username}:
     get:
       consumes:
       - application/json
@@ -682,6 +754,32 @@ paths:
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Get user by Telegram username
+      tags:
+      - user
+  /user/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user from Telegram Mini App or update existing user
+        profile (idempotent). Requires valid Telegram init data in Authorization header.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User registered or updated
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.RegisterUserResponse'
+        "401":
+          description: Invalid or missing Telegram authorization
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      security:
+      - TelegramAuth: []
+      summary: Register or update user
       tags:
       - user
   /users:

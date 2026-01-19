@@ -293,8 +293,44 @@ AbandonQuizUseCase(sessionID) → (void)
 ```go
 ListQuizzesUseCase() → (quizzes[])
 GetQuizDetailsUseCase(quizID) → (quiz)
+GetQuizzesByCategoryUseCase(categoryID) → (quizzes[])
 CreateQuizUseCase(title, description, questions) → (quizID)
 ```
+
+---
+
+#### Aggregate: Category
+
+**Ответственность:**
+- Организация квизов по тематикам
+- Навигация и фильтрация контента
+- Подсчет квизов в категории
+
+**Value Objects:**
+- `CategoryID` - уникальный идентификатор (UUID)
+- `CategoryName` - название категории (макс 100 символов)
+- `CategorySlug` - URL-friendly идентификатор (lowercase, hyphenated)
+- `CategoryDescription` - описание категории (опциональное, макс 200 символов)
+- `CategoryIcon` - эмодзи или иконка для визуальной идентификации
+
+**Бизнес-правила:**
+1. Название категории должно быть уникальным (case-insensitive)
+2. Slug автогенерируется из названия: "General Knowledge" → "general-knowledge"
+3. Категория может содержать 0 или более квизов
+4. Удаление категории не удаляет квизы (category_id → NULL)
+
+**Use Cases:**
+```go
+ListCategoriesUseCase() → (categories[])
+GetCategoryUseCase(categoryID) → (category)
+CreateCategoryUseCase(name, description) → (categoryID)
+GetCategoryWithQuizCountUseCase(categoryID) → (category, quizCount)
+```
+
+**Связь с Quiz:**
+- Quiz → CategoryID (optional foreign key)
+- Квиз может принадлежать только одной категории
+- При удалении категории, квизы остаются (category_id = NULL)
 
 ---
 

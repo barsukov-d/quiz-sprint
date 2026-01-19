@@ -25,9 +25,82 @@ const docTemplate = `{
     "host": "{{.Host}}",
     "basePath": "{{.BasePath}}",
     "paths": {
+        "/categories": {
+            "get": {
+                "description": "Get a list of all available quiz categories",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "category"
+                ],
+                "summary": "List all categories",
+                "responses": {
+                    "200": {
+                        "description": "List of categories",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ListCategoriesResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "post": {
+                "description": "Create a new quiz category",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "category"
+                ],
+                "summary": "Create a new category",
+                "parameters": [
+                    {
+                        "description": "Category data",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.CreateCategoryRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Category created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.CreateCategoryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/quiz": {
             "get": {
-                "description": "Get a list of all available quizzes with basic information",
+                "description": "Get a list of all available quizzes with basic information, optionally filtered by category.",
                 "consumes": [
                     "application/json"
                 ],
@@ -38,6 +111,14 @@ const docTemplate = `{
                     "quiz"
                 ],
                 "summary": "List all quizzes",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID to filter quizzes by",
+                        "name": "categoryId",
+                        "in": "query"
+                    }
+                ],
                 "responses": {
                     "200": {
                         "description": "List of quizzes",
@@ -290,47 +371,7 @@ const docTemplate = `{
                 }
             }
         },
-        "/user/register": {
-            "post": {
-                "security": [
-                    {
-                        "TelegramAuth": []
-                    }
-                ],
-                "description": "Register a new user from Telegram Mini App or update existing user profile (idempotent). Requires valid Telegram init data in Authorization header.",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "user"
-                ],
-                "summary": "Register or update user",
-                "responses": {
-                    "200": {
-                        "description": "User registered or updated",
-                        "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RegisterUserResponse"
-                        }
-                    },
-                    "401": {
-                        "description": "Invalid or missing Telegram authorization",
-                        "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal server error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
-        "/user/username/{username}": {
+        "/user/by-username/{username}": {
             "get": {
                 "description": "Retrieve user profile by Telegram @username",
                 "consumes": [
@@ -367,6 +408,46 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/user/register": {
+            "post": {
+                "security": [
+                    {
+                        "TelegramAuth": []
+                    }
+                ],
+                "description": "Register a new user from Telegram Mini App or update existing user profile (idempotent). Requires valid Telegram init data in Authorization header.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Register or update user",
+                "responses": {
+                    "200": {
+                        "description": "User registered or updated",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RegisterUserResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Invalid or missing Telegram authorization",
                         "schema": {
                             "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
@@ -551,6 +632,54 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.CategoryDTO": {
+            "type": "object",
+            "required": [
+                "id",
+                "name"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.CreateCategoryData": {
+            "type": "object",
+            "required": [
+                "category"
+            ],
+            "properties": {
+                "category": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.CategoryDTO"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.CreateCategoryRequest": {
+            "type": "object",
+            "required": [
+                "name"
+            ],
+            "properties": {
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.CreateCategoryResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.CreateCategoryData"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.ErrorDetail": {
             "type": "object",
             "required": [
@@ -689,6 +818,20 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.ListCategoriesResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.CategoryDTO"
+                    }
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.ListQuizzesResponse": {
             "type": "object",
             "required": [
@@ -762,6 +905,9 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
+                "categoryId": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "integer"
                 },
@@ -796,6 +942,9 @@ const docTemplate = `{
                 "title"
             ],
             "properties": {
+                "categoryId": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "integer"
                 },

@@ -45,21 +45,28 @@ func NewQuizHandler(
 
 // GetAllQuizzes handles GET /api/v1/quiz
 // @Summary List all quizzes
-// @Description Get a list of all available quizzes with basic information
+// @Description Get a list of all available quizzes with basic information, optionally filtered by category.
 // @Tags quiz
 // @Accept json
 // @Produce json
+// @Param categoryId query string false "Category ID to filter quizzes by"
 // @Success 200 {object} ListQuizzesResponse "List of quizzes"
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /quiz [get]
 func (h *QuizHandler) GetAllQuizzes(c fiber.Ctx) error {
-	// 1. Execute use case
-	output, err := h.listQuizzesUC.Execute(appQuiz.ListQuizzesInput{})
+	// 1. Check for categoryId query param
+	categoryID := c.Query("categoryId")
+
+	// 2. Execute use case
+	input := appQuiz.ListQuizzesInput{
+		CategoryID: categoryID,
+	}
+	output, err := h.listQuizzesUC.Execute(input)
 	if err != nil {
 		return mapError(err)
 	}
 
-	// 2. Return response
+	// 3. Return response
 	return c.JSON(fiber.Map{
 		"data": output.Quizzes,
 	})

@@ -188,6 +188,98 @@ func (r *QuizRepository) FindAllSummaries() ([]*quiz.QuizSummary, error) {
 	return summaries, nil
 }
 
+// FindSummariesByCategory retrieves all quizzes for a given category and their question counts
+func (r *QuizRepository) FindSummariesByCategory(categoryID quiz.CategoryID) ([]*quiz.QuizSummary, error) {
+	query := `
+		SELECT
+			q.id, q.title, q.description, q.category_id, q.time_limit, q.passing_score, q.created_at,
+			COUNT(qu.id) as question_count
+		FROM quizzes q
+		LEFT JOIN questions qu ON q.id = qu.quiz_id
+		WHERE q.category_id = $1
+		GROUP BY q.id
+		ORDER BY q.created_at DESC
+	`
+
+	rows, err := r.db.Query(query, categoryID.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to query quiz summaries by category: %w", err)
+	}
+	defer rows.Close()
+
+	var summaries []*quiz.QuizSummary
+
+	for rows.Next() {
+		var (
+			idStr         string
+			title         string
+			description   sql.NullString
+			categoryIDStr sql.NullString
+			timeLimit     int
+			passingScore  int
+			createdAt     int64
+			questionCount int
+		)
+
+		err := rows.Scan(
+			&idStr, &title, &description, &categoryIDStr, &timeLimit,
+			&passingScore, &createdAt, &questionCount,
+		)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan quiz summary by category: %w", err)
+		}
+
+		// Reconstruct value objects from scanned data
+		quizID, err := quiz.NewQuizIDFromString(idStr)
+		if err != nil {
+			return nil, err
+		}
+		quizTitle, err := quiz.NewQuizTitle(title)
+		if err != nil {
+			return nil, err
+		}
+		var catID quiz.CategoryID
+		if categoryIDStr.Valid && categoryIDStr.String != "" {
+			catID, err = quiz.NewCategoryIDFromString(categoryIDStr.String)
+			if err != nil {
+				return nil, err
+			}
+		}
+		quizTimeLimit, err := quiz.NewTimeLimit(timeLimit)
+		if err != nil {
+			return nil, err
+		}
+		quizPassingScore, err := quiz.NewPassingScore(passingScore)
+		if err != nil {
+			return nil, err
+		}
+		desc := ""
+		if description.Valid {
+			desc = description.String
+		}
+
+		// Create summary object
+		summary := quiz.NewQuizSummary(
+			quizID,
+			quizTitle,
+			desc,
+			catID,
+			quizTimeLimit,
+			quizPassingScore,
+			createdAt,
+			questionCount,
+		)
+
+		summaries = append(summaries, summary)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating quiz summary rows by category: %w", err)
+	}
+
+	return summaries, nil
+}
+
 // Save stores a quiz with all its questions and answers in a transaction
 func (r *QuizRepository) Save(q *quiz.Quiz) error {
 	tx, err := r.db.Begin()

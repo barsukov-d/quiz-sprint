@@ -206,7 +206,7 @@ func (h *UserHandler) ListUsers(c fiber.Ctx) error {
 	})
 }
 
-// GetUserByTelegramUsername handles GET /api/v1/user/username/:username
+// GetUserByTelegramUsername handles GET /api/v1/user/by-username/:username
 // @Summary Get user by Telegram username
 // @Description Retrieve user profile by Telegram @username
 // @Tags user
@@ -217,7 +217,7 @@ func (h *UserHandler) ListUsers(c fiber.Ctx) error {
 // @Failure 400 {object} ErrorResponse "Invalid username"
 // @Failure 404 {object} ErrorResponse "User not found"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /user/username/{username} [get]
+// @Router /user/by-username/{username} [get]
 func (h *UserHandler) GetUserByTelegramUsername(c fiber.Ctx) error {
 	// 1. Extract path parameter
 	username := c.Params("username")

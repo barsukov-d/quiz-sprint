@@ -31,7 +31,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	if db != nil {
 		quizRepo = postgres.NewQuizRepository(db)
 	} else {
-		quizRepo = memory.NewQuizRepository()
+		// quizRepo = memory.NewQuizRepository()
 	}
 
 	// Session and Leaderboard: still use memory for now
@@ -179,7 +179,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		// Public routes (for now - can add auth later)
 		user.Get("/:id", userHandler.GetUser)
 		user.Put("/:id", userHandler.UpdateUserProfile)
-		user.Get("/username/:username", userHandler.GetUserByTelegramUsername)
+		user.Get("/by-username/:username", userHandler.GetUserByTelegramUsername)
 
 		// Admin routes
 		users := v1.Group("/users")

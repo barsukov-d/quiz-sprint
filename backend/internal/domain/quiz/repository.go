@@ -17,6 +17,9 @@ type QuizRepository interface {
 	// FindAllSummaries retrieves a list of quiz summaries (read model for list views)
 	FindAllSummaries() ([]*QuizSummary, error)
 
+	// FindSummariesByCategory retrieves a list of quiz summaries filtered by category
+	FindSummariesByCategory(categoryID CategoryID) ([]*QuizSummary, error)
+
 	// Save persists a quiz (create or update)
 	Save(quiz *Quiz) error
 

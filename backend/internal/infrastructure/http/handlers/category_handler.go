@@ -24,6 +24,16 @@ func NewCategoryHandler(
 }
 
 // CreateCategory handles POST /api/v1/categories
+// @Summary Create a new category
+// @Description Create a new quiz category
+// @Tags category
+// @Accept json
+// @Produce json
+// @Param request body handlers.CreateCategoryRequest true "Category data"
+// @Success 201 {object} handlers.CreateCategoryResponse "Category created"
+// @Failure 400 {object} handlers.ErrorResponse "Invalid request"
+// @Failure 500 {object} handlers.ErrorResponse "Internal server error"
+// @Router /categories [post]
 func (h *CategoryHandler) CreateCategory(c fiber.Ctx) error {
 	var req appQuiz.CreateCategoryInput
 	if err := c.Bind().Body(&req); err != nil {
@@ -42,6 +52,14 @@ func (h *CategoryHandler) CreateCategory(c fiber.Ctx) error {
 }
 
 // GetAllCategories handles GET /api/v1/categories
+// @Summary List all categories
+// @Description Get a list of all available quiz categories
+// @Tags category
+// @Accept json
+// @Produce json
+// @Success 200 {object} handlers.ListCategoriesResponse "List of categories"
+// @Failure 500 {object} handlers.ErrorResponse "Internal server error"
+// @Router /categories [get]
 func (h *CategoryHandler) GetAllCategories(c fiber.Ctx) error {
 	output, err := h.listCategoriesUC.Execute(appQuiz.ListCategoriesInput{})
 	if err != nil {

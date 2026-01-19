@@ -157,6 +157,46 @@ type GetLeaderboardResponse struct {
 
 // @name GetLeaderboardResponse
 
+// ========================================
+// Category Models
+// ========================================
+
+// CategoryDTO represents a quiz category
+type CategoryDTO struct {
+	ID   string `json:"id" validate:"required"`
+	Name string `json:"name" validate:"required"`
+}
+
+// @name CategoryDTO
+
+// ListCategoriesResponse wraps the category list response
+type ListCategoriesResponse struct {
+	Data []CategoryDTO `json:"data" validate:"required"`
+}
+
+// @name ListCategoriesResponse
+
+// CreateCategoryRequest represents the request body for creating a category
+type CreateCategoryRequest struct {
+	Name string `json:"name" validate:"required"`
+}
+
+// @name CreateCategoryRequest
+
+// CreateCategoryData contains created category data
+type CreateCategoryData struct {
+	Category CategoryDTO `json:"category" validate:"required"`
+}
+
+// @name CreateCategoryData
+
+// CreateCategoryResponse wraps the create category response
+type CreateCategoryResponse struct {
+	Data CreateCategoryData `json:"data" validate:"required"`
+}
+
+// @name CreateCategoryResponse
+
 // ErrorResponse is the standard error response format
 type ErrorResponse struct {
 	Error ErrorDetail `json:"error" validate:"required"`

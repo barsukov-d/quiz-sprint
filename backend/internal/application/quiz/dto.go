@@ -173,7 +173,7 @@ type GetQuizOutput struct {
 
 // ListQuizzesInput is the input DTO for ListQuizzes use case
 type ListQuizzesInput struct {
-	// Add pagination later: Offset, Limit
+	CategoryID string `json:"categoryId,omitempty"`
 }
 
 // ListQuizzesOutput is the output DTO for ListQuizzes use case
