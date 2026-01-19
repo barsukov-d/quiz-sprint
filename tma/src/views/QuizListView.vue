@@ -19,11 +19,9 @@ const goBackToCategories = () => {
 	router.push({ name: 'categories' })
 }
 
-// Начать квиз (пока просто заглушка)
-const startQuiz = (quizId: string) => {
-	console.log('Starting quiz:', quizId)
-	// TODO: Implement quiz start logic
-	// router.push({ name: 'quiz-details', params: { id: quizId } })
+// Перейти к деталям квиза
+const goToQuizDetails = (quizId: string) => {
+	router.push({ name: 'quiz-details', params: { id: quizId } })
 }
 </script>
 
@@ -87,7 +85,7 @@ const startQuiz = (quizId: string) => {
 				</div>
 
 				<template #footer>
-					<UButton block color="primary" @click="startQuiz(quiz.id)"> Начать квиз </UButton>
+					<UButton block color="primary" @click="goToQuizDetails(quiz.id)"> View Quiz </UButton>
 				</template>
 			</UCard>
 		</div>
