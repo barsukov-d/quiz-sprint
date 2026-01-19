@@ -32,9 +32,9 @@ BEGIN
     RETURNING id INTO q1_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q1_id, 'Expands an iterable into individual elements', TRUE, 1),
-    (q1_id, 'Creates a new variable', FALSE, 2),
-    (q1_id, 'Defines a function', FALSE, 3),
+    (q1_id, 'Creates a new variable', FALSE, 1),
+    (q1_id, 'Defines a function', FALSE, 2),
+    (q1_id, 'Expands an iterable into individual elements', TRUE, 3),
     (q1_id, 'Creates a loop', FALSE, 4);
 
     -- Question 2
@@ -54,10 +54,10 @@ BEGIN
     RETURNING id INTO q3_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q3_id, 'A function with access to its outer scope even after the outer function returns', TRUE, 1),
-    (q3_id, 'An async function', FALSE, 2),
-    (q3_id, 'A loop structure', FALSE, 3),
-    (q3_id, 'A class method', FALSE, 4);
+    (q3_id, 'An async function', FALSE, 1),
+    (q3_id, 'A loop structure', FALSE, 2),
+    (q3_id, 'A class method', FALSE, 3),
+    (q3_id, 'A function with access to its outer scope even after the outer function returns', TRUE, 4);
 
     -- Question 4
     INSERT INTO questions (id, quiz_id, text, points, position)
@@ -65,8 +65,8 @@ BEGIN
     RETURNING id INTO q4_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q4_id, 'const cannot be reassigned, let can be reassigned', TRUE, 1),
-    (q4_id, 'They are exactly the same', FALSE, 2),
+    (q4_id, 'They are exactly the same', FALSE, 1),
+    (q4_id, 'const cannot be reassigned, let can be reassigned', TRUE, 2),
     (q4_id, 'let is faster than const', FALSE, 3),
     (q4_id, 'const is deprecated', FALSE, 4);
 
@@ -76,9 +76,9 @@ BEGIN
     RETURNING id INTO q5_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q5_id, 'A new array with transformed elements', TRUE, 1),
-    (q5_id, 'A filtered array', FALSE, 2),
-    (q5_id, 'A sorted array', FALSE, 3),
+    (q5_id, 'A filtered array', FALSE, 1),
+    (q5_id, 'A sorted array', FALSE, 2),
+    (q5_id, 'A new array with transformed elements', TRUE, 3),
     (q5_id, 'A reversed array', FALSE, 4);
 END $$;
 
@@ -109,8 +109,8 @@ BEGIN
     RETURNING id INTO q1_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q1_id, 'A concise way to create lists', TRUE, 1),
-    (q1_id, 'A type of loop', FALSE, 2),
+    (q1_id, 'A type of loop', FALSE, 1),
+    (q1_id, 'A concise way to create lists', TRUE, 2),
     (q1_id, 'A function decorator', FALSE, 3),
     (q1_id, 'A class method', FALSE, 4);
 
@@ -119,10 +119,10 @@ BEGIN
     RETURNING id INTO q2_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q2_id, 'The instance of the class', TRUE, 1),
-    (q2_id, 'The class itself', FALSE, 2),
-    (q2_id, 'A global variable', FALSE, 3),
-    (q2_id, 'A function parameter', FALSE, 4);
+    (q2_id, 'The class itself', FALSE, 1),
+    (q2_id, 'A global variable', FALSE, 2),
+    (q2_id, 'A function parameter', FALSE, 3),
+    (q2_id, 'The instance of the class', TRUE, 4);
 
     INSERT INTO questions (id, quiz_id, text, points, position)
     VALUES (uuid_generate_v4(), quiz_id, 'What is the difference between a tuple and a list?', 10, 3)
@@ -139,9 +139,9 @@ BEGIN
     RETURNING id INTO q4_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q4_id, 'Ensures proper resource cleanup using context managers', TRUE, 1),
-    (q4_id, 'Creates a new variable', FALSE, 2),
-    (q4_id, 'Defines a function', FALSE, 3),
+    (q4_id, 'Creates a new variable', FALSE, 1),
+    (q4_id, 'Defines a function', FALSE, 2),
+    (q4_id, 'Ensures proper resource cleanup using context managers', TRUE, 3),
     (q4_id, 'Creates a loop', FALSE, 4);
 
     INSERT INTO questions (id, quiz_id, text, points, position)
@@ -149,8 +149,8 @@ BEGIN
     RETURNING id INTO q5_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q5_id, 'A function that modifies another function', TRUE, 1),
-    (q5_id, 'A type of variable', FALSE, 2),
+    (q5_id, 'A type of variable', FALSE, 1),
+    (q5_id, 'A function that modifies another function', TRUE, 2),
     (q5_id, 'A loop structure', FALSE, 3),
     (q5_id, 'A class attribute', FALSE, 4);
 END $$;
@@ -182,19 +182,19 @@ BEGIN
     RETURNING id INTO q1_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q1_id, 'An object at rest stays at rest unless acted upon by a force', TRUE, 1),
-    (q1_id, 'Force equals mass times acceleration', FALSE, 2),
-    (q1_id, 'Every action has an equal and opposite reaction', FALSE, 3),
-    (q1_id, 'Energy cannot be created or destroyed', FALSE, 4);
+    (q1_id, 'Force equals mass times acceleration', FALSE, 1),
+    (q1_id, 'Every action has an equal and opposite reaction', FALSE, 2),
+    (q1_id, 'Energy cannot be created or destroyed', FALSE, 3),
+    (q1_id, 'An object at rest stays at rest unless acted upon by a force', TRUE, 4);
 
     INSERT INTO questions (id, quiz_id, text, points, position)
     VALUES (uuid_generate_v4(), quiz_id, 'What is the speed of light in vacuum?', 10, 2)
     RETURNING id INTO q2_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q2_id, '299,792,458 meters per second', TRUE, 1),
-    (q2_id, '150,000,000 meters per second', FALSE, 2),
-    (q2_id, '500,000,000 meters per second', FALSE, 3),
+    (q2_id, '150,000,000 meters per second', FALSE, 1),
+    (q2_id, '500,000,000 meters per second', FALSE, 2),
+    (q2_id, '299,792,458 meters per second', TRUE, 3),
     (q2_id, '1,000,000 meters per second', FALSE, 4);
 
     INSERT INTO questions (id, quiz_id, text, points, position)
@@ -202,8 +202,8 @@ BEGIN
     RETURNING id INTO q3_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q3_id, 'Energy of motion', TRUE, 1),
-    (q3_id, 'Energy stored in position', FALSE, 2),
+    (q3_id, 'Energy stored in position', FALSE, 1),
+    (q3_id, 'Energy of motion', TRUE, 2),
     (q3_id, 'Heat energy', FALSE, 3),
     (q3_id, 'Chemical energy', FALSE, 4);
 
@@ -222,10 +222,10 @@ BEGIN
     RETURNING id INTO q5_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q5_id, 'F = ma (Force equals mass times acceleration)', TRUE, 1),
-    (q5_id, 'E = mc²', FALSE, 2),
-    (q5_id, 'P = mv', FALSE, 3),
-    (q5_id, 'W = Fd', FALSE, 4);
+    (q5_id, 'E = mc²', FALSE, 1),
+    (q5_id, 'P = mv', FALSE, 2),
+    (q5_id, 'W = Fd', FALSE, 3),
+    (q5_id, 'F = ma (Force equals mass times acceleration)', TRUE, 4);
 END $$;
 
 -- Quiz 4: World History (History Category)
@@ -265,8 +265,8 @@ BEGIN
     RETURNING id INTO q2_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q2_id, 'George Washington', TRUE, 1),
-    (q2_id, 'Thomas Jefferson', FALSE, 2),
+    (q2_id, 'Thomas Jefferson', FALSE, 1),
+    (q2_id, 'George Washington', TRUE, 2),
     (q2_id, 'Abraham Lincoln', FALSE, 3),
     (q2_id, 'John Adams', FALSE, 4);
 
@@ -275,19 +275,19 @@ BEGIN
     RETURNING id INTO q3_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q3_id, '1989', TRUE, 1),
-    (q3_id, '1991', FALSE, 2),
-    (q3_id, '1987', FALSE, 3),
-    (q3_id, '1990', FALSE, 4);
+    (q3_id, '1991', FALSE, 1),
+    (q3_id, '1987', FALSE, 2),
+    (q3_id, '1990', FALSE, 3),
+    (q3_id, '1989', TRUE, 4);
 
     INSERT INTO questions (id, quiz_id, text, points, position)
     VALUES (uuid_generate_v4(), quiz_id, 'What ancient civilization built the pyramids?', 10, 4)
     RETURNING id INTO q4_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q4_id, 'Ancient Egyptians', TRUE, 1),
-    (q4_id, 'Ancient Greeks', FALSE, 2),
-    (q4_id, 'Ancient Romans', FALSE, 3),
+    (q4_id, 'Ancient Greeks', FALSE, 1),
+    (q4_id, 'Ancient Romans', FALSE, 2),
+    (q4_id, 'Ancient Egyptians', TRUE, 3),
     (q4_id, 'Maya', FALSE, 4);
 
     INSERT INTO questions (id, quiz_id, text, points, position)
@@ -328,9 +328,9 @@ BEGIN
     RETURNING id INTO q1_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q1_id, 'Paris', TRUE, 1),
-    (q1_id, 'London', FALSE, 2),
-    (q1_id, 'Berlin', FALSE, 3),
+    (q1_id, 'London', FALSE, 1),
+    (q1_id, 'Berlin', FALSE, 2),
+    (q1_id, 'Paris', TRUE, 3),
     (q1_id, 'Madrid', FALSE, 4);
 
     INSERT INTO questions (id, quiz_id, text, points, position)
@@ -338,10 +338,10 @@ BEGIN
     RETURNING id INTO q2_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q2_id, 'Tokyo', TRUE, 1),
-    (q2_id, 'Seoul', FALSE, 2),
-    (q2_id, 'Beijing', FALSE, 3),
-    (q2_id, 'Bangkok', FALSE, 4);
+    (q2_id, 'Seoul', FALSE, 1),
+    (q2_id, 'Beijing', FALSE, 2),
+    (q2_id, 'Bangkok', FALSE, 3),
+    (q2_id, 'Tokyo', TRUE, 4);
 
     INSERT INTO questions (id, quiz_id, text, points, position)
     VALUES (uuid_generate_v4(), quiz_id, 'What is the capital of Australia?', 10, 3)
@@ -358,8 +358,8 @@ BEGIN
     RETURNING id INTO q4_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q4_id, 'India', TRUE, 1),
-    (q4_id, 'China', FALSE, 2),
+    (q4_id, 'China', FALSE, 1),
+    (q4_id, 'India', TRUE, 2),
     (q4_id, 'United States', FALSE, 3),
     (q4_id, 'Indonesia', FALSE, 4);
 
@@ -368,8 +368,8 @@ BEGIN
     RETURNING id INTO q5_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q5_id, 'Vatican City', TRUE, 1),
-    (q5_id, 'Monaco', FALSE, 2),
+    (q5_id, 'Monaco', FALSE, 1),
+    (q5_id, 'Vatican City', TRUE, 2),
     (q5_id, 'San Marino', FALSE, 3),
     (q5_id, 'Liechtenstein', FALSE, 4);
 END $$;
@@ -401,8 +401,8 @@ BEGIN
     RETURNING id INTO q1_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q1_id, 'Leonardo da Vinci', TRUE, 1),
-    (q1_id, 'Michelangelo', FALSE, 2),
+    (q1_id, 'Michelangelo', FALSE, 1),
+    (q1_id, 'Leonardo da Vinci', TRUE, 2),
     (q1_id, 'Raphael', FALSE, 3),
     (q1_id, 'Donatello', FALSE, 4);
 
@@ -411,9 +411,9 @@ BEGIN
     RETURNING id INTO q2_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q2_id, 'William Shakespeare', TRUE, 1),
-    (q2_id, 'Charles Dickens', FALSE, 2),
-    (q2_id, 'Jane Austen', FALSE, 3),
+    (q2_id, 'Charles Dickens', FALSE, 1),
+    (q2_id, 'Jane Austen', FALSE, 2),
+    (q2_id, 'William Shakespeare', TRUE, 3),
     (q2_id, 'Mark Twain', FALSE, 4);
 
     INSERT INTO questions (id, quiz_id, text, points, position)
@@ -421,10 +421,10 @@ BEGIN
     RETURNING id INTO q3_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q3_id, 'The Louvre', TRUE, 1),
-    (q3_id, 'The British Museum', FALSE, 2),
-    (q3_id, 'The Metropolitan Museum of Art', FALSE, 3),
-    (q3_id, 'The Hermitage', FALSE, 4);
+    (q3_id, 'The British Museum', FALSE, 1),
+    (q3_id, 'The Metropolitan Museum of Art', FALSE, 2),
+    (q3_id, 'The Hermitage', FALSE, 3),
+    (q3_id, 'The Louvre', TRUE, 4);
 
     INSERT INTO questions (id, quiz_id, text, points, position)
     VALUES (uuid_generate_v4(), quiz_id, 'Who composed the "Four Seasons"?', 10, 4)
@@ -441,10 +441,8 @@ BEGIN
     RETURNING id INTO q5_id;
 
     INSERT INTO answers (question_id, text, is_correct, position) VALUES
-    (q5_id, 'Vatican City', TRUE, 1),
-    (q5_id, 'Rome', FALSE, 2),
-    (q5_id, 'Florence', FALSE, 3),
+    (q5_id, 'Rome', FALSE, 1),
+    (q5_id, 'Florence', FALSE, 2),
+    (q5_id, 'Vatican City', TRUE, 3),
     (q5_id, 'Venice', FALSE, 4);
 END $$;
-
-RAISE NOTICE 'Successfully seeded 6 quizzes across all categories';
