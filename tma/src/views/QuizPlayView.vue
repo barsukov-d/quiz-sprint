@@ -34,6 +34,10 @@ const answerResult = ref<{
 // Error state
 const showConflictModal = ref(false)
 const errorMessage = ref<string | null>(null)
+const isResuming = ref(false)
+const isAbandoning = ref(false)
+const isSessionResumed = ref(false) // Track if session was successfully resumed
+const isInitializing = ref(true) // Track initial load
 
 // Mutations для API
 const { mutateAsync: startQuiz, isPending: isStarting } = usePostQuizIdStart()
@@ -44,27 +48,50 @@ const { mutateAsync: abandonSession } = useDeleteQuizSessionSessionid()
 const handleResumeSession = async () => {
 	if (!currentUser.value) return
 
+	// Close modal first, show loading screen
+	showConflictModal.value = false
+	isResuming.value = true
+	errorMessage.value = null
+
 	try {
 		const response = await axios.get(
 			`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value.id}`
 		)
 
 		if (response.data?.data) {
+			console.log('Resume session data:', response.data.data)
+
 			session.value = response.data.data.session
 			currentQuestion.value = response.data.data.currentQuestion
 			totalQuestions.value = response.data.data.totalQuestions
 			currentQuestionIndex.value = response.data.data.session.currentQuestion + 1
-			showConflictModal.value = false
+			isSessionResumed.value = true // Mark as successfully resumed
+
+			console.log('Session resumed:', {
+				sessionId: session.value?.id,
+				questionIndex: currentQuestionIndex.value,
+				hasQuestion: !!currentQuestion.value
+			})
+		} else {
+			throw new Error('Invalid response data')
 		}
 	} catch (error) {
 		console.error('Failed to resume session:', error)
 		errorMessage.value = 'Failed to resume session. Please try again.'
+		isSessionResumed.value = false
+		// Show modal again on error
+		showConflictModal.value = true
+	} finally {
+		isResuming.value = false
 	}
 }
 
 // Handle abandoning session and starting fresh
 const handleStartFresh = async () => {
 	if (!currentUser.value || !session.value) return
+
+	isAbandoning.value = true
+	errorMessage.value = null
 
 	try {
 		// Delete the existing session
@@ -73,21 +100,71 @@ const handleStartFresh = async () => {
 			data: { userId: currentUser.value.id }
 		})
 
-		// Start a new quiz
-		await attemptStartQuiz()
+		// Reset session resumed flag
+		isSessionResumed.value = false
+
+		// Close modal first
 		showConflictModal.value = false
+
+		// Clear old session data
+		session.value = null
+		currentQuestion.value = null
+
+		// Start a new quiz (this will show loading state)
+		await startNewQuiz()
 	} catch (error) {
 		console.error('Failed to abandon session:', error)
 		errorMessage.value = 'Failed to start fresh. Please try again.'
+		showConflictModal.value = true
+	} finally {
+		isAbandoning.value = false
 	}
 }
 
-// Attempt to start quiz
-const attemptStartQuiz = async () => {
+// Check for existing session first, then start or resume
+const initializeQuiz = async () => {
 	if (!currentUser.value) {
 		console.error('User not authenticated')
+		isInitializing.value = false
 		return
 	}
+
+	isInitializing.value = true
+	showConflictModal.value = false // Explicitly hide modal during init
+
+	try {
+		// First, check if there's an active session
+		const activeSessionResponse = await axios.get(
+			`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value.id}`
+		)
+
+		if (activeSessionResponse.data?.data) {
+			// Active session exists - show modal
+			console.log('Active session found, showing modal')
+			session.value = activeSessionResponse.data.data.session
+			isInitializing.value = false
+			// Show modal AFTER initialization is complete
+			showConflictModal.value = true
+		}
+	} catch (error) {
+		// No active session (404) - start a new one
+		if (axios.isAxiosError(error) && error.response?.status === 404) {
+			console.log('No active session, starting new quiz')
+			showConflictModal.value = false // Ensure modal stays hidden
+			await startNewQuiz()
+			isInitializing.value = false
+		} else {
+			console.error('Error checking for active session:', error)
+			errorMessage.value = 'Failed to initialize quiz. Please try again.'
+			showConflictModal.value = false
+			isInitializing.value = false
+		}
+	}
+}
+
+// Start a completely new quiz
+const startNewQuiz = async () => {
+	if (!currentUser.value) return
 
 	try {
 		const result = await startQuiz({
@@ -102,34 +179,17 @@ const attemptStartQuiz = async () => {
 			currentQuestion.value = result.data.firstQuestion
 			totalQuestions.value = result.data.totalQuestions
 			currentQuestionIndex.value = 1
+			isSessionResumed.value = false
 		}
 	} catch (error) {
-		// Check if it's a 409 conflict error
-		if (axios.isAxiosError(error) && error.response?.status === 409) {
-			// User has an active session, show modal
-			showConflictModal.value = true
-
-			// Pre-fetch the active session so we have the session ID for abandoning
-			try {
-				const response = await axios.get(
-					`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value!.id}`
-				)
-				if (response.data?.data) {
-					session.value = response.data.data.session
-				}
-			} catch (fetchError) {
-				console.error('Failed to fetch active session:', fetchError)
-			}
-		} else {
-			console.error('Failed to start quiz:', error)
-			errorMessage.value = 'Failed to start quiz. Please try again.'
-		}
+		console.error('Failed to start quiz:', error)
+		errorMessage.value = 'Failed to start quiz. Please try again.'
 	}
 }
 
 // Начать квиз при монтировании
 onMounted(async () => {
-	await attemptStartQuiz()
+	await initializeQuiz()
 })
 
 // Progress percentage
@@ -222,9 +282,11 @@ const getAnswerButtonClass = (answerId: string) => {
 <template>
 	<div class="container mx-auto p-4 pt-20">
 		<!-- Loading -->
-		<div v-if="isStarting" class="flex justify-center items-center py-12">
+		<div v-if="isInitializing || isStarting || isResuming" class="flex justify-center items-center py-12">
 			<UProgress animation="carousel" />
-			<span class="ml-4">Starting quiz...</span>
+			<span class="ml-4">
+				{{ isResuming ? 'Resuming session...' : isInitializing ? 'Loading quiz...' : 'Starting quiz...' }}
+			</span>
 		</div>
 
 		<!-- Quiz Interface -->
@@ -318,7 +380,12 @@ const getAnswerButtonClass = (answerId: string) => {
 		</div>
 
 		<!-- Active Session Conflict Modal -->
-		<UModal v-model="showConflictModal" :prevent-close="true">
+		<!-- Only show when explicitly requested and not during initialization -->
+		<UModal
+			v-if="showConflictModal && !isInitializing && (!session || !currentQuestion)"
+			v-model="showConflictModal"
+			:prevent-close="isAbandoning"
+		>
 			<UCard>
 				<template #header>
 					<h3 class="text-xl font-bold">Active Quiz Session Found</h3>
@@ -330,12 +397,28 @@ const getAnswerButtonClass = (answerId: string) => {
 						or start fresh?
 					</p>
 
+					<!-- Error message -->
+					<UAlert v-if="errorMessage" color="red" :title="errorMessage" />
+
 					<div class="flex flex-col gap-3">
-						<UButton size="lg" color="primary" block @click="handleResumeSession">
+						<UButton
+							size="lg"
+							color="primary"
+							block
+							:disabled="isAbandoning"
+							@click="handleResumeSession"
+						>
 							Continue Session
 						</UButton>
-						<UButton size="lg" color="gray" variant="outline" block @click="handleStartFresh">
-							Start Fresh
+						<UButton
+							size="lg"
+							color="gray"
+							variant="outline"
+							block
+							:loading="isAbandoning"
+							@click="handleStartFresh"
+						>
+							{{ isAbandoning ? 'Starting Fresh...' : 'Start Fresh' }}
 						</UButton>
 					</div>
 				</div>
