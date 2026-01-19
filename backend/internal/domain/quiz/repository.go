@@ -37,6 +37,9 @@ type SessionRepository interface {
 
 	// Save persists a session (create or update)
 	Save(session *QuizSession) error
+
+	// Delete removes a session by ID
+	Delete(id SessionID) error
 }
 
 // LeaderboardEntry represents a leaderboard entry

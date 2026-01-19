@@ -135,6 +135,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/quiz/session/{sessionId}": {
+            "delete": {
+                "description": "Delete an active quiz session, allowing the user to start fresh",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "quiz"
+                ],
+                "summary": "Abandon a quiz session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User ID for authorization",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AbandonSessionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "204": {
+                        "description": "Session abandoned successfully"
+                    },
+                    "400": {
+                        "description": "Invalid session ID",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - session belongs to another user",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/quiz/session/{sessionId}/answer": {
             "post": {
                 "description": "Submit an answer for a question in an active quiz session",
@@ -237,6 +299,65 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Quiz not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/quiz/{id}/active-session": {
+            "get": {
+                "description": "Retrieve the active quiz session for the current user and quiz",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "quiz"
+                ],
+                "summary": "Get active quiz session",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Quiz ID",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "User ID for authorization",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetActiveSessionRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Active session with current question",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetActiveSessionResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid quiz or user ID",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "No active session found",
                         "schema": {
                             "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
@@ -613,6 +734,17 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "internal_infrastructure_http_handlers.AbandonSessionRequest": {
+            "type": "object",
+            "required": [
+                "userId"
+            ],
+            "properties": {
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.AnswerDTO": {
             "type": "object",
             "required": [
@@ -734,6 +866,48 @@ const docTemplate = `{
                 },
                 "totalScore": {
                     "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetActiveSessionData": {
+            "type": "object",
+            "required": [
+                "currentQuestion",
+                "session",
+                "timeLimit",
+                "totalQuestions"
+            ],
+            "properties": {
+                "currentQuestion": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
+                },
+                "session": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.SessionDTO"
+                },
+                "timeLimit": {
+                    "type": "integer"
+                },
+                "totalQuestions": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetActiveSessionRequest": {
+            "type": "object",
+            "required": [
+                "userId"
+            ],
+            "properties": {
+                "userId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetActiveSessionResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.GetActiveSessionData"
                 }
             }
         },

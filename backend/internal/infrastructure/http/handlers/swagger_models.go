@@ -228,6 +228,36 @@ type SubmitAnswerRequest struct {
 	UserID     string `json:"userId" validate:"required"`
 }
 
+// GetActiveSessionRequest is the HTTP request for getting an active session
+// UserID is passed as a query parameter
+type GetActiveSessionRequest struct {
+	UserID string `json:"userId" validate:"required"`
+}
+
+// GetActiveSessionResponse wraps the active session response
+type GetActiveSessionResponse struct {
+	Data GetActiveSessionData `json:"data"`
+}
+
+// @name GetActiveSessionResponse
+
+// GetActiveSessionData contains the active session details
+type GetActiveSessionData struct {
+	Session        SessionDTO  `json:"session" validate:"required"`
+	CurrentQuestion QuestionDTO `json:"currentQuestion" validate:"required"`
+	TotalQuestions int         `json:"totalQuestions" validate:"required"`
+	TimeLimit      int         `json:"timeLimit" validate:"required"`
+}
+
+// @name GetActiveSessionData
+
+// AbandonSessionRequest is the HTTP request body for abandoning a session
+type AbandonSessionRequest struct {
+	UserID string `json:"userId" validate:"required"`
+}
+
+// @name AbandonSessionRequest
+
 // ========================================
 // User Models
 // ========================================

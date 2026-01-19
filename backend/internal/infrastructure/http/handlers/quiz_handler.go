@@ -11,12 +11,14 @@ import (
 // QuizHandler handles HTTP requests for quizzes
 // NOTE: This is a THIN adapter - no business logic here!
 type QuizHandler struct {
-	listQuizzesUC    *appQuiz.ListQuizzesUseCase
-	getQuizUC        *appQuiz.GetQuizUseCase
-	getQuizDetailsUC *appQuiz.GetQuizDetailsUseCase
-	startQuizUC      *appQuiz.StartQuizUseCase
-	submitAnswerUC   *appQuiz.SubmitAnswerUseCase
-	getLeaderboardUC *appQuiz.GetLeaderboardUseCase
+	listQuizzesUC       *appQuiz.ListQuizzesUseCase
+	getQuizUC           *appQuiz.GetQuizUseCase
+	getQuizDetailsUC    *appQuiz.GetQuizDetailsUseCase
+	startQuizUC         *appQuiz.StartQuizUseCase
+	submitAnswerUC      *appQuiz.SubmitAnswerUseCase
+	getLeaderboardUC    *appQuiz.GetLeaderboardUseCase
+	getActiveSessionUC  *appQuiz.GetActiveSessionUseCase
+	abandonSessionUC    *appQuiz.AbandonSessionUseCase
 }
 
 // NewQuizHandler creates a new QuizHandler
@@ -27,14 +29,18 @@ func NewQuizHandler(
 	startQuizUC *appQuiz.StartQuizUseCase,
 	submitAnswerUC *appQuiz.SubmitAnswerUseCase,
 	getLeaderboardUC *appQuiz.GetLeaderboardUseCase,
+	getActiveSessionUC *appQuiz.GetActiveSessionUseCase,
+	abandonSessionUC *appQuiz.AbandonSessionUseCase,
 ) *QuizHandler {
 	return &QuizHandler{
-		listQuizzesUC:    listQuizzesUC,
-		getQuizUC:        getQuizUC,
-		getQuizDetailsUC: getQuizDetailsUC,
-		startQuizUC:      startQuizUC,
-		submitAnswerUC:   submitAnswerUC,
-		getLeaderboardUC: getLeaderboardUC,
+		listQuizzesUC:      listQuizzesUC,
+		getQuizUC:          getQuizUC,
+		getQuizDetailsUC:   getQuizDetailsUC,
+		startQuizUC:        startQuizUC,
+		submitAnswerUC:     submitAnswerUC,
+		getLeaderboardUC:   getLeaderboardUC,
+		getActiveSessionUC: getActiveSessionUC,
+		abandonSessionUC:   abandonSessionUC,
 	}
 }
 
@@ -191,6 +197,80 @@ func (h *QuizHandler) SubmitAnswer(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{
 		"data": output,
 	})
+}
+
+// GetActiveSession handles GET /api/v1/quiz/:id/active-session
+// @Summary Get active quiz session
+// @Description Retrieve the active quiz session for the current user and quiz
+// @Tags quiz
+// @Accept json
+// @Produce json
+// @Param id path string true "Quiz ID"
+// @Param request body GetActiveSessionRequest true "User ID for authorization"
+// @Success 200 {object} GetActiveSessionResponse "Active session with current question"
+// @Failure 400 {object} ErrorResponse "Invalid quiz or user ID"
+// @Failure 404 {object} ErrorResponse "No active session found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /quiz/{id}/active-session [get]
+func (h *QuizHandler) GetActiveSession(c fiber.Ctx) error {
+	// 1. Parse query parameter
+	userID := c.Query("userId")
+	if userID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "userId query parameter is required")
+	}
+
+	// 2. Execute use case
+	output, err := h.getActiveSessionUC.Execute(appQuiz.GetActiveSessionInput{
+		QuizID: c.Params("id"),
+		UserID: userID,
+	})
+	if err != nil {
+		return mapError(err)
+	}
+
+	// 3. Return response
+	return c.JSON(fiber.Map{
+		"data": output,
+	})
+}
+
+// AbandonSession handles DELETE /api/v1/quiz/session/:sessionId
+// @Summary Abandon a quiz session
+// @Description Delete an active quiz session, allowing the user to start fresh
+// @Tags quiz
+// @Accept json
+// @Produce json
+// @Param sessionId path string true "Session ID"
+// @Param request body AbandonSessionRequest true "User ID for authorization"
+// @Success 204 "Session abandoned successfully"
+// @Failure 400 {object} ErrorResponse "Invalid session ID"
+// @Failure 401 {object} ErrorResponse "Unauthorized - session belongs to another user"
+// @Failure 404 {object} ErrorResponse "Session not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /quiz/session/{sessionId} [delete]
+func (h *QuizHandler) AbandonSession(c fiber.Ctx) error {
+	// 1. Parse request body
+	var req AbandonSessionRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	// 2. Validate required fields
+	if req.UserID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "userId is required")
+	}
+
+	// 3. Execute use case
+	err := h.abandonSessionUC.Execute(appQuiz.AbandonSessionInput{
+		SessionID: c.Params("sessionId"),
+		UserID:    req.UserID,
+	})
+	if err != nil {
+		return mapError(err)
+	}
+
+	// 4. Return no content (204)
+	return c.SendStatus(fiber.StatusNoContent)
 }
 
 // GetLeaderboard handles GET /api/v1/quiz/:id/leaderboard

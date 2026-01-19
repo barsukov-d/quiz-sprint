@@ -53,9 +53,11 @@
 ### Альтернативные флоу
 
 ```
-• Пользователь закрывает TMA во время квиза
-  → Сессия сохраняется как "Abandoned"
-  → При возврате: продолжить или начать заново?
+• ✅ Пользователь закрывает TMA во время квиза [РЕАЛИЗОВАНО]
+  → Сессия сохраняется как активная
+  → При возврате: показать modal с выбором "Continue" или "Start Fresh"
+  → Continue: восстановить прогресс (вопрос, счет, позицию)
+  → Start Fresh: удалить старую сессию, начать новую
 
 • Пользователь исчерпывает время
   → Автоматическое завершение
@@ -878,15 +880,33 @@ Client получает update
 
 **Проблема:** Незавершенная сессия
 
-**Решение:**
+**Решение:** ✅ **РЕАЛИЗОВАНО (2026-01-19)**
 ```
 При возврате в TMA:
-  1. Проверить наличие активной сессии (GET /quiz/session/:id)
-  2. Если есть active session:
-     - Показать modal: "You have unfinished quiz. Continue or start over?"
-     - [Continue] → восстановить состояние (currentQuestion, score, timeLeft)
-     - [Start Over] → abandon текущую сессию, создать новую
-  3. Если нет active session → обычный флоу
+  1. Попытка начать квиз → backend возвращает 409 Conflict
+  2. Frontend обнаруживает ошибку и показывает modal с выбором
+  3. Если есть active session:
+     ┌─────────────────────────────────────────────────┐
+     │ Active Quiz Session Found                       │
+     │                                                 │
+     │ You already have an active quiz session.        │
+     │ Would you like to continue where you left       │
+     │ off or start fresh?                             │
+     │                                                 │
+     │  [Continue Session]    [Start Fresh]            │
+     └─────────────────────────────────────────────────┘
+
+     - [Continue Session] → GET /api/v1/quiz/:id/active-session
+       → восстановить состояние (currentQuestion, score, position)
+
+     - [Start Fresh] → DELETE /api/v1/quiz/session/:sessionId
+       → создать новую сессию
+
+  4. Если нет active session → обычный флоу
+
+**Реализованные API:**
+- GET /api/v1/quiz/:id/active-session?userId=xxx
+- DELETE /api/v1/quiz/session/:sessionId
 ```
 
 ### 2. Истекло время

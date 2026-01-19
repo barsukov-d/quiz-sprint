@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { ref, computed, onMounted } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
-import { usePostQuizIdStart, usePostQuizSessionSessionidAnswer } from '@/api'
+import {
+	usePostQuizIdStart,
+	usePostQuizSessionSessionidAnswer,
+	useDeleteQuizSessionSessionid
+} from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import type {
 	InternalInfrastructureHttpHandlersQuestionDTO as QuestionDTO,
 	InternalInfrastructureHttpHandlersSessionDTO as SessionDTO
 } from '@/api/generated/types/internalInfrastructureHttpHandlers'
+import axios from 'axios'
 
 const route = useRoute()
 const router = useRouter()
@@ -26,12 +31,59 @@ const answerResult = ref<{
 	correctAnswerId?: string
 } | null>(null)
 
+// Error state
+const showConflictModal = ref(false)
+const errorMessage = ref<string | null>(null)
+
 // Mutations для API
 const { mutateAsync: startQuiz, isPending: isStarting } = usePostQuizIdStart()
 const { mutateAsync: submitAnswer, isPending: isSubmitting } = usePostQuizSessionSessionidAnswer()
+const { mutateAsync: abandonSession } = useDeleteQuizSessionSessionid()
 
-// Начать квиз при монтировании
-onMounted(async () => {
+// Handle resuming existing session
+const handleResumeSession = async () => {
+	if (!currentUser.value) return
+
+	try {
+		const response = await axios.get(
+			`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value.id}`
+		)
+
+		if (response.data?.data) {
+			session.value = response.data.data.session
+			currentQuestion.value = response.data.data.currentQuestion
+			totalQuestions.value = response.data.data.totalQuestions
+			currentQuestionIndex.value = response.data.data.session.currentQuestion + 1
+			showConflictModal.value = false
+		}
+	} catch (error) {
+		console.error('Failed to resume session:', error)
+		errorMessage.value = 'Failed to resume session. Please try again.'
+	}
+}
+
+// Handle abandoning session and starting fresh
+const handleStartFresh = async () => {
+	if (!currentUser.value || !session.value) return
+
+	try {
+		// Delete the existing session
+		await abandonSession({
+			sessionId: session.value.id,
+			data: { userId: currentUser.value.id }
+		})
+
+		// Start a new quiz
+		await attemptStartQuiz()
+		showConflictModal.value = false
+	} catch (error) {
+		console.error('Failed to abandon session:', error)
+		errorMessage.value = 'Failed to start fresh. Please try again.'
+	}
+}
+
+// Attempt to start quiz
+const attemptStartQuiz = async () => {
 	if (!currentUser.value) {
 		console.error('User not authenticated')
 		return
@@ -52,8 +104,32 @@ onMounted(async () => {
 			currentQuestionIndex.value = 1
 		}
 	} catch (error) {
-		console.error('Failed to start quiz:', error)
+		// Check if it's a 409 conflict error
+		if (axios.isAxiosError(error) && error.response?.status === 409) {
+			// User has an active session, show modal
+			showConflictModal.value = true
+
+			// Pre-fetch the active session so we have the session ID for abandoning
+			try {
+				const response = await axios.get(
+					`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value!.id}`
+				)
+				if (response.data?.data) {
+					session.value = response.data.data.session
+				}
+			} catch (fetchError) {
+				console.error('Failed to fetch active session:', fetchError)
+			}
+		} else {
+			console.error('Failed to start quiz:', error)
+			errorMessage.value = 'Failed to start quiz. Please try again.'
+		}
 	}
+}
+
+// Начать квиз при монтировании
+onMounted(async () => {
+	await attemptStartQuiz()
 })
 
 // Progress percentage
@@ -233,9 +309,38 @@ const getAnswerButtonClass = (answerId: string) => {
 		</div>
 
 		<!-- Error state -->
-		<div v-else class="text-center py-12">
-			<UAlert color="red" title="Failed to load quiz" description="Please try again" />
+		<div v-else-if="!showConflictModal" class="text-center py-12">
+			<UAlert
+				color="red"
+				title="Failed to load quiz"
+				:description="errorMessage || 'Please try again'"
+			/>
 		</div>
+
+		<!-- Active Session Conflict Modal -->
+		<UModal v-model="showConflictModal" :prevent-close="true">
+			<UCard>
+				<template #header>
+					<h3 class="text-xl font-bold">Active Quiz Session Found</h3>
+				</template>
+
+				<div class="space-y-4">
+					<p class="text-gray-700">
+						You already have an active quiz session. Would you like to continue where you left off
+						or start fresh?
+					</p>
+
+					<div class="flex flex-col gap-3">
+						<UButton size="lg" color="primary" block @click="handleResumeSession">
+							Continue Session
+						</UButton>
+						<UButton size="lg" color="gray" variant="outline" block @click="handleStartFresh">
+							Start Fresh
+						</UButton>
+					</div>
+				</div>
+			</UCard>
+		</UModal>
 	</div>
 </template>
 

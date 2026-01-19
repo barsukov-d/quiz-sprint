@@ -147,6 +147,19 @@ func (r *SessionRepository) Save(session *quiz.QuizSession) error {
 	return nil
 }
 
+// Delete removes a session by ID
+func (r *SessionRepository) Delete(id quiz.SessionID) error {
+	r.mu.Lock()
+	defer r.mu.Unlock()
+
+	if _, exists := r.sessions[id.String()]; !exists {
+		return quiz.ErrSessionNotFound
+	}
+
+	delete(r.sessions, id.String())
+	return nil
+}
+
 // LeaderboardRepository is an in-memory implementation of quiz.LeaderboardRepository
 type LeaderboardRepository struct {
 	sessionRepo *SessionRepository

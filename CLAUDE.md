@@ -507,7 +507,9 @@ docker compose up -d
 - `GET /api/v1/quiz` - List all quizzes
 - `GET /api/v1/quiz/:id` - Get quiz details (with questions & top scores)
 - `POST /api/v1/quiz/:id/start` - Start quiz session
+- `GET /api/v1/quiz/:id/active-session` - Get active session for user (query param: userId)
 - `POST /api/v1/quiz/session/:sessionId/answer` - Submit answer
+- `DELETE /api/v1/quiz/session/:sessionId` - Abandon/delete a session
 - `GET /api/v1/quiz/:id/leaderboard` - Get leaderboard
 
 **User Endpoints:**
@@ -735,6 +737,8 @@ func mapUserError(err error) error {
 
 - **Quiz Use Cases** (`backend/internal/application/quiz/`)
   - ✅ StartQuiz - Create quiz session
+  - ✅ GetActiveSession - Retrieve active session for user/quiz
+  - ✅ AbandonSession - Delete session (with authorization)
   - ✅ SubmitAnswer - Submit answer and get feedback
   - ✅ GetLeaderboard - Get top scores
 
@@ -758,6 +762,12 @@ func mapUserError(err error) error {
   - ✅ Type-safe with custom `ParsedInitData` interface
   - ✅ Handles both SDK and hash-based init data extraction
   - ✅ Base64 encoding for Authorization header
+
+- **Quiz Session Management** (`tma/src/views/QuizPlayView.vue`)
+  - ✅ 409 Conflict detection when starting quiz with active session
+  - ✅ User-friendly modal with "Continue Session" or "Start Fresh" options
+  - ✅ Resume from where user left off (preserves progress, score, question index)
+  - ✅ Abandon session with authorization check
 
 - **API Integration**
   - ✅ Automatic type generation from Swagger
@@ -794,16 +804,59 @@ func mapUserError(err error) error {
 - ⚠️ File upload support for quiz images
 
 #### Frontend
-- ⚠️ Quiz playing UI components
+- ✅ Quiz playing UI components (with session management)
 - ⚠️ Leaderboard display with real-time updates
 - ⚠️ User profile page
 - ⚠️ Quiz results/statistics page
 - ⚠️ Telegram theme integration
 
-### 🔧 Recent Fixes (2026-01-18)
+### 🔧 Recent Fixes & Features
 
-#### Backend Fixes
-4. **`questionsCount` always 0 in Quiz List**
+#### Session Management Enhancement (2026-01-19)
+**Feature:** Graceful handling of active quiz sessions
+
+**Problem:**
+- Users received a 409 Conflict error when trying to start a quiz they already had an active session for
+- No way to resume or abandon existing sessions
+- Poor user experience with generic error message
+
+**Solution:**
+1. **Backend - New Use Cases:**
+   - `GetActiveSessionUseCase` - Retrieves active session with current question
+   - `AbandonSessionUseCase` - Deletes session with authorization check
+
+2. **Backend - New API Endpoints:**
+   - `GET /api/v1/quiz/:id/active-session?userId=xxx` - Get active session
+   - `DELETE /api/v1/quiz/session/:sessionId` - Abandon session
+
+3. **Backend - Repository Enhancement:**
+   - Added `Delete()` method to `SessionRepository` interface
+   - Implemented in memory repository
+
+4. **Frontend - Conflict Resolution Modal:**
+   - Detects 409 Conflict error on quiz start
+   - Shows user-friendly modal with two options:
+     - **Continue Session** - Resumes from current question with preserved score
+     - **Start Fresh** - Abandons old session and creates new one
+   - Fetches active session details for context
+
+**Files Modified:**
+- `backend/internal/application/quiz/get_active_session.go` (new)
+- `backend/internal/application/quiz/abandon_session.go` (new)
+- `backend/internal/domain/quiz/repository.go`
+- `backend/internal/infrastructure/persistence/memory/quiz_repository.go`
+- `backend/internal/infrastructure/http/handlers/quiz_handler.go`
+- `backend/internal/infrastructure/http/handlers/swagger_models.go`
+- `backend/internal/infrastructure/http/routes/routes.go`
+- `tma/src/views/QuizPlayView.vue`
+
+**Impact:**
+- Improved UX - users can resume or restart without confusion
+- Proper authorization - users can only abandon their own sessions
+- Type-safe - full TypeScript support for new endpoints
+
+#### Backend Fixes (2026-01-18)
+1. **`questionsCount` always 0 in Quiz List**
    - **Issue:** The API endpoint `GET /api/v1/quiz` returned `questionsCount: 0` for all quizzes.
    - **Reason:** For performance, the `QuizRepository.FindAll()` method intentionally did not load the associated questions for each quiz.
    - **Solution:**
@@ -811,7 +864,8 @@ func mapUserError(err error) error {
      - `QuizRepository` now has a `FindAllSummaries()` method that uses a `LEFT JOIN` with `COUNT()` to efficiently fetch quizzes with their question counts in a single query.
      - The `ListQuizzesUseCase` was updated to use this new method.
    - **Impact:** The bug is fixed while respecting DDD principles by not polluting the `Quiz` aggregate with concerns related to specific queries.
-5. **Implemented Category Feature (Backend)**
+
+2. **Implemented Category Feature (Backend)**
    - **Feature:** Added support for quiz categories.
    - **Changes:**
      - Created `Category` aggregate and `CategoryName` value object.
@@ -820,18 +874,18 @@ func mapUserError(err error) error {
      - Exposed `GET /api/v1/categories` and `POST /api/v1/categories` endpoints.
      - Added `categories` table and foreign key to `quizzes` table via `003_add_categories.sql` migration.
 
-1. **Telegram Auth Context Storage Bug**
+3. **Telegram Auth Context Storage Bug**
    - **Issue:** Middleware stored init data as value, getter expected pointer → type assertion failed → nil
    - **Fix:** Changed `c.Locals("telegram_init_data", parsedData)` to `c.Locals("telegram_init_data", &parsedData)`
    - **File:** `backend/internal/infrastructure/http/middleware/telegram_auth.go:66`
    - **Impact:** Handler now successfully retrieves validated init data
 
-2. **Users Table Migration**
+4. **Users Table Migration**
    - **Issue:** `002_create_users_table.sql` existed but wasn't applied (Docker entrypoint only runs on first DB init)
    - **Fix:** Manually applied migration via `docker compose exec postgres psql -f /docker-entrypoint-initdb.d/002_create_users_table.sql`
    - **Result:** Users table created with all indexes
 
-3. **RegisterUserRequest Swagger Schema**
+5. **RegisterUserRequest Swagger Schema**
    - **Issue:** Swagger schema required `userId` field in body, but handler uses Authorization header (not body)
    - **Fix:** Made `RegisterUserRequest` an empty struct with comment explaining data comes from header
    - **File:** `backend/internal/infrastructure/http/handlers/swagger_models.go:218-225`
