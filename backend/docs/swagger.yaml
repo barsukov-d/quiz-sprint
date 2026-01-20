@@ -146,6 +146,13 @@ definitions:
     required:
     - data
     type: object
+  internal_infrastructure_http_handlers.GetSessionResultsResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.SessionResultsData'
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.GetUserResponse:
     properties:
       data:
@@ -320,6 +327,33 @@ definitions:
     - startedAt
     - status
     - userId
+    type: object
+  internal_infrastructure_http_handlers.SessionResultsData:
+    properties:
+      correctAnswers:
+        type: integer
+      passed:
+        type: boolean
+      quiz:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuizDTO'
+      scorePercentage:
+        description: 0-100
+        type: integer
+      session:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.SessionDTO'
+      timeSpent:
+        description: seconds
+        type: integer
+      totalQuestions:
+        type: integer
+    required:
+    - correctAnswers
+    - passed
+    - quiz
+    - scorePercentage
+    - session
+    - timeSpent
+    - totalQuestions
     type: object
   internal_infrastructure_http_handlers.StartQuizData:
     properties:
@@ -723,6 +757,39 @@ paths:
       summary: Abandon a quiz session
       tags:
       - quiz
+    get:
+      consumes:
+      - application/json
+      description: Get detailed results for a quiz session including statistics and
+        quiz info
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session results with statistics
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetSessionResultsResponse'
+        "400":
+          description: Invalid session ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get session results
+      tags:
+      - quiz
   /quiz/session/{sessionId}/answer:
     post:
       consumes:
@@ -843,6 +910,7 @@ paths:
       consumes:
       - application/json
       description: Retrieve user profile by Telegram @username
+      operationId: GetUserByUsername
       parameters:
       - description: Telegram username (without @)
         in: path

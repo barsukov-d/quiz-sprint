@@ -1,0 +1,141 @@
+{
+  "title": "World Geography",
+  "description": "Explore your knowledge of countries, capitals, and landmarks around the world",
+  "categoryId": null,
+  "timeLimit": 480,
+  "passingScore": 60,
+  "questions": [
+    {
+      "text": "What is the capital of Australia?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "Sydney",
+          "isCorrect": false
+        },
+        {
+          "text": "Melbourne",
+          "isCorrect": false
+        },
+        {
+          "text": "Canberra",
+          "isCorrect": true
+        },
+        {
+          "text": "Brisbane",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "Which is the longest river in the world?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "Amazon River",
+          "isCorrect": false
+        },
+        {
+          "text": "Nile River",
+          "isCorrect": true
+        },
+        {
+          "text": "Yangtze River",
+          "isCorrect": false
+        },
+        {
+          "text": "Mississippi River",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "Which country has the most time zones?",
+      "points": 15,
+      "answers": [
+        {
+          "text": "United States",
+          "isCorrect": false
+        },
+        {
+          "text": "Russia",
+          "isCorrect": false
+        },
+        {
+          "text": "France",
+          "isCorrect": true
+        },
+        {
+          "text": "China",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "What is the smallest country in the world by area?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "Monaco",
+          "isCorrect": false
+        },
+        {
+          "text": "Vatican City",
+          "isCorrect": true
+        },
+        {
+          "text": "San Marino",
+          "isCorrect": false
+        },
+        {
+          "text": "Liechtenstein",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "Which mountain range separates Europe from Asia?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "Himalayas",
+          "isCorrect": false
+        },
+        {
+          "text": "Alps",
+          "isCorrect": false
+        },
+        {
+          "text": "Ural Mountains",
+          "isCorrect": true
+        },
+        {
+          "text": "Andes",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "What is the world's largest desert?",
+      "points": 15,
+      "answers": [
+        {
+          "text": "Sahara Desert",
+          "isCorrect": false
+        },
+        {
+          "text": "Arabian Desert",
+          "isCorrect": false
+        },
+        {
+          "text": "Antarctic Desert",
+          "isCorrect": true
+        },
+        {
+          "text": "Gobi Desert",
+          "isCorrect": false
+        }
+      ]
+    }
+  ]
+}

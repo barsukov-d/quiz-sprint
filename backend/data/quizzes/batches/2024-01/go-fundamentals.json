@@ -1,0 +1,172 @@
+{
+  "batch": {
+    "version": 1,
+    "generated": "2024-01-20T10:30:00Z",
+    "cat": "programming",
+    "tags": ["language:go", "difficulty:easy"]
+  },
+  "quizzes": [
+    {
+      "t": "Go Syntax Basics",
+      "d": "Test your knowledge of basic Go syntax and structure.",
+      "tags": ["topic:syntax"],
+      "q": [
+        {
+          "t": "What is the entry point of a Go program?",
+          "a": ["start()", "main()", "init()", "run()"],
+          "c": 1
+        },
+        {
+          "t": "Which package must be imported to use fmt.Println?",
+          "a": ["io", "fmt", "print", "console"],
+          "c": 1
+        },
+        {
+          "t": "How do you write a single-line comment in Go?",
+          "a": ["# comment", "// comment", "/* comment */", "-- comment"],
+          "c": 1
+        },
+        {
+          "t": "What symbol is used for short variable declaration?",
+          "a": [":=", "=", "==", "->"],
+          "c": 0
+        },
+        {
+          "t": "Which keyword is used to define a constant in Go?",
+          "a": ["const", "final", "constant", "immutable"],
+          "c": 0
+        }
+      ]
+    },
+    {
+      "t": "Go Control Flow",
+      "d": "Master Go's control flow statements including loops and conditionals.",
+      "tags": ["topic:control-flow"],
+      "q": [
+        {
+          "t": "Which loop keyword exists in Go?",
+          "a": ["while", "for", "loop", "do"],
+          "c": 1
+        },
+        {
+          "t": "Can you use a switch without an expression in Go?",
+          "a": ["Yes", "No", "Only with default", "Only with fallthrough"],
+          "c": 0
+        },
+        {
+          "t": "What keyword is used to exit a loop early?",
+          "a": ["exit", "break", "stop", "return"],
+          "c": 1
+        },
+        {
+          "t": "How do you create an infinite loop in Go?",
+          "a": ["while true", "for {}", "loop {}", "do {}"],
+          "c": 1
+        },
+        {
+          "t": "What does the 'defer' keyword do?",
+          "a": ["Delays execution until function returns", "Creates a goroutine", "Handles errors", "Declares a variable"],
+          "c": 0
+        }
+      ]
+    },
+    {
+      "t": "Go Data Structures",
+      "d": "Understand Go's built-in data structures and collections.",
+      "tags": ["topic:data-structures"],
+      "l": 90,
+      "q": [
+        {
+          "t": "What is the zero value of a slice?",
+          "a": ["[]", "null", "nil", "empty"],
+          "c": 2
+        },
+        {
+          "t": "How do you get the length of a slice?",
+          "a": ["size(s)", "length(s)", "len(s)", "s.length"],
+          "c": 2
+        },
+        {
+          "t": "What is a map in Go?",
+          "a": ["An array", "A list", "A hash table", "A tree"],
+          "c": 2
+        },
+        {
+          "t": "How do you check if a key exists in a map?",
+          "a": ["map.has(key)", "key in map", "value, exists := map[key]", "map.contains(key)"],
+          "c": 2
+        },
+        {
+          "t": "What is the capacity of an array?",
+          "a": ["Variable", "Fixed at declaration", "Dynamic", "Unlimited"],
+          "c": 1
+        }
+      ]
+    },
+    {
+      "t": "Go Functions and Methods",
+      "d": "Learn about function definitions, methods, and receivers in Go.",
+      "tags": ["topic:functions"],
+      "q": [
+        {
+          "t": "Can Go functions return multiple values?",
+          "a": ["Yes", "No", "Only errors", "Only with tuples"],
+          "c": 0
+        },
+        {
+          "t": "What is a method receiver in Go?",
+          "a": ["A parameter", "A special first argument", "A return value", "An interface"],
+          "c": 1
+        },
+        {
+          "t": "What are variadic functions?",
+          "a": ["Functions with no return", "Functions accepting variable arguments", "Functions with multiple returns", "Async functions"],
+          "c": 1
+        },
+        {
+          "t": "What is the blank identifier for unused return values?",
+          "a": ["null", "_", "void", "ignore"],
+          "c": 1
+        },
+        {
+          "t": "Can you define methods on any type?",
+          "a": ["Yes, on any type defined in the same package", "No, only on structs", "Yes, on all types", "No, only on interfaces"],
+          "c": 0
+        }
+      ]
+    },
+    {
+      "t": "Go Error Handling",
+      "d": "Master Go's approach to error handling and the error interface.",
+      "tags": ["topic:errors"],
+      "p": 75,
+      "q": [
+        {
+          "t": "What type is used for errors in Go?",
+          "a": ["Exception", "error interface", "Error class", "Throwable"],
+          "c": 1
+        },
+        {
+          "t": "How do you create a simple error?",
+          "a": ["throw new Error()", "errors.New()", "error.Create()", "new Error()"],
+          "c": 1
+        },
+        {
+          "t": "What is the idiomatic way to handle errors in Go?",
+          "a": ["try-catch", "Check if err != nil", "panic/recover", "throw/catch"],
+          "c": 1
+        },
+        {
+          "t": "When should you use panic()?",
+          "a": ["For all errors", "For unrecoverable errors", "For user input errors", "Never"],
+          "c": 1
+        },
+        {
+          "t": "What does recover() do?",
+          "a": ["Catches panic", "Returns error", "Logs error", "Ignores panic"],
+          "c": 0
+        }
+      ]
+    }
+  ]
+}

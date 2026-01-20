@@ -1,0 +1,33 @@
+{
+  "t": "Go Basics: Variables and Types",
+  "d": "Test your understanding of basic Go programming concepts including variables, types, and declarations.",
+  "cat": "programming",
+  "tags": ["language:go", "difficulty:easy", "topic:variables"],
+  "q": [
+    {
+      "t": "Which keyword is used to declare a variable in Go?",
+      "a": ["let", "var", "const", "dim"],
+      "c": 1
+    },
+    {
+      "t": "What is the zero value for an integer in Go?",
+      "a": ["null", "undefined", "0", "nil"],
+      "c": 2
+    },
+    {
+      "t": "Which of the following is NOT a basic type in Go?",
+      "a": ["int", "string", "char", "bool"],
+      "c": 2
+    },
+    {
+      "t": "How do you declare a short variable in Go?",
+      "a": ["x := 10", "var x = 10", "let x = 10", "const x = 10"],
+      "c": 0
+    },
+    {
+      "t": "What does the blank identifier '_' do in Go?",
+      "a": ["Creates a new variable", "Ignores a value", "Declares a constant", "Imports a package"],
+      "c": 1
+    }
+  ]
+}

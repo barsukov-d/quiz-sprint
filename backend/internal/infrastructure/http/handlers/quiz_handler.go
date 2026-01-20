@@ -11,14 +11,15 @@ import (
 // QuizHandler handles HTTP requests for quizzes
 // NOTE: This is a THIN adapter - no business logic here!
 type QuizHandler struct {
-	listQuizzesUC       *appQuiz.ListQuizzesUseCase
-	getQuizUC           *appQuiz.GetQuizUseCase
-	getQuizDetailsUC    *appQuiz.GetQuizDetailsUseCase
-	startQuizUC         *appQuiz.StartQuizUseCase
-	submitAnswerUC      *appQuiz.SubmitAnswerUseCase
-	getLeaderboardUC    *appQuiz.GetLeaderboardUseCase
-	getActiveSessionUC  *appQuiz.GetActiveSessionUseCase
-	abandonSessionUC    *appQuiz.AbandonSessionUseCase
+	listQuizzesUC        *appQuiz.ListQuizzesUseCase
+	getQuizUC            *appQuiz.GetQuizUseCase
+	getQuizDetailsUC     *appQuiz.GetQuizDetailsUseCase
+	startQuizUC          *appQuiz.StartQuizUseCase
+	submitAnswerUC       *appQuiz.SubmitAnswerUseCase
+	getLeaderboardUC     *appQuiz.GetLeaderboardUseCase
+	getActiveSessionUC   *appQuiz.GetActiveSessionUseCase
+	abandonSessionUC     *appQuiz.AbandonSessionUseCase
+	getSessionResultsUC  *appQuiz.GetSessionResultsUseCase
 }
 
 // NewQuizHandler creates a new QuizHandler
@@ -31,16 +32,18 @@ func NewQuizHandler(
 	getLeaderboardUC *appQuiz.GetLeaderboardUseCase,
 	getActiveSessionUC *appQuiz.GetActiveSessionUseCase,
 	abandonSessionUC *appQuiz.AbandonSessionUseCase,
+	getSessionResultsUC *appQuiz.GetSessionResultsUseCase,
 ) *QuizHandler {
 	return &QuizHandler{
-		listQuizzesUC:      listQuizzesUC,
-		getQuizUC:          getQuizUC,
-		getQuizDetailsUC:   getQuizDetailsUC,
-		startQuizUC:        startQuizUC,
-		submitAnswerUC:     submitAnswerUC,
-		getLeaderboardUC:   getLeaderboardUC,
-		getActiveSessionUC: getActiveSessionUC,
-		abandonSessionUC:   abandonSessionUC,
+		listQuizzesUC:       listQuizzesUC,
+		getQuizUC:           getQuizUC,
+		getQuizDetailsUC:    getQuizDetailsUC,
+		startQuizUC:         startQuizUC,
+		submitAnswerUC:      submitAnswerUC,
+		getLeaderboardUC:    getLeaderboardUC,
+		getActiveSessionUC:  getActiveSessionUC,
+		abandonSessionUC:    abandonSessionUC,
+		getSessionResultsUC: getSessionResultsUC,
 	}
 }
 
@@ -271,6 +274,59 @@ func (h *QuizHandler) AbandonSession(c fiber.Ctx) error {
 
 	// 4. Return no content (204)
 	return c.SendStatus(fiber.StatusNoContent)
+}
+
+// GetSessionResults handles GET /api/v1/quiz/session/:sessionId
+// @Summary Get session results
+// @Description Get detailed results for a quiz session including statistics and quiz info
+// @Tags quiz
+// @Accept json
+// @Produce json
+// @Param sessionId path string true "Session ID"
+// @Success 200 {object} GetSessionResultsResponse "Session results with statistics"
+// @Failure 400 {object} ErrorResponse "Invalid session ID"
+// @Failure 404 {object} ErrorResponse "Session not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /quiz/session/{sessionId} [get]
+func (h *QuizHandler) GetSessionResults(c fiber.Ctx) error {
+	// 1. Execute use case
+	output, err := h.getSessionResultsUC.Execute(appQuiz.GetSessionResultsInput{
+		SessionID: c.Params("sessionId"),
+	})
+	if err != nil {
+		return mapError(err)
+	}
+
+	// 2. Map to response DTO
+	response := SessionResultsData{
+		Session: SessionDTO{
+			ID:              output.Session.ID,
+			QuizID:          output.Session.QuizID,
+			UserID:          output.Session.UserID,
+			CurrentQuestion: output.Session.CurrentQuestion,
+			Score:           output.Session.Score,
+			StartedAt:       output.Session.StartedAt,
+			CompletedAt:     output.Session.CompletedAt,
+			Status:          output.Session.Status,
+		},
+		Quiz: QuizDTO{
+			ID:           output.Quiz.ID,
+			Title:        output.Quiz.Title,
+			Description:  output.Quiz.Description,
+			TimeLimit:    output.Quiz.TimeLimit,
+			PassingScore: output.Quiz.PassingScore,
+		},
+		TotalQuestions:  output.TotalQuestions,
+		CorrectAnswers:  output.CorrectAnswers,
+		TimeSpent:       output.TimeSpent,
+		Passed:          output.Passed,
+		ScorePercentage: output.ScorePercentage,
+	}
+
+	// 3. Return wrapped response
+	return c.JSON(fiber.Map{
+		"data": response,
+	})
 }
 
 // GetLeaderboard handles GET /api/v1/quiz/:id/leaderboard

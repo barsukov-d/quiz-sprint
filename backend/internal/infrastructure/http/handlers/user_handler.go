@@ -209,6 +209,7 @@ func (h *UserHandler) ListUsers(c fiber.Ctx) error {
 // GetUserByTelegramUsername handles GET /api/v1/user/by-username/:username
 // @Summary Get user by Telegram username
 // @Description Retrieve user profile by Telegram @username
+// @Id GetUserByUsername
 // @Tags user
 // @Accept json
 // @Produce json

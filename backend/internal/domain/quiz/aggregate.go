@@ -40,6 +40,13 @@ type Quiz struct {
 	// questionCount is a denormalized count, used when questions are not loaded
 	questionCount int
 
+	// Tag system for flexible classification
+	tags []Tag // Multiple tags per quiz (language:go, difficulty:easy, etc.)
+
+	// Import metadata (for LLM-generated quizzes)
+	importBatchID *string // Batch identifier for grouped imports
+	generatedAt   *int64  // Unix timestamp when quiz was generated
+
 	// Domain events collected during operations
 	events []Event
 }
@@ -65,6 +72,9 @@ func NewQuiz(id QuizID, title QuizTitle, description string, categoryID Category
 		updatedAt:     createdAt,
 		questions:     make([]Question, 0),
 		questionCount: 0,
+		tags:          make([]Tag, 0),
+		importBatchID: nil,
+		generatedAt:   nil,
 		events:        make([]Event, 0),
 	}, nil
 }
@@ -80,6 +90,9 @@ func ReconstructQuiz(
 	passingScore PassingScore,
 	createdAt int64,
 	updatedAt int64,
+	tags []Tag,
+	importBatchID *string,
+	generatedAt *int64,
 ) *Quiz {
 	return &Quiz{
 		id:            id,
@@ -92,6 +105,9 @@ func ReconstructQuiz(
 		updatedAt:     updatedAt,
 		questions:     make([]Question, 0),
 		questionCount: 0,
+		tags:          tags,
+		importBatchID: importBatchID,
+		generatedAt:   generatedAt,
 		events:        make([]Event, 0),
 	}
 }
@@ -177,12 +193,75 @@ func (q *Quiz) TimeLimit() TimeLimit       { return q.timeLimit }
 func (q *Quiz) PassingScore() PassingScore { return q.passingScore }
 func (q *Quiz) CreatedAt() int64           { return q.createdAt }
 func (q *Quiz) UpdatedAt() int64           { return q.updatedAt }
+func (q *Quiz) ImportBatchID() *string     { return q.importBatchID }
+func (q *Quiz) GeneratedAt() *int64        { return q.generatedAt }
 
 // Questions returns a copy of questions (protect internal state)
 func (q *Quiz) Questions() []Question {
 	copies := make([]Question, len(q.questions))
 	copy(copies, q.questions)
 	return copies
+}
+
+// Tags returns a copy of tags (protect internal state)
+func (q *Quiz) Tags() []Tag {
+	copies := make([]Tag, len(q.tags))
+	copy(copies, q.tags)
+	return copies
+}
+
+// TagNames returns tag names as strings
+func (q *Quiz) TagNames() []string {
+	names := make([]string, len(q.tags))
+	for i, tag := range q.tags {
+		names[i] = tag.Name().String()
+	}
+	return names
+}
+
+// AddTag adds a tag to the quiz
+func (q *Quiz) AddTag(tag Tag) error {
+	// Check if tag already exists
+	for _, existingTag := range q.tags {
+		if existingTag.Equals(&tag) {
+			return nil // Already exists, no error (idempotent)
+		}
+	}
+
+	// Limit: maximum 10 tags per quiz
+	if len(q.tags) >= 10 {
+		return ErrTooManyTags
+	}
+
+	q.tags = append(q.tags, tag)
+	return nil
+}
+
+// HasTag checks if quiz has a specific tag by name
+func (q *Quiz) HasTag(tagName string) bool {
+	for _, tag := range q.tags {
+		if tag.Name().String() == tagName {
+			return true
+		}
+	}
+	return false
+}
+
+// HasTagCategory checks if quiz has any tag from a specific category
+// Example: HasTagCategory("difficulty") → true if quiz has difficulty:easy, difficulty:medium, etc.
+func (q *Quiz) HasTagCategory(category string) bool {
+	for _, tag := range q.tags {
+		if tag.Name().Category() == category {
+			return true
+		}
+	}
+	return false
+}
+
+// SetImportMetadata sets import batch ID and generation timestamp
+func (q *Quiz) SetImportMetadata(batchID string, generatedAt int64) {
+	q.importBatchID = &batchID
+	q.generatedAt = &generatedAt
 }
 
 // Events returns collected domain events and clears them

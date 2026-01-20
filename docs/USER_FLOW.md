@@ -197,6 +197,58 @@ Categories (Home) → Quiz List (by category) → Quiz Details
    [Home]        [Leaderboard]      [Profile]
 ```
 
+**Tag Filtering (Future Enhancement):**
+
+```
+┌────────────────────────────────────────────┐
+│  ← Back      🧠 Programming          [👤]  │  ← Header with category
+├────────────────────────────────────────────┤
+│                                            │
+│  Filters: [All Difficulty ▼] [All Topics ▼]│  ← Filter dropdowns
+│           [Easy] [Medium] [Hard]            │  ← Quick filter chips
+│                                            │
+│  ┌──────────────────────────────────────┐ │
+│  │ 🐹 Go Basics                         │ │
+│  │ 10 questions • 5 min                 │ │
+│  │ 🏷️ language:go • difficulty:easy    │ │  ← Tags as badges
+│  │ Your best: 85/100 🏆 #12             │ │
+│  │                                      │ │
+│  │                    [Start Quiz] →    │ │
+│  └──────────────────────────────────────┘ │
+│                                            │
+│  ┌──────────────────────────────────────┐ │
+│  │ 🚀 Go Concurrency                    │ │
+│  │ 15 questions • 10 min                │ │
+│  │ 🏷️ language:go • difficulty:medium  │ │  ← Tags shown
+│  │ 1,234 players • Top: 95/100          │ │
+│  │                                      │ │
+│  │                    [Start Quiz] →    │ │
+│  └──────────────────────────────────────┘ │
+│                                            │
+└────────────────────────────────────────────┘
+```
+
+**Tag Display:**
+- Tags shown under quiz title as colorful badges
+- Color-coded by category:
+  - `language:*` → 🔵 blue (programming languages)
+  - `difficulty:easy` → 🟢 green
+  - `difficulty:medium` → 🟡 yellow
+  - `difficulty:hard` → 🔴 red
+  - `topic:*` → ⚪ gray (specific topics)
+  - `domain:*` → 🟣 purple (general domains)
+
+**Filtering Logic:**
+- Category filter (existing) + Tag filters (new)
+- Multiple tags = AND logic (intersection)
+- Example: "Programming" + "Easy" + "Go" → all easy Go programming quizzes
+- Filter state persists during navigation (until cleared or changed)
+
+**Tag Interaction:**
+- Click on tag badge → filter by that tag
+- Click "Clear filters" → show all quizzes in category
+- Dropdown shows all available tags for current category
+
 **Элементы карточки квиза:**
 - **Иконка категории** - эмодзи для быстрой идентификации
 - **Название квиза** - короткое, привлекающее внимание
@@ -447,6 +499,18 @@ Categories (Home) → Quiz List (by category) → Quiz Details
 
 **Назначение:** Показать результат, мотивировать к повторному прохождению
 
+**API Endpoint:** `GET /api/v1/quiz/session/:sessionId` (см. [DOMAIN.md](./DOMAIN.md#use-cases))
+
+**Данные:**
+- Session details (score, status, timestamps)
+- Quiz info (title, description, totalPoints, passingScore)
+- Calculated statistics:
+  - `totalQuestions` - количество вопросов
+  - `correctAnswers` - количество правильных ответов
+  - `timeSpent` - затраченное время (секунды)
+  - `passed` - прошел ли (boolean)
+  - `scorePercentage` - процент от максимума (0-100%)
+
 **Wireframe:**
 ```
 ┌────────────────────────────────────────────┐
@@ -551,6 +615,16 @@ Categories (Home) → Quiz List (by category) → Quiz Details
 ### 5. Leaderboard
 
 **Назначение:** Показать рейтинг игроков, социальное сравнение
+
+**API Endpoint:** `GET /api/v1/quiz/:id/leaderboard?limit=50`
+
+**Данные:**
+- Array of `LeaderboardEntry`:
+  - `userId` - ID пользователя
+  - `username` - Telegram username (@username)
+  - `score` - Набранные очки
+  - `rank` - Позиция в таблице (1, 2, 3, ...)
+  - `completedAt` - Unix timestamp завершения
 
 **Wireframe:**
 ```
@@ -1041,9 +1115,44 @@ Frontend обработка:
 ```
 
 **Routes:**
-- `/` - Home (Quiz List)
-- `/leaderboard/:quizId?` - Leaderboard (global или конкретного квиза)
-- `/profile` - User Profile
+- `/` - Home (Categories → Quiz List)
+- `/leaderboard/:quizId?` - Leaderboard (конкретного квиза или глобальный)
+- `/profile` - User Profile (TODO)
+
+**API Endpoints:**
+- Leaderboard: `GET /api/v1/quiz/:id/leaderboard?limit=50`
+- User Profile: `GET /api/v1/user/:id` (см. [CLAUDE.md](../CLAUDE.md#backend-api-structure))
+- **Quiz List with Tags (Enhanced):**
+  ```
+  GET /api/v1/quiz?categoryId={uuid}&tag={name1}&tag={name2}
+
+  Response:
+  {
+    "data": [
+      {
+        "id": "...",
+        "title": "Go Basics",
+        "category": { "id": "...", "name": "Programming" },
+        "tags": ["language:go", "difficulty:easy"],
+        "questionsCount": 10,
+        "timeLimit": 600
+      }
+    ]
+  }
+  ```
+- **Tag List:**
+  ```
+  GET /api/v1/tags
+  GET /api/v1/tags?category=difficulty
+
+  Response:
+  {
+    "data": [
+      { "id": "difficulty-easy", "name": "difficulty:easy" },
+      { "id": "difficulty-medium", "name": "difficulty:medium" }
+    ]
+  }
+  ```
 
 ### In-Quiz Navigation
 
@@ -1230,6 +1339,22 @@ trackEvent('achievement_unlocked', { achievementId })
 
 ---
 
+## Changelog
+
+**v1.2 (2026-01-20):**
+- ✅ Добавлена документация API endpoints для Leaderboard и Navigation
+- Указаны routes и API для Bottom Tab Bar навигации
+
+**v1.1 (2026-01-20):**
+- ✅ Добавлена документация API endpoint для Results экрана
+- Указаны данные, получаемые из `GET /quiz/session/:sessionId`
+
+**v1.0 (2026-01-18):**
+- Первоначальная версия документа
+
+---
+
 **Дата создания:** 2026-01-18
-**Версия:** 1.0
+**Последнее обновление:** 2026-01-20
+**Версия:** 1.1
 **Проект:** Quiz Sprint TMA

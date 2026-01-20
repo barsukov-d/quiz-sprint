@@ -58,17 +58,34 @@
 **Ответственность:**
 - Хранение и управление контентом квизов
 - Управление вопросами и ответами
-- Категоризация квизов
+- **Категоризация квизов (одна категория на квиз - для навигации)**
+- **Теговая система (множественные теги на квиз - для фильтрации)**
 - Публикация квизов
+- Импорт квизов из внешних источников (LLM, JSON)
 
 **Ubiquitous Language:**
 - Quiz (Квиз)
 - Question (Вопрос)
 - Answer (Вариант ответа)
-- Category (Категория)
+- Category (Категория) - **одна на квиз, основная классификация**
+- Tag (Тег) - **много на квиз, дополнительные метки**
+- Quiz Metadata (Метаданные квиза)
+- Compact Format (Компактный формат) - оптимизированный формат для LLM
+- Batch Import (Пакетный импорт) - импорт нескольких квизов одновременно
 
 **Почему Supporting?**
 Необходим для работы Core Domain, но не является уникальным конкурентным преимуществом.
+
+**Hybrid Approach: Category + Tags:**
+- **Category** = главная полка в библиотеке (Programming, History, Movies)
+  - Одна категория на квиз
+  - Используется для основной навигации в UI (CategoriesView → QuizListView)
+  - Обязательное поле
+- **Tags** = ярлыки на книге (language:go, difficulty:easy, topic:concurrency)
+  - Много тегов на квиз (0-10)
+  - Используются для фильтрации и поиска
+  - Опциональное поле
+  - Формат: `{category}:{value}` (например: `language:go`, `difficulty:medium`)
 
 ---
 
@@ -275,9 +292,21 @@ AbandonSessionUseCase(sessionID, userID) → (void)
   • Проверяет авторизацию (только владелец)
   • Позволяет начать квиз заново
 
-// ⚠️ TODO
-GetSessionStatusUseCase(sessionID) → (progress, score)
-  • Получить статус любой сессии (включая завершенные)
+// ✅ Реализовано (2026-01-20)
+GetSessionResultsUseCase(sessionID) → (session, quiz, statistics)
+  • Получает детальные результаты завершенной сессии
+  • Возвращает:
+    - Session data (score, status, timestamps)
+    - Quiz info (title, description, totalPoints, passingScore)
+    - Calculated statistics:
+      * totalQuestions - количество вопросов в квизе
+      * correctAnswers - количество правильных ответов
+      * timeSpent - затраченное время (секунды)
+      * passed - прошел ли пользователь (score >= passingScore)
+      * scorePercentage - процент от максимума (0-100%)
+  • Работает для сессий в любом статусе (Active, Completed, Abandoned)
+  • 404 если сессия не найдена
+  • Используется для отображения Results screen
 ```
 
 ---
@@ -313,10 +342,20 @@ GetSessionStatusUseCase(sessionID) → (progress, score)
 
 **Use Cases:**
 ```go
+// Quiz Management
 ListQuizzesUseCase() → (quizzes[])
 GetQuizDetailsUseCase(quizID) → (quiz)
 GetQuizzesByCategoryUseCase(categoryID) → (quizzes[])
 CreateQuizUseCase(title, description, questions) → (quizID)
+
+// Tag Management (New)
+ListTagsUseCase() → (tags[])
+GetQuizzesByTagUseCase(tagName, limit, offset) → (quizzes[])
+AssignTagsToQuizUseCase(quizID, tags[]) → void
+
+// Quiz Import (New)
+ImportQuizFromJSONUseCase(jsonData, format) → (quizID)
+ImportQuizBatchUseCase(batchData) → (quizIDs[], errors[])
 ```
 
 ---
@@ -353,6 +392,76 @@ GetCategoryWithQuizCountUseCase(categoryID) → (category, quizCount)
 - Quiz → CategoryID (optional foreign key)
 - Квиз может принадлежать только одной категории
 - При удалении категории, квизы остаются (category_id = NULL)
+
+---
+
+#### Aggregate: Tag
+
+**Ответственность:**
+- Гибкая система метаданных для классификации квизов
+- Поддержка множественных меток на квиз
+- Валидация формата тегов
+
+**Value Objects:**
+- `TagID` - уникальный идентификатор (генерируется из имени)
+- `TagName` - значение тега с префиксом категории
+
+**Структура тега:**
+```
+{category}:{value}
+
+Примеры:
+- language:go
+- difficulty:easy
+- topic:concurrency
+- domain:programming
+```
+
+**Validation Rules:**
+- Lowercase only: `^[a-z0-9-:]+$`
+- Max length: 100 chars
+- Required format: `category:value`
+- No spaces (use hyphens: `web-development`, not `web development`)
+
+**Категории тегов:**
+- `language:*` - Языки программирования (go, python, javascript, rust)
+- `difficulty:*` - Сложность квиза (easy, medium, hard, expert)
+- `topic:*` - Конкретные темы (variables, functions, goroutines, pointers)
+- `domain:*` - Общие области знаний (programming, history, science, movies)
+- `format:*` - Формат вопросов (multiple-choice, true-false, code-completion)
+
+**Бизнес-правила:**
+1. Имя тега должно быть уникальным
+2. Имя тега должно соответствовать паттерну `^[a-z0-9-:]+$`
+3. Тег может быть присвоен множеству квизов (many-to-many)
+4. Квиз может иметь 0-10 тегов
+5. Теги неизменяемы (immutable) - для изменения удаляем и создаем новый
+
+**Repository Interface:**
+```go
+type TagRepository interface {
+    Save(tag *Tag) error
+    FindByName(name string) (*Tag, error)
+    FindByNames(names []string) ([]*Tag, error)
+    FindAll() ([]*Tag, error)
+    FindByQuizID(quizID QuizID) ([]*Tag, error)
+}
+```
+
+**Связь с Quiz:**
+- Quiz ↔ Tag (many-to-many через quiz_tags junction table)
+- Квиз может иметь множество тегов
+- Тег может быть у множества квизов
+- При удалении тега, связи удаляются (квизы остаются)
+- При удалении квиза, связи удаляются (теги остаются)
+
+**Автоматический вывод категории из тегов:**
+Если поле `category` не указано при импорте, оно выводится из тегов:
+- `language:*` → category = "programming"
+- `domain:history` → category = "history"
+- `domain:science` → category = "science"
+- `domain:movies` → category = "movies"
+- Fallback: category = "general"
 
 ---
 
@@ -419,6 +528,7 @@ User completes quiz
 | `AnswerSubmittedEvent` | Quiz Taking | sessionID, questionID, answerID, isCorrect, points | Analytics |
 | `QuizCompletedEvent` | Quiz Taking | quizID, sessionID, userID, finalScore, timestamp | Leaderboard, Notification, Analytics |
 | `LeaderboardUpdatedEvent` | Leaderboard | quizID, topEntries[] | WebSocket (real-time) |
+| `QuizImportedEvent` | Quiz Catalog | quizID, categoryID, tags[], importBatchID, generatedAt, source | Analytics, Search Index |
 
 ---
 
@@ -519,6 +629,21 @@ LeaderboardEntry:
 
 ---
 
+## Changelog
+
+**v1.2 (2026-01-20):**
+- ✅ Добавлен `GetSessionResultsUseCase` для получения детальных результатов сессии
+- Обновлен список Use Cases с реализованными фичами
+
+**v1.1 (2026-01-18):**
+- Добавлен Category aggregate и Use Cases
+
+**v1.0 (2026-01-15):**
+- Первоначальная версия документа
+
+---
+
 **Дата создания:** 2026-01-15
+**Последнее обновление:** 2026-01-20
 **Методология:** Pragmatic DDD (по мотивам Vernon Vaughn IDDD)
 **Проект:** Quiz Sprint TMA

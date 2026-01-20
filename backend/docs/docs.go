@@ -136,6 +136,54 @@ const docTemplate = `{
             }
         },
         "/quiz/session/{sessionId}": {
+            "get": {
+                "description": "Get detailed results for a quiz session including statistics and quiz info",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "quiz"
+                ],
+                "summary": "Get session results",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Session ID",
+                        "name": "sessionId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Session results with statistics",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetSessionResultsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid session ID",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Session not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
             "delete": {
                 "description": "Delete an active quiz session, allowing the user to start fresh",
                 "consumes": [
@@ -505,6 +553,7 @@ const docTemplate = `{
                     "user"
                 ],
                 "summary": "Get user by Telegram username",
+                "operationId": "GetUserByUsername",
                 "parameters": [
                     {
                         "type": "string",
@@ -954,6 +1003,17 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.GetSessionResultsResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.SessionResultsData"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.GetUserResponse": {
             "type": "object",
             "required": [
@@ -1206,6 +1266,43 @@ const docTemplate = `{
                 },
                 "userId": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.SessionResultsData": {
+            "type": "object",
+            "required": [
+                "correctAnswers",
+                "passed",
+                "quiz",
+                "scorePercentage",
+                "session",
+                "timeSpent",
+                "totalQuestions"
+            ],
+            "properties": {
+                "correctAnswers": {
+                    "type": "integer"
+                },
+                "passed": {
+                    "type": "boolean"
+                },
+                "quiz": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuizDTO"
+                },
+                "scorePercentage": {
+                    "description": "0-100",
+                    "type": "integer"
+                },
+                "session": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.SessionDTO"
+                },
+                "timeSpent": {
+                    "description": "seconds",
+                    "type": "integer"
+                },
+                "totalQuestions": {
+                    "type": "integer"
                 }
             }
         },

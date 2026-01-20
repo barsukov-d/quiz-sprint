@@ -343,3 +343,27 @@ type ListUsersResponse struct {
 }
 
 // @name ListUsersResponse
+
+// ========================================
+// Session Results
+// ========================================
+
+// SessionResultsData contains detailed results of a quiz session
+type SessionResultsData struct {
+	Session         SessionDTO `json:"session" validate:"required"`
+	Quiz            QuizDTO    `json:"quiz" validate:"required"`
+	TotalQuestions  int        `json:"totalQuestions" validate:"required"`
+	CorrectAnswers  int        `json:"correctAnswers" validate:"required"`
+	TimeSpent       int64      `json:"timeSpent" validate:"required"` // seconds
+	Passed          bool       `json:"passed" validate:"required"`
+	ScorePercentage int        `json:"scorePercentage" validate:"required"` // 0-100
+}
+
+// @name SessionResultsData
+
+// GetSessionResultsResponse wraps session results
+type GetSessionResultsResponse struct {
+	Data SessionResultsData `json:"data" validate:"required"`
+}
+
+// @name GetSessionResultsResponse

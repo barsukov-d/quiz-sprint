@@ -69,6 +69,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	getLeaderboardUC := appQuiz.NewGetLeaderboardUseCase(leaderboardRepo)
 	getActiveSessionUC := appQuiz.NewGetActiveSessionUseCase(quizRepo, sessionRepo)
 	abandonSessionUC := appQuiz.NewAbandonSessionUseCase(sessionRepo)
+	getSessionResultsUC := appQuiz.NewGetSessionResultsUseCase(sessionRepo, quizRepo)
 
 	// Category use cases (only if database is available)
 	var (
@@ -111,6 +112,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		getLeaderboardUC,
 		getActiveSessionUC,
 		abandonSessionUC,
+		getSessionResultsUC,
 	)
 
 	// Category handler (only if database is available)
@@ -152,7 +154,9 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 	// Session routes
 	session := v1.Group("/quiz/session")
+	// IMPORTANT: More specific routes MUST come before generic /:sessionId
 	session.Post("/:sessionId/answer", quizHandler.SubmitAnswer)
+	session.Get("/:sessionId", quizHandler.GetSessionResults)
 	session.Delete("/:sessionId", quizHandler.AbandonSession)
 
 	// Category routes

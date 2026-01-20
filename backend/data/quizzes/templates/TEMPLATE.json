@@ -1,0 +1,49 @@
+{
+  "title": "Your Quiz Title Here",
+  "description": "A brief description of what this quiz covers",
+  "categoryId": null,
+  "timeLimit": 600,
+  "passingScore": 70,
+  "questions": [
+    {
+      "text": "Your first question?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "First answer option",
+          "isCorrect": false
+        },
+        {
+          "text": "Second answer option (correct)",
+          "isCorrect": true
+        },
+        {
+          "text": "Third answer option",
+          "isCorrect": false
+        },
+        {
+          "text": "Fourth answer option",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "Your second question?",
+      "points": 15,
+      "answers": [
+        {
+          "text": "Answer A",
+          "isCorrect": false
+        },
+        {
+          "text": "Answer B (correct)",
+          "isCorrect": true
+        },
+        {
+          "text": "Answer C",
+          "isCorrect": false
+        }
+      ]
+    }
+  ]
+}

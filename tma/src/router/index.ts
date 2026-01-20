@@ -4,6 +4,8 @@ import QuizListView from '../views/QuizListView.vue'
 import QuizDetailsView from '../views/QuizDetailsView.vue'
 import QuizPlayView from '../views/QuizPlayView.vue'
 import QuizResultsView from '../views/QuizResultsView.vue'
+import LeaderboardView from '../views/LeaderboardView.vue'
+import ProfileView from '../views/ProfileView.vue'
 import HomeView from '../views/HomeView.vue'
 
 const router = createRouter({
@@ -33,6 +35,16 @@ const router = createRouter({
       path: '/quiz/results/:sessionId',
       name: 'quiz-results',
       component: QuizResultsView,
+    },
+    {
+      path: '/leaderboard/:quizId?',
+      name: 'leaderboard',
+      component: LeaderboardView,
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
     },
     // Legacy route (для обратной совместимости)
     {

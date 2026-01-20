@@ -61,3 +61,33 @@ dev: swagger run ## Generate swagger and run server
 
 .PHONY: all
 all: swagger build ## Generate swagger and build binary
+
+# ============================================
+# Quiz Import Commands
+# ============================================
+
+.PHONY: import-quiz
+import-quiz: ## Import a single quiz from JSON file (usage: make import-quiz FILE=path/to/quiz.json)
+	@if [ -z "$(FILE)" ]; then \
+		echo "Error: FILE parameter is required"; \
+		echo "Usage: make import-quiz FILE=data/quizzes/example.json"; \
+		exit 1; \
+	fi
+	go run cmd/import/main.go -file=$(FILE)
+
+.PHONY: import-quiz-dry-run
+import-quiz-dry-run: ## Validate a quiz JSON file without importing (usage: make import-quiz-dry-run FILE=path/to/quiz.json)
+	@if [ -z "$(FILE)" ]; then \
+		echo "Error: FILE parameter is required"; \
+		echo "Usage: make import-quiz-dry-run FILE=data/quizzes/example.json"; \
+		exit 1; \
+	fi
+	go run cmd/import/main.go -file=$(FILE) -dry-run
+
+.PHONY: import-all-quizzes
+import-all-quizzes: ## Import all quiz JSON files from data/quizzes directory
+	go run cmd/import/main.go -dir=data/quizzes
+
+.PHONY: import-all-quizzes-dry-run
+import-all-quizzes-dry-run: ## Validate all quiz JSON files without importing
+	go run cmd/import/main.go -dir=data/quizzes -dry-run

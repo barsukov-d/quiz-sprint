@@ -1,0 +1,119 @@
+{
+  "title": "Movie Trivia",
+  "description": "Test your knowledge of classic and modern cinema",
+  "categoryId": null,
+  "timeLimit": 600,
+  "passingScore": 65,
+  "questions": [
+    {
+      "text": "Who directed the movie 'Inception'?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "Steven Spielberg",
+          "isCorrect": false
+        },
+        {
+          "text": "Christopher Nolan",
+          "isCorrect": true
+        },
+        {
+          "text": "Martin Scorsese",
+          "isCorrect": false
+        },
+        {
+          "text": "Quentin Tarantino",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "Which movie won the Academy Award for Best Picture in 2020?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "1917",
+          "isCorrect": false
+        },
+        {
+          "text": "Joker",
+          "isCorrect": false
+        },
+        {
+          "text": "Parasite",
+          "isCorrect": true
+        },
+        {
+          "text": "Once Upon a Time in Hollywood",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "What is the highest-grossing film of all time (not adjusted for inflation)?",
+      "points": 15,
+      "answers": [
+        {
+          "text": "Avatar",
+          "isCorrect": true
+        },
+        {
+          "text": "Avengers: Endgame",
+          "isCorrect": false
+        },
+        {
+          "text": "Titanic",
+          "isCorrect": false
+        },
+        {
+          "text": "Star Wars: The Force Awakens",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "In which year was the first 'Harry Potter' film released?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "1999",
+          "isCorrect": false
+        },
+        {
+          "text": "2000",
+          "isCorrect": false
+        },
+        {
+          "text": "2001",
+          "isCorrect": true
+        },
+        {
+          "text": "2002",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "Who played the character of Tony Stark/Iron Man in the Marvel Cinematic Universe?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "Chris Evans",
+          "isCorrect": false
+        },
+        {
+          "text": "Robert Downey Jr.",
+          "isCorrect": true
+        },
+        {
+          "text": "Mark Ruffalo",
+          "isCorrect": false
+        },
+        {
+          "text": "Chris Hemsworth",
+          "isCorrect": false
+        }
+      ]
+    }
+  ]
+}

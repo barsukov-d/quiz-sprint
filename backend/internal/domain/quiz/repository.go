@@ -90,3 +90,33 @@ type CategoryRepository interface {
 	Save(category *Category) error
 	Delete(id CategoryID) error
 }
+
+// TagRepository defines the interface for tag persistence
+type TagRepository interface {
+	// Save persists a tag (create or update)
+	Save(tag *Tag) error
+
+	// SaveAll persists multiple tags at once
+	SaveAll(tags []*Tag) error
+
+	// FindByName retrieves a tag by its name
+	FindByName(name string) (*Tag, error)
+
+	// FindByNames retrieves multiple tags by their names
+	FindByNames(names []string) ([]*Tag, error)
+
+	// FindAll retrieves all tags
+	FindAll() ([]*Tag, error)
+
+	// FindByQuizID retrieves all tags assigned to a quiz
+	FindByQuizID(quizID QuizID) ([]*Tag, error)
+
+	// AssignTagsToQuiz creates relationships between quiz and tags
+	AssignTagsToQuiz(quizID QuizID, tags []*Tag) error
+
+	// RemoveTagsFromQuiz removes relationships between quiz and tags
+	RemoveTagsFromQuiz(quizID QuizID) error
+
+	// FindQuizzesByTag retrieves quizzes that have a specific tag
+	FindQuizzesByTag(tagName string, limit, offset int) ([]*QuizSummary, error)
+}

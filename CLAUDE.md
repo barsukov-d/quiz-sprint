@@ -101,7 +101,181 @@ go run github.com/swaggo/swag/v2/cmd/swag@latest init --generalInfo cmd/api/main
 # Database
 docker compose -f docker-compose.dev.yml exec postgres psql -U quiz_user -d quiz_sprint_dev
 # Run migrations: docker compose -f docker-compose.dev.yml exec api go run migrations/migrate.go
+
+# Quiz Import (from JSON files)
+make import-quiz FILE=data/quizzes/programming-basics.json  # Import single quiz
+make import-all-quizzes                                      # Import all quizzes from data/quizzes/
+make import-quiz-dry-run FILE=data/quizzes/my-quiz.json     # Validate without importing
+# See backend/IMPORT.md for detailed documentation
+# See backend/data/quizzes/SCHEMA.md for JSON schema
 ```
+
+## Quiz Import Formats
+
+The backend supports two quiz import formats optimized for different use cases:
+
+### Verbose Format (Legacy)
+
+Current format with full field names - good for human readability:
+```json
+{
+  "title": "Quiz Title",
+  "description": "Description",
+  "categoryId": "uuid",
+  "timeLimit": 600,
+  "passingScore": 70,
+  "questions": [
+    {
+      "text": "Question text?",
+      "points": 10,
+      "answers": [
+        { "text": "Answer 1", "isCorrect": false },
+        { "text": "Answer 2 (correct)", "isCorrect": true },
+        { "text": "Answer 3", "isCorrect": false }
+      ]
+    }
+  ]
+}
+```
+**Token Usage:** ~640 tokens per quiz
+
+### Compact Format (LLM-Optimized)
+
+New format for batch LLM generation - optimized for token efficiency:
+```json
+{
+  "t": "Quiz Title",
+  "d": "Description",
+  "cat": "programming",
+  "tags": ["language:go", "difficulty:easy"],
+  "l": 60,
+  "p": 70,
+  "q": [
+    {
+      "t": "Question text?",
+      "a": ["Answer 1", "Answer 2 (correct)", "Answer 3"],
+      "c": 1
+    }
+  ]
+}
+```
+**Token Usage:** ~230 tokens per quiz (**64% reduction!**)
+
+**Field Mapping:**
+- `t` → title
+- `d` → description
+- `cat` → category (can be inferred from tags, see below)
+- `tags` → array of tags (optional but recommended)
+- `l` → timeLimit in seconds (omit if 60)
+- `p` → passingScore percentage (omit if 70)
+- `q` → questions array
+- `a` → answers array (plain strings)
+- `c` → correctIndex (0-based, which answer is correct)
+
+### Batch Format
+
+Generate multiple quizzes in one file for batch import:
+```json
+{
+  "batch": {
+    "version": 1,
+    "cat": "programming",
+    "tags": ["language:go"]
+  },
+  "quizzes": [
+    {
+      "t": "Quiz 1",
+      "tags": ["topic:variables"],
+      "q": [...]
+    },
+    {
+      "t": "Quiz 2",
+      "tags": ["topic:functions"],
+      "l": 90,
+      "q": [...]
+    }
+  ]
+}
+```
+
+**Import Commands:**
+```bash
+# Legacy format (verbose)
+make import-quiz FILE=data/quizzes/legacy/quiz.json
+
+# Compact format
+make import-quiz FILE=data/quizzes/compact-quiz.json
+
+# Batch format (10+ quizzes)
+make import-quiz FILE=data/quizzes/batches/2024-01/go-basics.json
+```
+
+### Category + Tags Hybrid System
+
+**Category:** One per quiz (for main navigation)
+- programming, history, science, movies, geography
+- Used in CategoriesView → QuizListView navigation
+- Required field (or inferred from tags)
+
+**Tags:** Multiple per quiz (for filtering and metadata)
+- `language:go`, `difficulty:easy`, `topic:concurrency`
+- Used for advanced filtering and search
+- Optional field (0-10 tags per quiz)
+
+**Category Inference:**
+If `cat` field is omitted, the category is automatically inferred from tags:
+- `language:*` → "programming"
+- `domain:history` → "history"
+- `domain:science` → "science"
+- `domain:movies` → "movies"
+- Fallback: "general"
+
+**Example:**
+```json
+// Option A: Explicit category
+{
+  "t": "Go Concurrency",
+  "cat": "programming",
+  "tags": ["language:go", "difficulty:medium"]
+}
+
+// Option B: Inferred category (from "language:go" tag)
+{
+  "t": "Go Concurrency",
+  "tags": ["language:go", "difficulty:medium"]
+  // cat: "programming" - auto-inferred by import tool
+}
+```
+
+### Tag Naming Conventions
+
+**Format:** `{category}:{value}`
+
+**Valid Patterns:**
+- ✅ `language:go`
+- ✅ `difficulty:medium`
+- ✅ `topic:web-development` (hyphen for multi-word)
+- ❌ `Go` (missing category prefix)
+- ❌ `Language:Go` (uppercase not allowed)
+- ❌ `topic:web development` (space not allowed)
+
+**Validation Rules:**
+- Lowercase only
+- Hyphens for multi-word values (not underscores or spaces)
+- Max 100 characters
+- Pattern: `^[a-z0-9-:]+$`
+
+**Tag Categories:**
+- `language:*` - Programming languages (go, python, javascript, rust)
+- `difficulty:*` - Quiz difficulty (easy, medium, hard, expert)
+- `topic:*` - Specific topics (variables, functions, concurrency, pointers)
+- `domain:*` - General domains (programming, history, science, movies)
+- `format:*` - Question format (multiple-choice, true-false, code-completion)
+
+**Documentation:**
+- Detailed guide: `backend/IMPORT.md`
+- LLM generation: `backend/docs/LLM_GENERATION_GUIDE.md` (coming soon)
+- JSON schema: `backend/data/quizzes/SCHEMA.md`
 
 ## Architecture
 
@@ -132,7 +306,7 @@ The frontend uses [Kubb v4](https://kubb.dev/) to auto-generate TypeScript types
 ### Backend Structure (`backend/`)
 - `cmd/api/` - Application entry point with DB connection setup
 - `internal/domain/` - Domain models, business rules, repository interfaces (pure Go)
-  - `quiz/` - Quiz aggregate (Quiz, Question, Answer entities)
+  - `quiz/` - Quiz aggregate (Quiz, Question, Answer entities), Category aggregate, Tag aggregate (planned)
   - `user/` - User aggregate (User entity with profile management)
   - `shared/` - Shared value objects (UserID, etc.)
 - `internal/application/` - Use cases orchestrating domain logic
@@ -755,6 +929,23 @@ func mapUserError(err error) error {
 - **API Endpoint**
   - ✅ `GET /api/v1/categories` - Lists all categories.
   - ✅ `POST /api/v1/categories` - Creates a new category.
+
+#### Tag Domain
+- **Tag Aggregate** (`backend/internal/domain/quiz/tag.go`) - **Planned**
+  - ⏳ Aggregate: `Tag` with `TagID` and `TagName`
+  - ⏳ Value Objects: `TagID`, `TagName` with validation (lowercase, pattern `^[a-z0-9-:]+$`)
+  - ⏳ Format: `{category}:{value}` (e.g., language:go, difficulty:easy)
+- **Tag Repository** - **Planned**
+  - ⏳ Interface: `TagRepository` in `domain/quiz/repository.go`
+  - ⏳ Implementation: `PostgresTagRepository` with `Save`, `FindByName`, `FindByNames`, `FindAll`
+  - ⏳ Many-to-many relationship with Quiz via `quiz_tags` junction table
+- **Tag Use Cases** - **Planned**
+  - ⏳ `ListTagsUseCase` - Get all available tags
+  - ⏳ `GetQuizzesByTagUseCase` - Filter quizzes by tag
+  - ⏳ `AssignTagsToQuizUseCase` - Assign tags during import
+- **API Endpoints** - **Planned**
+  - ⏳ `GET /api/v1/tags` - List all tags
+  - ⏳ `GET /api/v1/quiz?tag={name}` - Filter quizzes by tag
 
 #### Frontend
 - **Composables** (`tma/src/composables/`)

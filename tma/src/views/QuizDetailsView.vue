@@ -1,12 +1,17 @@
 <script setup lang="ts">
 import { useGetQuizId } from '@/api'
 import { useRoute, useRouter } from 'vue-router'
+import { useLastQuiz } from '@/composables/useLastQuiz'
 
 const route = useRoute()
 const router = useRouter()
+const { saveLastQuizId } = useLastQuiz()
 
 // Получаем ID квиза из URL
 const quizId = route.params.id as string
+
+// Save this quiz as the last viewed
+saveLastQuizId(quizId)
 
 // Загружаем детали квиза
 const { data: quizData, isLoading, isError, error } = useGetQuizId({ id: quizId })
