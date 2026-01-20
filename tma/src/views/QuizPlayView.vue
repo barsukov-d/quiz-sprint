@@ -4,12 +4,12 @@ import { useRoute, useRouter } from 'vue-router'
 import {
 	usePostQuizIdStart,
 	usePostQuizSessionSessionidAnswer,
-	useDeleteQuizSessionSessionid
+	useDeleteQuizSessionSessionid,
 } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import type {
 	InternalInfrastructureHttpHandlersQuestionDTO as QuestionDTO,
-	InternalInfrastructureHttpHandlersSessionDTO as SessionDTO
+	InternalInfrastructureHttpHandlersSessionDTO as SessionDTO,
 } from '@/api/generated/types/internalInfrastructureHttpHandlers'
 import axios from 'axios'
 
@@ -55,7 +55,7 @@ const handleResumeSession = async () => {
 
 	try {
 		const response = await axios.get(
-			`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value.id}`
+			`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value.id}`,
 		)
 
 		if (response.data?.data) {
@@ -70,7 +70,7 @@ const handleResumeSession = async () => {
 			console.log('Session resumed:', {
 				sessionId: session.value?.id,
 				questionIndex: currentQuestionIndex.value,
-				hasQuestion: !!currentQuestion.value
+				hasQuestion: !!currentQuestion.value,
 			})
 		} else {
 			throw new Error('Invalid response data')
@@ -97,7 +97,7 @@ const handleStartFresh = async () => {
 		// Delete the existing session
 		await abandonSession({
 			sessionId: session.value.id,
-			data: { userId: currentUser.value.id }
+			data: { userId: currentUser.value.id },
 		})
 
 		// Reset session resumed flag
@@ -135,7 +135,7 @@ const initializeQuiz = async () => {
 	try {
 		// First, check if there's an active session
 		const activeSessionResponse = await axios.get(
-			`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value.id}`
+			`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value.id}`,
 		)
 
 		if (activeSessionResponse.data?.data) {
@@ -170,8 +170,8 @@ const startNewQuiz = async () => {
 		const result = await startQuiz({
 			id: quizId,
 			data: {
-				userId: currentUser.value.id
-			}
+				userId: currentUser.value.id,
+			},
 		})
 
 		if (result?.data) {
@@ -217,15 +217,15 @@ const confirmAnswer = async () => {
 			data: {
 				questionId: currentQuestion.value.id,
 				answerId: selectedAnswerId.value,
-				userId: currentUser.value.id
-			}
+				userId: currentUser.value.id,
+			},
 		})
 
 		if (result?.data) {
 			answerResult.value = {
 				isCorrect: result.data.isCorrect,
 				points: result.data.pointsEarned || 0,
-				correctAnswerId: result.data.correctAnswerId
+				correctAnswerId: result.data.correctAnswerId,
 			}
 
 			// Обновить счет сессии
@@ -244,7 +244,7 @@ const confirmAnswer = async () => {
 					// Квиз завершен
 					router.push({
 						name: 'quiz-results',
-						params: { sessionId: session.value!.id }
+						params: { sessionId: session.value!.id },
 					})
 				}
 			}, 2000)
@@ -282,10 +282,19 @@ const getAnswerButtonClass = (answerId: string) => {
 <template>
 	<div class="container mx-auto p-4 pt-20">
 		<!-- Loading -->
-		<div v-if="isInitializing || isStarting || isResuming" class="flex justify-center items-center py-12">
+		<div
+			v-if="isInitializing || isStarting || isResuming"
+			class="flex justify-center items-center py-12"
+		>
 			<UProgress animation="carousel" />
 			<span class="ml-4">
-				{{ isResuming ? 'Resuming session...' : isInitializing ? 'Loading quiz...' : 'Starting quiz...' }}
+				{{
+					isResuming
+						? 'Resuming session...'
+						: isInitializing
+							? 'Loading quiz...'
+							: 'Starting quiz...'
+				}}
 			</span>
 		</div>
 
@@ -297,9 +306,11 @@ const getAnswerButtonClass = (answerId: string) => {
 					<span class="text-sm font-semibold text-gray-600"
 						>Question {{ currentQuestionIndex }} of {{ totalQuestions }}</span
 					>
-					<span class="text-sm font-semibold text-gray-600">Score: {{ session.score }}</span>
+					<span class="text-sm font-semibold text-gray-600"
+						>Score: {{ session.score }}</span
+					>
 				</div>
-				<UProgress :value="progress" color="primary" />
+				<UProgress v-model="progress" color="primary" />
 			</div>
 
 			<!-- Question Card -->
@@ -321,7 +332,9 @@ const getAnswerButtonClass = (answerId: string) => {
 				>
 					<div class="flex items-center justify-between">
 						<span class="font-medium">{{ answer.text }}</span>
-						<span v-if="isAnswerSubmitted && answerResult?.correctAnswerId === answer.id">
+						<span
+							v-if="isAnswerSubmitted && answerResult?.correctAnswerId === answer.id"
+						>
 							✓
 						</span>
 						<span
@@ -393,8 +406,8 @@ const getAnswerButtonClass = (answerId: string) => {
 
 				<div class="space-y-4">
 					<p class="text-gray-700">
-						You already have an active quiz session. Would you like to continue where you left off
-						or start fresh?
+						You already have an active quiz session. Would you like to continue where
+						you left off or start fresh?
 					</p>
 
 					<!-- Error message -->
