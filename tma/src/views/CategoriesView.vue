@@ -13,10 +13,10 @@ const router = useRouter()
 const { currentUser, isAuthenticated } = useAuth()
 
 // Навигация к списку квизов по категории
-const navigateToQuizzes = (categoryId: string) => {
+const navigateToQuizzes = (categoryId: string, categoryName: string) => {
 	router.push({
 		name: 'quizzes',
-		query: { categoryId }
+		query: { categoryId, categoryName },
 	})
 }
 
@@ -31,7 +31,7 @@ const categoryIcons: Record<string, string> = {
 	sports: '⚽',
 	music: '🎵',
 	art: '🎨',
-	food: '🍕'
+	food: '🍕',
 }
 
 // Получить иконку для категории (по slug или дефолтную)
@@ -87,7 +87,7 @@ const getCategoryIcon = (categoryName: string): string => {
 				v-for="category in categories.data"
 				:key="category.id"
 				class="hover:shadow-lg transition-all cursor-pointer hover:scale-[1.02]"
-				@click="navigateToQuizzes(category.id)"
+				@click="navigateToQuizzes(category.id, category.name)"
 			>
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-4 flex-1">
@@ -97,7 +97,9 @@ const getCategoryIcon = (categoryName: string): string => {
 						<!-- Category Info -->
 						<div class="flex-1">
 							<h3 class="text-lg font-semibold mb-1">{{ category.name }}</h3>
-							<p class="text-sm text-gray-500">Explore {{ category.name.toLowerCase() }} quizzes</p>
+							<p class="text-sm text-gray-500">
+								Explore {{ category.name.toLowerCase() }} quizzes
+							</p>
 						</div>
 					</div>
 
@@ -110,7 +112,12 @@ const getCategoryIcon = (categoryName: string): string => {
 							viewBox="0 0 24 24"
 							stroke="currentColor"
 						>
-							<path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 5l7 7-7 7" />
+							<path
+								stroke-linecap="round"
+								stroke-linejoin="round"
+								stroke-width="2"
+								d="M9 5l7 7-7 7"
+							/>
 						</svg>
 					</div>
 				</div>

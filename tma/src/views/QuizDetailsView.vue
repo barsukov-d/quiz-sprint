@@ -1,11 +1,9 @@
 <script setup lang="ts">
-import { useGetQuizId, useGetQuizIdLeaderboard } from '@/api'
+import { useGetQuizId } from '@/api'
 import { useRoute, useRouter } from 'vue-router'
-import { useAuth } from '@/composables/useAuth'
 
 const route = useRoute()
 const router = useRouter()
-const { currentUser } = useAuth()
 
 // Получаем ID квиза из URL
 const quizId = route.params.id as string
@@ -20,7 +18,7 @@ const { data: quizData, isLoading, isError, error } = useGetQuizId({ id: quizId 
 const startQuiz = () => {
 	router.push({
 		name: 'quiz-play',
-		params: { id: quizId }
+		params: { id: quizId },
 	})
 }
 
@@ -83,7 +81,9 @@ const formatTime = (seconds: number) => {
 				<div class="space-y-3">
 					<div class="flex justify-between items-center">
 						<span class="text-gray-600">Questions:</span>
-						<span class="font-semibold">{{ quizData.data.quiz.questions?.length || 0 }}</span>
+						<span class="font-semibold">{{
+							quizData.data.quiz.questions?.length || 0
+						}}</span>
 					</div>
 					<div class="flex justify-between items-center">
 						<span class="text-gray-600">Time Limit:</span>
@@ -93,13 +93,18 @@ const formatTime = (seconds: number) => {
 					</div>
 					<div class="flex justify-between items-center">
 						<span class="text-gray-600">Passing Score:</span>
-						<span class="font-semibold">{{ quizData.data.quiz.passingScore || 0 }}%</span>
+						<span class="font-semibold"
+							>{{ quizData.data.quiz.passingScore || 0 }}%</span
+						>
 					</div>
 				</div>
 			</UCard>
 
 			<!-- Top 3 Leaderboard Card -->
-			<UCard v-if="quizData?.data?.topScores && quizData.data.topScores.length > 0" class="mb-8">
+			<UCard
+				v-if="quizData?.data?.topScores && quizData.data.topScores.length > 0"
+				class="mb-8"
+			>
 				<template #header>
 					<div class="flex justify-between items-center">
 						<h2 class="text-xl font-semibold">👑 Top 3 Leaders</h2>
@@ -114,7 +119,7 @@ const formatTime = (seconds: number) => {
 						:class="{
 							'bg-yellow-50': index === 0,
 							'bg-gray-50': index === 1,
-							'bg-orange-50': index === 2
+							'bg-orange-50': index === 2,
 						}"
 					>
 						<div class="flex items-center gap-3">

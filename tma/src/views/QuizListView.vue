@@ -8,10 +8,17 @@ const router = useRouter()
 
 // Получаем categoryId из query параметров
 const categoryId = computed(() => route.query.categoryId as string | undefined)
+const categoryName = computed(() => route.query.categoryName as string | undefined)
 
 // Получаем квизы с фильтрацией по категории
-const { data: quizzes, isLoading, isError, error, refetch } = useGetQuiz({
-	categoryId: categoryId.value
+const {
+	data: quizzes,
+	isLoading,
+	isError,
+	error,
+	refetch,
+} = useGetQuiz({
+	categoryId: categoryId.value,
 })
 
 // Навигация назад к категориям
@@ -38,7 +45,7 @@ const goToQuizDetails = (quizId: string) => {
 			/>
 			<div>
 				<h1 class="text-3xl font-bold">Квизы</h1>
-				<p v-if="categoryId" class="text-sm text-gray-500">Категория: {{ categoryId }}</p>
+				<p v-if="categoryId" class="text-sm text-gray-500">Категория: {{ categoryName }}</p>
 			</div>
 		</div>
 
@@ -77,7 +84,12 @@ const goToQuizDetails = (quizId: string) => {
 
 				<div class="flex items-center justify-between text-sm text-gray-500 mb-4">
 					<span>📝 {{ quiz.questionsCount || 0 }} вопросов</span>
-					<span>⏱️ {{ quiz.timeLimit ? `${Math.floor(quiz.timeLimit / 60)} мин` : 'N/A' }}</span>
+					<span
+						>⏱️
+						{{
+							quiz.timeLimit ? `${Math.floor(quiz.timeLimit / 60)} мин` : 'N/A'
+						}}</span
+					>
 				</div>
 
 				<div class="flex items-center text-sm text-gray-500 mb-4">
@@ -85,7 +97,9 @@ const goToQuizDetails = (quizId: string) => {
 				</div>
 
 				<template #footer>
-					<UButton block color="primary" @click="goToQuizDetails(quiz.id)"> View Quiz </UButton>
+					<UButton block color="primary" @click="goToQuizDetails(quiz.id)">
+						View Quiz
+					</UButton>
 				</template>
 			</UCard>
 		</div>

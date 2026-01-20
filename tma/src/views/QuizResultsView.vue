@@ -1,13 +1,13 @@
 <script setup lang="ts">
-import { useRoute, useRouter } from 'vue-router'
+import { useRouter } from 'vue-router'
 import { computed } from 'vue'
 
-const route = useRoute()
+// const route = useRoute()
 const router = useRouter()
 
 // Временно используем моковые данные, так как нет API для получения результатов сессии
 // TODO: Добавить API endpoint для получения финальных результатов
-const sessionId = route.params.sessionId as string
+// const sessionId = route.params.sessionId as string
 
 // Мок данные (в реальности должны приходить из API)
 const mockResults = {
@@ -18,7 +18,7 @@ const mockResults = {
 	timeSpent: 245, // секунды
 	passed: true,
 	rank: 12,
-	totalPlayers: 1234
+	totalPlayers: 1234,
 }
 
 // Computed properties
@@ -79,12 +79,14 @@ const goHome = () => {
 							class="w-40 h-40 rounded-full border-8 flex items-center justify-center"
 							:class="{
 								'border-green-500 bg-green-50': mockResults.passed,
-								'border-red-500 bg-red-50': !mockResults.passed
+								'border-red-500 bg-red-50': !mockResults.passed,
 							}"
 						>
 							<div>
 								<div class="text-5xl font-bold">{{ scorePercentage }}%</div>
-								<div class="text-sm text-gray-600">{{ mockResults.score }}/{{ mockResults.totalPoints }}</div>
+								<div class="text-sm text-gray-600">
+									{{ mockResults.score }}/{{ mockResults.totalPoints }}
+								</div>
 							</div>
 						</div>
 					</div>
@@ -105,7 +107,9 @@ const goHome = () => {
 			<div class="grid grid-cols-2 gap-4 mb-6">
 				<UCard>
 					<div class="text-center py-4">
-						<div class="text-3xl font-bold mb-2">{{ mockResults.correctAnswers }}/{{ mockResults.totalQuestions }}</div>
+						<div class="text-3xl font-bold mb-2">
+							{{ mockResults.correctAnswers }}/{{ mockResults.totalQuestions }}
+						</div>
 						<div class="text-sm text-gray-600">Correct Answers</div>
 					</div>
 				</UCard>
@@ -134,9 +138,7 @@ const goHome = () => {
 
 			<!-- Actions -->
 			<div class="space-y-3">
-				<UButton size="xl" color="primary" block @click="tryAgain">
-					Try Again
-				</UButton>
+				<UButton size="xl" color="primary" block @click="tryAgain"> Try Again </UButton>
 				<UButton size="xl" color="gray" variant="outline" block @click="viewLeaderboard">
 					View Leaderboard
 				</UButton>
