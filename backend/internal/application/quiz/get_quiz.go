@@ -48,16 +48,27 @@ func NewListQuizzesUseCase(quizRepo quiz.QuizRepository) *ListQuizzesUseCase {
 	}
 }
 
-// Execute retrieves all quizzes
+// Execute retrieves quizzes, optionally filtered by category
 func (uc *ListQuizzesUseCase) Execute(input ListQuizzesInput) (ListQuizzesOutput, error) {
-	// 1. Load all quizzes
-	quizzes, err := uc.quizRepo.FindAll()
+	var summaries []*quiz.QuizSummary
+	var err error
+
+	if input.CategoryID != "" {
+		categoryID, err := quiz.NewCategoryIDFromString(input.CategoryID)
+		if err != nil {
+			return ListQuizzesOutput{}, err // Invalid category ID format
+		}
+		summaries, err = uc.quizRepo.FindSummariesByCategory(categoryID)
+	} else {
+		summaries, err = uc.quizRepo.FindAllSummaries()
+	}
+
 	if err != nil {
 		return ListQuizzesOutput{}, err
 	}
 
 	// 2. Return DTOs
 	return ListQuizzesOutput{
-		Quizzes: ToQuizListDTO(quizzes),
+		Quizzes: ToQuizListDTOFromSummaries(summaries),
 	}, nil
 }

@@ -23,10 +23,10 @@ func NewAnswer(id AnswerID, text AnswerText, isCorrect bool, position int) (*Ans
 }
 
 // Getters (no setters - immutable after creation)
-func (a *Answer) ID() AnswerID       { return a.id }
-func (a *Answer) Text() AnswerText   { return a.text }
-func (a *Answer) IsCorrect() bool    { return a.isCorrect }
-func (a *Answer) Position() int      { return a.position }
+func (a *Answer) ID() AnswerID     { return a.id }
+func (a *Answer) Text() AnswerText { return a.text }
+func (a *Answer) IsCorrect() bool  { return a.isCorrect }
+func (a *Answer) Position() int    { return a.position }
 
 // Question is an entity representing a quiz question
 type Question struct {
@@ -131,3 +131,62 @@ func (ua UserAnswer) AnswerID() AnswerID     { return ua.answerID }
 func (ua UserAnswer) IsCorrect() bool        { return ua.isCorrect }
 func (ua UserAnswer) Points() Points         { return ua.points }
 func (ua UserAnswer) AnsweredAt() int64      { return ua.answeredAt }
+
+// QuizSummary represents a lightweight view of a quiz for list displays.
+type QuizSummary struct {
+	id            QuizID
+	title         QuizTitle
+	description   string
+	categoryID    CategoryID
+	timeLimit     TimeLimit
+	passingScore  PassingScore
+	createdAt     int64
+	questionCount int
+}
+
+// NewQuizSummary is a constructor for QuizSummary
+func NewQuizSummary(
+	id QuizID,
+	title QuizTitle,
+	description string,
+	categoryID CategoryID,
+	timeLimit TimeLimit,
+	passingScore PassingScore,
+	createdAt int64,
+	questionCount int,
+) *QuizSummary {
+	return &QuizSummary{
+		id:            id,
+		title:         title,
+		description:   description,
+		categoryID:    categoryID,
+		timeLimit:     timeLimit,
+		passingScore:  passingScore,
+		createdAt:     createdAt,
+		questionCount: questionCount,
+	}
+}
+
+// ID returns the quiz ID.
+func (qs *QuizSummary) ID() QuizID { return qs.id }
+
+// Title returns the quiz title.
+func (qs *QuizSummary) Title() QuizTitle { return qs.title }
+
+// Description returns the quiz description.
+func (qs *QuizSummary) Description() string { return qs.description }
+
+// CategoryID returns the quiz category ID.
+func (qs *QuizSummary) CategoryID() CategoryID { return qs.categoryID }
+
+// TimeLimit returns the quiz time limit.
+func (qs *QuizSummary) TimeLimit() TimeLimit { return qs.timeLimit }
+
+// PassingScore returns the quiz passing score.
+func (qs *QuizSummary) PassingScore() PassingScore { return qs.passingScore }
+
+// CreatedAt returns the creation timestamp.
+func (qs *QuizSummary) CreatedAt() int64 { return qs.createdAt }
+
+// QuestionCount returns the number of questions in the quiz.
+func (qs *QuizSummary) QuestionCount() int { return qs.questionCount }

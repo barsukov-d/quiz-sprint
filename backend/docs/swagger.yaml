@@ -1,11 +1,380 @@
 basePath: /api/v1
 definitions:
-  handlers.StartQuizRequest:
+  internal_infrastructure_http_handlers.AbandonSessionRequest:
     properties:
       userId:
         type: string
+    required:
+    - userId
     type: object
-  handlers.SubmitAnswerRequest:
+  internal_infrastructure_http_handlers.AnswerDTO:
+    properties:
+      id:
+        type: string
+      position:
+        type: integer
+      text:
+        type: string
+    required:
+    - id
+    - position
+    - text
+    type: object
+  internal_infrastructure_http_handlers.CategoryDTO:
+    properties:
+      id:
+        type: string
+      name:
+        type: string
+    required:
+    - id
+    - name
+    type: object
+  internal_infrastructure_http_handlers.CreateCategoryData:
+    properties:
+      category:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.CategoryDTO'
+    required:
+    - category
+    type: object
+  internal_infrastructure_http_handlers.CreateCategoryRequest:
+    properties:
+      name:
+        type: string
+    required:
+    - name
+    type: object
+  internal_infrastructure_http_handlers.CreateCategoryResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.CreateCategoryData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.ErrorDetail:
+    properties:
+      code:
+        type: integer
+      message:
+        type: string
+    required:
+    - code
+    - message
+    type: object
+  internal_infrastructure_http_handlers.ErrorResponse:
+    properties:
+      error:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorDetail'
+    required:
+    - error
+    type: object
+  internal_infrastructure_http_handlers.FinalResultDTO:
+    properties:
+      correctCount:
+        type: integer
+      maxScore:
+        type: integer
+      passed:
+        type: boolean
+      percentage:
+        type: integer
+      questionsCount:
+        type: integer
+      totalScore:
+        type: integer
+    required:
+    - correctCount
+    - maxScore
+    - passed
+    - percentage
+    - questionsCount
+    - totalScore
+    type: object
+  internal_infrastructure_http_handlers.GetActiveSessionData:
+    properties:
+      currentQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      session:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.SessionDTO'
+      timeLimit:
+        type: integer
+      totalQuestions:
+        type: integer
+    required:
+    - currentQuestion
+    - session
+    - timeLimit
+    - totalQuestions
+    type: object
+  internal_infrastructure_http_handlers.GetActiveSessionRequest:
+    properties:
+      userId:
+        type: string
+    required:
+    - userId
+    type: object
+  internal_infrastructure_http_handlers.GetActiveSessionResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GetActiveSessionData'
+    type: object
+  internal_infrastructure_http_handlers.GetLeaderboardResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO'
+        type: array
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetQuizDetailsData:
+    properties:
+      quiz:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuizDetailDTO'
+      topScores:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO'
+        type: array
+    required:
+    - quiz
+    - topScores
+    type: object
+  internal_infrastructure_http_handlers.GetQuizDetailsResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GetQuizDetailsData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetUserResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.UserDTO'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.LeaderboardEntryDTO:
+    properties:
+      completedAt:
+        type: integer
+      rank:
+        type: integer
+      score:
+        type: integer
+      userId:
+        type: string
+      username:
+        type: string
+    required:
+    - completedAt
+    - rank
+    - score
+    - userId
+    - username
+    type: object
+  internal_infrastructure_http_handlers.ListCategoriesResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.CategoryDTO'
+        type: array
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.ListQuizzesResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.QuizDTO'
+        type: array
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.ListUsersResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.UserDTO'
+        type: array
+      total:
+        type: integer
+    required:
+    - data
+    - total
+    type: object
+  internal_infrastructure_http_handlers.QuestionDTO:
+    properties:
+      answers:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.AnswerDTO'
+        type: array
+      id:
+        type: string
+      points:
+        type: integer
+      position:
+        type: integer
+      text:
+        type: string
+    required:
+    - answers
+    - id
+    - points
+    - position
+    - text
+    type: object
+  internal_infrastructure_http_handlers.QuizDTO:
+    properties:
+      categoryId:
+        type: string
+      createdAt:
+        type: integer
+      description:
+        type: string
+      id:
+        type: string
+      passingScore:
+        type: integer
+      questionsCount:
+        type: integer
+      timeLimit:
+        type: integer
+      title:
+        type: string
+    required:
+    - createdAt
+    - id
+    - passingScore
+    - questionsCount
+    - timeLimit
+    - title
+    type: object
+  internal_infrastructure_http_handlers.QuizDetailDTO:
+    properties:
+      categoryId:
+        type: string
+      createdAt:
+        type: integer
+      description:
+        type: string
+      id:
+        type: string
+      passingScore:
+        type: integer
+      questions:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+        type: array
+      timeLimit:
+        type: integer
+      title:
+        type: string
+    required:
+    - createdAt
+    - id
+    - passingScore
+    - questions
+    - timeLimit
+    - title
+    type: object
+  internal_infrastructure_http_handlers.RegisterUserData:
+    properties:
+      isNewUser:
+        type: boolean
+      user:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.UserDTO'
+    required:
+    - isNewUser
+    - user
+    type: object
+  internal_infrastructure_http_handlers.RegisterUserResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.RegisterUserData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.SessionDTO:
+    properties:
+      completedAt:
+        type: integer
+      currentQuestion:
+        type: integer
+      id:
+        type: string
+      quizId:
+        type: string
+      score:
+        type: integer
+      startedAt:
+        type: integer
+      status:
+        type: string
+      userId:
+        type: string
+    required:
+    - currentQuestion
+    - id
+    - quizId
+    - score
+    - startedAt
+    - status
+    - userId
+    type: object
+  internal_infrastructure_http_handlers.StartQuizData:
+    properties:
+      firstQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      session:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.SessionDTO'
+      timeLimit:
+        type: integer
+      totalQuestions:
+        type: integer
+    required:
+    - firstQuestion
+    - session
+    - timeLimit
+    - totalQuestions
+    type: object
+  internal_infrastructure_http_handlers.StartQuizRequest:
+    properties:
+      userId:
+        type: string
+    required:
+    - userId
+    type: object
+  internal_infrastructure_http_handlers.StartQuizResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.StartQuizData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.SubmitAnswerData:
+    properties:
+      correctAnswerId:
+        type: string
+      finalResult:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.FinalResultDTO'
+      isCorrect:
+        type: boolean
+      isQuizCompleted:
+        type: boolean
+      nextQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      pointsEarned:
+        type: integer
+      totalScore:
+        type: integer
+    required:
+    - correctAnswerId
+    - isCorrect
+    - isQuizCompleted
+    - pointsEarned
+    - totalScore
+    type: object
+  internal_infrastructure_http_handlers.SubmitAnswerRequest:
     properties:
       answerId:
         type: string
@@ -13,6 +382,65 @@ definitions:
         type: string
       userId:
         type: string
+    required:
+    - answerId
+    - questionId
+    - userId
+    type: object
+  internal_infrastructure_http_handlers.SubmitAnswerResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.SubmitAnswerData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.UpdateUserProfileRequest:
+    properties:
+      avatarUrl:
+        type: string
+      email:
+        type: string
+      languageCode:
+        type: string
+      telegramUsername:
+        type: string
+      username:
+        type: string
+    type: object
+  internal_infrastructure_http_handlers.UpdateUserProfileResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.UserDTO'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.UserDTO:
+    properties:
+      avatarUrl:
+        type: string
+      createdAt:
+        type: integer
+      email:
+        type: string
+      id:
+        type: string
+      isBlocked:
+        type: boolean
+      languageCode:
+        type: string
+      telegramUsername:
+        type: string
+      updatedAt:
+        type: integer
+      username:
+        type: string
+    required:
+    - createdAt
+    - id
+    - isBlocked
+    - languageCode
+    - updatedAt
+    - username
     type: object
 host: localhost:3000
 info:
@@ -28,24 +456,76 @@ info:
   title: Quiz Sprint API
   version: "1.0"
 paths:
+  /categories:
+    get:
+      consumes:
+      - application/json
+      description: Get a list of all available quiz categories
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of categories
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ListCategoriesResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: List all categories
+      tags:
+      - category
+    post:
+      consumes:
+      - application/json
+      description: Create a new quiz category
+      parameters:
+      - description: Category data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.CreateCategoryRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Category created
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.CreateCategoryResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Create a new category
+      tags:
+      - category
   /quiz:
     get:
       consumes:
       - application/json
-      description: Get a list of all available quizzes with basic information
+      description: Get a list of all available quizzes with basic information, optionally
+        filtered by category.
+      parameters:
+      - description: Category ID to filter quizzes by
+        in: query
+        name: categoryId
+        type: string
       produces:
       - application/json
       responses:
         "200":
           description: List of quizzes
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ListQuizzesResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: List all quizzes
       tags:
       - quiz
@@ -67,24 +547,59 @@ paths:
         "200":
           description: Quiz details with questions and top scores
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetQuizDetailsResponse'
         "400":
           description: Invalid quiz ID
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "404":
           description: Quiz not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Get quiz details
+      tags:
+      - quiz
+  /quiz/{id}/active-session:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve the active quiz session for the current user and quiz
+      parameters:
+      - description: Quiz ID
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: User ID for authorization
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.GetActiveSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Active session with current question
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetActiveSessionResponse'
+        "400":
+          description: Invalid quiz or user ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: No active session found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get active quiz session
       tags:
       - quiz
   /quiz/{id}/leaderboard:
@@ -108,23 +623,19 @@ paths:
         "200":
           description: Leaderboard entries
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetLeaderboardResponse'
         "400":
           description: Invalid quiz ID
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "404":
           description: Quiz not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Get quiz leaderboard
       tags:
       - quiz
@@ -144,36 +655,72 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.StartQuizRequest'
+          $ref: '#/definitions/internal_infrastructure_http_handlers.StartQuizRequest'
       produces:
       - application/json
       responses:
         "201":
           description: Quiz session started with first question
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.StartQuizResponse'
         "400":
           description: Invalid request or quiz ID
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "404":
           description: Quiz not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "409":
           description: Active session already exists
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Start a quiz session
+      tags:
+      - quiz
+  /quiz/session/{sessionId}:
+    delete:
+      consumes:
+      - application/json
+      description: Delete an active quiz session, allowing the user to start fresh
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      - description: User ID for authorization
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.AbandonSessionRequest'
+      produces:
+      - application/json
+      responses:
+        "204":
+          description: Session abandoned successfully
+        "400":
+          description: Invalid session ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized - session belongs to another user
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Abandon a quiz session
       tags:
       - quiz
   /quiz/session/{sessionId}/answer:
@@ -192,7 +739,7 @@ paths:
         name: request
         required: true
         schema:
-          $ref: '#/definitions/handlers.SubmitAnswerRequest'
+          $ref: '#/definitions/internal_infrastructure_http_handlers.SubmitAnswerRequest'
       produces:
       - application/json
       responses:
@@ -200,31 +747,184 @@ paths:
           description: Answer result with correctness, points, and next question or
             final result
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.SubmitAnswerResponse'
         "400":
           description: Invalid request, session completed, or already answered
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "401":
           description: Unauthorized - user mismatch
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "404":
           description: Session, question, or answer not found
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "500":
           description: Internal server error
           schema:
-            additionalProperties: true
-            type: object
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Submit an answer
       tags:
       - quiz
+  /user/{id}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve user profile by Telegram user ID
+      parameters:
+      - description: User ID (Telegram ID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetUserResponse'
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get user by ID
+      tags:
+      - user
+    put:
+      consumes:
+      - application/json
+      description: Update user profile information
+      parameters:
+      - description: User ID (Telegram ID)
+        in: path
+        name: id
+        required: true
+        type: string
+      - description: Updated profile data
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.UpdateUserProfileRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated user profile
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.UpdateUserProfileResponse'
+        "400":
+          description: Invalid request body or user ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Update user profile
+      tags:
+      - user
+  /user/by-username/{username}:
+    get:
+      consumes:
+      - application/json
+      description: Retrieve user profile by Telegram @username
+      parameters:
+      - description: Telegram username (without @)
+        in: path
+        name: username
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetUserResponse'
+        "400":
+          description: Invalid username
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get user by Telegram username
+      tags:
+      - user
+  /user/register:
+    post:
+      consumes:
+      - application/json
+      description: Register a new user from Telegram Mini App or update existing user
+        profile (idempotent). Requires valid Telegram init data in Authorization header.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User registered or updated
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.RegisterUserResponse'
+        "401":
+          description: Invalid or missing Telegram authorization
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      security:
+      - TelegramAuth: []
+      summary: Register or update user
+      tags:
+      - user
+  /users:
+    get:
+      consumes:
+      - application/json
+      description: Get a paginated list of all users
+      parameters:
+      - description: Limit (default 50, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset (default 0)
+        in: query
+        name: offset
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of users
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ListUsersResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: List all users (Admin)
+      tags:
+      - user
 schemes:
 - http
 - https

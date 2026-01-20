@@ -5,7 +5,7 @@ import (
 	"log"
 	"sync"
 
-	"github.com/gofiber/websocket/v2"
+	"github.com/gofiber/contrib/v3/websocket"
 
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
 )

@@ -256,3 +256,53 @@ func (ps PassingScore) Percentage() int {
 func (ps PassingScore) IsZero() bool {
 	return ps.percentage == 0
 }
+
+// CategoryID is a value object for category identifier
+type CategoryID struct {
+	id shared.ID
+}
+
+func NewCategoryID() CategoryID {
+	return CategoryID{id: shared.NewID()}
+}
+
+func NewCategoryIDFromString(value string) (CategoryID, error) {
+	id, err := shared.NewIDFromString(value)
+	if err != nil {
+		return CategoryID{}, ErrInvalidCategoryID
+	}
+	return CategoryID{id: id}, nil
+}
+
+func (id CategoryID) String() string {
+	return id.id.String()
+}
+
+func (id CategoryID) Equals(other CategoryID) bool {
+	return id.id.Equals(other.id)
+}
+
+func (id CategoryID) IsZero() bool {
+	return id.id.IsZero()
+}
+
+// CategoryName is a value object for category name
+type CategoryName struct {
+	value string
+}
+
+// NewCategoryName creates a new CategoryName value object after validation.
+func NewCategoryName(value string) (CategoryName, error) {
+	if value == "" {
+		return CategoryName{}, ErrInvalidCategoryName
+	}
+	if len(value) > 100 {
+		return CategoryName{}, ErrCategoryNameTooLong
+	}
+	return CategoryName{value: value}, nil
+}
+
+// String returns the primitive string value.
+func (n CategoryName) String() string {
+	return n.value
+}
