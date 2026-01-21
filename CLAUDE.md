@@ -51,7 +51,7 @@ quiz-sprint/
 ├── backend/                # Go backend (DDD)
 ├── infrastructure/         # VPS configs (nginx, systemd)
 ├── dev-tunnel/             # SSH tunnels for HTTPS dev
-└── docs/                   # Domain docs (DOMAIN.md, USER_FLOW.md)
+└── docs/                   # Documentation (see docs/README.md)
 ```
 
 ### Backend DDD Layers (`backend/internal/`)
@@ -176,10 +176,51 @@ make import-all-quizzes                           # Import all from data/quizzes
 
 ## Documentation
 
-See `docs/` for domain model and user flows:
-- `DOMAIN.md` - DDD patterns, aggregates, use cases
-- `USER_FLOW.md` - User journeys, wireframes, UI spec
-- `DOCUMENTATION_WORKFLOW.md` - When/how to update docs
+**NEW (v2.0):** Hybrid documentation structure for better AI code generation
+
+**Navigation Hub:** `docs/README.md` - START HERE
+
+### Quick Reference for AI
+
+**Для bugfix существующей фичи:**
+1. Read `docs/current/domain.md` - find aggregate & use case
+2. Read `docs/current/api.md` - find API endpoint
+3. Fix code
+4. Update docs if business logic changed
+
+**Для новой фичи:**
+1. Read `docs/future/ROADMAP.md` - check if planned
+2. Read detailed spec in old `DOMAIN.md` or `USER_FLOW.md` (Future Enhancements sections)
+3. Implement following DDD structure
+4. Update `docs/current/` after implementation
+
+**Для понимания архитектуры:**
+- `docs/ARCHITECTURE.md` - Bounded Contexts, tech stack, DDD layers
+- `docs/UBIQUITOUS_LANGUAGE.md` - словарь терминов
+
+**Для API integration:**
+- `docs/current/api.md` - все endpoints с примерами
+- OR Swagger UI: http://localhost:3000/swagger/index.html
+
+**Для UI/UX:**
+- `docs/current/user-flows.md` - ссылки на wireframes (пока в старом USER_FLOW.md)
+
+### Documentation Structure
+
+```
+docs/
+├── README.md                    # Navigation hub (START HERE)
+├── ARCHITECTURE.md              # System overview, Bounded Contexts
+├── UBIQUITOUS_LANGUAGE.md       # Словарь терминов
+│
+├── current/                     # Текущая реализация (~1500 lines total)
+│   ├── domain.md                # Aggregates, Use Cases (~400 lines)
+│   ├── api.md                   # REST & WebSocket catalog (~550 lines)
+│   └── user-flows.md            # UI flows (links to old file for now)
+│
+└── future/                      # Roadmap
+    └── ROADMAP.md               # Priority matrix, 6 phases
+```
 
 **Workflow**: Update docs BEFORE code → Commit together
 
