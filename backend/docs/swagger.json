@@ -169,6 +169,95 @@
                 }
             }
         },
+        "/quiz/daily": {
+            "get": {
+                "security": [
+                    {
+                        "TelegramAuth": []
+                    }
+                ],
+                "description": "Get the quiz of the day with completion status. Same quiz for all users on the same date. Deterministic selection based on date. Requires authentication.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "quiz"
+                ],
+                "summary": "Get daily quiz",
+                "responses": {
+                    "200": {
+                        "description": "Daily quiz details with completion status",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetDailyQuizResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - missing or invalid authentication",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "No quizzes available",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/quiz/random": {
+            "get": {
+                "description": "Get a random quiz, optionally filtered by category",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "quiz"
+                ],
+                "summary": "Get random quiz",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID to filter quizzes by",
+                        "name": "categoryId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Random quiz details with questions",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetRandomQuizResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "No quizzes available",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/quiz/session/{sessionId}": {
             "get": {
                 "description": "Get detailed results for a quiz session including statistics and quiz info",
@@ -772,6 +861,50 @@
                 }
             }
         },
+        "/user/{userId}/sessions/active": {
+            "get": {
+                "description": "Get all active (not completed) quiz sessions for a user. Used for \"Continue Playing\" feature.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "quiz"
+                ],
+                "summary": "Get user's active quiz sessions",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID",
+                        "name": "userId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "List of active sessions",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetUserActiveSessionsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid user ID",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/users": {
             "get": {
                 "description": "Get a paginated list of all users",
@@ -895,6 +1028,51 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.DailyQuizData": {
+            "type": "object",
+            "required": [
+                "completionStatus",
+                "quiz",
+                "topScores"
+            ],
+            "properties": {
+                "completionStatus": {
+                    "description": "\"not_attempted\" | \"completed\"",
+                    "type": "string"
+                },
+                "quiz": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuizDetailDTO"
+                },
+                "topScores": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO"
+                    }
+                },
+                "userResult": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.DailyQuizUserResultDTO"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.DailyQuizUserResultDTO": {
+            "type": "object",
+            "required": [
+                "completedAt",
+                "rank",
+                "score"
+            ],
+            "properties": {
+                "completedAt": {
+                    "type": "integer"
+                },
+                "rank": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.ErrorDetail": {
             "type": "object",
             "required": [
@@ -998,6 +1176,17 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.GetDailyQuizResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.DailyQuizData"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse": {
             "type": "object",
             "required": [
@@ -1055,6 +1244,17 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.GetRandomQuizResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.GetQuizDetailsData"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.GetSessionResultsResponse": {
             "type": "object",
             "required": [
@@ -1063,6 +1263,20 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.SessionResultsData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetUserActiveSessionsResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.SessionSummaryDTO"
+                    }
                 }
             }
         },
@@ -1400,6 +1614,41 @@
                 },
                 "timeSpent": {
                     "description": "seconds",
+                    "type": "integer"
+                },
+                "totalQuestions": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.SessionSummaryDTO": {
+            "type": "object",
+            "required": [
+                "currentQuestion",
+                "quizId",
+                "quizTitle",
+                "score",
+                "sessionId",
+                "startedAt",
+                "totalQuestions"
+            ],
+            "properties": {
+                "currentQuestion": {
+                    "type": "integer"
+                },
+                "quizId": {
+                    "type": "string"
+                },
+                "quizTitle": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "sessionId": {
+                    "type": "string"
+                },
+                "startedAt": {
                     "type": "integer"
                 },
                 "totalQuestions": {

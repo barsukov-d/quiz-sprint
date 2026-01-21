@@ -1,11 +1,14 @@
 package handlers
 
 import (
+	"fmt"
+
 	"github.com/gofiber/fiber/v3"
 
 	appQuiz "github.com/barsukov/quiz-sprint/backend/internal/application/quiz"
 	domainQuiz "github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/shared"
+	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/middleware"
 )
 
 // QuizHandler handles HTTP requests for quizzes
@@ -21,6 +24,9 @@ type QuizHandler struct {
 	getActiveSessionUC        *appQuiz.GetActiveSessionUseCase
 	abandonSessionUC          *appQuiz.AbandonSessionUseCase
 	getSessionResultsUC       *appQuiz.GetSessionResultsUseCase
+	getDailyQuizUC            *appQuiz.GetDailyQuizUseCase
+	getRandomQuizUC           *appQuiz.GetRandomQuizUseCase
+	getUserActiveSessionsUC   *appQuiz.GetUserActiveSessionsUseCase
 }
 
 // NewQuizHandler creates a new QuizHandler
@@ -35,18 +41,24 @@ func NewQuizHandler(
 	getActiveSessionUC *appQuiz.GetActiveSessionUseCase,
 	abandonSessionUC *appQuiz.AbandonSessionUseCase,
 	getSessionResultsUC *appQuiz.GetSessionResultsUseCase,
+	getDailyQuizUC *appQuiz.GetDailyQuizUseCase,
+	getRandomQuizUC *appQuiz.GetRandomQuizUseCase,
+	getUserActiveSessionsUC *appQuiz.GetUserActiveSessionsUseCase,
 ) *QuizHandler {
 	return &QuizHandler{
-		listQuizzesUC:          listQuizzesUC,
-		getQuizUC:              getQuizUC,
-		getQuizDetailsUC:       getQuizDetailsUC,
-		startQuizUC:            startQuizUC,
-		submitAnswerUC:         submitAnswerUC,
-		getLeaderboardUC:       getLeaderboardUC,
-		getGlobalLeaderboardUC: getGlobalLeaderboardUC,
-		getActiveSessionUC:     getActiveSessionUC,
-		abandonSessionUC:       abandonSessionUC,
-		getSessionResultsUC:    getSessionResultsUC,
+		listQuizzesUC:           listQuizzesUC,
+		getQuizUC:               getQuizUC,
+		getQuizDetailsUC:        getQuizDetailsUC,
+		startQuizUC:             startQuizUC,
+		submitAnswerUC:          submitAnswerUC,
+		getLeaderboardUC:        getLeaderboardUC,
+		getGlobalLeaderboardUC:  getGlobalLeaderboardUC,
+		getActiveSessionUC:      getActiveSessionUC,
+		abandonSessionUC:        abandonSessionUC,
+		getSessionResultsUC:     getSessionResultsUC,
+		getDailyQuizUC:          getDailyQuizUC,
+		getRandomQuizUC:         getRandomQuizUC,
+		getUserActiveSessionsUC: getUserActiveSessionsUC,
 	}
 }
 
@@ -393,6 +405,101 @@ func (h *QuizHandler) GetGlobalLeaderboard(c fiber.Ctx) error {
 	// 3. Return response
 	return c.JSON(fiber.Map{
 		"data": output.Entries,
+	})
+}
+
+// GetDailyQuiz handles GET /api/v1/quiz/daily
+// @Summary Get daily quiz
+// @Description Get the quiz of the day with completion status. Same quiz for all users on the same date. Deterministic selection based on date. Requires authentication.
+// @Tags quiz
+// @Accept json
+// @Produce json
+// @Security TelegramAuth
+// @Success 200 {object} GetDailyQuizResponse "Daily quiz details with completion status"
+// @Failure 401 {object} ErrorResponse "Unauthorized - missing or invalid authentication"
+// @Failure 404 {object} ErrorResponse "No quizzes available"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /quiz/daily [get]
+func (h *QuizHandler) GetDailyQuiz(c fiber.Ctx) error {
+	// 1. Get authenticated user from middleware
+	initData := middleware.GetTelegramInitData(c)
+	if initData == nil {
+		return fiber.NewError(fiber.StatusUnauthorized, "Authentication required")
+	}
+
+	userID := fmt.Sprintf("%d", initData.User.ID)
+
+	// 2. Execute use case
+	output, err := h.getDailyQuizUC.Execute(appQuiz.GetDailyQuizInput{
+		UserID: userID,
+	})
+	if err != nil {
+		return mapError(err)
+	}
+
+	// 3. Return response
+	return c.JSON(fiber.Map{
+		"data": output,
+	})
+}
+
+// GetRandomQuiz handles GET /api/v1/quiz/random
+// @Summary Get random quiz
+// @Description Get a random quiz, optionally filtered by category
+// @Tags quiz
+// @Accept json
+// @Produce json
+// @Param categoryId query string false "Category ID to filter quizzes by"
+// @Success 200 {object} GetRandomQuizResponse "Random quiz details with questions"
+// @Failure 404 {object} ErrorResponse "No quizzes available"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /quiz/random [get]
+func (h *QuizHandler) GetRandomQuiz(c fiber.Ctx) error {
+	// 1. Get query params
+	categoryID := c.Query("categoryId")
+
+	// 2. Execute use case
+	input := appQuiz.GetRandomQuizInput{
+		CategoryID: categoryID,
+	}
+	output, err := h.getRandomQuizUC.Execute(input)
+	if err != nil {
+		return mapError(err)
+	}
+
+	// 3. Return response
+	return c.JSON(fiber.Map{
+		"data": output,
+	})
+}
+
+// GetUserActiveSessions handles GET /api/v1/user/:userId/sessions/active
+// @Summary Get user's active quiz sessions
+// @Description Get all active (not completed) quiz sessions for a user. Used for "Continue Playing" feature.
+// @Tags quiz
+// @Accept json
+// @Produce json
+// @Param userId path string true "User ID"
+// @Success 200 {object} GetUserActiveSessionsResponse "List of active sessions"
+// @Failure 400 {object} ErrorResponse "Invalid user ID"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /user/{userId}/sessions/active [get]
+func (h *QuizHandler) GetUserActiveSessions(c fiber.Ctx) error {
+	// 1. Get path params
+	userID := c.Params("userId")
+
+	// 2. Execute use case
+	input := appQuiz.GetUserActiveSessionsInput{
+		UserID: userID,
+	}
+	output, err := h.getUserActiveSessionsUC.Execute(input)
+	if err != nil {
+		return mapError(err)
+	}
+
+	// 3. Return response
+	return c.JSON(fiber.Map{
+		"data": output.Sessions,
 	})
 }
 

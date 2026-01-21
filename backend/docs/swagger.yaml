@@ -51,6 +51,37 @@ definitions:
     required:
     - data
     type: object
+  internal_infrastructure_http_handlers.DailyQuizData:
+    properties:
+      completionStatus:
+        description: '"not_attempted" | "completed"'
+        type: string
+      quiz:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuizDetailDTO'
+      topScores:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO'
+        type: array
+      userResult:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.DailyQuizUserResultDTO'
+    required:
+    - completionStatus
+    - quiz
+    - topScores
+    type: object
+  internal_infrastructure_http_handlers.DailyQuizUserResultDTO:
+    properties:
+      completedAt:
+        type: integer
+      rank:
+        type: integer
+      score:
+        type: integer
+    required:
+    - completedAt
+    - rank
+    - score
+    type: object
   internal_infrastructure_http_handlers.ErrorDetail:
     properties:
       code:
@@ -121,6 +152,13 @@ definitions:
       data:
         $ref: '#/definitions/internal_infrastructure_http_handlers.GetActiveSessionData'
     type: object
+  internal_infrastructure_http_handlers.GetDailyQuizResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.DailyQuizData'
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse:
     properties:
       data:
@@ -158,10 +196,26 @@ definitions:
     required:
     - data
     type: object
+  internal_infrastructure_http_handlers.GetRandomQuizResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GetQuizDetailsData'
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.GetSessionResultsResponse:
     properties:
       data:
         $ref: '#/definitions/internal_infrastructure_http_handlers.SessionResultsData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetUserActiveSessionsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.SessionSummaryDTO'
+        type: array
     required:
     - data
     type: object
@@ -403,6 +457,31 @@ definitions:
     - scorePercentage
     - session
     - timeSpent
+    - totalQuestions
+    type: object
+  internal_infrastructure_http_handlers.SessionSummaryDTO:
+    properties:
+      currentQuestion:
+        type: integer
+      quizId:
+        type: string
+      quizTitle:
+        type: string
+      score:
+        type: integer
+      sessionId:
+        type: string
+      startedAt:
+        type: integer
+      totalQuestions:
+        type: integer
+    required:
+    - currentQuestion
+    - quizId
+    - quizTitle
+    - score
+    - sessionId
+    - startedAt
     - totalQuestions
     type: object
   internal_infrastructure_http_handlers.StartQuizData:
@@ -810,6 +889,64 @@ paths:
       summary: Start a quiz session
       tags:
       - quiz
+  /quiz/daily:
+    get:
+      consumes:
+      - application/json
+      description: Get the quiz of the day with completion status. Same quiz for all
+        users on the same date. Deterministic selection based on date. Requires authentication.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Daily quiz details with completion status
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetDailyQuizResponse'
+        "401":
+          description: Unauthorized - missing or invalid authentication
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: No quizzes available
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      security:
+      - TelegramAuth: []
+      summary: Get daily quiz
+      tags:
+      - quiz
+  /quiz/random:
+    get:
+      consumes:
+      - application/json
+      description: Get a random quiz, optionally filtered by category
+      parameters:
+      - description: Category ID to filter quizzes by
+        in: query
+        name: categoryId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Random quiz details with questions
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetRandomQuizResponse'
+        "404":
+          description: No quizzes available
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get random quiz
+      tags:
+      - quiz
   /quiz/session/{sessionId}:
     delete:
       consumes:
@@ -999,6 +1136,36 @@ paths:
       summary: Update user profile
       tags:
       - user
+  /user/{userId}/sessions/active:
+    get:
+      consumes:
+      - application/json
+      description: Get all active (not completed) quiz sessions for a user. Used for
+        "Continue Playing" feature.
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of active sessions
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetUserActiveSessionsResponse'
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get user's active quiz sessions
+      tags:
+      - quiz
   /user/by-username/{username}:
     get:
       consumes:

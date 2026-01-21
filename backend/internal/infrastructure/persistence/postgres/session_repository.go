@@ -236,6 +236,86 @@ func (r *SessionRepository) FindActiveByUserAndQuiz(userID shared.UserID, quizID
 	return r.FindByID(sessionIDVO)
 }
 
+// FindAllActiveByUser retrieves all active sessions for a user
+func (r *SessionRepository) FindAllActiveByUser(userID shared.UserID) ([]*quiz.QuizSession, error) {
+	query := `
+		SELECT id
+		FROM quiz_sessions
+		WHERE user_id = $1 AND status = 'active'
+		ORDER BY started_at DESC
+	`
+
+	rows, err := r.db.Query(query, userID.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to query active sessions: %w", err)
+	}
+	defer rows.Close()
+
+	var sessions []*quiz.QuizSession
+
+	for rows.Next() {
+		var sessionID string
+		if err := rows.Scan(&sessionID); err != nil {
+			return nil, fmt.Errorf("failed to scan session ID: %w", err)
+		}
+
+		// Parse and load full session
+		sessionIDVO, err := quiz.NewSessionIDFromString(sessionID)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse session ID: %w", err)
+		}
+
+		session, err := r.FindByID(sessionIDVO)
+		if err != nil {
+			// Skip sessions that fail to load
+			continue
+		}
+
+		sessions = append(sessions, session)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating sessions: %w", err)
+	}
+
+	return sessions, nil
+}
+
+// FindCompletedByUserQuizAndDate finds a completed session for a user, quiz, and date range
+func (r *SessionRepository) FindCompletedByUserQuizAndDate(userID shared.UserID, quizID quiz.QuizID, startTime, endTime int64) (*quiz.QuizSession, error) {
+	query := `
+		SELECT id
+		FROM quiz_sessions
+		WHERE user_id = $1
+		  AND quiz_id = $2
+		  AND status = 'completed'
+		  AND completed_at >= $3
+		  AND completed_at < $4
+		ORDER BY completed_at DESC
+		LIMIT 1
+	`
+
+	var sessionID string
+
+	err := r.db.QueryRow(query, userID.String(), quizID.String(), startTime, endTime).Scan(&sessionID)
+
+	if err == sql.ErrNoRows {
+		return nil, quiz.ErrSessionNotFound
+	}
+
+	if err != nil {
+		return nil, fmt.Errorf("failed to query completed session: %w", err)
+	}
+
+	// Parse and load full session
+	sessionIDVO, err := quiz.NewSessionIDFromString(sessionID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to parse session ID: %w", err)
+	}
+
+	return r.FindByID(sessionIDVO)
+}
+
 // Save persists a quiz session (create or update) with all user answers
 func (r *SessionRepository) Save(session *quiz.QuizSession) error {
 	// Start transaction

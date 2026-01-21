@@ -105,6 +105,9 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	getActiveSessionUC := appQuiz.NewGetActiveSessionUseCase(quizRepo, sessionRepo)
 	abandonSessionUC := appQuiz.NewAbandonSessionUseCase(sessionRepo)
 	getSessionResultsUC := appQuiz.NewGetSessionResultsUseCase(sessionRepo, quizRepo)
+	getDailyQuizUC := appQuiz.NewGetDailyQuizUseCase(quizRepo, sessionRepo, leaderboardRepo)
+	getRandomQuizUC := appQuiz.NewGetRandomQuizUseCase(quizRepo)
+	getUserActiveSessionsUC := appQuiz.NewGetUserActiveSessionsUseCase(quizRepo, sessionRepo)
 
 	// Category use cases (only if database is available)
 	var (
@@ -149,6 +152,9 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		getActiveSessionUC,
 		abandonSessionUC,
 		getSessionResultsUC,
+		getDailyQuizUC,
+		getRandomQuizUC,
+		getUserActiveSessionsUC,
 	)
 
 	// Category handler (only if database is available)
@@ -181,6 +187,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	// Quiz routes
 	quiz := v1.Group("/quiz")
 	quiz.Get("/", quizHandler.GetAllQuizzes)
+	quiz.Get("/daily", middleware.TelegramAuthMiddleware(), quizHandler.GetDailyQuiz) // Daily quiz with auth (before /:id)
+	quiz.Get("/random", quizHandler.GetRandomQuiz)                                    // Random quiz (before /:id)
 	quiz.Get("/:id", quizHandler.GetQuizByID)
 	quiz.Post("/:id/start", quizHandler.StartQuiz)
 	quiz.Get("/:id/active-session", quizHandler.GetActiveSession)
@@ -226,6 +234,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 		// Public routes (for now - can add auth later)
 		user.Get("/:id", userHandler.GetUser)
+		user.Get("/:userId/sessions/active", quizHandler.GetUserActiveSessions) // Active sessions
 		user.Put("/:id", userHandler.UpdateUserProfile)
 		user.Get("/by-username/:username", userHandler.GetUserByTelegramUsername)
 

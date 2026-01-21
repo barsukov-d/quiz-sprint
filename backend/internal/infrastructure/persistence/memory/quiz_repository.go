@@ -138,6 +138,40 @@ func (r *SessionRepository) FindActiveByUserAndQuiz(userID shared.UserID, quizID
 	return nil, quiz.ErrSessionNotFound
 }
 
+// FindAllActiveByUser retrieves all active sessions for a user
+func (r *SessionRepository) FindAllActiveByUser(userID shared.UserID) ([]*quiz.QuizSession, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	var activeSessions []*quiz.QuizSession
+
+	for _, session := range r.sessions {
+		if session.UserID().Equals(userID) && session.IsActive() {
+			activeSessions = append(activeSessions, session)
+		}
+	}
+
+	return activeSessions, nil
+}
+
+// FindCompletedByUserQuizAndDate finds a completed session for a user, quiz, and date range
+func (r *SessionRepository) FindCompletedByUserQuizAndDate(userID shared.UserID, quizID quiz.QuizID, startTime, endTime int64) (*quiz.QuizSession, error) {
+	r.mu.RLock()
+	defer r.mu.RUnlock()
+
+	for _, session := range r.sessions {
+		if session.UserID().Equals(userID) &&
+			session.QuizID().Equals(quizID) &&
+			session.Status() == quiz.SessionStatusCompleted &&
+			session.CompletedAt() >= startTime &&
+			session.CompletedAt() < endTime {
+			return session, nil
+		}
+	}
+
+	return nil, quiz.ErrSessionNotFound
+}
+
 // Save stores a session
 func (r *SessionRepository) Save(session *quiz.QuizSession) error {
 	r.mu.Lock()

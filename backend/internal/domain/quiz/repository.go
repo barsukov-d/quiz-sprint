@@ -35,6 +35,13 @@ type SessionRepository interface {
 	// FindActiveByUserAndQuiz finds an active session for a user and quiz
 	FindActiveByUserAndQuiz(userID shared.UserID, quizID QuizID) (*QuizSession, error)
 
+	// FindAllActiveByUser retrieves all active sessions for a user
+	FindAllActiveByUser(userID shared.UserID) ([]*QuizSession, error)
+
+	// FindCompletedByUserQuizAndDate finds a completed session for a user, quiz, and date range
+	// startTime and endTime are Unix timestamps
+	FindCompletedByUserQuizAndDate(userID shared.UserID, quizID QuizID, startTime, endTime int64) (*QuizSession, error)
+
 	// Save persists a session (create or update)
 	Save(session *QuizSession) error
 

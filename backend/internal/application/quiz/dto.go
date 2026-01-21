@@ -226,3 +226,53 @@ type GlobalLeaderboardEntryDTO struct {
 	Rank             int    `json:"rank"`
 	LastActivityAt   int64  `json:"lastActivityAt"`
 }
+
+// GetRandomQuizInput is the input DTO for GetRandomQuiz use case
+type GetRandomQuizInput struct {
+	CategoryID string `json:"categoryId,omitempty"` // Optional category filter
+}
+
+// SessionSummaryDTO is a data transfer object for active session summary
+type SessionSummaryDTO struct {
+	SessionID       string `json:"sessionId"`
+	QuizID          string `json:"quizId"`
+	QuizTitle       string `json:"quizTitle"`
+	CurrentQuestion int    `json:"currentQuestion"`
+	TotalQuestions  int    `json:"totalQuestions"`
+	Score           int    `json:"score"`
+	StartedAt       int64  `json:"startedAt"`
+}
+
+// GetUserActiveSessionsInput is the input DTO for GetUserActiveSessions use case
+type GetUserActiveSessionsInput struct {
+	UserID string `json:"userId"`
+}
+
+// GetUserActiveSessionsOutput is the output DTO for GetUserActiveSessions use case
+type GetUserActiveSessionsOutput struct {
+	Sessions []SessionSummaryDTO `json:"sessions"`
+}
+
+// ========================================
+// GetDailyQuiz Use Case
+// ========================================
+
+// GetDailyQuizInput is the input DTO for GetDailyQuiz use case
+type GetDailyQuizInput struct {
+	UserID string `json:"userId"`
+}
+
+// GetDailyQuizOutput is the output DTO for GetDailyQuiz use case
+type GetDailyQuizOutput struct {
+	Quiz             QuizDetailDTO             `json:"quiz"`
+	CompletionStatus string                    `json:"completionStatus"` // "not_attempted" | "completed"
+	UserResult       *DailyQuizUserResultDTO   `json:"userResult,omitempty"`
+	TopScores        []LeaderboardEntryDTO     `json:"topScores"`
+}
+
+// DailyQuizUserResultDTO contains user's result for daily quiz (if completed)
+type DailyQuizUserResultDTO struct {
+	Score       int   `json:"score"`
+	Rank        int   `json:"rank"`
+	CompletedAt int64 `json:"completedAt"`
+}

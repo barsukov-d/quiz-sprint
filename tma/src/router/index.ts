@@ -13,8 +13,8 @@ const router = createRouter({
   routes: [
     {
       path: '/',
-      name: 'categories',
-      component: CategoriesView,
+      name: 'home',
+      component: HomeView,
     },
     {
       path: '/quizzes',
@@ -48,9 +48,9 @@ const router = createRouter({
     },
     // Legacy route (для обратной совместимости)
     {
-      path: '/home',
-      name: 'home',
-      component: HomeView,
+      path: '/categories',
+      name: 'categories',
+      component: CategoriesView,
     },
   ],
 })

@@ -319,6 +319,13 @@ GetSessionResultsUseCase(sessionID) → (session, quiz, statistics)
   • Работает для сессий в любом статусе (Active, Completed, Abandoned)
   • 404 если сессия не найдена
   • Используется для отображения Results screen
+
+// 🆕 v1.4
+GetUserActiveSessionsUseCase(userID) → (sessions[])
+  • Получает все активные сессии для пользователя
+  • Возвращает массив SessionSummary (sessionID, quizID, quizTitle, currentQuestion, score, startedAt)
+  • Используется для "Continue Playing" секции на главной
+  • Пустой массив если нет активных сессий
 ```
 
 ---
@@ -370,6 +377,20 @@ AssignTagsToQuizUseCase(quizID, tags[]) → void
 // Quiz Import (New)
 ImportQuizFromJSONUseCase(jsonData, format) → (quizID)
 ImportQuizBatchUseCase(batchData) → (quizIDs[], errors[])
+
+// 🆕 Quiz Discovery (v1.4)
+GetDailyQuizUseCase(userID, date) → (quiz, completionStatus, userResult?)
+  • Возвращает квиз дня для указанной даты
+  • Детерминированный выбор (один и тот же квиз для одной даты)
+  • Используется алгоритм: hash(date) % totalQuizzesCount
+  • Проверяет, был ли квиз уже пройден пользователем сегодня
+  • completionStatus: "not_attempted" | "completed"
+  • Если completed, возвращает userResult: { score, rank, completedAt }
+
+GetRandomQuizUseCase(categoryID?, excludeCompleted?) → (quiz)
+  • Возвращает случайный квиз
+  • Опциональная фильтрация по категории
+  • Опционально исключить уже пройденные квизы пользователем
 ```
 
 ---
@@ -512,6 +533,81 @@ GetUserRankUseCase(quizID, userID) → (rank, entry)
 
 ---
 
+### User Stats Domain (Supporting) 📊
+
+**Ответственность:**
+- Отслеживание прогресса пользователя
+- Streak tracking (серии ежедневных активностей)
+- Статистика по Daily Quiz
+- Мотивация пользователей через достижения
+
+#### Aggregate: UserStats
+
+**Value Objects:**
+- `UserID` - идентификатор пользователя
+- `CurrentStreak` - текущая серия дней подряд
+- `LongestStreak` - лучшая серия за все время
+- `LastDailyQuizDate` - дата последнего прохождения daily quiz (для расчета streak)
+- `TotalQuizzesCompleted` - всего завершено квизов
+
+**Бизнес-правила:**
+1. Streak увеличивается только при завершении Daily Quiz
+2. Streak сбрасывается, если пропущен день (gap > 1 день)
+3. Если Last Daily Quiz = сегодня, повторное прохождение Daily Quiz не увеличивает streak
+4. Longest Streak обновляется только если Current Streak > Longest Streak
+
+**Streak Calculation Logic:**
+```go
+func UpdateStreak(userID, completedAt) {
+    lastDate := GetLastDailyQuizDate(userID)
+    today := Date(completedAt)
+
+    if lastDate == today {
+        // Уже проходили сегодня, не меняем streak
+        return
+    }
+
+    if lastDate == yesterday(today) {
+        // Продолжили серию
+        currentStreak++
+        if currentStreak > longestStreak {
+            longestStreak = currentStreak
+        }
+    } else {
+        // Пропустили день(и), сброс
+        currentStreak = 1
+    }
+
+    lastDailyQuizDate = today
+}
+```
+
+**Use Cases:**
+```go
+// 🆕 v1.4
+GetUserStatsUseCase(userID) → (stats)
+  • Возвращает статистику пользователя
+  • currentStreak, longestStreak, lastDailyQuizDate, totalQuizzesCompleted
+  • Используется для отображения streak badge на главной
+
+UpdateUserStatsOnQuizCompletionUseCase(userID, quizID, isDaily) → void
+  • Обновляет статистику после завершения квиза
+  • Если isDaily = true, обновляет streak
+  • Increment totalQuizzesCompleted
+  • Event handler для QuizCompletedEvent
+```
+
+**Repository Interface:**
+```go
+type UserStatsRepository interface {
+    FindByUserID(userID UserID) (*UserStats, error)
+    Save(stats *UserStats) error
+    IncrementQuizzesCompleted(userID UserID) error
+}
+```
+
+---
+
 ## Domain Events
 
 ### Event Flow
@@ -645,6 +741,16 @@ LeaderboardEntry:
 
 ## Changelog
 
+**v1.4 (2026-01-21):**
+- 🚀 **Добавлена система Discovery и User Engagement!**
+  - Добавлен новый **User Stats Domain** (Supporting) для отслеживания прогресса
+  - **Daily Quiz**: новый use case `GetDailyQuizUseCase` для квиза дня
+  - **Random Quiz**: `GetRandomQuizUseCase` с опциональной фильтрацией по категории
+  - **Active Sessions**: `GetUserActiveSessionsUseCase` для восстановления прогресса
+  - **Streak Tracking**: бизнес-логика для серий ежедневных активностей
+  - Новые Value Objects: `CurrentStreak`, `LongestStreak`, `LastDailyQuizDate`
+  - Поддержка мотивационной механики на главном экране (3 зоны: Daily, Quick Actions, Categories)
+
 **v1.3 (2026-01-20):**
 - 🚀 **Введена новая система начисления очков!**
   - Добавлен **бонус за скорость ответа** (Time Bonus).
@@ -665,6 +771,6 @@ LeaderboardEntry:
 ---
 
 **Дата создания:** 2026-01-15
-**Последнее обновление:** 2026-01-20
+**Последнее обновление:** 2026-01-21
 **Методология:** Pragmatic DDD (по мотивам Vernon Vaughn IDDD)
 **Проект:** Quiz Sprint TMA

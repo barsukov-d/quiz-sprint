@@ -399,3 +399,64 @@ type GetSessionResultsResponse struct {
 }
 
 // @name GetSessionResultsResponse
+
+// ========================================
+// Daily Quiz & Random Quiz Models
+// ========================================
+
+// DailyQuizUserResultDTO contains user's result for daily quiz (if completed)
+type DailyQuizUserResultDTO struct {
+	Score       int   `json:"score" validate:"required"`
+	Rank        int   `json:"rank" validate:"required"`
+	CompletedAt int64 `json:"completedAt" validate:"required"`
+}
+
+// @name DailyQuizUserResultDTO
+
+// DailyQuizData contains daily quiz details with completion status
+type DailyQuizData struct {
+	Quiz             QuizDetailDTO           `json:"quiz" validate:"required"`
+	CompletionStatus string                  `json:"completionStatus" validate:"required"` // "not_attempted" | "completed"
+	UserResult       *DailyQuizUserResultDTO `json:"userResult,omitempty"`
+	TopScores        []LeaderboardEntryDTO   `json:"topScores" validate:"required"`
+}
+
+// @name DailyQuizData
+
+// GetDailyQuizResponse wraps daily quiz response
+type GetDailyQuizResponse struct {
+	Data DailyQuizData `json:"data" validate:"required"`
+}
+
+// @name GetDailyQuizResponse
+
+// GetRandomQuizResponse wraps random quiz response
+type GetRandomQuizResponse struct {
+	Data GetQuizDetailsData `json:"data" validate:"required"`
+}
+
+// @name GetRandomQuizResponse
+
+// ========================================
+// User Active Sessions Models
+// ========================================
+
+// SessionSummaryDTO represents an active session summary
+type SessionSummaryDTO struct {
+	SessionID       string `json:"sessionId" validate:"required"`
+	QuizID          string `json:"quizId" validate:"required"`
+	QuizTitle       string `json:"quizTitle" validate:"required"`
+	CurrentQuestion int    `json:"currentQuestion" validate:"required"`
+	TotalQuestions  int    `json:"totalQuestions" validate:"required"`
+	Score           int    `json:"score" validate:"required"`
+	StartedAt       int64  `json:"startedAt" validate:"required"`
+}
+
+// @name SessionSummaryDTO
+
+// GetUserActiveSessionsResponse wraps user active sessions
+type GetUserActiveSessionsResponse struct {
+	Data []SessionSummaryDTO `json:"data" validate:"required"`
+}
+
+// @name GetUserActiveSessionsResponse
