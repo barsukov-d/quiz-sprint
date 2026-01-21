@@ -202,3 +202,27 @@ type GetQuizDetailsOutput struct {
 	Quiz      QuizDetailDTO         `json:"quiz"`
 	TopScores []LeaderboardEntryDTO `json:"topScores"`
 }
+
+// ========================================
+// GetGlobalLeaderboard Use Case
+// ========================================
+
+// GetGlobalLeaderboardInput is the input DTO for GetGlobalLeaderboard use case
+type GetGlobalLeaderboardInput struct {
+	Limit int `json:"limit"`
+}
+
+// GetGlobalLeaderboardOutput is the output DTO for GetGlobalLeaderboard use case
+type GetGlobalLeaderboardOutput struct {
+	Entries []GlobalLeaderboardEntryDTO `json:"entries"`
+}
+
+// GlobalLeaderboardEntryDTO is a data transfer object for GlobalLeaderboardEntry
+type GlobalLeaderboardEntryDTO struct {
+	UserID           string `json:"userId"`
+	Username         string `json:"username"`
+	TotalScore       int    `json:"totalScore"`
+	QuizzesCompleted int    `json:"quizzesCompleted"`
+	Rank             int    `json:"rank"`
+	LastActivityAt   int64  `json:"lastActivityAt"`
+}

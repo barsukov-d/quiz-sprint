@@ -139,6 +139,36 @@ func ReconstructQuiz(
 	}
 }
 
+// ReconstructQuizSession reconstructs a QuizSession from persistence (no validation)
+// Used by repository when loading from database
+// NOTE: Events are NOT reconstructed (domain events are transient)
+func ReconstructQuizSession(
+	id SessionID,
+	quizID QuizID,
+	userID shared.UserID,
+	currentQuestion int,
+	score Points,
+	answers []UserAnswer,
+	startedAt int64,
+	completedAt int64,
+	status SessionStatus,
+	correctAnswerStreak int,
+) *QuizSession {
+	return &QuizSession{
+		id:                  id,
+		quizID:              quizID,
+		userID:              userID,
+		currentQuestion:     currentQuestion,
+		score:               score,
+		answers:             answers,
+		startedAt:           startedAt,
+		completedAt:         completedAt,
+		status:              status,
+		correctAnswerStreak: correctAnswerStreak,
+		events:              make([]Event, 0), // Don't replay events from DB
+	}
+}
+
 // AddQuestion adds a question to the quiz
 func (q *Quiz) AddQuestion(question Question) error {
 	if len(q.questions) >= 50 {

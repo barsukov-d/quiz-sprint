@@ -1,7 +1,7 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useRoute } from 'vue-router'
-import { useGetQuizIdLeaderboard, useGetQuiz } from '@/api'
+import { useGetQuiz, useGetLeaderboard } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useLastQuiz } from '@/composables/useLastQuiz'
 
@@ -19,10 +19,7 @@ const activeQuizId = computed(() => {
 })
 
 // Fetch first available quiz if no ID is available
-const {
-	data: quizzesResponse,
-	isLoading: isLoadingQuizzes,
-} = useGetQuiz(undefined, {
+const { data: quizzesResponse, isLoading: isLoadingQuizzes } = useGetQuiz(undefined, {
 	query: {
 		enabled: computed(() => !activeQuizId.value),
 	},
@@ -46,7 +43,7 @@ watch(
 			saveLastQuizId(newId)
 		}
 	},
-	{ immediate: true }
+	{ immediate: true },
 )
 
 // Fetch leaderboard data
@@ -56,15 +53,7 @@ const {
 	isError,
 	error,
 	refetch,
-} = useGetQuizIdLeaderboard(
-	{ id: computed(() => quizId.value || '') },
-	computed(() => ({ limit: 50 })),
-	{
-		query: {
-			enabled: computed(() => !!quizId.value),
-		},
-	}
-)
+} = useGetLeaderboard({ limit: 50 })
 
 // Combined loading state
 const isLoading = computed(() => isLoadingQuizzes.value || isLoadingLeaderboard.value)
@@ -163,10 +152,18 @@ const isCurrentUser = (userId: string) => {
 						<table class="w-full">
 							<thead>
 								<tr class="border-b border-gray-200">
-									<th class="text-left py-3 px-4 font-semibold text-gray-700">Rank</th>
-									<th class="text-left py-3 px-4 font-semibold text-gray-700">Player</th>
-									<th class="text-right py-3 px-4 font-semibold text-gray-700">Score</th>
-									<th class="text-right py-3 px-4 font-semibold text-gray-700">Date</th>
+									<th class="text-left py-3 px-4 font-semibold text-gray-700">
+										Rank
+									</th>
+									<th class="text-left py-3 px-4 font-semibold text-gray-700">
+										Player
+									</th>
+									<th class="text-right py-3 px-4 font-semibold text-gray-700">
+										Score
+									</th>
+									<th class="text-right py-3 px-4 font-semibold text-gray-700">
+										Date
+									</th>
 								</tr>
 							</thead>
 							<tbody>
@@ -195,7 +192,9 @@ const isCurrentUser = (userId: string) => {
 									<!-- Player -->
 									<td class="py-3 px-4">
 										<div class="flex items-center gap-2">
-											<span class="font-medium">{{ entry.username || 'Anonymous' }}</span>
+											<span class="font-medium">{{
+												entry.username || 'Anonymous'
+											}}</span>
 											<UIcon
 												v-if="isCurrentUser(entry.userId)"
 												name="i-heroicons-star-solid"
@@ -206,13 +205,15 @@ const isCurrentUser = (userId: string) => {
 
 									<!-- Score -->
 									<td class="py-3 px-4 text-right">
-										<span class="font-bold text-gray-900">{{ entry.score }}</span>
+										<span class="font-bold text-gray-900">{{
+											entry.totalScore
+										}}</span>
 									</td>
 
-									<!-- Date -->
+									Date
 									<td class="py-3 px-4 text-right">
 										<span class="text-sm text-gray-500">
-											{{ formatDate(entry.completedAt) }}
+											{{ formatDate(entry.rank) }}
 										</span>
 									</td>
 								</tr>

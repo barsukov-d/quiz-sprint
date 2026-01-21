@@ -173,30 +173,56 @@ func NewLeaderboardRepository(sessionRepo *SessionRepository) *LeaderboardReposi
 }
 
 // GetLeaderboard retrieves top scores for a quiz
+// Shows only the BEST score per user (if user completed quiz multiple times)
 func (r *LeaderboardRepository) GetLeaderboard(quizID quiz.QuizID, limit int) ([]quiz.LeaderboardEntry, error) {
 	r.sessionRepo.mu.RLock()
 	defer r.sessionRepo.mu.RUnlock()
 
-	// Collect completed sessions for this quiz
+	// Collect best scores per user for this quiz
 	type sessionScore struct {
 		userID      shared.UserID
 		score       quiz.Points
 		completedAt int64
 	}
 
-	scores := make([]sessionScore, 0)
+	// Map: userID -> best session score
+	userBestScores := make(map[string]sessionScore)
+
 	for _, session := range r.sessionRepo.sessions {
 		if session.QuizID().Equals(quizID) && session.IsCompleted() {
-			scores = append(scores, sessionScore{
-				userID:      session.UserID(),
-				score:       session.Score(),
-				completedAt: session.CompletedAt(),
-			})
+			userIDStr := session.UserID().String()
+
+			// Check if this is the user's first score or a better score
+			if existing, found := userBestScores[userIDStr]; !found || session.Score().Value() > existing.score.Value() {
+				userBestScores[userIDStr] = sessionScore{
+					userID:      session.UserID(),
+					score:       session.Score(),
+					completedAt: session.CompletedAt(),
+				}
+			} else if session.Score().Value() == existing.score.Value() {
+				// If scores are equal, keep the earlier completion time
+				if session.CompletedAt() < existing.completedAt {
+					userBestScores[userIDStr] = sessionScore{
+						userID:      session.UserID(),
+						score:       session.Score(),
+						completedAt: session.CompletedAt(),
+					}
+				}
+			}
 		}
 	}
 
-	// Sort by score descending
+	// Convert map to slice
+	scores := make([]sessionScore, 0, len(userBestScores))
+	for _, s := range userBestScores {
+		scores = append(scores, s)
+	}
+
+	// Sort by score descending, then by completed_at ascending (earlier is better)
 	sort.Slice(scores, func(i, j int) bool {
+		if scores[i].score.Value() == scores[j].score.Value() {
+			return scores[i].completedAt < scores[j].completedAt
+		}
 		return scores[i].score.Value() > scores[j].score.Value()
 	})
 
@@ -236,4 +262,115 @@ func (r *LeaderboardRepository) GetUserRank(quizID quiz.QuizID, userID shared.Us
 	}
 
 	return 0, quiz.ErrSessionNotFound
+}
+
+// GetGlobalLeaderboard retrieves top scores across all quizzes
+// Shows sum of best scores per quiz for each user
+func (r *LeaderboardRepository) GetGlobalLeaderboard(limit int) ([]quiz.GlobalLeaderboardEntry, error) {
+	r.sessionRepo.mu.RLock()
+	defer r.sessionRepo.mu.RUnlock()
+
+	// Map: userID -> map[quizID -> best score]
+	userQuizScores := make(map[string]map[string]quiz.Points)
+
+	// Collect best scores per user per quiz
+	for _, session := range r.sessionRepo.sessions {
+		if !session.IsCompleted() {
+			continue
+		}
+
+		userIDStr := session.UserID().String()
+		quizIDStr := session.QuizID().String()
+
+		if _, exists := userQuizScores[userIDStr]; !exists {
+			userQuizScores[userIDStr] = make(map[string]quiz.Points)
+		}
+
+		// Keep best score for this quiz
+		if existingScore, found := userQuizScores[userIDStr][quizIDStr]; !found || session.Score().Value() > existingScore.Value() {
+			userQuizScores[userIDStr][quizIDStr] = session.Score()
+		}
+	}
+
+	// Calculate total scores
+	type userTotal struct {
+		userID           shared.UserID
+		totalScore       quiz.Points
+		quizzesCompleted int
+		lastActivityAt   int64
+	}
+
+	userTotals := make([]userTotal, 0)
+	for userIDStr, quizScores := range userQuizScores {
+		totalPoints := 0
+		var lastActivity int64
+
+		for _, score := range quizScores {
+			totalPoints += score.Value()
+		}
+
+		// Find last activity time
+		for _, session := range r.sessionRepo.sessions {
+			if session.UserID().String() == userIDStr && session.IsCompleted() {
+				if session.CompletedAt() > lastActivity {
+					lastActivity = session.CompletedAt()
+				}
+			}
+		}
+
+		totalScoreVO, _ := quiz.NewPoints(totalPoints)
+		userID, _ := shared.NewUserID(userIDStr)
+
+		userTotals = append(userTotals, userTotal{
+			userID:           userID,
+			totalScore:       totalScoreVO,
+			quizzesCompleted: len(quizScores),
+			lastActivityAt:   lastActivity,
+		})
+	}
+
+	// Sort by total score descending, then by last activity ascending
+	sort.Slice(userTotals, func(i, j int) bool {
+		if userTotals[i].totalScore.Value() == userTotals[j].totalScore.Value() {
+			return userTotals[i].lastActivityAt < userTotals[j].lastActivityAt
+		}
+		return userTotals[i].totalScore.Value() > userTotals[j].totalScore.Value()
+	})
+
+	// Limit results
+	if len(userTotals) > limit {
+		userTotals = userTotals[:limit]
+	}
+
+	// Convert to GlobalLeaderboardEntry
+	entries := make([]quiz.GlobalLeaderboardEntry, 0, len(userTotals))
+	for i, ut := range userTotals {
+		entry := quiz.NewGlobalLeaderboardEntry(
+			ut.userID,
+			"User "+ut.userID.String()[:8], // Simplified username
+			ut.totalScore,
+			ut.quizzesCompleted,
+			i+1, // Rank
+			ut.lastActivityAt,
+		)
+		entries = append(entries, entry)
+	}
+
+	return entries, nil
+}
+
+// GetUserGlobalRank retrieves a user's rank in the global leaderboard
+func (r *LeaderboardRepository) GetUserGlobalRank(userID shared.UserID) (int, error) {
+	entries, err := r.GetGlobalLeaderboard(1000) // Get all
+	if err != nil {
+		return 0, err
+	}
+
+	for _, entry := range entries {
+		if entry.UserID().Equals(userID) {
+			return entry.Rank(), nil
+		}
+	}
+
+	return 0, nil // User not found = rank 0
 }

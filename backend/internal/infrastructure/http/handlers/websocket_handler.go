@@ -12,13 +12,14 @@ import (
 
 // WebSocketHub manages WebSocket connections and broadcasts
 type WebSocketHub struct {
-	// Quiz ID -> list of connections
-	connections     map[string]map[*websocket.Conn]bool
-	broadcast       chan BroadcastMessage
-	register        chan ConnectionRequest
-	unregister      chan ConnectionRequest
-	mu              sync.RWMutex
-	leaderboardRepo quiz.LeaderboardRepository
+	// Quiz ID -> list of connections (use "global" for global leaderboard)
+	connections             map[string]map[*websocket.Conn]bool
+	broadcast               chan BroadcastMessage
+	register                chan ConnectionRequest
+	unregister              chan ConnectionRequest
+	mu                      sync.RWMutex
+	leaderboardRepo         quiz.LeaderboardRepository
+	globalLeaderboardRepo   quiz.GlobalLeaderboardRepository
 }
 
 // ConnectionRequest represents a WebSocket connection request
@@ -34,13 +35,18 @@ type BroadcastMessage struct {
 }
 
 // NewWebSocketHub creates a new WebSocket hub
-func NewWebSocketHub(leaderboardRepo quiz.LeaderboardRepository) *WebSocketHub {
+// repo should implement both LeaderboardRepository and GlobalLeaderboardRepository interfaces
+func NewWebSocketHub(repo interface {
+	quiz.LeaderboardRepository
+	quiz.GlobalLeaderboardRepository
+}) *WebSocketHub {
 	hub := &WebSocketHub{
-		connections:     make(map[string]map[*websocket.Conn]bool),
-		broadcast:       make(chan BroadcastMessage, 256),
-		register:        make(chan ConnectionRequest),
-		unregister:      make(chan ConnectionRequest),
-		leaderboardRepo: leaderboardRepo,
+		connections:           make(map[string]map[*websocket.Conn]bool),
+		broadcast:             make(chan BroadcastMessage, 256),
+		register:              make(chan ConnectionRequest),
+		unregister:            make(chan ConnectionRequest),
+		leaderboardRepo:       repo,
+		globalLeaderboardRepo: repo,
 	}
 
 	go hub.run()
@@ -190,5 +196,96 @@ func (h *WebSocketHub) HandleLeaderboardWebSocket(c *websocket.Conn) {
 		if messageType == websocket.PingMessage {
 			c.WriteMessage(websocket.PongMessage, nil)
 		}
+	}
+}
+
+// HandleGlobalLeaderboardWebSocket handles WebSocket connections for global leaderboard
+func (h *WebSocketHub) HandleGlobalLeaderboardWebSocket(c *websocket.Conn) {
+	const globalKey = "global"
+
+	// Register connection to global leaderboard channel
+	h.register <- ConnectionRequest{
+		QuizID: globalKey,
+		Conn:   c,
+	}
+
+	// Send initial global leaderboard
+	entries, err := h.globalLeaderboardRepo.GetGlobalLeaderboard(10)
+	if err == nil {
+		globalLeaderboardDTOs := make([]map[string]interface{}, 0, len(entries))
+		for _, entry := range entries {
+			globalLeaderboardDTOs = append(globalLeaderboardDTOs, map[string]interface{}{
+				"userId":           entry.UserID().String(),
+				"username":         entry.Username(),
+				"totalScore":       entry.TotalScore().Value(),
+				"quizzesCompleted": entry.QuizzesCompleted(),
+				"rank":             entry.Rank(),
+				"lastActivityAt":   entry.LastActivityAt(),
+			})
+		}
+
+		initialData := map[string]interface{}{
+			"type": "global_leaderboard_update",
+			"data": globalLeaderboardDTOs,
+		}
+		if jsonData, err := json.Marshal(initialData); err == nil {
+			c.WriteMessage(websocket.TextMessage, jsonData)
+		}
+	}
+
+	// Clean up on disconnect
+	defer func() {
+		h.unregister <- ConnectionRequest{
+			QuizID: globalKey,
+			Conn:   c,
+		}
+	}()
+
+	// Listen for messages (mainly for ping/pong)
+	for {
+		messageType, _, err := c.ReadMessage()
+		if err != nil {
+			if websocket.IsUnexpectedCloseError(err, websocket.CloseGoingAway, websocket.CloseAbnormalClosure) {
+				log.Printf("WebSocket error: %v", err)
+			}
+			break
+		}
+
+		// Echo ping/pong
+		if messageType == websocket.PingMessage {
+			c.WriteMessage(websocket.PongMessage, nil)
+		}
+	}
+}
+
+// BroadcastGlobalLeaderboardUpdate sends global leaderboard update to all connected clients
+func (h *WebSocketHub) BroadcastGlobalLeaderboardUpdate() {
+	const globalKey = "global"
+
+	entries, err := h.globalLeaderboardRepo.GetGlobalLeaderboard(10)
+	if err != nil {
+		log.Printf("Failed to get global leaderboard: %v", err)
+		return
+	}
+
+	// Convert to simple DTOs for JSON
+	globalLeaderboardDTOs := make([]map[string]interface{}, 0, len(entries))
+	for _, entry := range entries {
+		globalLeaderboardDTOs = append(globalLeaderboardDTOs, map[string]interface{}{
+			"userId":           entry.UserID().String(),
+			"username":         entry.Username(),
+			"totalScore":       entry.TotalScore().Value(),
+			"quizzesCompleted": entry.QuizzesCompleted(),
+			"rank":             entry.Rank(),
+			"lastActivityAt":   entry.LastActivityAt(),
+		})
+	}
+
+	h.broadcast <- BroadcastMessage{
+		QuizID: globalKey,
+		Data: map[string]interface{}{
+			"type": "global_leaderboard_update",
+			"data": globalLeaderboardDTOs,
+		},
 	}
 }

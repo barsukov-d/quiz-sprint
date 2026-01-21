@@ -34,9 +34,21 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		// quizRepo = memory.NewQuizRepository()
 	}
 
-	// Session and Leaderboard: still use memory for now
-	sessionRepo := memory.NewSessionRepository()
-	leaderboardRepo := memory.NewLeaderboardRepository(sessionRepo)
+	// Session and Leaderboard: use PostgreSQL if available, fallback to memory
+	var sessionRepo quiz.SessionRepository
+	var leaderboardRepo interface {
+		quiz.LeaderboardRepository
+		quiz.GlobalLeaderboardRepository
+	}
+
+	if db != nil {
+		sessionRepo = postgres.NewSessionRepository(db)
+		leaderboardRepo = postgres.NewLeaderboardRepository(db)
+	} else {
+		memSessionRepo := memory.NewSessionRepository()
+		sessionRepo = memSessionRepo
+		leaderboardRepo = memory.NewLeaderboardRepository(memSessionRepo)
+	}
 
 	// User repository: use PostgreSQL if available
 	var userRepo domainUser.UserRepository
@@ -57,6 +69,28 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	loggingEventBus := messaging.NewLoggingEventBus(eventBus)
 
 	// ========================================
+	// Infrastructure Layer: WebSocket Hub
+	// ========================================
+	wsHub := handlers.NewWebSocketHub(leaderboardRepo)
+
+	// ========================================
+	// Infrastructure Layer: Event Handlers
+	// ========================================
+	// Register QuizCompletedEvent handler to broadcast leaderboard updates
+	loggingEventBus.Subscribe("quiz.completed", func(event quiz.Event) {
+		completedEvent, ok := event.(quiz.QuizCompletedEvent)
+		if !ok {
+			return
+		}
+
+		// Broadcast to per-quiz leaderboard WebSocket
+		wsHub.BroadcastLeaderboardUpdate(completedEvent.QuizID().String())
+
+		// Broadcast to global leaderboard WebSocket
+		wsHub.BroadcastGlobalLeaderboardUpdate()
+	})
+
+	// ========================================
 	// Application Layer: Use Cases
 	// ========================================
 
@@ -67,6 +101,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	startQuizUC := appQuiz.NewStartQuizUseCase(quizRepo, sessionRepo, loggingEventBus)
 	submitAnswerUC := appQuiz.NewSubmitAnswerUseCase(quizRepo, sessionRepo, loggingEventBus)
 	getLeaderboardUC := appQuiz.NewGetLeaderboardUseCase(leaderboardRepo)
+	getGlobalLeaderboardUC := appQuiz.NewGetGlobalLeaderboardUseCase(leaderboardRepo)
 	getActiveSessionUC := appQuiz.NewGetActiveSessionUseCase(quizRepo, sessionRepo)
 	abandonSessionUC := appQuiz.NewAbandonSessionUseCase(sessionRepo)
 	getSessionResultsUC := appQuiz.NewGetSessionResultsUseCase(sessionRepo, quizRepo)
@@ -110,6 +145,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		startQuizUC,
 		submitAnswerUC,
 		getLeaderboardUC,
+		getGlobalLeaderboardUC,
 		getActiveSessionUC,
 		abandonSessionUC,
 		getSessionResultsUC,
@@ -120,8 +156,6 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	if categoryRepo != nil {
 		categoryHandler = handlers.NewCategoryHandler(createCategoryUC, listCategoriesUC)
 	}
-
-	wsHub := handlers.NewWebSocketHub(leaderboardRepo)
 
 	// User handler (only if database is available)
 	var userHandler *handlers.UserHandler
@@ -152,6 +186,9 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	quiz.Get("/:id/active-session", quizHandler.GetActiveSession)
 	quiz.Get("/:id/leaderboard", quizHandler.GetLeaderboard)
 
+	// Global leaderboard route
+	v1.Get("/leaderboard", quizHandler.GetGlobalLeaderboard)
+
 	// Session routes
 	session := v1.Group("/quiz/session")
 	// IMPORTANT: More specific routes MUST come before generic /:sessionId
@@ -178,6 +215,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	})
 
 	ws.Get("/leaderboard/:id", websocket.New(wsHub.HandleLeaderboardWebSocket))
+	ws.Get("/leaderboard/global", websocket.New(wsHub.HandleGlobalLeaderboardWebSocket))
 
 	// User routes (only if database is available)
 	if userHandler != nil {

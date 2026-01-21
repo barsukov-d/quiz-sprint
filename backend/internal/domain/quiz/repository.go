@@ -83,6 +83,54 @@ type LeaderboardRepository interface {
 	GetUserRank(quizID QuizID, userID shared.UserID) (int, error)
 }
 
+// GlobalLeaderboardEntry represents a global leaderboard entry (read model)
+// Shows aggregated score across all quizzes for a user
+type GlobalLeaderboardEntry struct {
+	userID           shared.UserID
+	username         string
+	totalScore       Points
+	quizzesCompleted int
+	rank             int
+	lastActivityAt   int64
+}
+
+// NewGlobalLeaderboardEntry creates a new global leaderboard entry
+func NewGlobalLeaderboardEntry(
+	userID shared.UserID,
+	username string,
+	totalScore Points,
+	quizzesCompleted int,
+	rank int,
+	lastActivityAt int64,
+) GlobalLeaderboardEntry {
+	return GlobalLeaderboardEntry{
+		userID:           userID,
+		username:         username,
+		totalScore:       totalScore,
+		quizzesCompleted: quizzesCompleted,
+		rank:             rank,
+		lastActivityAt:   lastActivityAt,
+	}
+}
+
+// Getters
+func (gle GlobalLeaderboardEntry) UserID() shared.UserID  { return gle.userID }
+func (gle GlobalLeaderboardEntry) Username() string       { return gle.username }
+func (gle GlobalLeaderboardEntry) TotalScore() Points     { return gle.totalScore }
+func (gle GlobalLeaderboardEntry) QuizzesCompleted() int  { return gle.quizzesCompleted }
+func (gle GlobalLeaderboardEntry) Rank() int              { return gle.rank }
+func (gle GlobalLeaderboardEntry) LastActivityAt() int64  { return gle.lastActivityAt }
+
+// GlobalLeaderboardRepository defines the interface for global leaderboard queries
+// Aggregates scores across all quizzes (sum of best scores per quiz)
+type GlobalLeaderboardRepository interface {
+	// GetGlobalLeaderboard retrieves top scores across all quizzes
+	GetGlobalLeaderboard(limit int) ([]GlobalLeaderboardEntry, error)
+
+	// GetUserGlobalRank retrieves a user's rank in the global leaderboard
+	GetUserGlobalRank(userID shared.UserID) (int, error)
+}
+
 // CategoryRepository defines the interface for category persistence
 type CategoryRepository interface {
 	FindByID(id CategoryID) (*Category, error)

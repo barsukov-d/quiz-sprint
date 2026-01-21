@@ -11,15 +11,16 @@ import (
 // QuizHandler handles HTTP requests for quizzes
 // NOTE: This is a THIN adapter - no business logic here!
 type QuizHandler struct {
-	listQuizzesUC        *appQuiz.ListQuizzesUseCase
-	getQuizUC            *appQuiz.GetQuizUseCase
-	getQuizDetailsUC     *appQuiz.GetQuizDetailsUseCase
-	startQuizUC          *appQuiz.StartQuizUseCase
-	submitAnswerUC       *appQuiz.SubmitAnswerUseCase
-	getLeaderboardUC     *appQuiz.GetLeaderboardUseCase
-	getActiveSessionUC   *appQuiz.GetActiveSessionUseCase
-	abandonSessionUC     *appQuiz.AbandonSessionUseCase
-	getSessionResultsUC  *appQuiz.GetSessionResultsUseCase
+	listQuizzesUC             *appQuiz.ListQuizzesUseCase
+	getQuizUC                 *appQuiz.GetQuizUseCase
+	getQuizDetailsUC          *appQuiz.GetQuizDetailsUseCase
+	startQuizUC               *appQuiz.StartQuizUseCase
+	submitAnswerUC            *appQuiz.SubmitAnswerUseCase
+	getLeaderboardUC          *appQuiz.GetLeaderboardUseCase
+	getGlobalLeaderboardUC    *appQuiz.GetGlobalLeaderboardUseCase
+	getActiveSessionUC        *appQuiz.GetActiveSessionUseCase
+	abandonSessionUC          *appQuiz.AbandonSessionUseCase
+	getSessionResultsUC       *appQuiz.GetSessionResultsUseCase
 }
 
 // NewQuizHandler creates a new QuizHandler
@@ -30,20 +31,22 @@ func NewQuizHandler(
 	startQuizUC *appQuiz.StartQuizUseCase,
 	submitAnswerUC *appQuiz.SubmitAnswerUseCase,
 	getLeaderboardUC *appQuiz.GetLeaderboardUseCase,
+	getGlobalLeaderboardUC *appQuiz.GetGlobalLeaderboardUseCase,
 	getActiveSessionUC *appQuiz.GetActiveSessionUseCase,
 	abandonSessionUC *appQuiz.AbandonSessionUseCase,
 	getSessionResultsUC *appQuiz.GetSessionResultsUseCase,
 ) *QuizHandler {
 	return &QuizHandler{
-		listQuizzesUC:       listQuizzesUC,
-		getQuizUC:           getQuizUC,
-		getQuizDetailsUC:    getQuizDetailsUC,
-		startQuizUC:         startQuizUC,
-		submitAnswerUC:      submitAnswerUC,
-		getLeaderboardUC:    getLeaderboardUC,
-		getActiveSessionUC:  getActiveSessionUC,
-		abandonSessionUC:    abandonSessionUC,
-		getSessionResultsUC: getSessionResultsUC,
+		listQuizzesUC:          listQuizzesUC,
+		getQuizUC:              getQuizUC,
+		getQuizDetailsUC:       getQuizDetailsUC,
+		startQuizUC:            startQuizUC,
+		submitAnswerUC:         submitAnswerUC,
+		getLeaderboardUC:       getLeaderboardUC,
+		getGlobalLeaderboardUC: getGlobalLeaderboardUC,
+		getActiveSessionUC:     getActiveSessionUC,
+		abandonSessionUC:       abandonSessionUC,
+		getSessionResultsUC:    getSessionResultsUC,
 	}
 }
 
@@ -354,6 +357,34 @@ func (h *QuizHandler) GetLeaderboard(c fiber.Ctx) error {
 	output, err := h.getLeaderboardUC.Execute(appQuiz.GetLeaderboardInput{
 		QuizID: c.Params("id"),
 		Limit:  limit,
+	})
+	if err != nil {
+		return mapError(err)
+	}
+
+	// 3. Return response
+	return c.JSON(fiber.Map{
+		"data": output.Entries,
+	})
+}
+
+// GetGlobalLeaderboard handles GET /api/v1/leaderboard
+// @Summary Get global leaderboard
+// @Description Get the global leaderboard across all quizzes (sum of best scores per quiz)
+// @Tags leaderboard
+// @Accept json
+// @Produce json
+// @Param limit query int false "Number of entries to return (default 10, max 100)"
+// @Success 200 {object} GetGlobalLeaderboardResponse "Global leaderboard entries"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /leaderboard [get]
+func (h *QuizHandler) GetGlobalLeaderboard(c fiber.Ctx) error {
+	// 1. Extract query parameters
+	limit := fiber.Query[int](c, "limit", 10)
+
+	// 2. Execute use case
+	output, err := h.getGlobalLeaderboardUC.Execute(appQuiz.GetGlobalLeaderboardInput{
+		Limit: limit,
 	})
 	if err != nil {
 		return mapError(err)

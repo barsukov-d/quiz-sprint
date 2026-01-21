@@ -121,6 +121,15 @@ definitions:
       data:
         $ref: '#/definitions/internal_infrastructure_http_handlers.GetActiveSessionData'
     type: object
+  internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.GlobalLeaderboardEntryDTO'
+        type: array
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.GetLeaderboardResponse:
     properties:
       data:
@@ -162,6 +171,37 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.UserDTO'
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.GlobalLeaderboardEntryDTO:
+    properties:
+      lastActivityAt:
+        example: 1674567890
+        type: integer
+      quizzesCompleted:
+        example: 5
+        minimum: 0
+        type: integer
+      rank:
+        example: 1
+        minimum: 1
+        type: integer
+      totalScore:
+        example: 850
+        minimum: 0
+        type: integer
+      userId:
+        example: user123
+        type: string
+      username:
+        example: JohnDoe
+        type: string
+    required:
+    - lastActivityAt
+    - quizzesCompleted
+    - rank
+    - totalScore
+    - userId
+    - username
     type: object
   internal_infrastructure_http_handlers.LeaderboardEntryDTO:
     properties:
@@ -567,6 +607,31 @@ paths:
       summary: Create a new category
       tags:
       - category
+  /leaderboard:
+    get:
+      consumes:
+      - application/json
+      description: Get the global leaderboard across all quizzes (sum of best scores
+        per quiz)
+      parameters:
+      - description: Number of entries to return (default 10, max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Global leaderboard entries
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get global leaderboard
+      tags:
+      - leaderboard
   /quiz:
     get:
       consumes:

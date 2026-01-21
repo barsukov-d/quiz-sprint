@@ -163,6 +163,29 @@ type GetLeaderboardResponse struct {
 // @name GetLeaderboardResponse
 
 // ========================================
+// Global Leaderboard Models
+// ========================================
+
+// GlobalLeaderboardEntryDTO represents a global leaderboard entry
+type GlobalLeaderboardEntryDTO struct {
+	UserID           string `json:"userId" validate:"required" example:"user123"`
+	Username         string `json:"username" validate:"required" example:"JohnDoe"`
+	TotalScore       int    `json:"totalScore" validate:"required,min=0" example:"850"`
+	QuizzesCompleted int    `json:"quizzesCompleted" validate:"required,min=0" example:"5"`
+	Rank             int    `json:"rank" validate:"required,min=1" example:"1"`
+	LastActivityAt   int64  `json:"lastActivityAt" validate:"required" example:"1674567890"`
+}
+
+// @name GlobalLeaderboardEntryDTO
+
+// GetGlobalLeaderboardResponse wraps the global leaderboard response
+type GetGlobalLeaderboardResponse struct {
+	Data []GlobalLeaderboardEntryDTO `json:"data" validate:"required"`
+}
+
+// @name GetGlobalLeaderboardResponse
+
+// ========================================
 // Category Models
 // ========================================
 

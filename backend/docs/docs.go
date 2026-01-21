@@ -98,6 +98,43 @@ const docTemplate = `{
                 }
             }
         },
+        "/leaderboard": {
+            "get": {
+                "description": "Get the global leaderboard across all quizzes (sum of best scores per quiz)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "leaderboard"
+                ],
+                "summary": "Get global leaderboard",
+                "parameters": [
+                    {
+                        "type": "integer",
+                        "description": "Number of entries to return (default 10, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Global leaderboard entries",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/quiz": {
             "get": {
                 "description": "Get a list of all available quizzes with basic information, optionally filtered by category.",
@@ -964,6 +1001,20 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.GlobalLeaderboardEntryDTO"
+                    }
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.GetLeaderboardResponse": {
             "type": "object",
             "required": [
@@ -1026,6 +1077,46 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.UserDTO"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GlobalLeaderboardEntryDTO": {
+            "type": "object",
+            "required": [
+                "lastActivityAt",
+                "quizzesCompleted",
+                "rank",
+                "totalScore",
+                "userId",
+                "username"
+            ],
+            "properties": {
+                "lastActivityAt": {
+                    "type": "integer",
+                    "example": 1674567890
+                },
+                "quizzesCompleted": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 5
+                },
+                "rank": {
+                    "type": "integer",
+                    "minimum": 1,
+                    "example": 1
+                },
+                "totalScore": {
+                    "type": "integer",
+                    "minimum": 0,
+                    "example": 850
+                },
+                "userId": {
+                    "type": "string",
+                    "example": "user123"
+                },
+                "username": {
+                    "type": "string",
+                    "example": "JohnDoe"
                 }
             }
         },
