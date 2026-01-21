@@ -52,6 +52,11 @@ func (r *QuizRepository) FindByID(id quiz.QuizID) (*quiz.Quiz, error) {
 		tags,
 		quizData.importBatchID,
 		quizData.generatedAt,
+		quizData.basePoints,
+		quizData.timeLimitPerQuestion,
+		quizData.maxTimeBonus,
+		quizData.streakThreshold,
+		quizData.streakBonus,
 	)
 
 	// Add questions
@@ -67,7 +72,8 @@ func (r *QuizRepository) FindByID(id quiz.QuizID) (*quiz.Quiz, error) {
 // FindAll retrieves all quizzes (without questions for performance)
 func (r *QuizRepository) FindAll() ([]quiz.Quiz, error) {
 	query := `
-		SELECT id, title, description, category_id, time_limit, passing_score, created_at, updated_at, import_batch_id, generated_at
+		SELECT id, title, description, category_id, time_limit, passing_score, created_at, updated_at, import_batch_id, generated_at,
+		       base_points, time_limit_per_question, max_time_bonus, streak_threshold, streak_bonus
 		FROM quizzes
 		ORDER BY created_at DESC
 	`
@@ -99,6 +105,11 @@ func (r *QuizRepository) FindAll() ([]quiz.Quiz, error) {
 			[]quiz.Tag{},
 			quizData.importBatchID,
 			quizData.generatedAt,
+			quizData.basePoints,
+			quizData.timeLimitPerQuestion,
+			quizData.maxTimeBonus,
+			quizData.streakThreshold,
+			quizData.streakBonus,
 		)
 
 		quizzes = append(quizzes, *q)
@@ -372,23 +383,29 @@ func (r *QuizRepository) Delete(id quiz.QuizID) error {
 // ========================================
 
 type quizData struct {
-	id            quiz.QuizID
-	title         quiz.QuizTitle
-	description   string
-	categoryID    quiz.CategoryID
-	timeLimit     quiz.TimeLimit
-	passingScore  quiz.PassingScore
-	createdAt     int64
-	updatedAt     int64
-	tags          []quiz.Tag
-	importBatchID *string
-	generatedAt   *int64
+	id                   quiz.QuizID
+	title                quiz.QuizTitle
+	description          string
+	categoryID           quiz.CategoryID
+	timeLimit            quiz.TimeLimit
+	passingScore         quiz.PassingScore
+	createdAt            int64
+	updatedAt            int64
+	tags                 []quiz.Tag
+	importBatchID        *string
+	generatedAt          *int64
+	basePoints           quiz.Points
+	timeLimitPerQuestion int
+	maxTimeBonus         quiz.Points
+	streakThreshold      int
+	streakBonus          quiz.Points
 }
 
 // loadQuiz loads a quiz from database (without questions)
 func (r *QuizRepository) loadQuiz(id quiz.QuizID) (*quizData, error) {
 	query := `
-		SELECT id, title, description, category_id, time_limit, passing_score, created_at, updated_at, import_batch_id, generated_at
+		SELECT id, title, description, category_id, time_limit, passing_score, created_at, updated_at, import_batch_id, generated_at,
+		       base_points, time_limit_per_question, max_time_bonus, streak_threshold, streak_bonus
 		FROM quizzes
 		WHERE id = $1
 	`
@@ -402,19 +419,25 @@ func (r *QuizRepository) scanQuizRow(scanner interface {
 	Scan(dest ...interface{}) error
 }) (*quizData, error) {
 	var (
-		idStr          string
-		title          string
-		description    sql.NullString
-		categoryIDStr  sql.NullString
-		timeLimit      int
-		passingScore   int
-		createdAt      int64
-		updatedAt      int64
-		importBatchID  sql.NullString
-		generatedAtSQL sql.NullTime
+		idStr                string
+		title                string
+		description          sql.NullString
+		categoryIDStr        sql.NullString
+		timeLimit            int
+		passingScore         int
+		createdAt            int64
+		updatedAt            int64
+		importBatchID        sql.NullString
+		generatedAtSQL       sql.NullTime
+		basePoints           int
+		timeLimitPerQuestion int
+		maxTimeBonus         int
+		streakThreshold      int
+		streakBonus          int
 	)
 
-	err := scanner.Scan(&idStr, &title, &description, &categoryIDStr, &timeLimit, &passingScore, &createdAt, &updatedAt, &importBatchID, &generatedAtSQL)
+	err := scanner.Scan(&idStr, &title, &description, &categoryIDStr, &timeLimit, &passingScore, &createdAt, &updatedAt, &importBatchID, &generatedAtSQL,
+		&basePoints, &timeLimitPerQuestion, &maxTimeBonus, &streakThreshold, &streakBonus)
 	if err == sql.ErrNoRows {
 		return nil, quiz.ErrQuizNotFound
 	}
@@ -468,18 +491,39 @@ func (r *QuizRepository) scanQuizRow(scanner interface {
 		generatedAt = &ts
 	}
 
+	// Reconstruct scoring value objects
+	quizBasePoints, err := quiz.NewPoints(basePoints)
+	if err != nil {
+		return nil, fmt.Errorf("invalid base points: %w", err)
+	}
+
+	quizMaxTimeBonus, err := quiz.NewPoints(maxTimeBonus)
+	if err != nil {
+		return nil, fmt.Errorf("invalid max time bonus: %w", err)
+	}
+
+	quizStreakBonus, err := quiz.NewPoints(streakBonus)
+	if err != nil {
+		return nil, fmt.Errorf("invalid streak bonus: %w", err)
+	}
+
 	return &quizData{
-		id:            quizID,
-		title:         quizTitle,
-		description:   desc,
-		categoryID:    categoryID,
-		timeLimit:     quizTimeLimit,
-		passingScore:  quizPassingScore,
-		createdAt:     createdAt,
-		updatedAt:     updatedAt,
-		tags:          []quiz.Tag{}, // Will be loaded separately
-		importBatchID: batchID,
-		generatedAt:   generatedAt,
+		id:                   quizID,
+		title:                quizTitle,
+		description:          desc,
+		categoryID:           categoryID,
+		timeLimit:            quizTimeLimit,
+		passingScore:         quizPassingScore,
+		createdAt:            createdAt,
+		updatedAt:            updatedAt,
+		tags:                 []quiz.Tag{}, // Will be loaded separately
+		importBatchID:        batchID,
+		generatedAt:          generatedAt,
+		basePoints:           quizBasePoints,
+		timeLimitPerQuestion: timeLimitPerQuestion,
+		maxTimeBonus:         quizMaxTimeBonus,
+		streakThreshold:      streakThreshold,
+		streakBonus:          quizStreakBonus,
 	}, nil
 }
 
@@ -617,8 +661,9 @@ func (r *QuizRepository) loadAnswers(questionID quiz.QuestionID) ([]quiz.Answer,
 // saveQuiz saves or updates a quiz
 func (r *QuizRepository) saveQuiz(tx *sql.Tx, q *quiz.Quiz) error {
 	query := `
-		INSERT INTO quizzes (id, title, description, category_id, time_limit, passing_score, created_at, updated_at, tags, import_batch_id, generated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11)
+		INSERT INTO quizzes (id, title, description, category_id, time_limit, passing_score, created_at, updated_at, tags, import_batch_id, generated_at,
+		                     base_points, time_limit_per_question, max_time_bonus, streak_threshold, streak_bonus)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 		ON CONFLICT (id) DO UPDATE SET
 			title = EXCLUDED.title,
 			description = EXCLUDED.description,
@@ -628,7 +673,12 @@ func (r *QuizRepository) saveQuiz(tx *sql.Tx, q *quiz.Quiz) error {
 			updated_at = EXCLUDED.updated_at,
 			tags = EXCLUDED.tags,
 			import_batch_id = EXCLUDED.import_batch_id,
-			generated_at = EXCLUDED.generated_at
+			generated_at = EXCLUDED.generated_at,
+			base_points = EXCLUDED.base_points,
+			time_limit_per_question = EXCLUDED.time_limit_per_question,
+			max_time_bonus = EXCLUDED.max_time_bonus,
+			streak_threshold = EXCLUDED.streak_threshold,
+			streak_bonus = EXCLUDED.streak_bonus
 	`
 
 	var categoryIDStr interface{}
@@ -662,6 +712,11 @@ func (r *QuizRepository) saveQuiz(tx *sql.Tx, q *quiz.Quiz) error {
 		tagsArray,
 		q.ImportBatchID(),
 		generatedAtSQL,
+		q.BasePoints().Value(),
+		q.TimeLimitPerQuestion(),
+		q.MaxTimeBonus().Value(),
+		q.StreakThreshold(),
+		q.StreakBonus().Value(),
 	)
 
 	if err != nil {

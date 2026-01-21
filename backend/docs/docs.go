@@ -924,6 +924,7 @@ const docTemplate = `{
                 "currentQuestion",
                 "session",
                 "timeLimit",
+                "timeLimitPerQuestion",
                 "totalQuestions"
             ],
             "properties": {
@@ -934,6 +935,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.SessionDTO"
                 },
                 "timeLimit": {
+                    "type": "integer"
+                },
+                "timeLimitPerQuestion": {
                     "type": "integer"
                 },
                 "totalQuestions": {
@@ -1272,7 +1276,9 @@ const docTemplate = `{
         "internal_infrastructure_http_handlers.SessionResultsData": {
             "type": "object",
             "required": [
+                "avgAnswerTime",
                 "correctAnswers",
+                "longestStreak",
                 "passed",
                 "quiz",
                 "scorePercentage",
@@ -1281,7 +1287,14 @@ const docTemplate = `{
                 "totalQuestions"
             ],
             "properties": {
+                "avgAnswerTime": {
+                    "description": "seconds",
+                    "type": "number"
+                },
                 "correctAnswers": {
+                    "type": "integer"
+                },
+                "longestStreak": {
                     "type": "integer"
                 },
                 "passed": {
@@ -1312,6 +1325,7 @@ const docTemplate = `{
                 "firstQuestion",
                 "session",
                 "timeLimit",
+                "timeLimitPerQuestion",
                 "totalQuestions"
             ],
             "properties": {
@@ -1322,6 +1336,9 @@ const docTemplate = `{
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.SessionDTO"
                 },
                 "timeLimit": {
+                    "type": "integer"
+                },
+                "timeLimitPerQuestion": {
                     "type": "integer"
                 },
                 "totalQuestions": {
@@ -1354,15 +1371,25 @@ const docTemplate = `{
         "internal_infrastructure_http_handlers.SubmitAnswerData": {
             "type": "object",
             "required": [
+                "basePoints",
                 "correctAnswerId",
+                "currentStreak",
                 "isCorrect",
                 "isQuizCompleted",
                 "pointsEarned",
+                "streakBonus",
+                "timeBonus",
                 "totalScore"
             ],
             "properties": {
+                "basePoints": {
+                    "type": "integer"
+                },
                 "correctAnswerId": {
                     "type": "string"
+                },
+                "currentStreak": {
+                    "type": "integer"
                 },
                 "finalResult": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.FinalResultDTO"
@@ -1379,6 +1406,12 @@ const docTemplate = `{
                 "pointsEarned": {
                     "type": "integer"
                 },
+                "streakBonus": {
+                    "type": "integer"
+                },
+                "timeBonus": {
+                    "type": "integer"
+                },
                 "totalScore": {
                     "type": "integer"
                 }
@@ -1389,6 +1422,7 @@ const docTemplate = `{
             "required": [
                 "answerId",
                 "questionId",
+                "timeTaken",
                 "userId"
             ],
             "properties": {
@@ -1397,6 +1431,10 @@ const docTemplate = `{
                 },
                 "questionId": {
                     "type": "string"
+                },
+                "timeTaken": {
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "userId": {
                     "type": "string"

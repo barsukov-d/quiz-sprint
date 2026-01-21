@@ -98,12 +98,15 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.SessionDTO'
       timeLimit:
         type: integer
+      timeLimitPerQuestion:
+        type: integer
       totalQuestions:
         type: integer
     required:
     - currentQuestion
     - session
     - timeLimit
+    - timeLimitPerQuestion
     - totalQuestions
     type: object
   internal_infrastructure_http_handlers.GetActiveSessionRequest:
@@ -330,7 +333,12 @@ definitions:
     type: object
   internal_infrastructure_http_handlers.SessionResultsData:
     properties:
+      avgAnswerTime:
+        description: seconds
+        type: number
       correctAnswers:
+        type: integer
+      longestStreak:
         type: integer
       passed:
         type: boolean
@@ -347,7 +355,9 @@ definitions:
       totalQuestions:
         type: integer
     required:
+    - avgAnswerTime
     - correctAnswers
+    - longestStreak
     - passed
     - quiz
     - scorePercentage
@@ -363,12 +373,15 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.SessionDTO'
       timeLimit:
         type: integer
+      timeLimitPerQuestion:
+        type: integer
       totalQuestions:
         type: integer
     required:
     - firstQuestion
     - session
     - timeLimit
+    - timeLimitPerQuestion
     - totalQuestions
     type: object
   internal_infrastructure_http_handlers.StartQuizRequest:
@@ -387,8 +400,12 @@ definitions:
     type: object
   internal_infrastructure_http_handlers.SubmitAnswerData:
     properties:
+      basePoints:
+        type: integer
       correctAnswerId:
         type: string
+      currentStreak:
+        type: integer
       finalResult:
         $ref: '#/definitions/internal_infrastructure_http_handlers.FinalResultDTO'
       isCorrect:
@@ -399,13 +416,21 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
       pointsEarned:
         type: integer
+      streakBonus:
+        type: integer
+      timeBonus:
+        type: integer
       totalScore:
         type: integer
     required:
+    - basePoints
     - correctAnswerId
+    - currentStreak
     - isCorrect
     - isQuizCompleted
     - pointsEarned
+    - streakBonus
+    - timeBonus
     - totalScore
     type: object
   internal_infrastructure_http_handlers.SubmitAnswerRequest:
@@ -414,11 +439,15 @@ definitions:
         type: string
       questionId:
         type: string
+      timeTaken:
+        minimum: 0
+        type: integer
       userId:
         type: string
     required:
     - answerId
     - questionId
+    - timeTaken
     - userId
     type: object
   internal_infrastructure_http_handlers.SubmitAnswerResponse:

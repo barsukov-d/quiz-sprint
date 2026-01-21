@@ -184,6 +184,9 @@ func (h *QuizHandler) SubmitAnswer(c fiber.Ctx) error {
 	if req.UserID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "userId is required")
 	}
+	if req.TimeTaken < 0 {
+		return fiber.NewError(fiber.StatusBadRequest, "timeTaken must be non-negative")
+	}
 
 	// 3. Execute use case
 	output, err := h.submitAnswerUC.Execute(appQuiz.SubmitAnswerInput{
@@ -191,6 +194,7 @@ func (h *QuizHandler) SubmitAnswer(c fiber.Ctx) error {
 		QuestionID: req.QuestionID,
 		AnswerID:   req.AnswerID,
 		UserID:     req.UserID,
+		TimeTaken:  req.TimeTaken,
 	})
 	if err != nil {
 		return mapError(err)

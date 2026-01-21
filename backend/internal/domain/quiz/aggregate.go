@@ -47,6 +47,13 @@ type Quiz struct {
 	importBatchID *string // Batch identifier for grouped imports
 	generatedAt   *int64  // Unix timestamp when quiz was generated
 
+	// Scoring system fields (added 2026-01-20)
+	basePoints           Points // Base points per question (default if question.points not set)
+	timeLimitPerQuestion int    // Time limit per question in seconds
+	maxTimeBonus         Points // Maximum bonus points for speed
+	streakThreshold      int    // Number of correct answers to trigger streak bonus
+	streakBonus          Points // Bonus points for achieving streak
+
 	// Domain events collected during operations
 	events []Event
 }
@@ -61,21 +68,31 @@ func NewQuiz(id QuizID, title QuizTitle, description string, categoryID Category
 		return nil, ErrInvalidTitle
 	}
 
+	// Default scoring values
+	basePoints, _ := NewPoints(50)
+	maxTimeBonus, _ := NewPoints(50)
+	streakBonus, _ := NewPoints(100)
+
 	return &Quiz{
-		id:            id,
-		title:         title,
-		description:   description,
-		categoryID:    categoryID,
-		timeLimit:     timeLimit,
-		passingScore:  passingScore,
-		createdAt:     createdAt,
-		updatedAt:     createdAt,
-		questions:     make([]Question, 0),
-		questionCount: 0,
-		tags:          make([]Tag, 0),
-		importBatchID: nil,
-		generatedAt:   nil,
-		events:        make([]Event, 0),
+		id:                   id,
+		title:                title,
+		description:          description,
+		categoryID:           categoryID,
+		timeLimit:            timeLimit,
+		passingScore:         passingScore,
+		createdAt:            createdAt,
+		updatedAt:            createdAt,
+		questions:            make([]Question, 0),
+		questionCount:        0,
+		tags:                 make([]Tag, 0),
+		importBatchID:        nil,
+		generatedAt:          nil,
+		basePoints:           basePoints,
+		timeLimitPerQuestion: 30, // Default: 30 seconds per question
+		maxTimeBonus:         maxTimeBonus,
+		streakThreshold:      3, // Default: 3 correct answers for streak bonus
+		streakBonus:          streakBonus,
+		events:               make([]Event, 0),
 	}, nil
 }
 
@@ -93,22 +110,32 @@ func ReconstructQuiz(
 	tags []Tag,
 	importBatchID *string,
 	generatedAt *int64,
+	basePoints Points,
+	timeLimitPerQuestion int,
+	maxTimeBonus Points,
+	streakThreshold int,
+	streakBonus Points,
 ) *Quiz {
 	return &Quiz{
-		id:            id,
-		title:         title,
-		description:   description,
-		categoryID:    categoryID,
-		timeLimit:     timeLimit,
-		passingScore:  passingScore,
-		createdAt:     createdAt,
-		updatedAt:     updatedAt,
-		questions:     make([]Question, 0),
-		questionCount: 0,
-		tags:          tags,
-		importBatchID: importBatchID,
-		generatedAt:   generatedAt,
-		events:        make([]Event, 0),
+		id:                   id,
+		title:                title,
+		description:          description,
+		categoryID:           categoryID,
+		timeLimit:            timeLimit,
+		passingScore:         passingScore,
+		createdAt:            createdAt,
+		updatedAt:            updatedAt,
+		questions:            make([]Question, 0),
+		questionCount:        0,
+		tags:                 tags,
+		importBatchID:        importBatchID,
+		generatedAt:          generatedAt,
+		basePoints:           basePoints,
+		timeLimitPerQuestion: timeLimitPerQuestion,
+		maxTimeBonus:         maxTimeBonus,
+		streakThreshold:      streakThreshold,
+		streakBonus:          streakBonus,
+		events:               make([]Event, 0),
 	}
 }
 
@@ -196,6 +223,13 @@ func (q *Quiz) UpdatedAt() int64           { return q.updatedAt }
 func (q *Quiz) ImportBatchID() *string     { return q.importBatchID }
 func (q *Quiz) GeneratedAt() *int64        { return q.generatedAt }
 
+// Scoring system getters
+func (q *Quiz) BasePoints() Points           { return q.basePoints }
+func (q *Quiz) TimeLimitPerQuestion() int     { return q.timeLimitPerQuestion }
+func (q *Quiz) MaxTimeBonus() Points          { return q.maxTimeBonus }
+func (q *Quiz) StreakThreshold() int          { return q.streakThreshold }
+func (q *Quiz) StreakBonus() Points           { return q.streakBonus }
+
 // Questions returns a copy of questions (protect internal state)
 func (q *Quiz) Questions() []Question {
 	copies := make([]Question, len(q.questions))
@@ -273,15 +307,16 @@ func (q *Quiz) Events() []Event {
 
 // QuizSession is the aggregate root for an active quiz session
 type QuizSession struct {
-	id              SessionID
-	quizID          QuizID
-	userID          shared.UserID
-	currentQuestion int
-	score           Points
-	answers         []UserAnswer
-	startedAt       int64 // Unix timestamp
-	completedAt     int64 // Unix timestamp (0 if not completed)
-	status          SessionStatus
+	id                  SessionID
+	quizID              QuizID
+	userID              shared.UserID
+	currentQuestion     int
+	score               Points
+	answers             []UserAnswer
+	startedAt           int64 // Unix timestamp
+	completedAt         int64 // Unix timestamp (0 if not completed)
+	status              SessionStatus
+	correctAnswerStreak int // Current streak of correct answers
 
 	// Domain events collected during operations
 	events []Event
@@ -302,16 +337,17 @@ func NewQuizSession(id SessionID, quizID QuizID, userID shared.UserID, startedAt
 	}
 
 	session := &QuizSession{
-		id:              id,
-		quizID:          quizID,
-		userID:          userID,
-		currentQuestion: 0,
-		score:           Points{},
-		answers:         make([]UserAnswer, 0),
-		startedAt:       startedAt,
-		completedAt:     0,
-		status:          SessionStatusActive,
-		events:          make([]Event, 0),
+		id:                  id,
+		quizID:              quizID,
+		userID:              userID,
+		currentQuestion:     0,
+		score:               Points{},
+		answers:             make([]UserAnswer, 0),
+		startedAt:           startedAt,
+		completedAt:         0,
+		status:              SessionStatusActive,
+		correctAnswerStreak: 0,
+		events:              make([]Event, 0),
 	}
 
 	// Record domain event
@@ -320,34 +356,91 @@ func NewQuizSession(id SessionID, quizID QuizID, userID shared.UserID, startedAt
 	return session, nil
 }
 
+// SubmitAnswerResult holds detailed information about a submitted answer
+type SubmitAnswerResult struct {
+	BasePoints    Points
+	TimeBonus     Points
+	StreakBonus   Points
+	TotalPoints   Points
+	CurrentStreak int
+	IsCorrect     bool
+}
+
 // SubmitAnswer processes a user's answer (business logic)
-func (qs *QuizSession) SubmitAnswer(question *Question, answerID AnswerID, answeredAt int64) error {
+func (qs *QuizSession) SubmitAnswer(question *Question, answerID AnswerID, answeredAt int64, timeTaken int64, quiz *Quiz) (*SubmitAnswerResult, error) {
 	if qs.status != SessionStatusActive {
-		return ErrSessionCompleted
+		return nil, ErrSessionCompleted
 	}
 
 	// Check if already answered this question
 	for _, ua := range qs.answers {
 		if ua.QuestionID().Equals(question.ID()) {
-			return ErrAlreadyAnswered
+			return nil, ErrAlreadyAnswered
 		}
 	}
 
 	// Validate answer belongs to question
 	answer, err := question.GetAnswer(answerID)
 	if err != nil {
-		return err
+		return nil, err
 	}
 
-	// Calculate points
-	points := Points{}
+	// Initialize result
+	result := &SubmitAnswerResult{
+		BasePoints:    Points{},
+		TimeBonus:     Points{},
+		StreakBonus:   Points{},
+		TotalPoints:   Points{},
+		CurrentStreak: qs.correctAnswerStreak,
+		IsCorrect:     answer.IsCorrect(),
+	}
+
+	// Only calculate points if answer is correct
 	if answer.IsCorrect() {
-		points = question.Points()
-		qs.score = qs.score.Add(points)
+		// 1. Base points (from question or quiz default)
+		basePoints := question.Points()
+		if basePoints.IsZero() {
+			basePoints = quiz.BasePoints()
+		}
+		result.BasePoints = basePoints
+
+		// 2. Time bonus (linear formula)
+		timeLimitMs := int64(quiz.TimeLimitPerQuestion()) * 1000
+		if timeTaken > 0 && timeTaken <= timeLimitMs {
+			ratio := 1.0 - (float64(timeTaken) / float64(timeLimitMs))
+			timeBonusValue := int(float64(quiz.MaxTimeBonus().Value()) * ratio)
+			result.TimeBonus, _ = NewPoints(timeBonusValue)
+		}
+
+		// 3. Update streak
+		qs.correctAnswerStreak++
+		result.CurrentStreak = qs.correctAnswerStreak
+
+		// 4. Streak bonus (if threshold reached)
+		if qs.correctAnswerStreak >= quiz.StreakThreshold() {
+			result.StreakBonus = quiz.StreakBonus()
+		}
+
+		// 5. Calculate total points
+		result.TotalPoints = result.BasePoints.Add(result.TimeBonus).Add(result.StreakBonus)
+		qs.score = qs.score.Add(result.TotalPoints)
+	} else {
+		// Reset streak on incorrect answer
+		qs.correctAnswerStreak = 0
+		result.CurrentStreak = 0
 	}
 
-	// Record answer
-	userAnswer := NewUserAnswer(question.ID(), answerID, answer.IsCorrect(), points, answeredAt)
+	// Record answer with detailed breakdown
+	userAnswer := NewUserAnswerWithBreakdown(
+		question.ID(),
+		answerID,
+		answer.IsCorrect(),
+		result.BasePoints,
+		result.TimeBonus,
+		result.StreakBonus,
+		timeTaken,
+		answeredAt,
+	)
 	qs.answers = append(qs.answers, userAnswer)
 	qs.currentQuestion++
 
@@ -357,11 +450,11 @@ func (qs *QuizSession) SubmitAnswer(question *Question, answerID AnswerID, answe
 		question.ID(),
 		answerID,
 		answer.IsCorrect(),
-		points,
+		result.TotalPoints,
 		answeredAt,
 	))
 
-	return nil
+	return result, nil
 }
 
 // Complete marks the session as completed
@@ -432,14 +525,15 @@ func (qs *QuizSession) HasAnsweredQuestion(questionID QuestionID) bool {
 }
 
 // Getters
-func (qs *QuizSession) ID() SessionID         { return qs.id }
-func (qs *QuizSession) QuizID() QuizID        { return qs.quizID }
-func (qs *QuizSession) UserID() shared.UserID { return qs.userID }
-func (qs *QuizSession) CurrentQuestion() int  { return qs.currentQuestion }
-func (qs *QuizSession) Score() Points         { return qs.score }
-func (qs *QuizSession) StartedAt() int64      { return qs.startedAt }
-func (qs *QuizSession) CompletedAt() int64    { return qs.completedAt }
-func (qs *QuizSession) Status() SessionStatus { return qs.status }
+func (qs *QuizSession) ID() SessionID             { return qs.id }
+func (qs *QuizSession) QuizID() QuizID            { return qs.quizID }
+func (qs *QuizSession) UserID() shared.UserID     { return qs.userID }
+func (qs *QuizSession) CurrentQuestion() int      { return qs.currentQuestion }
+func (qs *QuizSession) Score() Points             { return qs.score }
+func (qs *QuizSession) StartedAt() int64          { return qs.startedAt }
+func (qs *QuizSession) CompletedAt() int64        { return qs.completedAt }
+func (qs *QuizSession) Status() SessionStatus     { return qs.status }
+func (qs *QuizSession) CurrentStreak() int        { return qs.correctAnswerStreak }
 
 // Answers returns a copy of answers (protect internal state)
 func (qs *QuizSession) Answers() []UserAnswer {

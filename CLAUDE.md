@@ -227,3 +227,4 @@ Full API docs: http://localhost:3000/swagger/index.html
 Before completing session:
 1. Track issues with `bd` (beads) tool
 2. Always push to remote: `git push` required
+- to memorize general

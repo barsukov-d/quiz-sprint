@@ -30,10 +30,11 @@ type GetActiveSessionInput struct {
 
 // GetActiveSessionOutput is the output DTO
 type GetActiveSessionOutput struct {
-	Session        SessionDTO    `json:"session"`
-	CurrentQuestion QuestionDTO   `json:"currentQuestion"`
-	TotalQuestions int           `json:"totalQuestions"`
-	TimeLimit      int           `json:"timeLimit"`
+	Session              SessionDTO  `json:"session"`
+	CurrentQuestion      QuestionDTO `json:"currentQuestion"`
+	TotalQuestions       int         `json:"totalQuestions"`
+	TimeLimit            int         `json:"timeLimit"`
+	TimeLimitPerQuestion int         `json:"timeLimitPerQuestion"`
 }
 
 // Execute retrieves the active session for a user and quiz
@@ -69,9 +70,10 @@ func (uc *GetActiveSessionUseCase) Execute(input GetActiveSessionInput) (GetActi
 
 	// 5. Return DTO
 	return GetActiveSessionOutput{
-		Session:        ToSessionDTO(session),
-		CurrentQuestion: ToQuestionDTO(currentQuestion),
-		TotalQuestions: quizAggregate.QuestionsCount(),
-		TimeLimit:      quizAggregate.TimeLimit().Seconds(),
+		Session:              ToSessionDTO(session),
+		CurrentQuestion:      ToQuestionDTO(currentQuestion),
+		TotalQuestions:       quizAggregate.QuestionsCount(),
+		TimeLimit:            quizAggregate.TimeLimit().Seconds(),
+		TimeLimitPerQuestion: quizAggregate.TimeLimitPerQuestion(),
 	}, nil
 }

@@ -921,6 +921,7 @@
                 "currentQuestion",
                 "session",
                 "timeLimit",
+                "timeLimitPerQuestion",
                 "totalQuestions"
             ],
             "properties": {
@@ -931,6 +932,9 @@
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.SessionDTO"
                 },
                 "timeLimit": {
+                    "type": "integer"
+                },
+                "timeLimitPerQuestion": {
                     "type": "integer"
                 },
                 "totalQuestions": {
@@ -1269,7 +1273,9 @@
         "internal_infrastructure_http_handlers.SessionResultsData": {
             "type": "object",
             "required": [
+                "avgAnswerTime",
                 "correctAnswers",
+                "longestStreak",
                 "passed",
                 "quiz",
                 "scorePercentage",
@@ -1278,7 +1284,14 @@
                 "totalQuestions"
             ],
             "properties": {
+                "avgAnswerTime": {
+                    "description": "seconds",
+                    "type": "number"
+                },
                 "correctAnswers": {
+                    "type": "integer"
+                },
+                "longestStreak": {
                     "type": "integer"
                 },
                 "passed": {
@@ -1309,6 +1322,7 @@
                 "firstQuestion",
                 "session",
                 "timeLimit",
+                "timeLimitPerQuestion",
                 "totalQuestions"
             ],
             "properties": {
@@ -1319,6 +1333,9 @@
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.SessionDTO"
                 },
                 "timeLimit": {
+                    "type": "integer"
+                },
+                "timeLimitPerQuestion": {
                     "type": "integer"
                 },
                 "totalQuestions": {
@@ -1351,15 +1368,25 @@
         "internal_infrastructure_http_handlers.SubmitAnswerData": {
             "type": "object",
             "required": [
+                "basePoints",
                 "correctAnswerId",
+                "currentStreak",
                 "isCorrect",
                 "isQuizCompleted",
                 "pointsEarned",
+                "streakBonus",
+                "timeBonus",
                 "totalScore"
             ],
             "properties": {
+                "basePoints": {
+                    "type": "integer"
+                },
                 "correctAnswerId": {
                     "type": "string"
+                },
+                "currentStreak": {
+                    "type": "integer"
                 },
                 "finalResult": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.FinalResultDTO"
@@ -1376,6 +1403,12 @@
                 "pointsEarned": {
                     "type": "integer"
                 },
+                "streakBonus": {
+                    "type": "integer"
+                },
+                "timeBonus": {
+                    "type": "integer"
+                },
                 "totalScore": {
                     "type": "integer"
                 }
@@ -1386,6 +1419,7 @@
             "required": [
                 "answerId",
                 "questionId",
+                "timeTaken",
                 "userId"
             ],
             "properties": {
@@ -1394,6 +1428,10 @@
                 },
                 "questionId": {
                     "type": "string"
+                },
+                "timeTaken": {
+                    "type": "integer",
+                    "minimum": 0
                 },
                 "userId": {
                     "type": "string"

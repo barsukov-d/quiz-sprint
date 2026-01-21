@@ -115,10 +115,11 @@ type GetQuizDetailsResponse struct {
 
 // StartQuizData contains data for a started quiz
 type StartQuizData struct {
-	Session        SessionDTO  `json:"session" validate:"required"`
-	FirstQuestion  QuestionDTO `json:"firstQuestion" validate:"required"`
-	TotalQuestions int         `json:"totalQuestions" validate:"required"`
-	TimeLimit      int         `json:"timeLimit" validate:"required"`
+	Session              SessionDTO  `json:"session" validate:"required"`
+	FirstQuestion        QuestionDTO `json:"firstQuestion" validate:"required"`
+	TotalQuestions       int         `json:"totalQuestions" validate:"required"`
+	TimeLimit            int         `json:"timeLimit" validate:"required"`
+	TimeLimitPerQuestion int         `json:"timeLimitPerQuestion" validate:"required"`
 }
 
 // @name StartQuizData
@@ -134,7 +135,11 @@ type StartQuizResponse struct {
 type SubmitAnswerData struct {
 	IsCorrect       bool            `json:"isCorrect" validate:"required"`
 	CorrectAnswerID string          `json:"correctAnswerId" validate:"required"`
+	BasePoints      int             `json:"basePoints" validate:"required"`
+	TimeBonus       int             `json:"timeBonus" validate:"required"`
+	StreakBonus     int             `json:"streakBonus" validate:"required"`
 	PointsEarned    int             `json:"pointsEarned" validate:"required"`
+	CurrentStreak   int             `json:"currentStreak" validate:"required"`
 	TotalScore      int             `json:"totalScore" validate:"required"`
 	IsQuizCompleted bool            `json:"isQuizCompleted" validate:"required"`
 	NextQuestion    *QuestionDTO    `json:"nextQuestion,omitempty"`
@@ -226,6 +231,7 @@ type SubmitAnswerRequest struct {
 	QuestionID string `json:"questionId" validate:"required"`
 	AnswerID   string `json:"answerId" validate:"required"`
 	UserID     string `json:"userId" validate:"required"`
+	TimeTaken  int64  `json:"timeTaken" validate:"required,min=0"`
 }
 
 // GetActiveSessionRequest is the HTTP request for getting an active session
@@ -243,10 +249,11 @@ type GetActiveSessionResponse struct {
 
 // GetActiveSessionData contains the active session details
 type GetActiveSessionData struct {
-	Session        SessionDTO  `json:"session" validate:"required"`
-	CurrentQuestion QuestionDTO `json:"currentQuestion" validate:"required"`
-	TotalQuestions int         `json:"totalQuestions" validate:"required"`
-	TimeLimit      int         `json:"timeLimit" validate:"required"`
+	Session              SessionDTO  `json:"session" validate:"required"`
+	CurrentQuestion      QuestionDTO `json:"currentQuestion" validate:"required"`
+	TotalQuestions       int         `json:"totalQuestions" validate:"required"`
+	TimeLimit            int         `json:"timeLimit" validate:"required"`
+	TimeLimitPerQuestion int         `json:"timeLimitPerQuestion" validate:"required"`
 }
 
 // @name GetActiveSessionData
@@ -354,9 +361,11 @@ type SessionResultsData struct {
 	Quiz            QuizDTO    `json:"quiz" validate:"required"`
 	TotalQuestions  int        `json:"totalQuestions" validate:"required"`
 	CorrectAnswers  int        `json:"correctAnswers" validate:"required"`
-	TimeSpent       int64      `json:"timeSpent" validate:"required"` // seconds
+	TimeSpent       int64      `json:"timeSpent" validate:"required"`       // seconds
 	Passed          bool       `json:"passed" validate:"required"`
 	ScorePercentage int        `json:"scorePercentage" validate:"required"` // 0-100
+	LongestStreak   int        `json:"longestStreak" validate:"required"`
+	AvgAnswerTime   float64    `json:"avgAnswerTime" validate:"required"` // seconds
 }
 
 // @name SessionResultsData

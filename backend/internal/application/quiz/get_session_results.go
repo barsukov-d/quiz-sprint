@@ -15,9 +15,11 @@ type GetSessionResultsOutput struct {
 	Quiz            QuizDTO
 	TotalQuestions  int
 	CorrectAnswers  int
-	TimeSpent       int64 // seconds
+	TimeSpent       int64   // seconds
 	Passed          bool
 	ScorePercentage int
+	LongestStreak   int     // Longest streak of correct answers
+	AvgAnswerTime   float64 // Average answer time in seconds
 }
 
 // GetSessionResultsUseCase retrieves the results of a completed (or active) quiz session
@@ -82,7 +84,11 @@ func (uc *GetSessionResultsUseCase) Execute(input GetSessionResultsInput) (*GetS
 	// 7. Check if passed
 	passed := session.HasPassed(quiz)
 
-	// 8. Map to DTOs
+	// 8. Calculate longest streak and average answer time
+	longestStreak := calculateLongestStreak(session.Answers())
+	avgAnswerTime := calculateAvgAnswerTime(session.Answers())
+
+	// 9. Map to DTOs
 	sessionDTO := SessionDTO{
 		ID:              session.ID().String(),
 		QuizID:          session.QuizID().String(),
@@ -110,5 +116,41 @@ func (uc *GetSessionResultsUseCase) Execute(input GetSessionResultsInput) (*GetS
 		TimeSpent:       timeSpent,
 		Passed:          passed,
 		ScorePercentage: scorePercentage,
+		LongestStreak:   longestStreak,
+		AvgAnswerTime:   avgAnswerTime,
 	}, nil
+}
+
+// calculateLongestStreak finds the longest streak of correct answers
+func calculateLongestStreak(answers []domainQuiz.UserAnswer) int {
+	longestStreak := 0
+	currentStreak := 0
+
+	for _, answer := range answers {
+		if answer.IsCorrect() {
+			currentStreak++
+			if currentStreak > longestStreak {
+				longestStreak = currentStreak
+			}
+		} else {
+			currentStreak = 0
+		}
+	}
+
+	return longestStreak
+}
+
+// calculateAvgAnswerTime calculates average answer time in seconds
+func calculateAvgAnswerTime(answers []domainQuiz.UserAnswer) float64 {
+	if len(answers) == 0 {
+		return 0
+	}
+
+	totalTime := int64(0)
+	for _, answer := range answers {
+		totalTime += answer.TimeSpent() // milliseconds
+	}
+
+	avgMs := float64(totalTime) / float64(len(answers))
+	return avgMs / 1000.0 // Convert to seconds
 }

@@ -47,4 +47,8 @@ var (
 
 	// User errors
 	ErrUnauthorized = errors.New("unauthorized")
+
+	// Timing errors
+	ErrInvalidTimeTaken  = errors.New("invalid time taken (must be non-negative)")
+	ErrTimeTakenTooLong  = errors.New("time taken too long (max 1 hour)")
 )

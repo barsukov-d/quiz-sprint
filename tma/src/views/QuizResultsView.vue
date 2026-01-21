@@ -38,6 +38,11 @@ const formatTime = computed(() => {
 	return `${minutes}:${seconds.toString().padStart(2, '0')}`
 })
 
+const avgAnswerTime = computed(() => {
+	const avgTime = results.value?.avgAnswerTime || 0
+	return avgTime.toFixed(1)
+})
+
 const performanceEmoji = computed(() => {
 	const percentage = scorePercentage.value
 	if (percentage >= 90) return '🏆'
@@ -163,6 +168,22 @@ const goHome = () => {
 						<div class="text-center py-4">
 							<div class="text-3xl font-bold mb-2">{{ results.scorePercentage }}%</div>
 							<div class="text-sm text-gray-600">Accuracy</div>
+						</div>
+					</UCard>
+
+					<UCard>
+						<div class="text-center py-4">
+							<div class="text-3xl font-bold mb-2 text-orange-500">
+								🔥 {{ results.longestStreak }}
+							</div>
+							<div class="text-sm text-gray-600">Longest Streak</div>
+						</div>
+					</UCard>
+
+					<UCard>
+						<div class="text-center py-4">
+							<div class="text-3xl font-bold mb-2">{{ avgAnswerTime }}s</div>
+							<div class="text-sm text-gray-600">Avg. Response</div>
 						</div>
 					</UCard>
 				</div>
