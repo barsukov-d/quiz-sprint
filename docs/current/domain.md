@@ -22,15 +22,18 @@
 ### Aggregate: QuizSession
 
 **Ответственность:**
+
 - Управление прохождением квиза одним пользователем
 - Принятие и валидация ответов
 - Подсчет очков с учетом скорости и серий
 - Отслеживание прогресса
 
 **Entities внутри:**
+
 - `UserAnswer` - ответ пользователя на вопрос
 
 **Value Objects:**
+
 - `SessionID` - уникальный идентификатор сессии
 - `QuizID` - ссылка на квиз (из Catalog Context)
 - `UserID` - ссылка на пользователя
@@ -40,6 +43,7 @@
 - `CurrentQuestionIndex` - текущий вопрос (0-indexed)
 
 **Бизнес-правила (Invariants):**
+
 1. Пользователь может иметь только одну активную сессию на квиз
 2. Нельзя ответить на вопрос дважды
 3. Нельзя отправить ответ после завершения сессии
@@ -48,6 +52,7 @@
 6. `CorrectAnswerStreak` сбрасывается при неверном ответе
 
 **Domain Events:**
+
 - `QuizStartedEvent` - когда создается новая сессия
 - `AnswerSubmittedEvent` - когда пользователь отвечает на вопрос
 - `QuizCompletedEvent` - когда все вопросы отвечены
@@ -57,6 +62,7 @@
 ### Use Cases
 
 #### StartQuizUseCase
+
 ```go
 StartQuizUseCase(quizID, userID) → (session, firstQuestion) | error
 
@@ -82,6 +88,7 @@ StartQuizUseCase(quizID, userID) → (session, firstQuestion) | error
 ---
 
 #### GetActiveSessionUseCase
+
 ```go
 GetActiveSessionUseCase(quizID, userID) → (session, currentQuestion) | 404
 
@@ -106,6 +113,7 @@ GetActiveSessionUseCase(quizID, userID) → (session, currentQuestion) | 404
 ---
 
 #### SubmitAnswerUseCase
+
 ```go
 SubmitAnswerUseCase(sessionID, questionID, answerID, userID, timeTaken)
   → (isCorrect, pointsEarned, streakInfo, nextQuestion?) | error
@@ -166,6 +174,7 @@ SubmitAnswerUseCase(sessionID, questionID, answerID, userID, timeTaken)
 ---
 
 #### AbandonSessionUseCase
+
 ```go
 AbandonSessionUseCase(sessionID, userID) → void | error
 
@@ -188,6 +197,7 @@ AbandonSessionUseCase(sessionID, userID) → void | error
 ---
 
 #### GetSessionResultsUseCase
+
 ```go
 GetSessionResultsUseCase(sessionID) → (results) | 404
 
@@ -226,6 +236,7 @@ GetSessionResultsUseCase(sessionID) → (results) | 404
 ---
 
 #### GetUserActiveSessionsUseCase
+
 ```go
 GetUserActiveSessionsUseCase(userID) → (sessions[])
 
@@ -259,11 +270,13 @@ GetUserActiveSessionsUseCase(userID) → (sessions[])
 ### Aggregate: Quiz
 
 **Ответственность:**
+
 - Хранение структуры и правил квиза
 - Валидация правил квиза
 - Предоставление вопросов для игры
 
 **Entities внутри:**
+
 - `Question` - вопрос с вариантами ответов
   - `questionID`: UUID
   - `text`: string (макс 500 символов)
@@ -271,6 +284,7 @@ GetUserActiveSessionsUseCase(userID) → (sessions[])
   - `correctAnswerID`: UUID (ровно один)
 
 **Value Objects:**
+
 - `QuizID`, `QuestionID`, `AnswerID` (UUID)
 - `QuizTitle` - название (макс 200 символов)
 - `QuizDescription` - описание (опционально)
@@ -282,6 +296,7 @@ GetUserActiveSessionsUseCase(userID) → (sessions[])
 - `StreakBonus` - очки за достижение серии
 
 **Бизнес-правила:**
+
 1. Квиз должен иметь минимум 5 вопросов
 2. Квиз может иметь максимум 50 вопросов
 3. Каждый вопрос должен иметь ровно 1 правильный ответ
@@ -293,6 +308,7 @@ GetUserActiveSessionsUseCase(userID) → (sessions[])
 ### Use Cases (Quiz Catalog)
 
 #### ListQuizzesUseCase
+
 ```go
 ListQuizzesUseCase() → (quizzes[])
 
@@ -301,6 +317,7 @@ ListQuizzesUseCase() → (quizzes[])
 ```
 
 #### GetQuizDetailsUseCase
+
 ```go
 GetQuizDetailsUseCase(quizID) → (quiz) | 404
 
@@ -309,6 +326,7 @@ GetQuizDetailsUseCase(quizID) → (quiz) | 404
 ```
 
 #### GetQuizzesByCategoryUseCase
+
 ```go
 GetQuizzesByCategoryUseCase(categoryID) → (quizzes[])
 
@@ -317,6 +335,7 @@ GetQuizzesByCategoryUseCase(categoryID) → (quizzes[])
 ```
 
 #### GetDailyQuizUseCase
+
 ```go
 GetDailyQuizUseCase(userID, date) → (quiz, completionStatus, userResult?)
 
@@ -350,6 +369,7 @@ GetDailyQuizUseCase(userID, date) → (quiz, completionStatus, userResult?)
 ---
 
 #### GetRandomQuizUseCase
+
 ```go
 GetRandomQuizUseCase(categoryID?, excludeCompleted?) → (quiz)
 
@@ -375,10 +395,12 @@ GetRandomQuizUseCase(categoryID?, excludeCompleted?) → (quiz)
 ### Aggregate: Category
 
 **Ответственность:**
+
 - Организация квизов по тематикам
 - Навигация и фильтрация контента
 
 **Value Objects:**
+
 - `CategoryID` - UUID
 - `CategoryName` - название (макс 100 символов, уникальное)
 - `CategorySlug` - URL-friendly (auto-generated)
@@ -386,11 +408,13 @@ GetRandomQuizUseCase(categoryID?, excludeCompleted?) → (quiz)
 - `CategoryIcon` - эмодзи для визуальной идентификации
 
 **Бизнес-правила:**
+
 1. Название категории уникально (case-insensitive)
 2. Slug автогенерируется: "General Knowledge" → "general-knowledge"
 3. Удаление категории не удаляет квизы (category_id → NULL)
 
 **Связь с Quiz:**
+
 - Quiz → CategoryID (optional foreign key)
 - Один квиз = одна категория (или NULL)
 
@@ -410,14 +434,17 @@ GetCategoryWithQuizCountUseCase(categoryID) → (category, quizCount)
 ### Aggregate: Tag
 
 **Ответственность:**
+
 - Гибкая система метаданных для классификации квизов
 - Множественные метки на квиз (many-to-many)
 
 **Value Objects:**
+
 - `TagID` - уникальный идентификатор (derived from name)
 - `TagName` - значение тега в формате `{category}:{value}`
 
 **Формат тега:**
+
 ```
 {category}:{value}
 
@@ -429,12 +456,14 @@ GetCategoryWithQuizCountUseCase(categoryID) → (category, quizCount)
 ```
 
 **Validation Rules:**
+
 - Lowercase only: `^[a-z0-9-:]+$`
 - Max length: 100 chars
 - Required format: `category:value`
 - No spaces (use hyphens)
 
 **Бизнес-правила:**
+
 1. Имя тега уникально
 2. Тег immutable (для изменения - удалить и создать новый)
 3. Квиз может иметь 0-10 тегов
@@ -473,14 +502,18 @@ ImportQuizBatchUseCase(batchData) → (quizIDs[], errors[])
 
 ## Supporting Domain: Leaderboard
 
+<!-- TODO: нужно пересмотреть реализацию мне не очень понятно как это будет по производительность -->
+
 ### Read Model: LeaderboardEntry
 
 **Ответственность:**
+
 - Отображение результатов пользователей
 - Вычисление рангов
 - Real-time обновления через WebSocket
 
 **Структура:**
+
 ```go
 type LeaderboardEntry struct {
     UserID      UUID
@@ -493,11 +526,13 @@ type LeaderboardEntry struct {
 ```
 
 **Бизнес-правила:**
+
 1. Один пользователь = одна запись (лучшая попытка)
 2. Сортировка: по Score DESC, затем по CompletedAt ASC (при равенстве)
 3. Rank рассчитывается динамически при запросе
 
 **CQRS Pattern:**
+
 - Leaderboard - это Read Model
 - Обновляется асинхронно через `QuizCompletedEvent`
 - Event Handler: `OnQuizCompleted` → Update/Insert leaderboard entry
@@ -537,22 +572,27 @@ GetUserRankUseCase(quizID, userID) → (rank, entry) | null
 ```
 
 **WebSocket Support:**
+
 - Endpoint: `wss://<domain>/ws/leaderboard/:quizId`
 - Event: `LeaderboardUpdatedEvent` → broadcast топ-50 всем подключенным
 - Real-time обновления при завершении квизов
 
 ---
 
+<!-- TODO: нужно реализовать сейчас вообще не работает на фронтенде -->
+
 ## Supporting Domain: User Stats
 
 ### Aggregate: UserStats
 
 **Ответственность:**
+
 - Отслеживание прогресса пользователя
 - Daily Quiz streak tracking
 - Мотивационные метрики
 
 **Value Objects:**
+
 - `UserID` - UUID пользователя
 - `CurrentStreak` - текущая серия дней подряд
 - `LongestStreak` - лучшая серия за все время
@@ -560,12 +600,14 @@ GetUserRankUseCase(quizID, userID) → (rank, entry) | null
 - `TotalQuizzesCompleted` - всего завершено квизов
 
 **Бизнес-правила:**
+
 1. Streak увеличивается ТОЛЬКО при завершении Daily Quiz
 2. Streak сбрасывается при пропуске дня (gap > 1 день)
 3. Повторное прохождение Daily Quiz в тот же день НЕ увеличивает streak
 4. `LongestStreak` обновляется только если `CurrentStreak` > `LongestStreak`
 
 **Streak Calculation:**
+
 ```go
 func UpdateStreak(userID, completedAt) {
     stats := GetUserStats(userID)
@@ -648,19 +690,20 @@ User completes quiz
 
 ### Events Catalog
 
-| Event | Payload | Subscribers |
-|-------|---------|-------------|
-| **QuizStartedEvent** | quizID, sessionID, userID, timestamp | Analytics |
-| **AnswerSubmittedEvent** | sessionID, questionID, answerID, isCorrect, points, streak | Analytics |
-| **QuizCompletedEvent** | quizID, sessionID, userID, finalScore, timestamp, isDaily | Leaderboard, UserStats, Analytics, WebSocket |
-| **LeaderboardUpdatedEvent** | quizID, topEntries[] | WebSocket clients |
-| **QuizImportedEvent** | quizID, categoryID, tags[], source | Analytics, SearchIndex |
+| Event                       | Payload                                                    | Subscribers                                  |
+| --------------------------- | ---------------------------------------------------------- | -------------------------------------------- |
+| **QuizStartedEvent**        | quizID, sessionID, userID, timestamp                       | Analytics                                    |
+| **AnswerSubmittedEvent**    | sessionID, questionID, answerID, isCorrect, points, streak | Analytics                                    |
+| **QuizCompletedEvent**      | quizID, sessionID, userID, finalScore, timestamp, isDaily  | Leaderboard, UserStats, Analytics, WebSocket |
+| **LeaderboardUpdatedEvent** | quizID, topEntries[]                                       | WebSocket clients                            |
+| **QuizImportedEvent**       | quizID, categoryID, tags[], source                         | Analytics, SearchIndex                       |
 
 ---
 
 ## Repository Interfaces
 
 ### QuizRepository
+
 ```go
 type QuizRepository interface {
     FindByID(quizID QuizID) (*Quiz, error)
@@ -673,6 +716,7 @@ type QuizRepository interface {
 ```
 
 ### SessionRepository
+
 ```go
 type SessionRepository interface {
     FindByID(sessionID SessionID) (*QuizSession, error)
@@ -684,6 +728,7 @@ type SessionRepository interface {
 ```
 
 ### LeaderboardRepository
+
 ```go
 type LeaderboardRepository interface {
     FindByQuizID(quizID QuizID, limit int) ([]*LeaderboardEntry, error)
@@ -693,6 +738,7 @@ type LeaderboardRepository interface {
 ```
 
 ### UserStatsRepository
+
 ```go
 type UserStatsRepository interface {
     FindByUserID(userID UserID) (*UserStats, error)
@@ -702,6 +748,7 @@ type UserStatsRepository interface {
 ```
 
 ### CategoryRepository
+
 ```go
 type CategoryRepository interface {
     FindByID(categoryID CategoryID) (*Category, error)
@@ -711,6 +758,7 @@ type CategoryRepository interface {
 ```
 
 ### TagRepository
+
 ```go
 type TagRepository interface {
     FindByName(name string) (*Tag, error)
