@@ -13,14 +13,18 @@ Head-to-Head Duel transforms quizzes into **"Intellectual Combat"**. Its appeal 
 4. **Quick Matches:** 3-5 minute battles, perfect for mobile gaming.
 
 ## 3. Terminology (Ubiquitous Language)
-- **Duel:** 1v1 real-time quiz battle between two players.
-- **HP (Health Points):** Each player starts with 100 HP. First to 0 HP loses.
-- **Combo:** Chain of consecutive correct answers that amplifies damage.
-- **Damage:** HP reduction dealt to opponent on correct answer.
-- **Critical Hit:** Bonus damage for answering within the first 3 seconds.
-- **Special Move:** Powerful attack unlocked at Combo 3, 5, or 7.
-- **Block/Defense:** Damage reduction when opponent answers slower than you.
-- **KO (Knockout):** Victory achieved when opponent's HP reaches 0.
+> See [UBIQUITOUS_LANGUAGE.md](../UBIQUITOUS_LANGUAGE.md) for full domain glossary.
+
+**Note:** Duel uses "Combo" (fighting game terminology) instead of "Streak" (used in Classic/Daily) to emphasize combat context.
+
+- **Duel:** Real-time 1v1 quiz battle with fighting game mechanics.
+- **HP (Health Points):** Continuous health system (0-100 per player). First to 0 HP loses.
+- **Combo:** Chain of consecutive correct answers that amplifies damage dealt to opponent.
+- **Damage:** HP reduction dealt to opponent on correct answer (base: 15 HP).
+- **Critical Hit:** +50% damage bonus for answering within Speed Window (first 3 seconds).
+- **Special Move:** Auto-triggered powerful attack at Combo milestones (3, 5, 7).
+- **Defense (Block):** Damage reduction (50%) when opponent answers faster than you.
+- **KO (Knockout):** Victory when opponent HP = 0 (immediate match end).
 
 ## 4. Business Rules and Invariants
 
@@ -40,18 +44,18 @@ Consecutive correct answers multiply your damage:
 - **Combo 4-5:** x1.6 (24 HP) - "On Fire" 🔥🔥
 - **Combo 6+:** x2.0 (30 HP) - "Unstoppable" 🔥🔥🔥
 
-#### Critical Hit (Speed Bonus)
-- If you answer within **first 3 seconds (Speed Window)**, deal **+50% damage**.
-- Example: Combo 4 + Critical = 24 * 1.5 = **36 HP damage**.
-- Visual: Screen flash, "CRITICAL!" text, sound effect.
+#### Critical Hit (Speed Window Bonus)
+- If you answer within **Speed Window (first 3 seconds)**, deal **+50% damage**.
+- Example: Combo 4 (24 HP) + Critical Hit = 24 × 1.5 = **36 HP damage**.
+- Visual: Golden screen flash, "CRITICAL!" text, power-up sound effect.
 
 #### Special Moves (Combo Finishers)
-At specific combo levels, you can trigger a special move (optional, replaces normal attack):
-- **Combo 3:** "Power Strike" - Deal 40 HP (instead of 19 HP), but reset Combo to 0.
-- **Combo 5:** "Fury Combo" - Deal 50 HP + stun opponent for 2 seconds (they can't answer next question immediately).
-- **Combo 7:** "Ultimate Attack" - Deal 70 HP, reset Combo to 0.
+Auto-triggered powerful attacks at specific Combo milestones (replaces normal damage):
+- **Combo 3:** "Power Strike" - 40 HP damage (instead of 19 HP), resets Combo to 0.
+- **Combo 5:** "Fury Combo" - 50 HP damage + stuns opponent for 2 seconds.
+- **Combo 7:** "Ultimate Attack" - 70 HP damage, resets Combo to 0.
 
-**Rule:** Special Move is triggered automatically if you answer correctly at these combo levels. Player sees dramatic animation.
+**Trigger Rule:** Special Move activates automatically when answering correctly at these Combo levels. Player sees dramatic full-screen animation.
 
 #### Defense Mechanism
 - If **both players answer correctly**, compare answer times:
@@ -81,23 +85,23 @@ At specific combo levels, you can trigger a special move (optional, replaces nor
 
 ### Aggregate `DuelGame`
 - `DuelID` (UUID): Unique match identifier.
-- `Player1`, `Player2` (UserID): Participants.
-- `Player1HP`, `Player2HP` (int): Current health (0-100).
-- `Player1Combo`, `Player2Combo` (int): Current combo counters.
-- `CurrentQuestionIndex` (int): Which question (0-9).
-- `Player1Answers`, `Player2Answers` ([]AnswerSubmission): Timestamped answers.
-- `Status` (enum): `WaitingForPlayers`, `InProgress`, `Completed`.
-- `Winner` (UserID): Set when match ends.
+- `Player1`, `Player2` (UserID): Participating players.
+- `Player1HP`, `Player2HP` (int): Current Health Points (0-100).
+- `Player1Combo`, `Player2Combo` (int): Current Combo counters.
+- `CurrentQuestionIndex` (int): Current question number (0-9, total 10 questions).
+- `Player1Answers`, `Player2Answers` ([]AnswerSubmission): Timestamped answer history.
+- `Status` (enum): `WaitingForPlayers`, `PreBattle`, `InProgress`, `Completed`.
+- `Winner` (UserID): Winning player (set when match ends).
 - `EndReason` (enum): `KO`, `Decision`, `Forfeit`, `Draw`.
 
 ### Entity `AnswerSubmission`
-- `QuestionID` (UUID)
-- `SelectedAnswerID` (UUID)
-- `IsCorrect` (bool)
-- `ResponseTime` (int): Milliseconds taken.
-- `DamageDealt` (int): HP damage to opponent.
-- `IsCritical` (bool): Was it a critical hit?
-- `ComboAtTime` (int): Combo level when answer submitted.
+- `QuestionID` (UUID): Question being answered.
+- `SelectedAnswerID` (UUID): Player's chosen answer.
+- `IsCorrect` (bool): Whether answer was correct.
+- `ResponseTime` (int): Milliseconds taken to answer.
+- `DamageDealt` (int): HP damage dealt to opponent (0 if incorrect).
+- `IsCriticalHit` (bool): Whether answer was within Speed Window.
+- `ComboLevel` (int): Player's Combo level when answer was submitted.
 
 ## 6. Scenarios (User Flows)
 
@@ -151,44 +155,7 @@ At specific combo levels, you can trigger a special move (optional, replaces nor
   - Both see shield icon on opponent (defender).
   - Text: "Opponent blocked your attack!"
 
-## 7. UI/UX Design
-
-### Battle Screen Layout
-```
-┌─────────────────────────────────────────┐
-│  [🧑 You: 75 HP ████████░░]            │
-│  Combo: 4 🔥🔥 "On Fire"                │
-│                                         │
-│  ┌─────────────────────────────────┐   │
-│  │  Question: What is 2+2?         │   │
-│  │  Timer: ⏱️ 8s                    │   │
-│  ├─────────────────────────────────┤   │
-│  │  A) 3    [tap]                  │   │
-│  │  B) 4    [tap]                  │   │
-│  │  C) 5    [tap]                  │   │
-│  │  D) 22   [tap]                  │   │
-│  └─────────────────────────────────┘   │
-│                                         │
-│  [👤 Opponent: 50 HP █████░░░░░]       │
-│  Combo: 2 🔥 "Warming Up"               │
-└─────────────────────────────────────────┘
-```
-
-### Damage Animation
-- **Hit:** Opponent's HP bar shakes and decreases with red flash.
-- **Critical:** Screen border flashes gold, "CRITICAL!" text.
-- **Special Move:** Full-screen animation (e.g., fireball, lightning).
-- **Combo Milestone:** Character portrait glows, fire particles.
-
-### Sound Design
-- **Correct Answer:** Attack sound (punch, slash).
-- **Critical Hit:** Power-up chime + whoosh.
-- **Combo Build:** Rising pitch sounds (1→2→3).
-- **Special Move:** Dramatic orchestral hit.
-- **Wrong Answer:** Damage grunt, HP bar alert sound.
-- **KO:** Knockout bell, victory fanfare.
-
-## 8. Technical Requirements
+## 7. Technical Requirements
 
 ### Real-time Sync (WebSocket)
 - Both players must see live HP updates.
@@ -205,7 +172,7 @@ At specific combo levels, you can trigger a special move (optional, replaces nor
 - Max queue time: 30s, then match with anyone.
 - No rematches with same opponent within 1 hour.
 
-## 9. Future Enhancements (Post-MVP)
+## 8. Future Enhancements (Post-MVP)
 
 ### Character Classes
 Players choose a "Fighter" with unique passive:
@@ -224,7 +191,7 @@ Random power-ups appear mid-match:
 - Top 100 players get exclusive badges.
 - Season rewards: Avatars, titles, coins.
 
-## 10. Success Metrics
+## 9. Success Metrics
 - **Engagement:** 40% of daily active users try Duel mode within first week.
 - **Retention:** 60% of players who try Duel play 3+ matches.
 - **Session Length:** Average 4 matches per session (12-20 minutes).

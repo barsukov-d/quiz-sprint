@@ -12,10 +12,14 @@ Classic Game is not just a test, it's a **"Personal Challenge"**. Its appeal is 
 3. **Juice:** Visual confirmation of success through combo bonuses and dynamic effects.
 
 ## 3. Terminology (Ubiquitous Language)
-- **Classic Game:** Main game loop focused on a single player.
-- **Streak:** Chain of correct answers that turns a regular game into a "hot streak".
-- **Multiplier:** Excitement coefficient that increases rewards for risk and speed.
-- **Speed Window:** First seconds of a question when maximum bonus can be obtained.
+> See [UBIQUITOUS_LANGUAGE.md](../UBIQUITOUS_LANGUAGE.md) for full domain glossary.
+
+- **Classic Game:** Solo quiz mode focused on score optimization and personal records.
+- **Streak:** Chain of consecutive correct answers that builds momentum and increases Multiplier.
+- **Multiplier:** Score coefficient that amplifies rewards based on Streak level (x1.0 → x1.5 → x2.0).
+- **Speed Window:** First 5-8 seconds of a question when maximum Time Bonus is available.
+- **Personal Best:** Player's highest score for a specific quiz (used for Ghost Battle).
+- **Ghost Battle:** Real-time comparison of current score vs Personal Best at same question point.
 
 ## 4. Business Rules and Invariants
 
@@ -23,27 +27,27 @@ Classic Game is not just a test, it's a **"Personal Challenge"**. Its appeal is 
 1. **Building Momentum:** When Streak >= 3, UI transitions to "Heat" state. When Streak >= 6, it enters "Fire" state. This is accompanied by animation and sound changes.
 2. **Streak Reset:** Any error or timeout immediately resets Multiplier and visual effects, creating emotional risk.
 
-### 4.2. Scoring System (Scoring 2.0)
+### 4.2. Scoring System
 Final score for a question is calculated by the formula:
-`Score = (BasePoints + TimeBonus) * Multiplier`
+`FinalScore = (BasePoints + TimeBonus) * Multiplier`
 
-1. **BasePoints:** Fixed value per question.
-2. **TimeBonus:** Linearly decreases from maximum to zero over the question time limit.
+1. **Base Points:** Fixed value per question (varies by difficulty).
+2. **Time Bonus:** Decreases linearly from maximum to zero over the question time limit.
 3. **Multiplier (Streak-based):**
-   - 0-2 correct: x1.0
-   - 3-5 correct: x1.5 ("On Fire")
-   - 6+ correct: x2.0 ("Godlike")
+   - 0-2 Streak: x1.0 (Normal)
+   - 3-5 Streak: x1.5 ("On Fire" 🔥)
+   - 6+ Streak: x2.0 ("Godlike" 🔥🔥)
 
 ### 4.3. Lifecycle and Progress
 1. **Battle with Record:** If user has a `PersonalBest` for this quiz, during gameplay a "Ghost" indicator is displayed (comparison of current score with best result at the same quiz point).
 2. **Completion:** Game is considered successful if `PassingScore` is reached. Only successful games update `PersonalBest`.
 
 ## 5. Data Model Changes
-- **Aggregate `ClassicGame`**:
-  - `CurrentStreak` (int): Current streak counter.
-  - `MaxStreak` (int): Best streak for current session.
-  - `CurrentMultiplier` (float): Current multiplier based on streak.
-  - `GhostComparison` (int): Score difference relative to Personal Best.
+- **Aggregate `ClassicGame`** (extends base Session):
+  - `CurrentStreak` (int): Current consecutive correct answers.
+  - `MaxStreak` (int): Highest Streak achieved in current session.
+  - `CurrentMultiplier` (float): Current score multiplier based on Streak (1.0, 1.5, or 2.0).
+  - `GhostComparison` (int): Score difference vs Personal Best at same question index.
 
 ## 6. Scenarios (User Flows)
 
@@ -56,10 +60,10 @@ Final score for a question is calculated by the formula:
   - UI activates "On Fire" effects.
   - Player receives significantly more points than for previous question.
 
-### Scenario: Battle with Yourself (Ghost Run)
-- **Given:** Player has a record of 5000 points.
-- **When:** On 5th question player has 2800 points (record was 2500 at this point).
-- **Then:** "Ghost" indicator shows `+300` and highlights green, motivating player to maintain pace.
+### Scenario: Ghost Battle (Beating Personal Best)
+- **Given:** Player has Personal Best of 5000 points for this quiz.
+- **When:** At Question 5, player has 2800 points (Personal Best was 2500 at this point).
+- **Then:** Ghost indicator shows `+300` in green, showing player is ahead of their record pace.
 
 ### Scenario: Dramatic Error
 - **Given:** Player is in "Godlike" state (Streak = 7, Multiplier = x2.0).
