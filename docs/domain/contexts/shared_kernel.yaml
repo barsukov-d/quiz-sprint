@@ -3,22 +3,20 @@
 
 kernel_models:
   - name: "QuizGameplaySession"
-    description: "Represents a single player's session of answering a set of questions against the clock."
+    description: "Represents a single player's session of answering a set of questions against the clock. Focuses on answer tracking, not scoring logic."
     state:
       - name: "ID"
         type: "uuid.UUID"
       - name: "Quiz"
-        type: "catalog.Quiz" # Assumes a Quiz struct from the catalog context
+        type: "catalog.Quiz"
       - name: "UserAnswers"
         type: "map[uuid.UUID]uuid.UUID" # map[QuestionID]AnswerID
       - name: "CurrentQuestionIndex"
         type: "int"
-      - name: "Score"
-        type: "int"
       - name: "StartedAt"
-        type: "time.Time"
+        type: "int64" # Unix timestamp
       - name: "FinishedAt"
-        type: "time.Time"
+        type: "int64" # Unix timestamp
     methods:
       - name: "NewQuizGameplaySession"
         params:
@@ -30,27 +28,53 @@ kernel_models:
         params:
           - { name: "questionID", type: "uuid.UUID" }
           - { name: "answerID", type: "uuid.UUID" }
-          - { name: "timeTaken", type: "time.Duration" }
         returns:
           - { type: "bool" } # is_correct
           - { type: "error" }
-        description: "Records a user's answer and calculates the score for it."
+        description: "Records a user's answer. Scoring is handled by the specific game mode aggregate."
       - name: "IsFinished"
         returns:
           - { type: "bool" }
         description: "Checks if all questions have been answered."
 
-# This section contains simple value objects shared across many contexts.
+# This section contains value objects shared across many contexts.
 shared_value_objects:
   - name: "UserID"
-    description: "Unique identifier for a User. Sourced from the Identity context."
+    description: "Unique identifier for a User."
+    type: "uuid.UUID"
   - name: "QuizID"
-    description: "Unique identifier for a Quiz. Sourced from the Quiz Catalog context."
+    description: "Unique identifier for a Quiz."
+    type: "uuid.UUID"
   - name: "QuestionID"
-    description: "Unique identifier for a Question within a Quiz."
+    description: "Unique identifier for a Question."
+    type: "uuid.UUID"
   - name: "AnswerID"
-    description: "Unique identifier for an Answer within a Question."
-  - name: "Score"
-    description: "Represents the points a user has. Non-negative integer."
-  - name: "Timestamp"
-    description: "A specific point in time, represented in UTC."
+    description: "Unique identifier for an Answer."
+    type: "uuid.UUID"
+  - name: "Points"
+    description: "Represents score units. Must be non-negative."
+    type: "int"
+    invariants: ["Must be >= 0"]
+  - name: "Multiplier"
+    description: "Score multiplier based on streak."
+    type: "float64"
+    allowed_values: [1.0, 1.5, 2.0]
+  - name: "TimeBonus"
+    description: "Bonus points awarded for speed."
+    type: "int"
+    invariants: ["Calculated as: MaxBonus * (RemainingTime / TotalTime)"]
+
+# Centralized scoring logic to be used by various game modes.
+scoring:
+  - name: "ScoringPolicy"
+    description: "Defines how points are calculated for a correct answer."
+    logic: |
+      FinalScore = (BasePoints + TimeBonus) * Multiplier
+    methods:
+      - name: "CalculateQuestionScore"
+        params:
+          - { name: "basePoints", type: "int" }
+          - { name: "timeBonus", type: "int" }
+          - { name: "multiplier", type: "float64" }
+        returns:
+          - { type: "int" }

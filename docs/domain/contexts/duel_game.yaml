@@ -30,70 +30,23 @@ value_objects:
     invariants:
       - "Must be between 0 and 100."
       - "Starts at 100 for both players."
-      - "Decreases when taking damage."
-      - "Reaching 0 triggers immediate KO."
 
   - name: "Combo"
     type: "int"
-    description: "Counter tracking consecutive correct answers for damage multiplication."
+    description: "Counter tracking consecutive correct answers."
     invariants:
       - "Starts at 0."
-      - "Increments by 1 for each correct answer."
       - "Resets to 0 on incorrect answer or timeout."
-      - "Determines damage multiplier and special moves."
-
-  - name: "DamageMultiplier"
-    type: "float64"
-    description: "Multiplier applied to base damage based on combo level."
-    allowed_values: [1.0, 1.3, 1.6, 2.0]
-    invariants:
-      - "x1.0: Combo 0-1 (Normal)."
-      - "x1.3: Combo 2-3 (Warming Up 🔥)."
-      - "x1.6: Combo 4-5 (On Fire 🔥🔥)."
-      - "x2.0: Combo 6+ (Unstoppable 🔥🔥🔥)."
-
-  - name: "Damage"
-    type: "int"
-    description: "HP reduction dealt to opponent."
-    invariants:
-      - "Base damage: 15 HP for correct answer."
-      - "Final damage: (BaseDamage * ComboMultiplier) * CriticalMultiplier * DefenseMultiplier."
-      - "Self-damage: 10 HP for incorrect answer, 5 HP for timeout."
-
-  - name: "CriticalHit"
-    type: "bool"
-    description: "Indicates if answer was given within Speed Window (first 3 seconds)."
-    invariants:
-      - "true if response time <= 3 seconds."
-      - "Adds +50% damage multiplier when true."
-
-  - name: "SpecialMoveType"
-    type: "enum"
-    description: "Types of special combo finisher attacks."
-    allowed_values: ["PowerStrike", "FuryCombo", "UltimateAttack"]
-    invariants:
-      - "PowerStrike: Combo 3, deals 40 HP, resets combo."
-      - "FuryCombo: Combo 5, deals 50 HP + 2s stun, resets combo."
-      - "UltimateAttack: Combo 7, deals 70 HP, resets combo."
 
   - name: "VictoryType"
-    type: "enum"
+    type: "string"
     description: "Method by which duel was won."
     allowed_values: ["KO", "Decision", "Forfeit", "Draw"]
-    invariants:
-      - "KO: Opponent's HP reached 0 before all questions answered."
-      - "Decision: After 10 questions, winner had more HP."
-      - "Forfeit: Opponent disconnected."
-      - "Draw: Equal HP after 10 questions."
 
   - name: "DuelStatus"
-    type: "enum"
+    type: "string"
     description: "Current state of the duel."
     allowed_values: ["WaitingForPlayers", "InProgress", "Completed"]
-    invariants:
-      - "WaitingForPlayers: Initial matchmaking phase."
-      - "InProgress: Both players active, answering questions."
-      - "Completed: Duel finished, winner determined."
 
 aggregates:
   - name: "DuelGame"
@@ -101,437 +54,103 @@ aggregates:
     state:
       - name: "ID"
         type: "uuid.UUID"
-        description: "Unique duel identifier."
       - name: "Player1ID"
         type: "uuid.UUID"
       - name: "Player2ID"
         type: "uuid.UUID"
       - name: "Player1HP"
-        type: "int"
-        description: "Current HP of Player 1 (0-100)."
+        type: "HP"
       - name: "Player2HP"
-        type: "int"
-        description: "Current HP of Player 2 (0-100)."
+        type: "HP"
       - name: "Player1Combo"
-        type: "int"
-        description: "Current combo counter for Player 1."
+        type: "Combo"
       - name: "Player2Combo"
-        type: "int"
-        description: "Current combo counter for Player 2."
+        type: "Combo"
       - name: "CurrentQuestionIndex"
         type: "int"
-        description: "Current question number (0-9)."
-      - name: "QuizID"
-        type: "uuid.UUID"
-        description: "Quiz used for this duel."
-      - name: "Player1Answers"
-        type: "[]AnswerSubmission"
-        description: "Timestamped answer history for Player 1."
-      - name: "Player2Answers"
-        type: "[]AnswerSubmission"
-        description: "Timestamped answer history for Player 2."
       - name: "Status"
         type: "DuelStatus"
       - name: "WinnerID"
         type: "*uuid.UUID"
-        description: "ID of winning player (nil if ongoing or draw)."
-      - name: "VictoryType"
-        type: "VictoryType"
       - name: "StartedAt"
         type: "int64"
-        description: "Unix timestamp when duel began."
-      - name: "CompletedAt"
+      - name: "FinishedAt"
         type: "int64"
-        description: "Unix timestamp when duel ended (0 if ongoing)."
 
     methods:
       - name: "NewDuelGame"
         params:
           - { name: "player1ID", type: "uuid.UUID" }
           - { name: "player2ID", type: "uuid.UUID" }
-          - { name: "quizID", type: "uuid.UUID" }
         returns:
           - { type: "*DuelGame" }
-          - { type: "error" }
-        logic: |
-          1. Validate player IDs are different.
-          2. Initialize both players with 100 HP.
-          3. Set both combos to 0.
-          4. Set CurrentQuestionIndex = 0.
-          5. Set Status = InProgress.
-          6. Set StartedAt to current time.
-          7. Publish DuelStarted event.
-        description: "Creates a new duel match between two players."
+        description: "Creates a new duel match."
 
-      - name: "SubmitAnswer"
+      - name: "ProcessAnswers"
         params:
-          - { name: "playerID", type: "uuid.UUID" }
-          - { name: "questionID", type: "uuid.UUID" }
-          - { name: "answerID", type: "uuid.UUID" }
-          - { name: "responseTime", type: "time.Duration" }
-        returns:
-          - { type: "*AnswerResult" }
-          - { type: "error" }
-        logic: |
-          1. Verify duel Status == InProgress.
-          2. Verify playerID is Player1ID or Player2ID.
-          3. Validate answer correctness.
-          4. Create AnswerSubmission record with timestamp.
-          5. If answer correct:
-             a. Increment player's combo.
-             b. Calculate damage multiplier based on combo.
-             c. Check if critical hit (responseTime <= 3s), apply +50% if true.
-             d. Check for special move trigger (combo 3, 5, or 7).
-             e. Calculate final damage dealt.
-             f. Apply damage to opponent's HP.
-             g. If opponent HP <= 0, trigger KO victory.
-          6. If answer incorrect:
-             a. Apply 10 HP self-damage to player.
-             b. Reset player's combo to 0.
-             c. If player HP <= 0, trigger KO defeat.
-          7. If both players answered current question, process defense mechanism:
-             a. Compare response times.
-             b. Faster player deals full damage, slower deals 50%.
-          8. Advance CurrentQuestionIndex if both answered.
-          9. If CurrentQuestionIndex == 10, call FinishDuel (Decision).
-          10. Publish appropriate events (DamageDealt, ComboMilestone, SpecialMoveTriggered).
-          11. Return AnswerResult with damage/HP info.
-        description: "Processes a player's answer submission with combat calculations."
-
-      - name: "FinishDuel"
-        params:
-          - { name: "victoryType", type: "VictoryType" }
+          - { name: "p1Answer", type: "*AnswerSubmission" }
+          - { name: "p2Answer", type: "*AnswerSubmission" }
         returns:
           - { type: "error" }
         logic: |
-          1. Set Status = Completed.
-          2. Set CompletedAt to current time.
-          3. If victoryType == KO:
-             - WinnerID = player with HP > 0.
-          4. If victoryType == Decision:
-             - WinnerID = player with higher HP.
-             - If equal HP, set WinnerID = nil (draw).
-          5. Check for Perfect Victory (winner HP == 100).
-          6. Check for Comeback Victory (winner had <20 HP at any point).
-          7. Set VictoryType.
-          8. Publish DuelFinished event with winner, victory type, and bonuses.
-        description: "Ends the duel and determines winner."
+          1. Validate both answers.
+          2. Calculate damage for both players based on combo and speed.
+          3. Apply defense (50% reduction) to the slower player if both are correct.
+          4. Update HP and check for KO.
+        description: "Processes simultaneous answers from both players."
 
-      - name: "GetPlayerHP"
-        params:
-          - { name: "playerID", type: "uuid.UUID" }
-        returns:
-          - { type: "int" }
-          - { type: "error" }
-        description: "Returns current HP for specified player."
-
-      - name: "GetPlayerCombo"
-        params:
-          - { name: "playerID", type: "uuid.UUID" }
-        returns:
-          - { type: "int" }
-          - { type: "error" }
-        description: "Returns current combo count for specified player."
-
-      - name: "GetCurrentQuestion"
-        returns:
-          - { type: "*Question" }
-          - { type: "error" }
-        description: "Returns the current question based on CurrentQuestionIndex."
-
-      - name: "HasPlayerAnswered"
-        params:
-          - { name: "playerID", type: "uuid.UUID" }
-          - { name: "questionIndex", type: "int" }
-        returns:
-          - { type: "bool" }
-        description: "Checks if player has submitted answer for specified question."
-
-      - name: "CalculateDamage"
-        params:
-          - { name: "basePoints", type: "int" }
-          - { name: "combo", type: "int" }
-          - { name: "isCritical", type: "bool" }
-          - { name: "isDefended", type: "bool" }
-        returns:
-          - { type: "int" }
-        logic: |
-          1. Determine multiplier from combo: 0-1: x1.0, 2-3: x1.3, 4-5: x1.6, 6+: x2.0.
-          2. Apply combo multiplier: damage = basePoints * comboMultiplier.
-          3. If isCritical, multiply by 1.5.
-          4. If isDefended, multiply by 0.5.
-          5. Return final damage.
-        description: "Calculates final damage based on combo, critical hit, and defense."
-
+entities:
   - name: "AnswerSubmission"
-    description: "Record of a single answer submission in a duel."
     state:
+      - name: "PlayerID"
+        type: "uuid.UUID"
       - name: "QuestionID"
         type: "uuid.UUID"
-      - name: "SelectedAnswerID"
-        type: "uuid.UUID"
       - name: "IsCorrect"
         type: "bool"
-      - name: "ResponseTime"
-        type: "time.Duration"
-        description: "Time taken to answer in milliseconds."
-      - name: "DamageDealt"
+      - name: "ResponseTimeMs"
         type: "int"
-        description: "HP damage dealt to opponent (0 if incorrect)."
-      - name: "IsCritical"
-        type: "bool"
-        description: "Whether this was a critical hit."
-      - name: "ComboAtTime"
-        type: "int"
-        description: "Player's combo level when answer submitted."
       - name: "SubmittedAt"
         type: "int64"
-        description: "Unix timestamp of submission."
-
-  - name: "AnswerResult"
-    description: "Result returned after answer submission."
-    state:
-      - name: "IsCorrect"
-        type: "bool"
-      - name: "DamageDealt"
-        type: "int"
-      - name: "DamageTaken"
-        type: "int"
-      - name: "CurrentHP"
-        type: "int"
-      - name: "OpponentHP"
-        type: "int"
-      - name: "CurrentCombo"
-        type: "int"
-      - name: "IsCritical"
-        type: "bool"
-      - name: "SpecialMoveTriggered"
-        type: "*SpecialMoveType"
-      - name: "IsKO"
-        type: "bool"
-        description: "Whether this answer resulted in KO."
 
 domain_events:
   - name: "DuelStarted"
-    description: "Published when a new duel begins."
     attributes:
       - { name: "DuelID", type: "uuid.UUID" }
       - { name: "Player1ID", type: "uuid.UUID" }
       - { name: "Player2ID", type: "uuid.UUID" }
-      - { name: "QuizID", type: "uuid.UUID" }
-      - { name: "StartedAt", type: "time.Time" }
+      - { name: "StartedAt", type: "int64" }
 
-  - name: "DamageDealt"
-    description: "Published when a player deals damage to opponent."
+  - name: "CombatActionOccurred"
     attributes:
       - { name: "DuelID", type: "uuid.UUID" }
       - { name: "AttackerID", type: "uuid.UUID" }
-      - { name: "DefenderID", type: "uuid.UUID" }
-      - { name: "Damage", type: "int" }
+      - { name: "DamageDealt", type: "int" }
+      - { name: "OpponentRemainingHP", type: "int" }
       - { name: "IsCritical", type: "bool" }
-      - { name: "IsBlocked", type: "bool" }
-      - { name: "DefenderRemainingHP", type: "int" }
-      - { name: "OccurredAt", type: "time.Time" }
-
-  - name: "ComboMilestoneReached"
-    description: "Published when player reaches combo milestone (3, 5, 7+)."
-    attributes:
-      - { name: "DuelID", type: "uuid.UUID" }
-      - { name: "PlayerID", type: "uuid.UUID" }
-      - { name: "ComboCount", type: "int" }
-      - { name: "Multiplier", type: "float64" }
-      - { name: "VisualState", type: "string", description: "WarmingUp, OnFire, Unstoppable" }
-      - { name: "OccurredAt", type: "time.Time" }
-
-  - name: "SpecialMoveTriggered"
-    description: "Published when player triggers a special move."
-    attributes:
-      - { name: "DuelID", type: "uuid.UUID" }
-      - { name: "PlayerID", type: "uuid.UUID" }
-      - { name: "SpecialMoveType", type: "SpecialMoveType" }
-      - { name: "Damage", type: "int" }
-      - { name: "StunDuration", type: "int", description: "Stun duration in seconds (0 if no stun)" }
-      - { name: "OccurredAt", type: "time.Time" }
-
-  - name: "ComboBroken"
-    description: "Published when player's combo resets due to error."
-    attributes:
-      - { name: "DuelID", type: "uuid.UUID" }
-      - { name: "PlayerID", type: "uuid.UUID" }
-      - { name: "PreviousCombo", type: "int" }
-      - { name: "SelfDamage", type: "int" }
-      - { name: "OccurredAt", type: "time.Time" }
+      - { name: "SpecialMove", type: "string" }
 
   - name: "DuelFinished"
-    description: "Published when duel ends."
     attributes:
       - { name: "DuelID", type: "uuid.UUID" }
       - { name: "WinnerID", type: "*uuid.UUID" }
-      - { name: "LoserID", type: "*uuid.UUID" }
-      - { name: "VictoryType", type: "VictoryType" }
-      - { name: "WinnerFinalHP", type: "int" }
-      - { name: "LoserFinalHP", type: "int" }
-      - { name: "IsPerfectVictory", type: "bool" }
-      - { name: "IsComebackVictory", type: "bool" }
-      - { name: "CompletedAt", type: "time.Time" }
-
-application_services:
-  - name: "DuelService"
-    description: "Orchestrates duel mode operations and matchmaking."
-    methods:
-      - name: "JoinMatchmaking"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "playerID", type: "uuid.UUID" }
-          - { name: "playerRating", type: "int" }
-        returns:
-          - { name: "duelID", type: "uuid.UUID" }
-          - { type: "error" }
-        logic: |
-          1. Add player to matchmaking queue with rating.
-          2. Search for opponent with rating ±150 points.
-          3. If found within 30s:
-             a. Remove both from queue.
-             b. Select random quiz from pool.
-             c. Create DuelGame via NewDuelGame.
-             d. Return duel ID to both players.
-          4. Else after 30s: match with any available player.
-        description: "Adds player to matchmaking queue and creates duel when opponent found."
-
-      - name: "SubmitAnswer"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "duelID", type: "uuid.UUID" }
-          - { name: "playerID", type: "uuid.UUID" }
-          - { name: "questionID", type: "uuid.UUID" }
-          - { name: "answerID", type: "uuid.UUID" }
-          - { name: "responseTime", type: "time.Duration" }
-        returns:
-          - { type: "*AnswerResult" }
-          - { type: "error" }
-        logic: |
-          1. Load DuelGame by duelID.
-          2. Verify player is participant.
-          3. Call duelGame.SubmitAnswer.
-          4. Save updated DuelGame.
-          5. Broadcast state update via WebSocket to both players.
-          6. If duel finished, update player ratings.
-          7. Return AnswerResult.
-        description: "Processes answer submission and broadcasts result in real-time."
-
-      - name: "GetDuelState"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "duelID", type: "uuid.UUID" }
-          - { name: "playerID", type: "uuid.UUID" }
-        returns:
-          - { type: "*DuelStateDTO" }
-          - { type: "error" }
-        description: "Returns current duel state for specified player (HP, combo, current question)."
-
-      - name: "ForfeitDuel"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "duelID", type: "uuid.UUID" }
-          - { name: "playerID", type: "uuid.UUID" }
-        returns:
-          - { type: "error" }
-        logic: |
-          1. Load DuelGame.
-          2. Set forfeiting player's HP to 0.
-          3. Call FinishDuel with VictoryType = Forfeit.
-          4. Apply loser penalty to forfeiting player.
-          5. Apply winner rewards to opponent.
-          6. Notify both players.
-        description: "Handles player disconnect or manual forfeit."
-
-      - name: "GetDuelHistory"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "playerID", type: "uuid.UUID" }
-          - { name: "limit", type: "int" }
-        returns:
-          - { type: "[]DuelSummary" }
-          - { type: "error" }
-        description: "Retrieves player's past duel results."
-
-      - name: "UpdatePlayerRating"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "duelID", type: "uuid.UUID" }
-        returns:
-          - { type: "error" }
-        logic: |
-          1. Load finished DuelGame.
-          2. Winner: +50 Rating, +500 coins, +3 trophies.
-          3. Loser: -20 Rating, +100 coins.
-          4. If Perfect Victory: +100 bonus coins.
-          5. If Comeback Victory: Grant achievement.
-          6. Save updated player stats.
-        description: "Updates player ratings and rewards after duel completion."
+      - { name: "VictoryType", type: "string" }
+      - { name: "FinishedAt", type: "int64" }
 
 repositories:
-  - name: "DuelGameRepository"
-    description: "Persistence interface for DuelGame aggregate."
+  - name: "DuelRepository"
     methods:
       - name: "FindByID"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "id", type: "uuid.UUID" }
-        returns:
-          - { type: "*DuelGame" }
-          - { type: "error" }
-
-      - name: "FindByPlayer"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "playerID", type: "uuid.UUID" }
-          - { name: "limit", type: "int" }
-        returns:
-          - { type: "[]DuelGame" }
-          - { type: "error" }
-        description: "Retrieves duels involving specified player."
-
+        params: [{ name: "id", type: "uuid.UUID" }]
+        returns: ["*DuelGame", "error"]
       - name: "Save"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "duel", type: "*DuelGame" }
-        returns:
-          - { type: "error" }
-
-  - name: "MatchmakingQueue"
-    description: "Interface for managing player matchmaking queue."
-    methods:
-      - name: "AddPlayer"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "playerID", type: "uuid.UUID" }
-          - { name: "rating", type: "int" }
-        returns:
-          - { type: "error" }
-
-      - name: "FindOpponent"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "playerID", type: "uuid.UUID" }
-          - { name: "ratingRange", type: "int" }
-        returns:
-          - { type: "*uuid.UUID" }
-          - { type: "error" }
-
-      - name: "RemovePlayer"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "playerID", type: "uuid.UUID" }
-        returns:
-          - { type: "error" }
+        params: [{ name: "duel", type: "*DuelGame" }]
+        returns: ["error"]
 
 dependencies:
-  - context: "Quiz Catalog"
-    reason: "Fetches quiz content for duel matches."
+  - context: "Shared Kernel"
+    reason: "Uses shared identifiers and base logic."
   - context: "Identity"
-    reason: "References player identities and ratings."
-  - context: "Quiz Gameplay Kernel"
-    reason: "Uses question answering and validation logic."
-  - context: "Leaderboard"
-    reason: "May publish PvP rankings based on duel performance."
+    reason: "References player profiles."
+  - context: "Quiz Catalog"
+    reason: "Fetches questions for the duel."

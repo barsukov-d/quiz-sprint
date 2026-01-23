@@ -33,7 +33,7 @@ value_objects:
       - "Cannot skip stages."
 
   - name: "PowerUpType"
-    type: "enum"
+    type: "string"
     description: "Types of power-ups available in the marathon."
     allowed_values: ["FiftyFifty", "TimeExtension", "Skip"]
     invariants:
@@ -54,32 +54,11 @@ value_objects:
       - "Can only be used during active gameplay."
 
   - name: "SurvivalBonus"
-    type: "int"
+    type: "kernel.Points"
     description: "Bonus points awarded for each remaining life at stage end."
     invariants:
       - "Calculated as: RemainingLives * BonusPerLife."
       - "Applied at stage completion."
-
-  - name: "StageConfig"
-    type: "struct"
-    description: "Configuration for a specific stage difficulty."
-    fields:
-      - name: "StageNumber"
-        type: "int"
-      - name: "QuestionCount"
-        type: "int"
-      - name: "TimePerQuestion"
-        type: "int"
-        description: "Seconds per question."
-      - name: "Difficulty"
-        type: "string"
-        description: "Easy, Medium, Hard, Elite."
-    invariants:
-      - "Higher stages have more questions and less time."
-      - "Stage 1: 5 questions, 30s, Easy."
-      - "Stage 2: 7 questions, 20s, Medium."
-      - "Stage 3: 10 questions, 15s, Hard."
-      - "Stage 4+: Progressive increase in difficulty."
 
 aggregates:
   - name: "DailySurvivalSession"
@@ -87,38 +66,29 @@ aggregates:
     state:
       - name: "ID"
         type: "uuid.UUID"
-        description: "Unique session identifier."
       - name: "PlayerID"
         type: "uuid.UUID"
       - name: "MarathonDate"
         type: "int64"
-        description: "Unix timestamp of the UTC day this marathon is for."
+        description: "Unix timestamp of the UTC day."
       - name: "CurrentStage"
         type: "int"
-        description: "Current stage number (1-indexed)."
       - name: "Lives"
         type: "int"
-        description: "Current lives remaining (0-3)."
       - name: "PowerUps"
         type: "[]PowerUp"
-        description: "Inventory of available power-ups."
       - name: "TotalScore"
-        type: "int"
-        description: "Accumulated score across all stages."
+        type: "kernel.Points"
       - name: "StagesCleared"
         type: "int"
-        description: "Number of successfully completed stages."
       - name: "CurrentComboStreak"
         type: "int"
-        description: "Current streak of correct answers for combo bonus."
       - name: "StartedAt"
         type: "int64"
       - name: "CompletedAt"
         type: "int64"
-        description: "Unix timestamp when session ended (0 if ongoing)."
       - name: "Status"
         type: "string"
-        description: "Active, Completed, Failed."
 
     methods:
       - name: "NewDailySurvivalSession"
@@ -127,83 +97,43 @@ aggregates:
           - { name: "marathonDate", type: "int64" }
         returns:
           - { type: "*DailySurvivalSession" }
-        description: "Creates a new marathon session starting at Stage 1 with 3 lives."
+        description: "Creates a new marathon session."
 
       - name: "LoseLife"
         returns:
           - { type: "error" }
         logic: |
-          1. Decrement Lives by 1.
-          2. Reset CurrentComboStreak to 0.
-          3. If Lives == 0:
-             - Set Status to "Failed".
-             - Set CompletedAt to current time.
-             - Publish DailyMarathonFailed event.
-          4. Publish LifeLost event.
-        description: "Records a life lost due to incorrect answer or timeout."
+          1. Decrement Lives.
+          2. Reset CurrentComboStreak.
+          3. If Lives == 0, end session as Failed.
+        description: "Records a life lost."
 
       - name: "RecordCorrectAnswer"
         params:
-          - { name: "points", type: "int" }
+          - { name: "points", type: "kernel.Points" }
         returns:
           - { type: "error" }
         logic: |
           1. Add points to TotalScore.
           2. Increment CurrentComboStreak.
-          3. If CurrentComboStreak == 5:
-             - Grant random PowerUp.
-             - Reset CurrentComboStreak to 0.
-             - Publish PowerUpEarned event.
+          3. If streak == 5, grant random PowerUp and reset streak.
         description: "Records a correct answer and checks for combo bonus."
 
       - name: "CompleteStage"
         returns:
           - { type: "error" }
         logic: |
-          1. Verify Lives > 0.
-          2. Calculate SurvivalBonus (Lives * 100).
-          3. Add SurvivalBonus to TotalScore.
-          4. Grant random PowerUp as stage reward.
-          5. Increment StagesCleared.
-          6. Increment CurrentStage.
-          7. Publish StageCompleted event.
-        description: "Finalizes current stage and advances to next."
+          1. Add SurvivalBonus to TotalScore.
+          2. Grant random PowerUp.
+          3. Advance stage.
+        description: "Finalizes current stage."
 
       - name: "UsePowerUp"
         params:
           - { name: "powerUpType", type: "PowerUpType" }
         returns:
           - { type: "error" }
-        logic: |
-          1. Find unused PowerUp of requested type in PowerUps.
-          2. If not found, return error.
-          3. Mark PowerUp as Used.
-          4. Publish PowerUpUsed event.
-        description: "Consumes a power-up from inventory."
-
-      - name: "EndMarathon"
-        params:
-          - { name: "success", type: "bool" }
-        returns:
-          - { type: "error" }
-        logic: |
-          1. Set CompletedAt to current time.
-          2. If success: Set Status to "Completed".
-          3. If failure: Set Status to "Failed".
-          4. Publish DailyMarathonCompleted event.
-        description: "Ends the marathon session (voluntary quit or completion)."
-
-      - name: "CanUsePowerUp"
-        params:
-          - { name: "powerUpType", type: "PowerUpType" }
-        returns:
-          - { type: "bool" }
-        description: "Checks if player has an unused power-up of the specified type."
-
-      - name: "GetRank"
-        returns:
-          - { type: "int" }
-        description: "Returns final rank among all players for this marathon date (calculated externally)."
+        description: "Consumes a power-up."
 
   - name: "DailyMarathon"
     description: "Represents the daily marathon configuration for a specific date."
@@ -212,292 +142,65 @@ aggregates:
         type: "uuid.UUID"
       - name: "Date"
         type: "int64"
-        description: "Unix timestamp for the UTC day this marathon is active."
       - name: "Stages"
         type: "[]MarathonStage"
-        description: "Sequence of quiz stages with configurations."
       - name: "CreatedAt"
         type: "int64"
 
-    methods:
-      - name: "NewDailyMarathon"
-        params:
-          - { name: "date", type: "int64" }
-          - { name: "stages", type: "[]MarathonStage" }
-        returns:
-          - { type: "*DailyMarathon" }
-          - { type: "error" }
-        description: "Creates a new daily marathon for a specific date."
-
-      - name: "IsActiveToday"
-        params:
-          - { name: "currentTime", type: "int64" }
-        returns:
-          - { type: "bool" }
-        description: "Checks if this marathon is active for the current UTC day."
-
-      - name: "GetStageConfig"
-        params:
-          - { name: "stageNumber", type: "int" }
-        returns:
-          - { type: "*MarathonStage" }
-          - { type: "error" }
-        description: "Retrieves configuration for a specific stage."
-
   - name: "MarathonStage"
-    description: "Configuration and quiz assignment for a single stage."
+    description: "Configuration for a single stage."
     state:
       - name: "StageNumber"
         type: "int"
       - name: "QuizID"
         type: "uuid.UUID"
-        description: "Reference to quiz in catalog."
       - name: "TimePerQuestion"
         type: "int"
-        description: "Seconds allowed per question."
       - name: "Difficulty"
         type: "string"
       - name: "CompletionBonus"
-        type: "int"
-        description: "Bonus points for completing this stage."
+        type: "kernel.Points"
 
 domain_events:
   - name: "DailyMarathonStarted"
-    description: "Published when a player starts a new marathon session."
     attributes:
       - { name: "SessionID", type: "uuid.UUID" }
       - { name: "PlayerID", type: "uuid.UUID" }
-      - { name: "MarathonDate", type: "int64" }
-      - { name: "StartedAt", type: "time.Time" }
+      - { name: "StartedAt", type: "int64" }
 
   - name: "LifeLost"
-    description: "Published when a player loses a life."
     attributes:
       - { name: "SessionID", type: "uuid.UUID" }
-      - { name: "PlayerID", type: "uuid.UUID" }
       - { name: "RemainingLives", type: "int" }
-      - { name: "Reason", type: "string", description: "IncorrectAnswer or Timeout" }
-      - { name: "LostAt", type: "time.Time" }
+      - { name: "LostAt", type: "int64" }
 
   - name: "StageCompleted"
-    description: "Published when a player successfully completes a stage."
     attributes:
       - { name: "SessionID", type: "uuid.UUID" }
-      - { name: "PlayerID", type: "uuid.UUID" }
       - { name: "StageNumber", type: "int" }
-      - { name: "SurvivalBonus", type: "int" }
-      - { name: "PowerUpAwarded", type: "PowerUpType" }
-      - { name: "TotalScore", type: "int" }
-      - { name: "CompletedAt", type: "time.Time" }
-
-  - name: "PowerUpEarned"
-    description: "Published when a player earns a power-up (stage reward or combo)."
-    attributes:
-      - { name: "SessionID", type: "uuid.UUID" }
-      - { name: "PlayerID", type: "uuid.UUID" }
-      - { name: "PowerUpType", type: "PowerUpType" }
-      - { name: "Source", type: "string", description: "StageReward or ComboBonus" }
-      - { name: "EarnedAt", type: "time.Time" }
-
-  - name: "PowerUpUsed"
-    description: "Published when a player uses a power-up."
-    attributes:
-      - { name: "SessionID", type: "uuid.UUID" }
-      - { name: "PlayerID", type: "uuid.UUID" }
-      - { name: "PowerUpType", type: "PowerUpType" }
-      - { name: "QuestionNumber", type: "int" }
-      - { name: "UsedAt", type: "time.Time" }
-
-  - name: "DailyMarathonCompleted"
-    description: "Published when a player successfully completes the marathon."
-    attributes:
-      - { name: "SessionID", type: "uuid.UUID" }
-      - { name: "PlayerID", type: "uuid.UUID" }
-      - { name: "FinalScore", type: "int" }
-      - { name: "StagesCleared", type: "int" }
-      - { name: "LivesRemaining", type: "int" }
-      - { name: "CompletedAt", type: "time.Time" }
-
-  - name: "DailyMarathonFailed"
-    description: "Published when a player's session ends due to running out of lives."
-    attributes:
-      - { name: "SessionID", type: "uuid.UUID" }
-      - { name: "PlayerID", type: "uuid.UUID" }
-      - { name: "FinalScore", type: "int" }
-      - { name: "StagesCleared", type: "int" }
-      - { name: "FailedAt", type: "time.Time" }
-
-application_services:
-  - name: "DailySurvivalService"
-    description: "Orchestrates Daily Survival Marathon operations."
-    methods:
-      - name: "StartMarathon"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "playerID", type: "uuid.UUID" }
-        returns:
-          - { name: "sessionID", type: "uuid.UUID" }
-          - { type: "error" }
-        logic: |
-          1. Get today's DailyMarathon.
-          2. Check if player already has active or completed session for today.
-          3. If yes, return error (already played).
-          4. Create new DailySurvivalSession with 3 lives, Stage 1.
-          5. Publish DailyMarathonStarted event.
-          6. Return session ID.
-        description: "Starts a new marathon session for the player."
-
-      - name: "SubmitAnswer"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "sessionID", type: "uuid.UUID" }
-          - { name: "questionID", type: "uuid.UUID" }
-          - { name: "answerID", type: "uuid.UUID" }
-          - { name: "timeTaken", type: "int" }
-        returns:
-          - { name: "isCorrect", type: "bool" }
-          - { name: "pointsEarned", type: "int" }
-          - { type: "error" }
-        logic: |
-          1. Load DailySurvivalSession.
-          2. Verify session is Active.
-          3. Validate answer.
-          4. If correct:
-             - Calculate points (base + speed bonus).
-             - Call RecordCorrectAnswer.
-          5. If incorrect:
-             - Call LoseLife.
-             - Check if Lives == 0 (game over).
-          6. Save session.
-          7. Return result.
-        description: "Processes a player's answer submission."
-
-      - name: "UsePowerUp"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "sessionID", type: "uuid.UUID" }
-          - { name: "powerUpType", type: "PowerUpType" }
-        returns:
-          - { type: "error" }
-        logic: |
-          1. Load DailySurvivalSession.
-          2. Call session.UsePowerUp.
-          3. Save session.
-        description: "Consumes a power-up during gameplay."
-
-      - name: "CompleteCurrentStage"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "sessionID", type: "uuid.UUID" }
-        returns:
-          - { type: "error" }
-        logic: |
-          1. Load DailySurvivalSession.
-          2. Verify all questions in current stage are answered.
-          3. Call session.CompleteStage.
-          4. Save session.
-        description: "Advances player to next stage after completing current one."
-
-      - name: "GetMarathonLeaderboard"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "date", type: "int64" }
-          - { name: "limit", type: "int" }
-        returns:
-          - { type: "[]LeaderboardEntry" }
-          - { type: "error" }
-        description: "Retrieves top players for a specific marathon date."
-
-      - name: "GetPlayerMarathonHistory"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "playerID", type: "uuid.UUID" }
-          - { name: "limit", type: "int" }
-        returns:
-          - { type: "[]DailySurvivalSession" }
-          - { type: "error" }
-        description: "Retrieves player's past marathon attempts."
-
-      - name: "CreateDailyMarathon"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "date", type: "int64" }
-          - { name: "stages", type: "[]MarathonStage" }
-        returns:
-          - { type: "*DailyMarathon" }
-          - { type: "error" }
-        description: "Admin function to create/schedule a daily marathon."
+      - { name: "TotalScore", type: "kernel.Points" }
+      - { name: "CompletedAt", type: "int64" }
 
 repositories:
-  - name: "DailySurvivalSessionRepository"
-    description: "Persistence interface for DailySurvivalSession aggregate."
-    methods:
-      - name: "FindByID"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "id", type: "uuid.UUID" }
-        returns:
-          - { type: "*DailySurvivalSession" }
-          - { type: "error" }
-
-      - name: "FindByPlayerAndDate"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "playerID", type: "uuid.UUID" }
-          - { name: "date", type: "int64" }
-        returns:
-          - { type: "*DailySurvivalSession" }
-          - { type: "error" }
-
-      - name: "FindByDate"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "date", type: "int64" }
-          - { name: "limit", type: "int" }
-        returns:
-          - { type: "[]DailySurvivalSession" }
-          - { type: "error" }
-        description: "Retrieves all sessions for a date (for leaderboard)."
-
-      - name: "Save"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "session", type: "*DailySurvivalSession" }
-        returns:
-          - { type: "error" }
-
   - name: "DailyMarathonRepository"
-    description: "Persistence interface for DailyMarathon aggregate."
     methods:
       - name: "FindByDate"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "date", type: "int64" }
-        returns:
-          - { type: "*DailyMarathon" }
-          - { type: "error" }
+        params: [{ name: "date", type: "int64" }]
+        returns: ["*DailyMarathon", "error"]
 
+  - name: "DailySurvivalSessionRepository"
+    methods:
       - name: "FindByID"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "id", type: "uuid.UUID" }
-        returns:
-          - { type: "*DailyMarathon" }
-          - { type: "error" }
-
+        params: [{ name: "id", type: "uuid.UUID" }]
+        returns: ["*DailySurvivalSession", "error"]
       - name: "Save"
-        params:
-          - { name: "ctx", type: "context.Context" }
-          - { name: "marathon", type: "*DailyMarathon" }
-        returns:
-          - { type: "error" }
+        params: [{ name: "session", type: "*DailySurvivalSession" }]
+        returns: ["error"]
 
 dependencies:
-  - context: "Classic Game"
-    reason: "Marathon gameplay uses question answering mechanics similar to Classic Game."
+  - context: "Shared Kernel"
+    reason: "Uses shared points and base session types."
   - context: "Quiz Catalog"
-    reason: "References actual quiz content for each stage."
+    reason: "Fetches quiz content for stages."
   - context: "Identity"
-    reason: "Tracks sessions and progress per player."
-  - context: "Leaderboard"
-    reason: "Daily marathon results are displayed on date-specific leaderboard."
+    reason: "References player identity."
