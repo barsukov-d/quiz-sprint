@@ -1,0 +1,353 @@
+bounded_context:
+  name: "Leaderboard"
+  type: "Core Domain"
+  description: "Manages competitive rankings and scores for quizzes, enabling social comparison and player motivation through public leaderboards."
+  business_rules:
+    - "One leaderboard per quiz - each quiz maintains its own independent ranking."
+    - "Score-based ranking: entries sorted by score (highest first)."
+    - "Timestamp tiebreaker: equal scores ranked by completion time (earlier = better)."
+    - "Immutable entries: once submitted, scores cannot be changed."
+    - "Multiple entries allowed: players can submit multiple scores (all appear in leaderboard)."
+    - "Public visibility: all player scores visible to everyone."
+    - "Username display: shows Telegram username for each entry."
+    - "Current user highlight: user's own entries always highlighted in UI."
+    - "Podium emphasis: top 3 displayed with medals (🥇🥈🥉)."
+    - "Pagination: load leaderboard in chunks (50 entries default)."
+    - "Real-time updates: broadcast rank changes via WebSocket when new scores arrive."
+    - "Denormalized usernames: cached in entries to avoid join queries."
+
+value_objects:
+  - name: "Rank"
+    type: "int"
+    description: "Player's position in the leaderboard (1 = first place)."
+    invariants:
+      - "Must be positive (>= 1)."
+      - "Calculated dynamically based on score and timestamp."
+
+  - name: "Score"
+    type: "int"
+    description: "Final score achieved in a completed game."
+    invariants:
+      - "Must be non-negative (>= 0)."
+      - "Immutable once set."
+
+  - name: "LeaderboardEntryId"
+    type: "uuid.UUID"
+    description: "Unique identifier for a leaderboard entry."
+
+aggregates:
+  - name: "Leaderboard"
+    description: "Manages all ranking entries for a specific quiz."
+    state:
+      - name: "QuizID"
+        type: "uuid.UUID"
+        description: "Which quiz this leaderboard is for."
+      - name: "Entries"
+        type: "[]LeaderboardEntry"
+        description: "Sorted list of entries (highest score first, then earliest time)."
+      - name: "TotalEntries"
+        type: "int"
+        description: "Total number of entries for this quiz."
+      - name: "LastUpdatedAt"
+        type: "int64"
+        description: "Unix timestamp of last leaderboard update."
+
+    methods:
+      - name: "NewLeaderboard"
+        params:
+          - { name: "quizID", type: "uuid.UUID" }
+        returns:
+          - { type: "*Leaderboard" }
+        description: "Creates a new empty leaderboard for a quiz."
+
+      - name: "AddEntry"
+        params:
+          - { name: "entry", type: "*LeaderboardEntry" }
+        returns:
+          - { type: "error" }
+        logic: |
+          1. Validate entry has valid score and player ID.
+          2. Insert entry into sorted Entries list (by score DESC, then completedAt ASC).
+          3. Recalculate ranks for all affected entries.
+          4. Increment TotalEntries.
+          5. Update LastUpdatedAt.
+          6. Publish LeaderboardUpdated event.
+          7. If rank <= 3, publish PodiumPositionAchieved event.
+          8. If rank = 1, publish TopScoreAchieved event.
+        description: "Adds a new entry to the leaderboard and recalculates ranks."
+
+      - name: "GetTopN"
+        params:
+          - { name: "n", type: "int" }
+        returns:
+          - { type: "[]LeaderboardEntry" }
+        description: "Returns top N entries from the leaderboard."
+
+      - name: "GetPlayerRank"
+        params:
+          - { name: "playerID", type: "uuid.UUID" }
+        returns:
+          - { type: "int" }
+          - { type: "error" }
+        logic: |
+          1. Search Entries for matching PlayerID.
+          2. Return entry's Rank.
+          3. Return 0 if player not found.
+        description: "Returns the rank of a specific player (0 if not found)."
+
+      - name: "GetEntriesAroundPlayer"
+        params:
+          - { name: "playerID", type: "uuid.UUID" }
+          - { name: "range", type: "int" }
+        returns:
+          - { type: "[]LeaderboardEntry" }
+        logic: |
+          1. Find player's entry.
+          2. Calculate start = max(0, playerRank - range).
+          3. Calculate end = min(TotalEntries, playerRank + range).
+          4. Return entries from start to end.
+        description: "Returns entries surrounding a specific player's position (for context display)."
+
+  - name: "LeaderboardEntry"
+    description: "Represents a single player's score entry on a leaderboard."
+    state:
+      - name: "ID"
+        type: "uuid.UUID"
+      - name: "QuizID"
+        type: "uuid.UUID"
+      - name: "PlayerID"
+        type: "uuid.UUID"
+      - name: "PlayerUsername"
+        type: "string"
+        description: "Cached username for display (denormalized for performance)."
+      - name: "PlayerAvatarURL"
+        type: "string"
+        description: "Cached avatar URL (optional, denormalized)."
+      - name: "Score"
+        type: "int"
+      - name: "Rank"
+        type: "int"
+        description: "Current position in leaderboard (calculated dynamically)."
+      - name: "CompletedAt"
+        type: "int64"
+        description: "Unix timestamp when game was completed."
+      - name: "MaxStreak"
+        type: "int"
+        description: "Best streak achieved in this game (for display/additional context)."
+
+    methods:
+      - name: "NewLeaderboardEntry"
+        params:
+          - { name: "quizID", type: "uuid.UUID" }
+          - { name: "playerID", type: "uuid.UUID" }
+          - { name: "playerUsername", type: "string" }
+          - { name: "score", type: "int" }
+          - { name: "maxStreak", type: "int" }
+          - { name: "completedAt", type: "int64" }
+        returns:
+          - { type: "*LeaderboardEntry" }
+          - { type: "error" }
+        logic: |
+          1. Validate score >= 0.
+          2. Set Rank = 0 (will be calculated when added to leaderboard).
+          3. Generate new UUID for ID.
+          4. Create and return entry.
+        description: "Creates a new leaderboard entry from a completed game."
+
+      - name: "UpdateRank"
+        params:
+          - { name: "newRank", type: "int" }
+        returns:
+          - { type: "error" }
+        logic: |
+          1. Validate newRank >= 1.
+          2. Set Rank = newRank.
+        description: "Updates the calculated rank position."
+
+      - name: "IsPodium"
+        returns:
+          - { type: "bool" }
+        logic: |
+          1. Return true if Rank <= 3.
+          2. Otherwise return false.
+        description: "Checks if entry is in top 3 (podium position)."
+
+      - name: "IsCurrentUser"
+        params:
+          - { name: "currentPlayerID", type: "uuid.UUID" }
+        returns:
+          - { type: "bool" }
+        logic: |
+          1. Return PlayerID == currentPlayerID.
+        description: "Checks if this entry belongs to the current user."
+
+domain_events:
+  - name: "LeaderboardEntryCreated"
+    description: "Published when a new score is added to a leaderboard."
+    attributes:
+      - { name: "EntryID", type: "uuid.UUID" }
+      - { name: "QuizID", type: "uuid.UUID" }
+      - { name: "PlayerID", type: "uuid.UUID" }
+      - { name: "Score", type: "int" }
+      - { name: "Rank", type: "int" }
+      - { name: "CreatedAt", type: "time.Time" }
+
+  - name: "LeaderboardUpdated"
+    description: "Published when leaderboard rankings change (batch update for efficiency)."
+    attributes:
+      - { name: "QuizID", type: "uuid.UUID" }
+      - { name: "AffectedPlayerIDs", type: "[]uuid.UUID" }
+      - { name: "UpdatedAt", type: "time.Time" }
+
+  - name: "TopScoreAchieved"
+    description: "Published when a player reaches #1 position."
+    attributes:
+      - { name: "QuizID", type: "uuid.UUID" }
+      - { name: "PlayerID", type: "uuid.UUID" }
+      - { name: "Score", type: "int" }
+      - { name: "PreviousTopScore", type: "int" }
+      - { name: "AchievedAt", type: "time.Time" }
+
+  - name: "PodiumPositionAchieved"
+    description: "Published when a player enters top 3."
+    attributes:
+      - { name: "QuizID", type: "uuid.UUID" }
+      - { name: "PlayerID", type: "uuid.UUID" }
+      - { name: "Rank", type: "int" }
+      - { name: "Score", type: "int" }
+      - { name: "AchievedAt", type: "time.Time" }
+
+application_services:
+  - name: "LeaderboardService"
+    description: "Orchestrates leaderboard operations and queries."
+    methods:
+      - name: "SubmitScore"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "quizID", type: "uuid.UUID" }
+          - { name: "playerID", type: "uuid.UUID" }
+          - { name: "score", type: "int" }
+          - { name: "maxStreak", type: "int" }
+        returns:
+          - { type: "int" }
+          - { type: "error" }
+        logic: |
+          1. Get player username from Identity context.
+          2. Create LeaderboardEntry.
+          3. Get or create Leaderboard for quiz.
+          4. Add entry to leaderboard (triggers rank calculation and events).
+          5. Save leaderboard.
+          6. Broadcast LeaderboardUpdated via WebSocket to connected clients.
+          7. Return new rank.
+        description: "Submits a completed game score to the leaderboard and returns new rank."
+
+      - name: "GetLeaderboard"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "quizID", type: "uuid.UUID" }
+          - { name: "limit", type: "int" }
+          - { name: "offset", type: "int" }
+        returns:
+          - { type: "[]LeaderboardEntry" }
+          - { type: "error" }
+        logic: |
+          1. Get Leaderboard by QuizID.
+          2. Return entries slice [offset:offset+limit].
+        description: "Retrieves paginated leaderboard entries for a quiz."
+
+      - name: "GetPlayerPosition"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "quizID", type: "uuid.UUID" }
+          - { name: "playerID", type: "uuid.UUID" }
+        returns:
+          - { type: "*LeaderboardEntry" }
+          - { type: "error" }
+        logic: |
+          1. Get Leaderboard by QuizID.
+          2. Find entry matching PlayerID.
+          3. Return entry with current rank.
+        description: "Gets a specific player's position and score on a leaderboard."
+
+      - name: "GetLeaderboardWithContext"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "quizID", type: "uuid.UUID" }
+          - { name: "playerID", type: "uuid.UUID" }
+          - { name: "topN", type: "int" }
+          - { name: "contextRange", type: "int" }
+        returns:
+          - { type: "LeaderboardView" }
+          - { type: "error" }
+        logic: |
+          1. Get top N entries.
+          2. Get player's position and rank.
+          3. If player not in top N:
+             a. Get contextRange entries around player.
+             b. Return combined view (top N + player context).
+          4. If player in top N:
+             a. Return only top N with player highlighted.
+        description: "Returns leaderboard with top players and context around current user (for UI display)."
+
+repositories:
+  - name: "LeaderboardRepository"
+    description: "Persistence interface for leaderboard data."
+    methods:
+      - name: "FindByQuizID"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "quizID", type: "uuid.UUID" }
+        returns:
+          - { type: "*Leaderboard" }
+          - { type: "error" }
+        description: "Retrieves leaderboard for a specific quiz."
+
+      - name: "Save"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "leaderboard", type: "*Leaderboard" }
+        returns:
+          - { type: "error" }
+        description: "Persists leaderboard aggregate."
+
+      - name: "GetTopEntries"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "quizID", type: "uuid.UUID" }
+          - { name: "limit", type: "int" }
+          - { name: "offset", type: "int" }
+        returns:
+          - { type: "[]LeaderboardEntry" }
+          - { type: "error" }
+        description: "Retrieves paginated top entries (optimized query)."
+
+      - name: "GetPlayerEntry"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "quizID", type: "uuid.UUID" }
+          - { name: "playerID", type: "uuid.UUID" }
+        returns:
+          - { type: "*LeaderboardEntry" }
+          - { type: "error" }
+        description: "Retrieves specific player's best entry for a quiz."
+
+      - name: "GetEntriesAroundRank"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "quizID", type: "uuid.UUID" }
+          - { name: "rank", type: "int" }
+          - { name: "range", type: "int" }
+        returns:
+          - { type: "[]LeaderboardEntry" }
+          - { type: "error" }
+        description: "Retrieves entries within range of a specific rank (for context window)."
+
+dependencies:
+  - context: "Classic Mode"
+    reason: "Receives final scores from completed games via ClassicGameFinished event."
+  - context: "Daily Mode"
+    reason: "Receives scores from daily quiz completions via DailyQuizCompleted event."
+  - context: "Identity"
+    reason: "Fetches player usernames and avatars for display in leaderboard entries."
+  - context: "Quiz Catalog"
+    reason: "References quiz metadata for leaderboard association."

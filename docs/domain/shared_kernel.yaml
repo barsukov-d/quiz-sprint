@@ -1,0 +1,56 @@
+# This file defines the Shared Kernel for the Quiz Gameplay.
+# It contains the core domain model for the act of a single player taking a quiz or a round of questions.
+
+kernel_models:
+  - name: "QuizGameplaySession"
+    description: "Represents a single player's session of answering a set of questions against the clock."
+    state:
+      - name: "ID"
+        type: "uuid.UUID"
+      - name: "Quiz"
+        type: "catalog.Quiz" # Assumes a Quiz struct from the catalog context
+      - name: "UserAnswers"
+        type: "map[uuid.UUID]uuid.UUID" # map[QuestionID]AnswerID
+      - name: "CurrentQuestionIndex"
+        type: "int"
+      - name: "Score"
+        type: "int"
+      - name: "StartedAt"
+        type: "time.Time"
+      - name: "FinishedAt"
+        type: "time.Time"
+    methods:
+      - name: "NewQuizGameplaySession"
+        params:
+          - { name: "quiz", type: "catalog.Quiz" }
+        returns:
+          - { type: "*QuizGameplaySession" }
+        description: "Factory to create a new session."
+      - name: "AnswerQuestion"
+        params:
+          - { name: "questionID", type: "uuid.UUID" }
+          - { name: "answerID", type: "uuid.UUID" }
+          - { name: "timeTaken", type: "time.Duration" }
+        returns:
+          - { type: "bool" } # is_correct
+          - { type: "error" }
+        description: "Records a user's answer and calculates the score for it."
+      - name: "IsFinished"
+        returns:
+          - { type: "bool" }
+        description: "Checks if all questions have been answered."
+
+# This section contains simple value objects shared across many contexts.
+shared_value_objects:
+  - name: "UserID"
+    description: "Unique identifier for a User. Sourced from the Identity context."
+  - name: "QuizID"
+    description: "Unique identifier for a Quiz. Sourced from the Quiz Catalog context."
+  - name: "QuestionID"
+    description: "Unique identifier for a Question within a Quiz."
+  - name: "AnswerID"
+    description: "Unique identifier for an Answer within a Question."
+  - name: "Score"
+    description: "Represents the points a user has. Non-negative integer."
+  - name: "Timestamp"
+    description: "A specific point in time, represented in UTC."

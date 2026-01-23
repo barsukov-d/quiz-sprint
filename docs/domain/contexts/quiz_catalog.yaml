@@ -1,0 +1,34 @@
+bounded_context:
+  name: "Quiz Catalog"
+  type: "Supporting Subdomain"
+  description: "Manages the content of all quizzes, including questions, answers, categories, and tags."
+
+aggregates:
+  - name: "Quiz"
+    description: "A collection of questions and rules for a quiz."
+    entities:
+      - "Question"
+    value_objects:
+      - "QuizID"
+      - "QuizTitle"
+      - "PassingScore"
+      - "TimeLimitPerQuestion"
+    invariants:
+      - "A quiz must have between 5 and 50 questions."
+      - "Each question must have exactly one correct answer."
+      - "Each question must have between 2 and 4 possible answers."
+
+  - name: "Category"
+    description: "A primary classification for quizzes, used for navigation."
+    value_objects:
+      - "CategoryID"
+      - "CategoryName"
+    invariants:
+      - "CategoryName must be unique."
+
+  - name: "Tag"
+    description: "A flexible metadata label for quizzes, used for filtering and discovery."
+    value_objects:
+      - "TagName"
+    invariants:
+      - "TagName must be unique and follow the format 'group:value'."

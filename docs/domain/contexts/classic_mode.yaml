@@ -1,0 +1,326 @@
+bounded_context:
+  name: "Classic Mode"
+  type: "Core Domain"
+  description: "Handles the classic solo quiz-taking experience with enhanced game juice mechanics, streak multipliers, and ghost comparison for personal mastery."
+  business_rules:
+    - "A game is started by a single user for a specific quiz."
+    - "The game ends when all questions in the quiz have been answered."
+    - "Scoring Formula: Score = (BasePoints + TimeBonus) * Multiplier."
+    - "BasePoints: Fixed value per question."
+    - "TimeBonus: Linearly decreases from maximum to zero over the question time limit."
+    - "Streak Multiplier: x1.0 (0-2 correct), x1.5 (3-5 correct 'On Fire'), x2.0 (6+ correct 'Godlike')."
+    - "Any incorrect answer or timeout immediately resets CurrentStreak to 0 and Multiplier to x1.0."
+    - "Visual states transition based on streak: Normal (< 3), Heat (>= 3), Fire (>= 6)."
+    - "Personal Best: Only successful games (PassingScore reached) update the user's PersonalBest for that quiz."
+    - "Ghost Comparison: During gameplay, system calculates score difference vs PersonalBest at the same question index."
+    - "MaxStreak tracks the highest streak achieved during the current game session."
+    - "Upon completion, the final score is published to the Leaderboard for ranking."
+
+value_objects:
+  - name: "GameStatus"
+    type: "string"
+    description: "Represents the lifecycle of a game."
+    allowed_values: ["InProgress", "Finished"]
+    invariants:
+      - "Status can only transition from InProgress to Finished."
+
+  - name: "Points"
+    type: "int"
+    description: "Represents score units. Must be non-negative."
+    invariants:
+      - "Must be >= 0."
+
+  - name: "VisualState"
+    type: "string"
+    description: "Represents the visual intensity state of the game UI for game juice feedback."
+    allowed_values: ["Normal", "Heat", "Fire"]
+    invariants:
+      - "Normal: Streak < 3."
+      - "Heat: Streak >= 3 and < 6."
+      - "Fire: Streak >= 6."
+
+  - name: "Multiplier"
+    type: "float64"
+    description: "Score multiplier based on current streak for the 'juice' mechanic."
+    allowed_values: [1.0, 1.5, 2.0]
+    invariants:
+      - "x1.0: Streak 0-2."
+      - "x1.5: Streak 3-5 (On Fire state)."
+      - "x2.0: Streak 6+ (Godlike state)."
+
+  - name: "TimeBonus"
+    type: "int"
+    description: "Bonus points awarded for quick answers within the speed window."
+    invariants:
+      - "Calculated as: MaxBonus * (RemainingTime / TotalTime)."
+      - "Linearly decreases from MaxBonus to 0."
+
+aggregates:
+  - name: "ClassicGame"
+    description: "Represents a single classic game session with enhanced scoring mechanics, visual feedback system, and ghost comparison for personal mastery."
+    state:
+      - name: "ID"
+        type: "uuid.UUID"
+      - name: "PlayerID"
+        type: "uuid.UUID"
+      - name: "QuizID"
+        type: "uuid.UUID"
+      - name: "Status"
+        type: "GameStatus"
+      - name: "Session"
+        type: "kernel.QuizGameplaySession"
+        description: "Underlying gameplay session handling questions and answers."
+      - name: "CurrentStreak"
+        type: "int"
+        description: "Number of consecutive correct answers in current game."
+      - name: "MaxStreak"
+        type: "int"
+        description: "Maximum streak achieved during this game session."
+      - name: "CurrentMultiplier"
+        type: "float64"
+        description: "Current score multiplier based on streak (1.0, 1.5, or 2.0)."
+      - name: "PersonalBestScore"
+        type: "*int"
+        description: "Player's PersonalBest score for this quiz (nil if no previous record)."
+      - name: "GhostComparison"
+        type: "int"
+        description: "Score difference relative to PersonalBest at the same question index (positive = ahead, negative = behind)."
+
+    methods:
+      - name: "NewClassicGame"
+        params:
+          - { name: "playerID", type: "uuid.UUID" }
+          - { name: "quiz", type: "catalog.Quiz" }
+          - { name: "personalBest", type: "*PersonalBest" }
+        returns:
+          - { type: "*ClassicGame" }
+          - { type: "error" }
+        logic: |
+          1. Create new QuizGameplaySession from quiz.
+          2. Initialize CurrentStreak = 0, MaxStreak = 0, CurrentMultiplier = 1.0.
+          3. If personalBest exists, store PersonalBestScore for ghost comparison.
+          4. Set Status = InProgress.
+          5. Publish ClassicGameStarted event.
+        description: "Creates a new classic game session. PersonalBest can be nil if the player has no previous record for this quiz."
+
+      - name: "SubmitAnswer"
+        params:
+          - { name: "questionID", type: "uuid.UUID" }
+          - { name: "answerID", type: "uuid.UUID" }
+          - { name: "timeTaken", type: "time.Duration" }
+        returns:
+          - { type: "error" }
+        logic: |
+          1. Delegate to Session.AnswerQuestion(questionID, answerID, timeTaken).
+          2. If answer is correct:
+             a. Increment CurrentStreak by 1.
+             b. Update MaxStreak if CurrentStreak > MaxStreak.
+             c. Update CurrentMultiplier based on streak:
+                - If streak <= 2: Multiplier = 1.0
+                - If streak >= 3 and <= 5: Multiplier = 1.5 (emit StreakMilestoneReached if transitioning)
+                - If streak >= 6: Multiplier = 2.0 (emit StreakMilestoneReached if transitioning)
+             d. Calculate TimeBonus = MaxBonus * (RemainingTime / QuestionTimeLimit).
+             e. Calculate QuestionScore = (BasePoints + TimeBonus) * CurrentMultiplier.
+             f. Add QuestionScore to Session total.
+             g. If PersonalBestScore exists, calculate GhostComparison.
+          3. If answer is incorrect or timeout:
+             a. If CurrentStreak > 0, emit StreakBroken event.
+             b. Reset CurrentStreak = 0.
+             c. Reset CurrentMultiplier = 1.0.
+             d. Show correct answer for learning.
+          4. If this was the last question, call Finish().
+        description: "Submits an answer to the session with enhanced scoring and streak tracking. Provides dramatic feedback for streaks and failures."
+
+      - name: "Finish"
+        returns:
+          - { type: "error" }
+        logic: |
+          1. Mark Status = Finished.
+          2. Get FinalScore from Session.
+          3. Determine IsNewPersonalBest = (PersonalBestScore == nil || FinalScore > PersonalBestScore) && PassingScore reached.
+          4. Publish ClassicGameFinished event with FinalScore, MaxStreak, IsNewPersonalBest.
+        description: "Finalizes the game and determines if a new PersonalBest was achieved."
+
+  - name: "PersonalBest"
+    description: "Tracks a player's best performance for a specific quiz."
+    state:
+      - name: "PlayerID"
+        type: "uuid.UUID"
+      - name: "QuizID"
+        type: "uuid.UUID"
+      - name: "BestScore"
+        type: "int"
+      - name: "MaxStreak"
+        type: "int"
+        description: "Highest streak achieved in the best run."
+      - name: "AchievedAt"
+        type: "int64"
+        description: "Unix timestamp when this record was set."
+      - name: "ScoreByQuestion"
+        type: "[]int"
+        description: "Cumulative score at each question for ghost comparison."
+
+    methods:
+      - name: "UpdateIfBetter"
+        params:
+          - { name: "game", type: "*ClassicGame" }
+        returns:
+          - { type: "bool" }
+        logic: |
+          1. Get FinalScore and MaxStreak from game.
+          2. If FinalScore > BestScore:
+             a. Update BestScore = FinalScore.
+             b. Update MaxStreak = game.MaxStreak.
+             c. Update AchievedAt = current time.
+             d. Update ScoreByQuestion from game.Session.
+             e. Return true.
+          3. Else return false.
+        description: "Updates the PersonalBest if the provided game achieved a higher score."
+
+domain_events:
+  - name: "ClassicGameStarted"
+    description: "Published when a new classic game is created."
+    attributes:
+      - { name: "GameID", type: "uuid.UUID" }
+      - { name: "PlayerID", type: "uuid.UUID" }
+      - { name: "QuizID", type: "uuid.UUID" }
+      - { name: "HasPersonalBest", type: "bool" }
+      - { name: "PersonalBestScore", type: "*int" }
+      - { name: "StartedAt", type: "time.Time" }
+
+  - name: "ClassicGameFinished"
+    description: "Published when a game is completed."
+    attributes:
+      - { name: "GameID", type: "uuid.UUID" }
+      - { name: "PlayerID", type: "uuid.UUID" }
+      - { name: "QuizID", type: "uuid.UUID" }
+      - { name: "FinalScore", type: "int" }
+      - { name: "MaxStreak", type: "int" }
+      - { name: "IsNewPersonalBest", type: "bool" }
+      - { name: "FinishedAt", type: "time.Time" }
+
+  - name: "StreakMilestoneReached"
+    description: "Published when player reaches significant streak milestones (3 or 6) for dramatic UI feedback."
+    attributes:
+      - { name: "GameID", type: "uuid.UUID" }
+      - { name: "PlayerID", type: "uuid.UUID" }
+      - { name: "StreakCount", type: "int" }
+      - { name: "VisualState", type: "string" }
+      - { name: "Multiplier", type: "float64" }
+      - { name: "OccurredAt", type: "time.Time" }
+
+  - name: "StreakBroken"
+    description: "Published when a player's in-game streak resets due to incorrect answer or timeout. Triggers dramatic shake effect."
+    attributes:
+      - { name: "GameID", type: "uuid.UUID" }
+      - { name: "PlayerID", type: "uuid.UUID" }
+      - { name: "PreviousStreak", type: "int" }
+      - { name: "QuestionID", type: "uuid.UUID" }
+      - { name: "OccurredAt", type: "time.Time" }
+
+  - name: "PersonalBestAchieved"
+    description: "Published when a player sets a new PersonalBest for a quiz."
+    attributes:
+      - { name: "PlayerID", type: "uuid.UUID" }
+      - { name: "QuizID", type: "uuid.UUID" }
+      - { name: "NewBestScore", type: "int" }
+      - { name: "PreviousBestScore", type: "*int" }
+      - { name: "MaxStreak", type: "int" }
+      - { name: "AchievedAt", type: "time.Time" }
+
+application_services:
+  - name: "ClassicModeService"
+    description: "Orchestrates classic mode use cases with enhanced game juice mechanics."
+    methods:
+      - name: "StartGame"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "playerID", type: "uuid.UUID" }
+          - { name: "quizID", type: "uuid.UUID" }
+        returns:
+          - { type: "*ClassicGame" }
+          - { type: "error" }
+        logic: |
+          1. Fetch Quiz from QuizCatalog.
+          2. Fetch PersonalBest for (playerID, quizID) from repository.
+          3. Create ClassicGame using NewClassicGame(playerID, quiz, personalBest).
+          4. Save ClassicGame to repository.
+          5. Return ClassicGame.
+        description: "Starts a new classic game session with ghost comparison if PersonalBest exists."
+
+      - name: "SubmitAnswer"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "gameID", type: "uuid.UUID" }
+          - { name: "playerID", type: "uuid.UUID" }
+          - { name: "questionID", type: "uuid.UUID" }
+          - { name: "answerID", type: "uuid.UUID" }
+          - { name: "timeTaken", type: "time.Duration" }
+        returns:
+          - { type: "error" }
+        logic: |
+          1. Fetch ClassicGame by gameID.
+          2. Verify PlayerID matches.
+          3. Call game.SubmitAnswer(questionID, answerID, timeTaken).
+          4. If game finished, update PersonalBest if applicable.
+          5. Save updated ClassicGame.
+          6. Publish LeaderboardScoreSubmitted if finished.
+        description: "Processes answer submission with streak mechanics and updates PersonalBest on completion."
+
+      - name: "GetPersonalBest"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "playerID", type: "uuid.UUID" }
+          - { name: "quizID", type: "uuid.UUID" }
+        returns:
+          - { type: "*PersonalBest" }
+          - { type: "error" }
+        description: "Retrieves the player's PersonalBest for a specific quiz."
+
+repositories:
+  - name: "ClassicGameRepository"
+    description: "Persistence interface for the ClassicGame aggregate."
+    methods:
+      - name: "FindByID"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "id", type: "uuid.UUID" }
+        returns:
+          - { type: "*ClassicGame" }
+          - { type: "error" }
+
+      - name: "Save"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "game", type: "*ClassicGame" }
+        returns:
+          - { type: "error" }
+
+  - name: "PersonalBestRepository"
+    description: "Persistence interface for PersonalBest tracking."
+    methods:
+      - name: "FindByPlayerAndQuiz"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "playerID", type: "uuid.UUID" }
+          - { name: "quizID", type: "uuid.UUID" }
+        returns:
+          - { type: "*PersonalBest" }
+          - { type: "error" }
+
+      - name: "Save"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "personalBest", type: "*PersonalBest" }
+        returns:
+          - { type: "error" }
+
+dependencies:
+  - context: "Quiz Gameplay Kernel"
+    reason: "Uses QuizGameplaySession for core gameplay mechanics."
+  - context: "Quiz Catalog"
+    reason: "Fetches quiz content and metadata."
+  - context: "Identity"
+    reason: "References player identity."
+  - context: "Leaderboard"
+    reason: "Publishes final scores for ranking."

@@ -1,0 +1,16 @@
+bounded_context:
+  name: "Identity"
+  type: "Generic Subdomain"
+  description: "Manages user authentication and profiles."
+
+aggregates:
+  - name: "User"
+    description: "Represents a user in the system."
+    value_objects:
+      - "UserID"
+      - "TelegramID"
+      - "Username"
+      - "UserProfile"
+    invariants:
+      - "Each user must have a unique UserID."
+      - "A TelegramID must be unique across all users."
