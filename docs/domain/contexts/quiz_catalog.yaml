@@ -1,34 +1,69 @@
 bounded_context:
-  name: "Quiz Catalog"
-  type: "Supporting Subdomain"
+  name: "QuizCatalog"
+  type: "Supporting"
   description: "Manages the content of all quizzes, including questions, answers, categories, and tags."
 
 aggregates:
   - name: "Quiz"
     description: "A collection of questions and rules for a quiz."
-    entities:
-      - "Question"
-    value_objects:
-      - "QuizID"
-      - "QuizTitle"
-      - "PassingScore"
-      - "TimeLimitPerQuestion"
-    invariants:
-      - "A quiz must have between 5 and 50 questions."
-      - "Each question must have exactly one correct answer."
-      - "Each question must have between 2 and 4 possible answers."
+    state:
+      - name: "ID"
+        type: "uuid.UUID"
+      - name: "Title"
+        type: "string"
+      - name: "Description"
+        type: "string"
+      - name: "Questions"
+        type: "[]Question"
+      - name: "CategoryID"
+        type: "uuid.UUID"
+      - name: "Tags"
+        type: "[]string"
+      - name: "PassingScore"
+        type: "int"
+      - name: "TimeLimitPerQuestion"
+        type: "int"
+
+entities:
+  - name: "Question"
+    state:
+      - name: "ID"
+        type: "uuid.UUID"
+      - name: "Text"
+        type: "string"
+      - name: "Answers"
+        type: "[]Answer"
+      - name: "CorrectAnswerID"
+        type: "uuid.UUID"
+
+  - name: "Answer"
+    state:
+      - name: "ID"
+        type: "uuid.UUID"
+      - name: "Text"
+        type: "string"
 
   - name: "Category"
-    description: "A primary classification for quizzes, used for navigation."
-    value_objects:
-      - "CategoryID"
-      - "CategoryName"
-    invariants:
-      - "CategoryName must be unique."
+    state:
+      - name: "ID"
+        type: "uuid.UUID"
+      - name: "Name"
+        type: "string"
 
-  - name: "Tag"
-    description: "A flexible metadata label for quizzes, used for filtering and discovery."
-    value_objects:
-      - "TagName"
-    invariants:
-      - "TagName must be unique and follow the format 'group:value'."
+repositories:
+  - name: "QuizRepository"
+    aggregate: "Quiz"
+    methods:
+      - name: "FindByID"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "id", type: "uuid.UUID" }
+        returns:
+          - { type: "*Quiz" }
+          - { type: "error" }
+      - name: "Save"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "quiz", type: "*Quiz" }
+        returns:
+          - { type: "error" }

@@ -11,6 +11,8 @@
 - **Permadeath:** Immediate session end when Lives reach zero.
 - **Stage:** Sequential difficulty level (Easy → Medium → Hard → Elite).
 - **Power-up:** Consumable item that provides tactical advantage (50/50, Time Extension, Skip).
+- **Streak:** Chain of consecutive correct answers within the current stage.
+- **Speed Window:** First 5-8 seconds of a question when bonus points for speed can be earned.
 
 ## 3. Business Rules & Logic
 1. **Starting State:** Every player begins with exactly 3 lives.
@@ -20,28 +22,11 @@
 5. **Advancement:** Must complete current stage with Lives ≥ 1 to unlock the next stage.
 6. **Earning Power-ups:** Awarded for stage completion (random) or achieving a 5-question Streak.
 7. **Power-up Usage:** Consumable items (50/50, Time Extension, Skip) are session-specific and do not carry over.
-8. **Scoring Formula:** `FinalScore = Sum(QuestionScores) + StageBonuses`. 
+8. **Scoring Formula:** `FinalScore = Sum(QuestionScores) + StageBonuses`.
     - **Stage Completion Bonus:** `500 * StageNumber`.
     - **Survival Bonus:** `200 * RemainingLives` at stage end.
 
-## 4. Manifest Updates (Intent)
-- **New Fields (Aggregate DailyMarathon):**
-    - `SessionID`: uuid.UUID
-    - `CurrentStage`: int (1-based stage index)
-    - `Lives`: int (0-3)
-    - `Streak`: int (Current correct answer chain)
-    - `Inventory`: []PowerUp (List of earned power-ups)
-    - `TotalScore`: int (Cumulative score)
-    - `LastAttemptTimestamp`: int64 (Unix timestamp)
-    - `Status`: string (InProgress, Completed, Failed)
-- **New Value Object (PowerUp):**
-    - `Type`: string (FiftyFifty, TimeExtension, Skip)
-    - `Quantity`: int
-- **New Methods:**
-    - `UsePowerUp`: Validates and applies power-up effects.
-    - `CompleteStage`: Calculates bonuses and transitions to next stage.
-
-## 5. Scenarios (User Flows)
+## 4. Scenarios (User Flows)
 - **Scenario: Perfect Stage Clear**
     - **Given:** Player is on Stage 1 with 3 lives, has answered 4/5 questions correctly.
     - **When:** Player answers final question correctly within Speed Window.

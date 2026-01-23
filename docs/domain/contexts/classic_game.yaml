@@ -1,20 +1,7 @@
 bounded_context:
-  name: "Classic Mode"
-  type: "Core Domain"
+  name: "ClassicGame"
+  type: "Core"
   description: "Handles the classic solo quiz-taking experience with enhanced game juice mechanics, streak multipliers, and ghost comparison for personal mastery."
-  business_rules:
-    - "A game is started by a single user for a specific quiz."
-    - "The game ends when all questions in the quiz have been answered."
-    - "Scoring Formula: Score = (BasePoints + TimeBonus) * Multiplier."
-    - "BasePoints: Fixed value per question."
-    - "TimeBonus: Linearly decreases from maximum to zero over the question time limit."
-    - "Streak Multiplier: x1.0 (0-2 correct), x1.5 (3-5 correct 'On Fire'), x2.0 (6+ correct 'Godlike')."
-    - "Any incorrect answer or timeout immediately resets CurrentStreak to 0 and Multiplier to x1.0."
-    - "Visual states transition based on streak: Normal (< 3), Heat (>= 3), Fire (>= 6)."
-    - "Personal Best: Only successful games (PassingScore reached) update the user's PersonalBest for that quiz."
-    - "Ghost Comparison: During gameplay, system calculates score difference vs PersonalBest at the same question index."
-    - "MaxStreak tracks the highest streak achieved during the current game session."
-    - "Upon completion, the final score is published to the Leaderboard for ranking."
 
 value_objects:
   - name: "GameStatus"
@@ -39,12 +26,16 @@ aggregates:
     state:
       - name: "ID"
         type: "uuid.UUID"
+        description: "Unique identifier for this game session."
       - name: "PlayerID"
         type: "uuid.UUID"
+        description: "Player participating in this game."
       - name: "QuizID"
         type: "uuid.UUID"
+        description: "Quiz being played in this game."
       - name: "Status"
         type: "GameStatus"
+        description: "Current lifecycle state of the game."
       - name: "Session"
         type: "kernel.QuizGameplaySession"
         description: "Underlying gameplay session handling questions and answers."
@@ -87,22 +78,17 @@ aggregates:
         params:
           - { name: "questionID", type: "uuid.UUID" }
           - { name: "answerID", type: "uuid.UUID" }
-          - { name: "timeTaken", type: "time.Duration" }
+          - { name: "timeTakenMs", type: "int" }
         returns:
           - { type: "error" }
-        logic: |
-          1. Delegate to Session.AnswerQuestion(questionID, answerID).
-          2. If answer is correct:
-             a. Increment CurrentStreak. Update MaxStreak.
-             b. Update CurrentMultiplier (1.0, 1.5, or 2.0).
-             c. Calculate TimeBonus using kernel logic.
-             d. Calculate QuestionScore = kernel.ScoringPolicy.CalculateQuestionScore(BasePoints, TimeBonus, CurrentMultiplier).
-             e. Add QuestionScore to TotalScore.
-             f. Update GhostComparison if PersonalBestScore exists.
-          3. If incorrect:
-             a. Reset CurrentStreak = 0, CurrentMultiplier = 1.0.
-          4. If last question, Finish().
         description: "Submits an answer and updates game state using shared scoring policy."
+        logic: |
+          Apply scoring rules from classic_game.md:
+          1. Validate answer correctness (delegate to Session.AnswerQuestion).
+          2. If correct: increment streak, update multiplier (Rule 2), calculate TimeBonus, apply scoring formula (Rule 1).
+          3. If incorrect: reset streak and multiplier to base values (Rule 3).
+          4. Update GhostComparison if PersonalBest exists.
+          5. If last question answered, call Finish().
 
       - name: "Finish"
         returns:
@@ -118,16 +104,22 @@ aggregates:
     state:
       - name: "PlayerID"
         type: "uuid.UUID"
+        description: "Player who achieved this best score."
       - name: "QuizID"
         type: "uuid.UUID"
+        description: "Quiz for which this is the best score."
       - name: "BestScore"
         type: "int"
+        description: "Highest score achieved for this quiz by this player."
       - name: "MaxStreak"
         type: "int"
+        description: "Highest streak achieved in the best game."
       - name: "AchievedAt"
         type: "int64"
+        description: "Unix timestamp when this PersonalBest was set."
       - name: "ScoreByQuestion"
         type: "[]int"
+        description: "Cumulative score progression for ghost comparison."
 
     methods:
       - name: "UpdateIfBetter"
@@ -136,6 +128,10 @@ aggregates:
         returns:
           - { type: "bool" }
         description: "Updates the PersonalBest if the provided game achieved a higher score."
+        logic: |
+          1. Compare game.TotalScore with current BestScore.
+          2. If higher, update all fields from game and return true.
+          3. Otherwise, return false.
 
 domain_events:
   - name: "ClassicGameStarted"
@@ -155,22 +151,39 @@ domain_events:
 
 repositories:
   - name: "ClassicGameRepository"
+    aggregate: "ClassicGame"
     methods:
       - name: "FindByID"
-        params: [{ name: "id", type: "uuid.UUID" }]
-        returns: ["*ClassicGame", "error"]
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "id", type: "uuid.UUID" }
+        returns:
+          - { type: "*ClassicGame" }
+          - { type: "error" }
       - name: "Save"
-        params: [{ name: "game", type: "*ClassicGame" }]
-        returns: ["error"]
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "game", type: "*ClassicGame" }
+        returns:
+          - { type: "error" }
 
   - name: "PersonalBestRepository"
+    aggregate: "PersonalBest"
     methods:
       - name: "FindByPlayerAndQuiz"
-        params: [{ name: "playerID", type: "uuid.UUID" }, { name: "quizID", type: "uuid.UUID" }]
-        returns: ["*PersonalBest", "error"]
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "playerID", type: "uuid.UUID" }
+          - { name: "quizID", type: "uuid.UUID" }
+        returns:
+          - { type: "*PersonalBest" }
+          - { type: "error" }
       - name: "Save"
-        params: [{ name: "personalBest", type: "*PersonalBest" }]
-        returns: ["error"]
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "personalBest", type: "*PersonalBest" }
+        returns:
+          - { type: "error" }
 
 dependencies:
   - context: "Shared Kernel"

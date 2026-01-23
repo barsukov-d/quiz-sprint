@@ -1,58 +1,149 @@
-# Guidelines for Creating Domain Specifications (Domain Specs)
+# Guidelines for Domain Specifications
 
-This document describes the process of transforming business ideas into technical documentation that serves as the "source of truth" for code generation and manifest updates.
+This document defines the format and rules for creating business requirement specifications in `docs/domain/specs/`.
 
-## Workflow
+## Purpose
 
-1. **Intent (User Input):** Describe a feature or game mode in simple words.
-2. **Specification (Spec):** Create or update a file in `docs/domain/specs/` using the template below. This is the "Design Document".
-3. **Manifest (YAML):** Based on the Spec, update the corresponding file in `docs/domain/contexts/`. This is the "Technical Blueprint".
-4. **Implementation (Code):** Based on the YAML manifest, Go code is generated or updated.
+**Specifications describe WHAT the system does and WHY** from a business perspective.
+
+- **Audience:** Product owners, analysts, stakeholders, QA, developers
+- **Focus:** Business logic, rules, formulas, user value
+- **Language:** Domain terminology (Ubiquitous Language)
+- **Format:** Markdown (.md)
+
+**NOT included:** Technical implementation details, data structures, method signatures, field types.
 
 ---
 
-## Universal Specification Template
-
-When creating a new file in `docs/domain/specs/`, use the following format:
+## Specification Template
 
 ```markdown
-# Specification: [Name]
+# Specification: [Feature Name]
 **Context:** [Identity | QuizCatalog | ClassicGame | DailyMarathon | DuelGame | Leaderboard]
 **Status:** [Draft | Approved | Implemented]
 
 ## 1. Business Goal (User Story)
-*Who, what, and why.*
-> As [role], I want [action], so that [value].
+> As [role], I want [action], so that [value/benefit].
 
 ## 2. Ubiquitous Language
-*Dictionary of terms that will become class/variable names. Focus on new terms.*
-- **Term:** Description and usage context.
+- **Term:** Clear definition and usage context in this domain.
+- **Term:** Description (avoid technical jargon).
 
 ## 3. Business Rules & Logic
-*The core of the domain. Describe complex logic, formulas, and constraints.*
-1. **[Rule Name]:** Detailed description of the logic (e.g., scoring formulas, win conditions).
-2. **Invariants:** Conditions that must always be true (e.g., "Lives cannot exceed 3").
+1. **[Rule Name]:** Detailed description of behavior, formulas, constraints.
+2. **[Formula]:** Mathematical expressions (e.g., `Score = (Base + Bonus) * Multiplier`).
+3. **[Invariants]:** Conditions that must always be true (e.g., "Lives cannot exceed 3").
 
-## 4. Manifest Updates (Intent)
-*Instructions for updating the corresponding YAML file in docs/domain/contexts/.*
-- **New Fields:** Fields to add to Aggregates, Entities, or Value Objects.
-- **New Methods:** Domain methods/actions to be added to Aggregates.
-- **New Events:** Domain events to be published.
-
-## 5. Scenarios (User Flows / BDD)
-*Concrete examples of system behavior. These serve as the basis for unit tests.*
-- **Scenario: [Name]**
-    - **Given:** [Initial conditions]
-    - **When:** [Action]
-    - **Then:** [Expected result and state changes]
+## 4. Scenarios (User Flows)
+- **Scenario: [Descriptive Name]**
+    - **Given:** [Initial state with specific values]
+    - **When:** [Action or event occurs]
+    - **Then:** [Expected outcome with concrete results]
 ```
 
 ---
 
-## Rules for LLM When Generating Specs
+## Writing Rules
 
-1. **Naming:** Always suggest names in English using CamelCase (for Go compatibility).
-2. **Logic First:** Focus on *behavior* and *rules* in Section 3. YAML is for structure; Spec is for logic.
-3. **Conciseness:** Do not duplicate the entire data model if only a few fields are changing. Use Section 4 to list specific delta changes for the YAML manifest.
-4. **Types:** When mentioning fields in Section 4, use Go-compatible types (uuid.UUID, int64 for timestamps, string, int).
-5. **DDD-Centric:** Focus on the domain layer. Avoid mentioning database tables, HTTP status codes, or UI implementation details unless they directly represent a business rule.
+### ✅ DO:
+1. **Focus on behavior:** Describe what happens when, not how it's implemented
+2. **Use domain language:** All terms from Section 2
+3. **Provide concrete examples:** Scenarios with real numbers, not placeholders
+4. **Document all formulas:** Exact calculations with all steps
+5. **Be specific:** "Streak increases by 1" not "Streak changes"
+6. **Keep it business-focused:** Avoid mentioning databases, APIs, UI components
+
+### ❌ DON'T:
+1. **No technical types:** Don't write `CurrentStreak: int` (that's for YAML manifests)
+2. **No method signatures:** Don't write "Method SubmitAnswer(answerID uuid.UUID)"
+3. **No data structures:** Don't describe aggregate fields and types
+4. **No event schemas:** Don't list event attributes and types
+5. **No placeholders in scenarios:** Don't write "Score = X", use actual values
+6. **No implementation details:** Don't mention database tables, HTTP codes, JSON tags
+
+---
+
+## Good Examples
+
+### ✅ Business Rule (Correct)
+```
+**Multiplier Levels:**
+- Streak 0-2: Multiplier = x1.0
+- Streak 3-5: Multiplier = x1.5
+- Streak 6+: Multiplier = x2.0
+
+**Reset Condition:** Any incorrect answer or timeout resets Streak to 0 and Multiplier to x1.0.
+```
+
+### ✅ Scenario (Correct)
+```
+- **Scenario: Entering Flow State**
+    - **Given:** Player has Streak = 2, Multiplier = x1.0
+    - **When:** Player answers question correctly within 5 seconds
+    - **Then:** Streak becomes 3, Multiplier increases to x1.5, UI shows "On Fire" effects
+```
+
+### ✅ Formula (Correct)
+```
+**Damage Calculation:**
+BaseDamage → Apply ComboMultiplier → Apply Critical/Block → Round down
+Example: 15 → 19 (×1.3 combo) → 28 (+50% crit) → 28 HP
+```
+
+---
+
+## Bad Examples (What NOT to do)
+
+### ❌ Technical Structure (Wrong - belongs in YAML)
+```
+**New Fields:**
+- CurrentStreak: int
+- MaxStreak: int
+- CurrentMultiplier: float64
+
+**New Methods:**
+- SubmitAnswer(answerID uuid.UUID, responseTime int) error
+```
+
+### ❌ Event Schema (Wrong - belongs in YAML)
+```
+**ClassicGameFinished Event:**
+- GameID: uuid.UUID
+- FinalScore: int
+- MaxStreak: int
+- CompletedAt: int64
+```
+
+### ❌ Vague Scenario (Wrong - not specific)
+```
+- **Scenario: User plays game**
+    - **Given:** User is playing
+    - **When:** User does something
+    - **Then:** Score changes
+```
+
+---
+
+## Document Structure Best Practices
+
+1. **Section 1 (Business Goal):** One clear user story. Focus on user value, not features.
+2. **Section 2 (Ubiquitous Language):** Define ALL terms before using them. 5-10 key terms max.
+3. **Section 3 (Business Rules):** 4-8 core rules. Use formulas, thresholds, conditions.
+4. **Section 4 (Scenarios):** 3-5 scenarios covering happy path, edge cases, failures.
+
+---
+
+## Workflow
+
+1. **Write Spec First:** Start here to clarify business requirements
+2. **Review with Stakeholders:** Validate business logic without technical jargon
+3. **Update YAML Manifest:** Technical structure in `docs/domain/contexts/*.yaml`
+4. **Implement Code:** Based on YAML manifest structure
+
+---
+
+## Related Documents
+
+- **Technical structure:** See `docs/domain/contexts/GUIDELINES.md`
+- **Implementation examples:** See existing specs in this directory
+- **Domain model:** See `docs/DOMAIN.md`
