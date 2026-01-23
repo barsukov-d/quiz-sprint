@@ -1,12 +1,12 @@
-# Specification: Classic Mode Core Gameplay Mechanics
-**Context:** ClassicMode
+# Specification: Classic Game Core Gameplay Mechanics
+**Context:** ClassicGame
 **Status:** Approved
 
 ## 1. Business Goal (User Story)
 > As a player, I want to play solo quizzes, turning knowledge testing into an exciting pursuit of records, where speed and accuracy are rewarded with visual and emotional triumph.
 
 ## 2. Value Proposition
-Classic Mode is not just a test, it's a **"Personal Challenge"**. Its appeal is built on three pillars:
+Classic Game is not just a test, it's a **"Personal Challenge"**. Its appeal is built on three pillars:
 1. **Flow:** Quick sessions, instant feedback, and increasing tempo.
 2. **Mastery:** Ability to beat your previous result ("Ghost Battle").
 3. **Juice:** Visual confirmation of success through combo bonuses and dynamic effects.
