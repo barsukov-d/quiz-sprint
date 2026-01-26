@@ -11,7 +11,8 @@ type Points = quiz.Points
 
 // QuizGameplaySession represents a single player's session of answering questions.
 // This is the SHARED KERNEL - pure gameplay logic without mode-specific business rules.
-// Used by ClassicGame, DailyMode, and future game modes (Duel, etc.)
+// Used by: Solo Marathon (endless with lives), Daily Challenge (10 questions, no feedback until end).
+// NOT used by: Quick Duel (PvP round-by-round), Party Mode (multiplayer synchronized).
 type QuizGameplaySession struct {
 	id                   SessionID
 	quiz                 *quiz.Quiz            // Reference to quiz content

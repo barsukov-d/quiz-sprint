@@ -2,6 +2,14 @@
 
 This file provides guidance to Claude Code when working with code in this repository.
 
+## 📚 IMPORTANT: Read Before Coding
+
+**ALWAYS read these documents before generating code:**
+- **[docs/GLOSSARY.md](docs/GLOSSARY.md)** - Ubiquitous Language (единый словарь терминов)
+  - Используй ТОЛЬКО термины из глоссария
+  - Следуй naming conventions
+  - Избегай anti-patterns
+
 ## Project Overview
 
 Quiz Sprint TMA - Telegram Mini App for quizzes:
