@@ -1,1012 +1,342 @@
-# 📚 GLOSSARY - Ubiquitous Language для Quiz Sprint
+# GLOSSARY - Ubiquitous Language
 
-> **Цель:** Единый словарь терминов для всей команды, кодовой базы и документации.
-> **Принцип:** Один термин = одно понятие. Избегаем синонимов и двусмысленности.
+> **Principle:** One term = one concept. Avoid synonyms and ambiguity.
 
-**Последнее обновление:** 2026-01-25
-**Версия:** 1.0
+## Core Domain Concepts
 
----
+### Quiz (Quiz Content)
+- **Aggregate Root:** `quiz.Quiz`
+- **Definition:** Set of questions with settings (not the gameplay process)
+- **Code:** `type Quiz struct { id QuizID; questions []Question; ... }`
+- **❌ Avoid:** Test, Questionnaire, Assessment
 
-## 🎯 Основные концепции (Core Concepts)
+### Question
+- **Entity:** `quiz.Question` (part of Quiz aggregate)
+- **Definition:** One question with 4 answer options (1 correct)
+- **Code:** `type Question struct { id QuestionID; text string; answers []Answer; difficulty string }`
 
-### Quiz (Квиз-контент)
-**Domain:** `quiz.Quiz` aggregate root
-**Определение:** Набор вопросов с настройками (категория, лимит времени, проходной балл)
-**Пример:** "Квиз по географии" содержит 10 вопросов о странах и столицах
-**НЕ путать с:** Процесс прохождения (это `Game`)
-**Код:**
-```go
-type Quiz struct {
-    id           QuizID
-    title        QuizTitle
-    questions    []Question
-    timeLimit    TimeLimit
-    passingScore PassingScore
-}
-```
-**Синонимы (❌ избегать):** Test, Questionnaire, Assessment
+### Answer
+- **Entity:** `quiz.Answer`
+- **Not to be confused:** `UserAnswer` (player's response)
+- **Code:** `type Answer struct { id AnswerID; text string; isCorrect bool; position int }`
 
----
+### Game
+- **Definition:** Process of taking a Quiz in specific mode
+- **Types:** `MarathonGame`, `DailyGame`, `DuelGame`, `PartyGame`
+- **Not to be confused:** `Quiz` (content), `Session` (pure gameplay logic)
+- **❌ Avoid:** Match, Round, Run
 
-### Question (Вопрос)
-**Domain:** `quiz.Question` entity (часть `Quiz` aggregate)
-**Определение:** Один вопрос с 4 вариантами ответов, из которых 1 правильный
-**Пример:** "Столица Франции?" → [Париж ✓, Лондон, Берлин, Мадрид]
-**Свойства:**
-- Текст вопроса
-- 4 варианта ответа
-- Правильный ответ (индекс)
-- Сложность (easy, medium, hard)
-- Категория
+### Session (Gameplay Session)
+- **Shared Kernel:** `kernel.QuizGameplaySession`
+- **Definition:** Pure question-answering logic without mode-specific rules
+- **Usage:** Reused by all game modes via composition
 
-**Код:**
-```go
-type Question struct {
-    id       QuestionID
-    text     QuestionText
-    answers  []Answer      // Всегда 4 ответа
-    points   Points
-}
-```
+### Category
+- **Aggregate Root:** `quiz.Category`
+- **Definition:** Thematic category for questions (Geography, History, etc.)
 
 ---
 
-### Answer (Вариант ответа)
-**Domain:** `quiz.Answer` entity
-**Определение:** Один вариант ответа на вопрос
-**НЕ путать с:** `UserAnswer` (ответ игрока)
-**Код:**
-```go
-type Answer struct {
-    id        AnswerID
-    text      AnswerText
-    isCorrect bool
-    position  int  // 0-3
-}
-```
+## Bounded Contexts (Game Modes)
 
----
+### Daily Challenge Context
+**Aggregates:**
+- `daily_challenge.DailyQuiz` - Daily question set (one for all players, 10 questions, refreshes 00:00 UTC)
+- `daily_challenge.DailyGame` - Individual player's attempt
 
-### Game (Игра)
-**Domain:** Разные aggregates в зависимости от режима
-**Определение:** Процесс прохождения Quiz'а игроком в конкретном режиме
-**Типы:**
-- `solo_marathon.MarathonGame` - Solo Marathon
-- `daily_challenge.DailyGame` - Daily Challenge
-- `quick_duel.DuelGame` - Quick Duel
-- `party_mode.PartyGame` - Party Mode
+**Key Concepts:**
+- **Daily Chest** - Main reward (🪵 Wooden/🥈 Silver/🏆 Golden) based on score (0-4/5-7/8-10 correct)
+- **Daily Streak** - Consecutive days played → resource multiplier (+10%/+25%/+50%)
+- **Chest Contents:** PvP Tickets, Coins, Marathon Bonuses (Shield, 50/50, Skip, Freeze)
 
-**НЕ путать с:** `Quiz` (контент вопросов), `Session` (чистая логика геймплея)
-**Синонимы (❌ избегать):** Match, Round, Run
-
----
-
-### Session (Сессия геймплея)
-**Domain:** `kernel.QuizGameplaySession`
-**Определение:** Чистая логика прохождения вопросов без mode-specific правил (shared kernel)
-**Назначение:** Переиспользуется всеми игровыми режимами
-**Что хранит:**
-- Ответы игрока
-- Текущий индекс вопроса
-- Базовый счёт (без бонусов режима)
-
-**Код:**
-```go
-type QuizGameplaySession struct {
-    id           SessionID
-    quiz         *quiz.Quiz
-    userAnswers  map[QuestionID]AnswerData
-    baseScore    Points
-}
-```
-**НЕ путать с:** `Game` (содержит mode-specific логику)
-
----
-
-### Category (Категория)
-**Domain:** `quiz.Category` aggregate root
-**Определение:** Тематическая категория для вопросов (География, История, Наука, и т.д.)
-**Пример:** Категория "География" содержит вопросы о странах, городах, реках
-**Свойства:**
-- Название
-- Иконка
-- Цвет (для UI)
-
-**Код:**
-```go
-type Category struct {
-    id   CategoryID
-    name CategoryName
-    icon string
-}
-```
-
----
-
-## 🎮 Игровые режимы (Game Modes)
-
-### Solo Marathon (Бесконечный марафон)
-**Domain:** `solo_marathon.MarathonGame` aggregate root
-**Определение:** Одиночный режим "до первой ошибки" с системой жизней
-**Ключевые механики:**
-- Lives (жизни с регенерацией)
-- Hints (подсказки)
-- Adaptive Difficulty (адаптивная сложность)
-- Personal Record (личный рекорд)
-
-**Код:**
-```go
-type MarathonGame struct {
-    id            GameID
-    playerID      UserID
-    category      MarathonCategory
-    currentStreak int
-    lives         LivesSystem
-    hints         HintsSystem
-}
-```
-
-**Терминология:**
-- ✅ `MarathonGame` - процесс игры
-- ✅ `currentStreak` - текущая серия правильных ответов
-- ❌ НЕ `MarathonSession`, НЕ `SoloGame`, НЕ `MarathonRun`
-
-**API:** `/api/v1/marathon/*`
-**Database:** `marathon_games` table
-
----
-
-### Daily Challenge (Ежедневный вызов)
-**Domain:** `daily_challenge.DailyGame` aggregate root + `daily_challenge.DailyQuiz` aggregate
-**Определение:** Один набор вопросов для всех игроков мира каждый день
-**Ключевые механики:**
-- Daily Streak (серия дней подряд)
-- Global Leaderboard (глобальный рейтинг)
-- One Attempt (одна попытка в день)
-- Same Questions (все получают одинаковые вопросы)
-
-**Код:**
-```go
-// Набор вопросов дня (один для всех)
-type DailyQuiz struct {
-    id        DailyQuizID
-    date      Date          // 2026-01-25
-    questions []QuestionID  // 10 вопросов
-    expiresAt int64
-}
-
-// Игра конкретного игрока
-type DailyGame struct {
-    id          GameID
-    playerID    UserID
-    dailyQuizID DailyQuizID
-    streak      StreakSystem
-    score       int
-    rank        *int  // Позиция в leaderboard
-}
-```
-
-**Терминология:**
-- ✅ `DailyGame` - прохождение игроком
-- ✅ `DailyQuiz` - набор вопросов дня
-- ✅ `dailyStreak` - дней подряд играл
-- ❌ НЕ `DailyChallenge` как aggregate (это название режима)
-- ❌ НЕ `DailySession`
+**Mechanics:**
+- One free attempt per day
+- Global/Friends/Country leaderboard
+- Streak recovery (monetization)
+- Second attempt (monetization)
 
 **API:** `/api/v1/daily/*`
-**Database:** `daily_quizzes`, `daily_games` tables
+**DB:** `daily_quizzes`, `daily_games`
+**❌ Avoid:** DailyChallenge as aggregate, DailySession
 
 ---
 
-### Quick Duel (Быстрая дуэль)
-**Domain:** `quick_duel.DuelGame` aggregate root
-**Определение:** PvP 1v1 в реальном времени с синхронизированными вопросами
-**Ключевые механики:**
-- Matchmaking (поиск соперника по ELO)
-- ELO Rating (шахматный рейтинг)
-- Synchronized Questions (одинаковые вопросы для обоих)
-- Real-time (WebSocket)
+### Solo Marathon Context
+**Aggregate Root:** `solo_marathon.MarathonGame`
 
-**Код:**
-```go
-type DuelGame struct {
-    id           GameID
-    player1      DuelPlayer
-    player2      DuelPlayer
-    questions    []QuestionID  // 7 вопросов
-    currentRound int
-    player1ELO   EloRating
-    player2ELO   EloRating
-}
+**Key Concepts:**
+- **Lives System** - 3 lives, -1 per wrong answer, game over at 0
+- **Bonuses** (earned from Daily Chest):
+  - 🛡️ Shield - One free mistake without losing life
+  - 🔀 50/50 - Remove 2 wrong answers
+  - ⏭️ Skip - Skip question without penalty
+  - ❄️ Freeze - Add 10 seconds to timer
+- **Score** - Number of correct answers in single run
+- **Adaptive Difficulty** - Harder questions as player progresses
 
-type DuelPlayer struct {
-    userID    UserID
-    score     int
-    connected bool
-}
-```
+**Mechanics:**
+- Endless questions until 3 lives lost
+- Strategic bonus usage for record runs
+- Weekly leaderboard (top 100 rewards)
+- All-time hall of fame
+- Continue run (monetization: rewarded ad or premium currency)
 
-**Терминология:**
-- ✅ `DuelGame` - процесс дуэли
-- ✅ `DuelPlayer` - игрок в дуэли
-- ✅ `currentRound` - текущий раунд (1-7)
-- ❌ НЕ `Match`, НЕ `PvPGame`, НЕ `QuickDuel` как aggregate
+**API:** `/api/v1/marathon/*`
+**DB:** `marathon_games`
+**❌ Avoid:** MarathonSession, SoloGame, MarathonRun
+
+---
+
+### PvP Duel Context (Ranked)
+**Aggregate Root:** `quick_duel.DuelGame`
+
+**Key Concepts:**
+- **PvP Ticket** - Entry cost (earned from Daily Challenge)
+- **MMR/ELO Rating** - Skill-based matchmaking and ranking
+- **League System:** 🥉 Bronze → 🥈 Silver → 🥇 Gold → 💍 Platinum → 💎 Diamond → 👑 Legend
+- **Season** - 1 month duration, partial rating reset, exclusive cosmetic rewards
+
+**Mechanics:**
+- 1v1 synchronized gameplay (7 identical questions)
+- Winner: more correct answers OR faster time (tiebreaker)
+- **NO bonuses allowed** (pure skill)
+- Matchmaking by MMR
 
 **API:** WebSocket `/ws/duel`
-**Database:** `duel_games` table
+**DB:** `duel_games`
+**❌ Avoid:** Match, PvPGame, QuickDuel as aggregate
 
 ---
 
-### Party Mode (Режим вечеринки)
-**Domain:** `party_mode.PartyRoom` + `party_mode.PartyGame` aggregate roots
-**Определение:** Мультиплеер 2-8 игроков в приватной комнате
-**Два агрегата:**
-1. `PartyRoom` - лобби перед игрой
-2. `PartyGame` - активная игра
+### Party Mode Context (Arcade PvP)
+**Aggregate Root:** `party_mode.PartyRoom` (lobby) + `party_mode.PartyGame` (active game)
 
-**Ключевые механики:**
-- Room Code (код комнаты ABC-123)
-- Host Permissions (права хоста)
-- Custom Settings (настройки комнаты)
-- Real-time (WebSocket)
+**Key Concepts:**
+- **Room Code** - ABC-123 format for private rooms
+- **Host Permissions** - Room creator controls
+- **Weekly Modifiers** - Changing rules each week (Knockout, Speed, Themed, Bonuses Allowed, True/False)
 
-**Код:**
-```go
-// Лобби
-type PartyRoom struct {
-    id       RoomID
-    code     RoomCode  // ABC-123
-    hostID   UserID
-    players  []RoomPlayer
-    settings RoomSettings
-    status   RoomStatus  // Lobby, Playing, Finished
-}
-
-// Активная игра
-type PartyGame struct {
-    id       GameID
-    roomID   RoomID
-    players  []PartyPlayer
-    questions []QuestionID
-    currentRound int
-}
-```
-
-**Терминология:**
-- ✅ `PartyRoom` - комната (лобби)
-- ✅ `PartyGame` - активная игра
-- ✅ `RoomCode` - код комнаты (ABC-123)
-- ✅ `hostID` - ID хоста комнаты
-- ❌ НЕ `Lobby` как aggregate (это статус `PartyRoom`)
-- ❌ НЕ `MultiplayerGame`
+**Mechanics:**
+- 4 players per match
+- Last man standing
+- Quick matchmaking (no MMR)
+- Private rooms with friends
+- PvP Ticket entry cost
+- Small coin reward for winner
 
 **API:** WebSocket `/ws/party`
-**Database:** `party_rooms`, `party_games` tables
+**DB:** `party_rooms`, `party_games`
+**❌ Avoid:** Lobby as aggregate, MultiplayerGame
 
 ---
 
-## ⚙️ Игровые механики (Game Mechanics)
+## Value Objects
 
-### Lives (Жизни)
-**Domain:** `solo_marathon.LivesSystem` value object
-**Определение:** Система жизней с автоматической регенерацией по времени
-**Правила:**
-- Максимум 3 жизни
-- Теряется 1 жизнь за неправильный ответ
-- Регенерируется 1 жизнь каждые 4 часа
-- При 0 жизней - game over
+### Lives System
+- **Context:** Solo Marathon
+- **Value Object:** `solo_marathon.LivesSystem`
+- **Rules:** Max 3, -1 per error, game over at 0
+- **❌ Avoid:** HP, Health, Hearts
 
-**Код:**
+### Streak
+**Context-dependent meanings:**
+1. **Marathon Streak:** `currentStreak` - consecutive correct answers (resets on error)
+2. **Daily Streak:** `dailyStreak` - consecutive days played (NOT reset on errors)
+- **❌ Avoid:** combo, chain
+
+### ELO Rating
+- **Context:** PvP Duel
+- **Value Object:** `quick_duel.EloRating`
+- **Rules:** Start 1000, K-factor 32→16, min 100
+- **❌ Avoid:** MMR, Rank without clarification
+
+### Bonus Types
+- **Context:** Solo Marathon
+- **Value Object:** `solo_marathon.BonusType`
+- **Types:** `shield`, `fifty_fifty`, `skip`, `freeze`
+- **❌ Avoid:** PowerUp, Boost, Help
+
+### Daily Chest
+- **Context:** Daily Challenge
+- **Value Object:** `daily_challenge.ChestType`
+- **Types:** `wooden` (0-4 correct), `silver` (5-7), `golden` (8-10)
+- **Contents:** PvP Tickets, Coins, Marathon Bonuses
+
+### PvP Ticket
+- **Value Object:** `pvp.Ticket`
+- **Usage:** Entry cost for PvP Duel and Party Mode
+- **Source:** Earned from Daily Challenge Chest
+
+### Difficulty
+- **Levels:** `easy`, `medium`, `hard`
+- **Contexts:** Question difficulty (property) vs Adaptive difficulty (Marathon progression)
+- **❌ Avoid:** level as difficulty
+
+### Leaderboard
+- **Read Model (CQRS)**
+- **Types:** Daily Global/Friends/Country, Marathon Weekly/All-Time, PvP Seasonal
+- **Storage:** Redis Sorted Sets
+- **❌ Avoid:** Ranking, TopScores
+
+---
+
+## DDD Patterns
+
+### Aggregate Root
+**Definition:** Main entity controlling invariants and transaction boundaries
+**Examples:** `Quiz`, `MarathonGame`, `DuelGame`, `PartyRoom`, `DailyQuiz`, `User`
+**Rule:** All changes ONLY through aggregate root
+
+### Entity
+**Definition:** Object with unique identity (meaningless outside aggregate)
+**Examples:** `Question`, `Answer`, `DuelPlayer`, `PartyPlayer`
+
+### Value Object
+**Definition:** Immutable object without identity
+**Examples:** `QuizID`, `Points`, `LivesSystem`, `EloRating`, `ChestType`, `Ticket`
+**Rule:** Methods return new object (NO mutation)
+
+### Domain Service
+**Definition:** Business logic coordinating multiple aggregates
+**Examples:** `DailyQuizSelector`, `MatchmakingService`, `ChestRewardCalculator`
+
+### Repository
+**Definition:** Interface for aggregate root persistence
+**Rule:** Defined in DOMAIN, implemented in INFRASTRUCTURE
+**❌ Avoid:** DAO, Storage
+
+### Domain Event
+**Definition:** Fact that happened in domain (past tense!)
+**Examples:** `GameStartedEvent`, `AnswerSubmittedEvent`, `GameOverEvent`, `ChestOpenedEvent`
+**❌ Avoid:** Present tense (StartGameEvent)
+
+### Shared Kernel
+**Definition:** Common domain logic shared by bounded contexts
+**In project:** `kernel.QuizGameplaySession` - used by all game modes
+
+---
+
+## Naming Conventions
+
+### Go Domain
 ```go
-type LivesSystem struct {
-    maxLives      int
-    currentLives  int
-    regenInterval int64  // 4 hours in seconds
-    lastUpdate    int64  // Unix timestamp
-}
-```
-
-**Терминология:**
-- ✅ `Lives` - жизни
-- ✅ `LivesSystem` - система жизней
-- ❌ НЕ `HP`, НЕ `Health`, НЕ `Hearts`
-
-**Используется в:** Solo Marathon
-
----
-
-### Streak (Серия)
-**Определение:** Последовательность успешных действий
-**Контексты (разные значения!):**
-
-1. **Solo Marathon: Current Streak**
-   - Подряд правильных ответов в текущей игре
-   - Сбрасывается на 0 при неправильном ответе
-   - Влияет на сложность вопросов
-   ```go
-   type MarathonGame struct {
-       currentStreak int  // Текущая серия
-       maxStreak     int  // Лучшая серия в этой игре
-   }
-   ```
-
-2. **Daily Challenge: Daily Streak**
-   - Дней подряд играл в Daily Challenge
-   - НЕ сбрасывается при неправильных ответах
-   - Сбрасывается если пропустил день
-   ```go
-   type StreakSystem struct {
-       currentStreak int  // Дней подряд
-       bestStreak    int  // Лучшая серия всех времён
-       lastPlayedDate Date
-   }
-   ```
-
-**Терминология:**
-- ✅ `currentStreak` - текущая серия
-- ✅ `maxStreak` / `bestStreak` - лучшая серия
-- ❌ НЕ `combo`, НЕ `chain`
-
----
-
-### ELO Rating (Рейтинг ELO)
-**Domain:** `quick_duel.EloRating` value object
-**Определение:** Шахматный рейтинг для Quick Duel режима
-**Правила:**
-- Начальный рейтинг: 1000
-- K-фактор: 32 (первые 30 игр) → 16
-- Минимум: 100
-- Изменение: ±12 в среднем
-
-**Код:**
-```go
-type EloRating struct {
-    rating      int
-    gamesPlayed int
-}
-
-func (e EloRating) KFactor() int {
-    if e.gamesPlayed < 30 {
-        return 32
-    }
-    return 16
-}
-```
-
-**Терминология:**
-- ✅ `EloRating` - рейтинг игрока
-- ✅ `eloChange` - изменение рейтинга после игры
-- ❌ НЕ `MMR`, НЕ `Rank`, НЕ `Rating` без уточнения
-
-**Используется в:** Quick Duel
-
----
-
-### Hint (Подсказка)
-**Domain:** `solo_marathon.HintType` enum + `solo_marathon.HintsSystem` value object
-**Определение:** Помощь игроку во время ответа на вопрос
-**Типы:**
-- `fifty_fifty` - убрать 2 неправильных ответа
-- `extra_time` - добавить 10 секунд к таймеру
-- `skip` - пропустить вопрос без потери жизни
-
-**Код:**
-```go
-type HintType string
-
-const (
-    HintFiftyFifty HintType = "fifty_fifty"
-    HintExtraTime  HintType = "extra_time"
-    HintSkip       HintType = "skip"
-)
-
-type HintsSystem struct {
-    fiftyFifty int  // Количество доступных 50/50
-    extraTime  int
-    skip       int
-}
-```
-
-**Терминология:**
-- ✅ `Hint` - подсказка
-- ✅ `HintType` - тип подсказки
-- ✅ `HintsSystem` - система подсказок
-- ❌ НЕ `PowerUp`, НЕ `Boost`, НЕ `Help`
-
-**Используется в:** Solo Marathon
-
----
-
-### Difficulty (Сложность)
-**Domain:** `quiz.Difficulty` enum + `solo_marathon.DifficultyProgression` value object
-**Уровни:**
-- `easy` - лёгкие вопросы
-- `medium` - средние вопросы
-- `hard` - сложные вопросы
-
-**Контексты:**
-
-1. **Question Difficulty (сложность вопроса):**
-   ```go
-   type Question struct {
-       difficulty string  // "easy", "medium", "hard"
-   }
-   ```
-
-2. **Adaptive Difficulty (адаптивная сложность в Marathon):**
-   ```go
-   type DifficultyProgression struct {
-       level DifficultyLevel  // Beginner → Master
-   }
-
-   type DifficultyDistribution struct {
-       Easy   float64  // 0.8 = 80% лёгких вопросов
-       Medium float64
-       Hard   float64
-   }
-   ```
-
-**Терминология:**
-- ✅ `difficulty` - сложность
-- ✅ `DifficultyProgression` - прогрессия сложности
-- ❌ НЕ `level` в значении сложности (level = уровень игрока)
-
----
-
-### Leaderboard (Таблица лидеров)
-**Domain:** Read model (CQRS)
-**Определение:** Рейтинг игроков по результатам
-**Типы:**
-
-1. **Quiz Leaderboard** - топ игроков в конкретном Quiz
-2. **Global Leaderboard** - топ игроков по всем Quiz
-3. **Daily Leaderboard** - топ игроков в Daily Challenge
-4. **Marathon Leaderboard** - топ по категориям в Marathon
-
-**Код:**
-```go
-type LeaderboardEntry struct {
-    userID   UserID
-    username string
-    score    Points
-    rank     int
-}
-```
-
-**Хранение:** Redis Sorted Sets
-**Терминология:**
-- ✅ `Leaderboard` - таблица лидеров
-- ✅ `LeaderboardEntry` - запись в таблице
-- ❌ НЕ `Ranking`, НЕ `TopScores`
-
----
-
-## 🏗️ Технические термины DDD (Domain-Driven Design)
-
-### Aggregate Root (Корень агрегата)
-**Определение:** Главная сущность, контролирующая инварианты и границы транзакций
-**Примеры:**
-- `Quiz` - корень агрегата вопросов
-- `MarathonGame` - корень игры в Marathon
-- `DuelGame` - корень дуэли
-- `PartyRoom` - корень комнаты
-- `User` - корень пользователя
-
-**Правило:** Все изменения в aggregate идут ТОЛЬКО через aggregate root
-**Код:**
-```go
-// ✅ Правильно
-quiz.AddQuestion(question)
-
-// ❌ Неправильно (прямое изменение)
-quiz.questions = append(quiz.questions, question)
-```
-
----
-
-### Entity (Сущность)
-**Определение:** Объект с уникальной идентичностью
-**Примеры:**
-- `Question` - сущность внутри `Quiz` aggregate
-- `Answer` - сущность внутри `Question`
-- `DuelPlayer` - сущность внутри `DuelGame`
-
-**Отличие от Aggregate Root:** Entity не имеет смысла вне своего aggregate
-**Код:**
-```go
-type Question struct {
-    id   QuestionID  // Идентичность
-    text QuestionText
-}
-```
-
----
-
-### Value Object (Объект-значение)
-**Определение:** Иммутабельный объект без идентичности, определяемый своими атрибутами
-**Примеры:**
-- `QuizID`, `QuestionID`, `UserID` - идентификаторы
-- `Points` - очки
-- `LivesSystem` - система жизней
-- `EloRating` - рейтинг
-- `RoomCode` - код комнаты
-
-**Правило:** Value Objects иммутабельны (методы возвращают новый объект)
-**Код:**
-```go
-type LivesSystem struct {
-    currentLives int
-    maxLives     int
-}
-
-// ✅ Возвращает новый объект
-func (ls LivesSystem) LoseLife() LivesSystem {
-    return LivesSystem{
-        currentLives: ls.currentLives - 1,
-        maxLives:     ls.maxLives,
-    }
-}
-
-// ❌ НЕ мутируем!
-func (ls *LivesSystem) LoseLife() {
-    ls.currentLives--  // WRONG!
-}
-```
-
----
-
-### Domain Service (Доменный сервис)
-**Определение:** Бизнес-логика, которая не принадлежит одному aggregate
-**Когда использовать:** Операция требует координации нескольких aggregates
-**Примеры:**
-- `DailyQuizSelector` - выбор вопросов для Daily Challenge
-- `MatchmakingService` - поиск соперника для Duel
-
-**Код:**
-```go
-type DailyQuizSelector struct {
-    questionRepo quiz.QuestionRepository
-}
-
-func (s *DailyQuizSelector) SelectQuestionsForDate(date Date) ([]quiz.QuestionID, error) {
-    // Business logic:
-    // 1. Get questions from all categories
-    // 2. Exclude questions from last 30 days
-    // 3. Balance categories
-    // 4. Sort by difficulty
-}
-```
-
----
-
-### Repository (Репозиторий)
-**Определение:** Интерфейс для персистентности aggregate roots
-**Правило:** Repository определяется в DOMAIN layer, реализуется в INFRASTRUCTURE
-**Примеры:**
-```go
-// domain/solo_marathon/repository.go
-type Repository interface {
-    Save(game *MarathonGame) error
-    FindByID(id GameID) (*MarathonGame, error)
-    FindActiveByUser(userID UserID) (*MarathonGame, error)
-}
-
-// infrastructure/persistence/postgres/marathon_repository.go
-type PostgresMarathonRepository struct {
-    db *sql.DB
-}
-
-func (r *PostgresMarathonRepository) Save(game *MarathonGame) error {
-    // SQL implementation
-}
-```
-
-**Терминология:**
-- ✅ `Repository` - интерфейс в domain
-- ✅ `PostgresMarathonRepository` - реализация в infrastructure
-- ❌ НЕ `DAO`, НЕ `Storage`
-
----
-
-### Domain Event (Доменное событие)
-**Определение:** Факт, произошедший в domain (прошедшее время!)
-**Примеры:**
-- `QuizStartedEvent` - Quiz был начат
-- `AnswerSubmittedEvent` - Ответ был отправлен
-- `GameOverEvent` - Игра завершена
-- `MatchFoundEvent` - Соперник найден
-
-**Код:**
-```go
-type GameOverEvent struct {
-    gameID      GameID
-    maxStreak   int
-    isNewRecord bool
-    occurredAt  int64
-}
-
-// Aggregate собирает события
-func (mg *MarathonGame) AnswerQuestion(...) {
-    // Business logic
-
-    if !mg.lives.HasLives() {
-        mg.events = append(mg.events, NewGameOverEvent(mg.id, mg.maxStreak))
-    }
-}
-
-// Application публикует события
-events := game.Events()
-eventBus.Publish(events...)
-```
-
-**Терминология:**
-- ✅ Прошедшее время: `GameStartedEvent`, `AnswerSubmittedEvent`
-- ❌ НЕ настоящее время: `StartGameEvent`, `SubmitAnswerEvent`
-
----
-
-### Shared Kernel (Общее ядро)
-**Определение:** Общая domain-логика, используемая несколькими bounded contexts
-**В Quiz Sprint:**
-- `kernel.QuizGameplaySession` - чистая логика геймплея
-- Используется всеми режимами: Marathon, Daily Challenge, Duel, Party
-
-**Код:**
-```go
-// kernel/quiz_gameplay_session.go
-type QuizGameplaySession struct {
-    id          SessionID
-    quiz        *quiz.Quiz
-    userAnswers map[QuestionID]AnswerData
-    baseScore   Points  // БЕЗ mode-specific бонусов
-}
-
-// solo_marathon/marathon_game.go
-type MarathonGame struct {
-    session *kernel.QuizGameplaySession  // Композиция
-    lives   LivesSystem                  // Mode-specific
-    hints   HintsSystem                  // Mode-specific
-}
-```
-
----
-
-## 📝 Naming Conventions (Соглашения об именовании)
-
-### Go Domain Layer
-
-#### Aggregates
-```go
-// Существительное в единственном числе
-type Quiz struct { ... }
+// Aggregates - singular noun
 type MarathonGame struct { ... }
-type DuelGame struct { ... }
-type PartyRoom struct { ... }
-```
 
-#### Value Objects
-```go
-// Существительное
-type QuizID struct { ... }
-type Points struct { ... }
+// Value Objects - noun
 type LivesSystem struct { ... }
-type EloRating struct { ... }
-```
+type ChestType string
 
-#### Domain Services
-```go
-// Существительное + Service
+// Domain Services - noun + Service
 type MatchmakingService struct { ... }
-type DailyQuizSelector struct { ... }
-```
 
-#### Methods (aggregate methods)
-```go
-// Глагол в повелительном наклонении
+// Methods - imperative verb
 func (mg *MarathonGame) AnswerQuestion(...) { ... }
-func (mg *MarathonGame) UseHint(...) { ... }
-func (pr *PartyRoom) AddPlayer(...) { ... }
-func (pr *PartyRoom) StartGame(...) { ... }
-```
+func (mg *MarathonGame) UseBonus(...) { ... }
 
-#### Factory Methods
-```go
-// New + AggregateRoot
+// Factory Methods
 func NewMarathonGame(...) (*MarathonGame, error) { ... }
-func NewDuelGame(...) (*DuelGame, error) { ... }
+func ReconstructMarathonGame(...) *MarathonGame { ... }  // for DB loading
 
-// Reconstruct + AggregateRoot (для загрузки из БД)
-func ReconstructMarathonGame(...) *MarathonGame { ... }
-```
-
-#### Domain Events
-```go
-// Прошедшее время + Event
+// Domain Events - past tense + Event
 type GameStartedEvent struct { ... }
-type AnswerSubmittedEvent struct { ... }
-type GameOverEvent struct { ... }
-type MatchFoundEvent struct { ... }
+type ChestOpenedEvent struct { ... }
+
+// Enums
+type BonusType string
+const (
+    BonusShield     BonusType = "shield"
+    BonusFiftyFifty BonusType = "fifty_fifty"
+    BonusSkip       BonusType = "skip"
+    BonusFreeze     BonusType = "freeze"
+)
 ```
 
----
-
-### Database Tables
-
-#### Основные правила
-- snake_case
-- Множественное число
-- Aggregate root = одна таблица
-
+### Database
 ```sql
--- Aggregates
-CREATE TABLE quizzes (...);
+-- snake_case, plural
 CREATE TABLE marathon_games (...);
+CREATE TABLE daily_quizzes (...);
+CREATE TABLE daily_games (...);
 CREATE TABLE duel_games (...);
 CREATE TABLE party_rooms (...);
-CREATE TABLE users (...);
 
--- Junction tables (связующие)
-CREATE TABLE party_room_players (...);  -- party_room + players
-CREATE TABLE quiz_tags (...);           -- quiz + tags
-
--- Child entities (если не JSONB)
-CREATE TABLE questions (...);
-CREATE TABLE answers (...);
+-- Indexes: idx_ + table + columns
+CREATE INDEX idx_marathon_games_player_active ON marathon_games(player_id, is_active);
+CREATE INDEX idx_daily_games_date ON daily_games(date DESC);
 ```
 
-#### Индексы
-```sql
--- idx_ + таблица + колонки
-CREATE INDEX idx_marathon_games_player_active
-    ON marathon_games(player_id, is_active);
-
-CREATE INDEX idx_duel_games_started
-    ON duel_games(started_at DESC);
+### API
+```
+REST: /api/v1/{mode}/{resource}/{action}
+WebSocket messages: type in snake_case {"type": "find_match"}
 ```
 
----
-
-### API Endpoints
-
-#### REST API
-```
-Pattern: /api/v1/{режим}/{ресурс}/{действие}
-
-Solo Marathon:
-POST   /api/v1/marathon/start
-POST   /api/v1/marathon/{gameId}/answer
-POST   /api/v1/marathon/{gameId}/hint
-DELETE /api/v1/marathon/{gameId}
-GET    /api/v1/marathon/leaderboard
-
-Daily Challenge:
-POST   /api/v1/daily/start
-POST   /api/v1/daily/{gameId}/answer
-GET    /api/v1/daily/leaderboard
-
-Quick Duel:
-WebSocket: /ws/duel
-
-Party Mode:
-WebSocket: /ws/party
-```
-
-#### WebSocket Messages
-```json
-// type в snake_case
-{
-    "type": "find_match",
-    "elo": 1200
-}
-
-{
-    "type": "match_found",
-    "gameId": "..."
-}
-
-{
-    "type": "submit_answer",
-    "answerId": "..."
-}
-```
-
----
-
-### Frontend (Vue/TypeScript)
-
-#### Views (страницы)
-```
-PascalCase + режим
-
-MarathonHome.vue
+### Frontend
+```typescript
+// Views - PascalCase
 MarathonGame.vue
 DailyChallenge.vue
-DuelGame.vue
-PartyRoom.vue
-PartyLobby.vue
-```
 
-#### Composables
-```typescript
-// camelCase + use prefix
+// Composables - camelCase + use prefix
 useSoloMarathon()
 useDailyChallenge()
-useQuickDuel()
-usePartyMode()
-useLives()
-useHints()
-```
 
-#### Components
-```
-PascalCase
-
+// Components - PascalCase
 QuestionCard.vue
-AnswerButton.vue
-LivesIndicator.vue
-TimerBar.vue
-LeaderboardTable.vue
-```
-
-#### API Calls (generated from Swagger)
-```typescript
-// hooks/marathon.ts (auto-generated)
-useStartMarathon()
-useSubmitMarathonAnswer()
-useGetMarathonLeaderboard()
+ChestReward.vue
 ```
 
 ---
 
-## ❌ Anti-patterns (Что НЕ использовать)
+## Anti-patterns
 
-### Избегать синонимов
+### Avoid Synonyms
+| ❌ DON'T use | ✅ DO use |
+|-------------|----------|
+| Test, Questionnaire | Quiz |
+| Match | DuelGame |
+| Run | MarathonGame |
+| Session (for modes) | Game |
+| HP, Health | Lives |
+| PowerUp, Boost | Bonus |
+| Combo, Chain | Streak |
+| Challenge (without context) | DailyGame or DailyQuiz |
 
-| ❌ НЕ использовать | ✅ Использовать | Контекст |
-|-------------------|----------------|----------|
-| `Test`, `Questionnaire` | `Quiz` | Контент вопросов |
-| `Match` | `DuelGame` | Quick Duel |
-| `Run` | `MarathonGame` | Solo Marathon |
-| `Challenge` (без уточнения) | `DailyGame` или `DailyQuiz` | Daily Challenge |
-| `Session` (для режимов) | `Game` | Процесс прохождения |
-| `HP`, `Health` | `Lives` | Жизни в Marathon |
-| `PowerUp`, `Boost` | `Hint` | Подсказки |
-| `Combo`, `Chain` | `Streak` | Серия |
-| `Ranking`, `TopScores` | `Leaderboard` | Таблица лидеров |
-| `Lobby` (как aggregate) | `PartyRoom` (со статусом Lobby) | Party Mode |
-
-### Избегать двусмысленности
-
+### Avoid Ambiguity
 ```go
-// ❌ ПЛОХО - неясно, это контент или процесс?
-type Quiz struct {
-    userScore int  // ???
-}
+// ❌ BAD - mixing content and process
+type Quiz struct { userScore int }
 
-// ✅ ХОРОШО - чёткое разделение
-type Quiz struct {
-    questions []Question  // Контент
-}
-
-type MarathonGame struct {
-    quiz   *Quiz  // Ссылка на контент
-    score  int    // Процесс
-}
+// ✅ GOOD - clear separation
+type Quiz struct { questions []Question }
+type MarathonGame struct { quiz *Quiz; score int }
 ```
 
-### Избегать generic названий
-
+### Avoid Generic Names
 ```go
-// ❌ ПЛОХО
-type GameSession struct { ... }  // Какой игры?
-type Player struct { ... }       // В каком контексте?
+// ❌ BAD
+type GameSession struct { ... }  // Which game?
 
-// ✅ ХОРОШО
+// ✅ GOOD
 type MarathonGame struct { ... }
 type DuelPlayer struct { ... }
-type PartyPlayer struct { ... }
 ```
 
 ---
 
-## 📖 Примеры использования
+## Cross-Context Integration
 
-### Пример 1: Обсуждение задачи
-
-❌ **Плохо:**
-> "Нужно добавить систему HP в соло режим"
-
-✅ **Хорошо:**
-> "Нужно добавить LivesSystem в MarathonGame aggregate"
-
----
-
-### Пример 2: Код review
-
-❌ **Плохо:**
-```go
-type SoloSession struct {
-    health int
-}
+### Resource Flow
+```
+Daily Challenge → Daily Chest → Resources:
+  ├─ PvP Tickets → PvP Duel / Party Mode
+  ├─ Coins → Shop, Marathon Continue, Streak Recovery
+  └─ Marathon Bonuses → Solo Marathon strategic usage
 ```
 
-✅ **Хорошо:**
-```go
-type MarathonGame struct {
-    lives LivesSystem
-}
-```
-
----
-
-### Пример 3: Документация
-
-❌ **Плохо:**
-> "Когда пользователь начинает test, создаётся session в базе"
-
-✅ **Хорошо:**
-> "Когда пользователь начинает MarathonGame, создаётся запись в таблице marathon_games"
-
----
-
-### Пример 4: Commit message
-
-❌ **Плохо:**
-```
-feat: add HP system to solo mode
-```
-
-✅ **Хорошо:**
-```
-feat(marathon): add LivesSystem to MarathonGame aggregate
-```
-
----
-
-## 📅 Changelog
-
-### 2026-01-25 - v1.0
-- ✅ Создан начальный глоссарий
-- ✅ Добавлены все 4 игровых режима
-- ✅ Добавлены игровые механики (Lives, Streak, ELO, Hints)
-- ✅ Добавлены DDD термины (Aggregate, Entity, Value Object, Domain Service)
-- ✅ Добавлены naming conventions для всех слоёв
-- ✅ Добавлены anti-patterns
-
----
-
-## 🔗 Связанные документы
-
-- **CLAUDE.md** - Инструкции для Claude Code (ссылается на этот глоссарий)
-- **DOMAIN.md** - Описание domain model
-- **docs/01_quick_duel.md** - Спецификация Quick Duel
-- **docs/02_daily_challenge.md** - Спецификация Daily Challenge
-- **docs/03_solo_marathon.md** - Спецификация Solo Marathon
-- **docs/04_party_mode.md** - Спецификация Party Mode
-
----
-
-## 💡 Как использовать этот глоссарий
-
-### Для разработчиков:
-1. Читайте перед написанием кода
-2. Используйте точные термины из глоссария
-3. При сомнениях - ищите термин здесь
-4. Предлагайте изменения через PR
-
-### Для LLM (Claude Code):
-1. **ВСЕГДА** читать перед генерацией кода
-2. Использовать только термины из глоссария
-3. Следовать naming conventions
-4. Избегать anti-patterns
-
-### Для документации:
-1. Использовать единую терминологию
-2. Ссылаться на глоссарий при первом упоминании термина
-3. Обновлять глоссарий при добавлении новых концепций
-
----
-
-**Вопросы или предложения?**
-Создайте issue с меткой `glossary` в репозитории.
+### Monetization Points
+- **Daily Challenge:** Second attempt, Streak recovery, Premium (chest upgrade)
+- **Solo Marathon:** Continue run, Bonus packs
+- **PvP Duel:** Ticket purchase, Cosmetics
+- **Party Mode:** Ticket purchase, Rewarded ad for free ticket

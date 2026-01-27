@@ -18,6 +18,11 @@ type QuestionRepository interface {
 	// Used by: Marathon (1 question at a time), Duel (select 7), Party (select N)
 	FindRandomQuestions(filter QuestionFilter, limit int) ([]*Question, error)
 
+	// FindQuestionsBySeed retrieves questions using deterministic seed
+	// Used by: Daily Challenge (ensures all players get same questions for a given date)
+	// seed should be derived from date (e.g., hash("2026-01-25") -> int64)
+	FindQuestionsBySeed(filter QuestionFilter, limit int, seed int64) ([]*Question, error)
+
 	// CountByFilter returns count of questions matching filter
 	// Used for: validation, statistics
 	CountByFilter(filter QuestionFilter) (int, error)

@@ -4,6 +4,8 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## 📚 IMPORTANT: Read Before Coding
 
+It is essential to always be concise, avoid unnecessary constructions, and document only what is essential.
+
 **ALWAYS read these documents before generating code:**
 - **[docs/GLOSSARY.md](docs/GLOSSARY.md)** - Ubiquitous Language (единый словарь терминов)
   - Используй ТОЛЬКО термины из глоссария

@@ -155,6 +155,35 @@ func (r *QuestionRepository) FindRandomQuestions(filter quiz.QuestionFilter, lim
 	return r.scanQuestions(rows)
 }
 
+// FindQuestionsBySeed retrieves questions using deterministic seed
+// This ensures all players get the same questions for the same seed (e.g., daily challenge date)
+func (r *QuestionRepository) FindQuestionsBySeed(filter quiz.QuestionFilter, limit int, seed int64) ([]*quiz.Question, error) {
+	// PostgreSQL's setseed() requires a value between -1.0 and 1.0
+	// We normalize the seed: seed % 1000000 / 1000000.0 gives us 0.0 to 0.999999
+	normalizedSeed := float64(seed%1000000) / 1000000.0
+
+	// Set the random seed for this session
+	_, err := r.db.Exec("SELECT setseed($1)", normalizedSeed)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set seed: %w", err)
+	}
+
+	// Build query with ORDER BY random() (but now it's deterministic due to setseed)
+	query, args := r.buildFilterQuery(filter, true)
+
+	// Add limit
+	args = append(args, limit)
+	query += fmt.Sprintf(" LIMIT $%d", len(args))
+
+	rows, err := r.db.Query(query, args...)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query questions by seed: %w", err)
+	}
+	defer rows.Close()
+
+	return r.scanQuestions(rows)
+}
+
 // CountByFilter returns count of questions matching filter
 func (r *QuestionRepository) CountByFilter(filter quiz.QuestionFilter) (int, error) {
 	baseQuery, args := r.buildFilterQueryBase(filter)

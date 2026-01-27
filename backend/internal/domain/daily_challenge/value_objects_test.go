@@ -385,3 +385,70 @@ func TestGameStatus_IsTerminal(t *testing.T) {
 		})
 	}
 }
+
+// TestDate_ToSeed tests deterministic seed generation from dates
+func TestDate_ToSeed(t *testing.T) {
+	tests := []struct {
+		name         string
+		date         Date
+		expectedSeed int64
+	}{
+		{
+			name:         "Standard date",
+			date:         NewDate(2026, time.January, 25),
+			expectedSeed: 20260125, // YYYYMMDD format
+		},
+		{
+			name:         "Different year",
+			date:         NewDate(2025, time.January, 25),
+			expectedSeed: 20250125,
+		},
+		{
+			name:         "Different month",
+			date:         NewDate(2026, time.December, 25),
+			expectedSeed: 20261225,
+		},
+		{
+			name:         "Different day",
+			date:         NewDate(2026, time.January, 1),
+			expectedSeed: 20260101,
+		},
+		{
+			name:         "Leap year date",
+			date:         NewDate(2024, time.February, 29),
+			expectedSeed: 20240229,
+		},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			seed := tt.date.ToSeed()
+			if seed != tt.expectedSeed {
+				t.Errorf("ToSeed() = %d, want %d", seed, tt.expectedSeed)
+			}
+		})
+	}
+}
+
+// TestDate_ToSeed_Deterministic verifies same date always produces same seed
+func TestDate_ToSeed_Deterministic(t *testing.T) {
+	date1 := NewDate(2026, time.January, 25)
+	date2 := NewDate(2026, time.January, 25)
+	date3 := NewDateFromString("2026-01-25")
+
+	seed1 := date1.ToSeed()
+	seed2 := date2.ToSeed()
+	seed3 := date3.ToSeed()
+
+	if seed1 != seed2 || seed2 != seed3 {
+		t.Errorf("Same date should produce same seed: %d, %d, %d", seed1, seed2, seed3)
+	}
+
+	// Verify different dates produce different seeds
+	differentDate := NewDate(2026, time.January, 26)
+	differentSeed := differentDate.ToSeed()
+
+	if seed1 == differentSeed {
+		t.Error("Different dates should produce different seeds")
+	}
+}

@@ -112,6 +112,23 @@ func (d Date) Previous() Date {
 	return NewDateFromTime(prev)
 }
 
+// ToSeed converts date to deterministic seed for question generation
+// Same date always produces the same seed, ensuring all players get identical questions
+// Example: "2026-01-25" -> 20260125 -> used for setseed() in PostgreSQL
+func (d Date) ToSeed() int64 {
+	// Parse date "2006-01-02" into year, month, day
+	t, _ := time.Parse("2006-01-02", d.value)
+
+	// Create seed: YYYYMMDD as integer
+	// Example: 2026-01-25 -> 20260125
+	year := t.Year()
+	month := int(t.Month())
+	day := t.Day()
+
+	seed := int64(year*10000 + month*100 + day)
+	return seed
+}
+
 // StreakSystem manages daily streak tracking
 type StreakSystem struct {
 	currentStreak  int    // Days in a row played
