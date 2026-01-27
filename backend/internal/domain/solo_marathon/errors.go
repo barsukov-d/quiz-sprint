@@ -10,6 +10,7 @@ var (
 	ErrGameAlreadyFinished = errors.New("marathon game already finished")
 	ErrGameNotActive       = errors.New("marathon game is not active")
 	ErrInvalidGameStatus   = errors.New("invalid game status transition")
+	ErrActiveGameExists    = errors.New("player already has an active marathon game")
 
 	// Lives errors
 	ErrNoLivesRemaining = errors.New("no lives remaining")

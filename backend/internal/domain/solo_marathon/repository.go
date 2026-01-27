@@ -1,16 +1,17 @@
 package solo_marathon
 
 // Repository defines the interface for marathon game persistence
+// NOTE: Now uses MarathonGameV2 (endless mode with dynamic questions)
 type Repository interface {
 	// Save persists a marathon game
-	Save(game *MarathonGame) error
+	Save(game *MarathonGameV2) error
 
 	// FindByID retrieves a marathon game by ID
-	FindByID(id GameID) (*MarathonGame, error)
+	FindByID(id GameID) (*MarathonGameV2, error)
 
 	// FindActiveByPlayer retrieves the active marathon game for a player
 	// Returns nil if no active game found
-	FindActiveByPlayer(playerID UserID) (*MarathonGame, error)
+	FindActiveByPlayer(playerID UserID) (*MarathonGameV2, error)
 
 	// Delete removes a marathon game
 	Delete(id GameID) error

@@ -31,6 +31,22 @@ type AnswerData struct {
 	answeredAt int64 // Unix timestamp
 }
 
+// NewAnswerData creates a new AnswerData (used for reconstruction from persistence)
+func NewAnswerData(answerID AnswerID, isCorrect bool, timeTaken int64, answeredAt int64) AnswerData {
+	return AnswerData{
+		answerID:   answerID,
+		isCorrect:  isCorrect,
+		timeTaken:  timeTaken,
+		answeredAt: answeredAt,
+	}
+}
+
+// Getters for AnswerData
+func (a AnswerData) AnswerID() AnswerID   { return a.answerID }
+func (a AnswerData) IsCorrect() bool      { return a.isCorrect }
+func (a AnswerData) TimeTaken() int64     { return a.timeTaken }
+func (a AnswerData) AnsweredAt() int64    { return a.answeredAt }
+
 // NewQuizGameplaySession creates a new gameplay session
 func NewQuizGameplaySession(id SessionID, quiz *quiz.Quiz, startedAt int64) (*QuizGameplaySession, error) {
 	if id.IsZero() {

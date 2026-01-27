@@ -98,6 +98,260 @@ const docTemplate = `{
                 }
             }
         },
+        "/daily-challenge/leaderboard": {
+            "get": {
+                "description": "Get daily challenge leaderboard for a specific date",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "daily-challenge"
+                ],
+                "summary": "Get leaderboard",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Date (YYYY-MM-DD, defaults to today)",
+                        "name": "date",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 10, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Player ID (to get rank)",
+                        "name": "playerId",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Leaderboard",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetDailyLeaderboardResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/daily-challenge/start": {
+            "post": {
+                "description": "Start today's daily challenge (one attempt per day)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "daily-challenge"
+                ],
+                "summary": "Start daily challenge",
+                "parameters": [
+                    {
+                        "description": "Start request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.StartDailyChallengeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Challenge started",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.StartDailyChallengeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Already played today",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/daily-challenge/status": {
+            "get": {
+                "description": "Get player's daily challenge status for today",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "daily-challenge"
+                ],
+                "summary": "Get daily status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Date (YYYY-MM-DD, defaults to today)",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetDailyStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/daily-challenge/streak": {
+            "get": {
+                "description": "Get player's daily streak information",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "daily-challenge"
+                ],
+                "summary": "Get player streak",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Streak info",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetPlayerStreakResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/daily-challenge/{gameId}/answer": {
+            "post": {
+                "description": "Submit answer for current question (no immediate feedback)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "daily-challenge"
+                ],
+                "summary": "Submit answer",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID",
+                        "name": "gameId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Submit request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.SubmitDailyAnswerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Answer submitted",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.SubmitDailyAnswerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/leaderboard": {
             "get": {
                 "description": "Get the global leaderboard across all quizzes (sum of best scores per quiz)",
@@ -124,6 +378,402 @@ const docTemplate = `{
                         "description": "Global leaderboard entries",
                         "schema": {
                             "$ref": "#/definitions/internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/marathon/leaderboard": {
+            "get": {
+                "description": "Get the leaderboard for a specific category or all categories, with optional time frame filter",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "marathon"
+                ],
+                "summary": "Get marathon leaderboard",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Category ID (empty or 'all' for all categories)",
+                        "name": "categoryId",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Time frame: all_time (default), weekly, daily",
+                        "name": "timeFrame",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Number of entries to return (default 10, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Leaderboard entries",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetMarathonLeaderboardResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid parameters",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/marathon/personal-bests": {
+            "get": {
+                "description": "Get all personal best records for a player across all marathon categories",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "marathon"
+                ],
+                "summary": "Get personal best records",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Personal best records",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetPersonalBestsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid player ID",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "No personal bests found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/marathon/start": {
+            "post": {
+                "description": "Start a new marathon game session with adaptive difficulty and dynamic question loading",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "marathon"
+                ],
+                "summary": "Start a marathon game",
+                "parameters": [
+                    {
+                        "description": "Start marathon request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.StartMarathonRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Marathon game started with first question",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.StartMarathonResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or player ID",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Active game already exists",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/marathon/status": {
+            "get": {
+                "description": "Get the status of the player's active marathon game, if any exists",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "marathon"
+                ],
+                "summary": "Get marathon game status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Marathon game status",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetMarathonStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid player ID",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/marathon/{gameId}": {
+            "delete": {
+                "description": "Abandon an active marathon game. Game ends immediately and final statistics are returned.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "marathon"
+                ],
+                "summary": "Abandon a marathon game",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID",
+                        "name": "gameId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Abandon game request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AbandonMarathonRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Game abandoned with final statistics",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AbandonMarathonResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid game ID or game not in progress",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - game belongs to another player",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/marathon/{gameId}/answer": {
+            "post": {
+                "description": "Submit an answer for the current question in a marathon game. Game continues if correct, loses life if incorrect.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "marathon"
+                ],
+                "summary": "Submit an answer in marathon mode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID",
+                        "name": "gameId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Submit answer request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.SubmitMarathonAnswerRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Answer result with next question or game over details",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.SubmitMarathonAnswerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request, game not in progress, or wrong question",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - game belongs to another player",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game, question, or answer not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/marathon/{gameId}/hint": {
+            "post": {
+                "description": "Use a hint to help with the current question. Available hints: fifty_fifty (remove 2 wrong answers), extra_time (+10 seconds), skip (skip question without losing life)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "marathon"
+                ],
+                "summary": "Use a hint in marathon mode",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID",
+                        "name": "gameId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Use hint request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.UseMarathonHintRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Hint result with remaining hints",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.UseMarathonHintResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request, hint not available, or wrong question",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - game belongs to another player",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game or question not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
                     },
                     "500": {
@@ -953,6 +1603,28 @@ const docTemplate = `{
         }
     },
     "definitions": {
+        "internal_infrastructure_http_handlers.AbandonMarathonRequest": {
+            "type": "object",
+            "required": [
+                "playerId"
+            ],
+            "properties": {
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AbandonMarathonResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonGameOverResultDTO"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.AbandonSessionRequest": {
             "type": "object",
             "required": [
@@ -1028,6 +1700,46 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.CreateCategoryData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.DailyGameDTO": {
+            "type": "object",
+            "required": [
+                "date",
+                "gameId",
+                "playerId",
+                "questionIndex",
+                "quizId",
+                "score",
+                "status"
+            ],
+            "properties": {
+                "currentQuestionId": {
+                    "type": "string"
+                },
+                "date": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "gameId": {
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                },
+                "questionIndex": {
+                    "type": "integer"
+                },
+                "quizId": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "status": {
+                    "description": "\"in_progress\" | \"completed\"",
+                    "type": "string"
                 }
             }
         },
@@ -1133,6 +1845,47 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.GameResultsDTO": {
+            "type": "object",
+            "required": [
+                "correctAnswers",
+                "leaderboard",
+                "rank",
+                "reviewAnswers",
+                "score",
+                "totalPlayers",
+                "totalQuestions"
+            ],
+            "properties": {
+                "correctAnswers": {
+                    "type": "integer"
+                },
+                "leaderboard": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO"
+                    }
+                },
+                "rank": {
+                    "type": "integer"
+                },
+                "reviewAnswers": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.ReviewAnswerDTO"
+                    }
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "totalPlayers": {
+                    "type": "integer"
+                },
+                "totalQuestions": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.GetActiveSessionData": {
             "type": "object",
             "required": [
@@ -1179,6 +1932,42 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.GetDailyLeaderboardData": {
+            "type": "object",
+            "required": [
+                "date",
+                "entries",
+                "totalPlayers"
+            ],
+            "properties": {
+                "date": {
+                    "type": "string"
+                },
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO"
+                    }
+                },
+                "playerRank": {
+                    "type": "integer"
+                },
+                "totalPlayers": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetDailyLeaderboardResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.GetDailyLeaderboardData"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.GetDailyQuizResponse": {
             "type": "object",
             "required": [
@@ -1187,6 +1976,42 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.DailyQuizData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetDailyStatusData": {
+            "type": "object",
+            "required": [
+                "hasPlayed",
+                "timeToExpire",
+                "totalPlayers"
+            ],
+            "properties": {
+                "game": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.DailyGameDTO"
+                },
+                "hasPlayed": {
+                    "type": "boolean"
+                },
+                "timeLimit": {
+                    "type": "integer"
+                },
+                "timeToExpire": {
+                    "type": "integer"
+                },
+                "totalPlayers": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetDailyStatusResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.GetDailyStatusData"
                 }
             }
         },
@@ -1215,6 +2040,132 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO"
                     }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetMarathonLeaderboardData": {
+            "type": "object",
+            "required": [
+                "category",
+                "entries",
+                "timeFrame"
+            ],
+            "properties": {
+                "category": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonCategoryDTO"
+                },
+                "entries": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonLeaderboardEntryDTO"
+                    }
+                },
+                "playerRank": {
+                    "type": "integer"
+                },
+                "timeFrame": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetMarathonLeaderboardResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.GetMarathonLeaderboardData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetMarathonStatusData": {
+            "type": "object",
+            "required": [
+                "hasActiveGame"
+            ],
+            "properties": {
+                "game": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonGameDTO"
+                },
+                "hasActiveGame": {
+                    "type": "boolean"
+                },
+                "timeLimit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetMarathonStatusResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.GetMarathonStatusData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetPersonalBestsData": {
+            "type": "object",
+            "required": [
+                "personalBests"
+            ],
+            "properties": {
+                "overallBest": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonPersonalBestDTO"
+                },
+                "personalBests": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonPersonalBestDTO"
+                    }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetPersonalBestsResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.GetPersonalBestsData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetPlayerStreakData": {
+            "type": "object",
+            "required": [
+                "canRestore",
+                "daysToNext",
+                "nextMilestone",
+                "streak"
+            ],
+            "properties": {
+                "canRestore": {
+                    "type": "boolean"
+                },
+                "daysToNext": {
+                    "type": "integer"
+                },
+                "nextMilestone": {
+                    "type": "integer"
+                },
+                "streak": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.StreakDTO"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetPlayerStreakResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.GetPlayerStreakData"
                 }
             }
         },
@@ -1407,6 +2358,215 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.MarathonCategoryDTO": {
+            "type": "object",
+            "required": [
+                "id",
+                "isAllCategories",
+                "name"
+            ],
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "isAllCategories": {
+                    "type": "boolean"
+                },
+                "name": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.MarathonGameDTO": {
+            "type": "object",
+            "required": [
+                "baseScore",
+                "category",
+                "currentStreak",
+                "difficultyLevel",
+                "hints",
+                "id",
+                "lives",
+                "maxStreak",
+                "playerId",
+                "status"
+            ],
+            "properties": {
+                "baseScore": {
+                    "type": "integer"
+                },
+                "category": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonCategoryDTO"
+                },
+                "currentQuestion": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
+                },
+                "currentStreak": {
+                    "type": "integer"
+                },
+                "difficultyLevel": {
+                    "type": "string"
+                },
+                "hints": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonHintsDTO"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lives": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonLivesDTO"
+                },
+                "maxStreak": {
+                    "type": "integer"
+                },
+                "personalBestStreak": {
+                    "type": "integer"
+                },
+                "playerId": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.MarathonGameOverResultDTO": {
+            "type": "object",
+            "required": [
+                "finalStreak",
+                "isNewPersonalBest",
+                "totalBaseScore"
+            ],
+            "properties": {
+                "finalStreak": {
+                    "type": "integer"
+                },
+                "globalRank": {
+                    "type": "integer"
+                },
+                "isNewPersonalBest": {
+                    "type": "boolean"
+                },
+                "previousRecord": {
+                    "type": "integer"
+                },
+                "totalBaseScore": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.MarathonHintResultDTO": {
+            "type": "object",
+            "properties": {
+                "hiddenAnswerIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "newTimeLimit": {
+                    "type": "integer"
+                },
+                "nextQuestion": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
+                },
+                "nextTimeLimit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.MarathonHintsDTO": {
+            "type": "object",
+            "required": [
+                "extraTime",
+                "fiftyFifty",
+                "skip"
+            ],
+            "properties": {
+                "extraTime": {
+                    "type": "integer"
+                },
+                "fiftyFifty": {
+                    "type": "integer"
+                },
+                "skip": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.MarathonLeaderboardEntryDTO": {
+            "type": "object",
+            "required": [
+                "achievedAt",
+                "bestScore",
+                "bestStreak",
+                "playerId",
+                "rank",
+                "username"
+            ],
+            "properties": {
+                "achievedAt": {
+                    "type": "integer"
+                },
+                "bestScore": {
+                    "type": "integer"
+                },
+                "bestStreak": {
+                    "type": "integer"
+                },
+                "playerId": {
+                    "type": "string"
+                },
+                "rank": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.MarathonLivesDTO": {
+            "type": "object",
+            "required": [
+                "currentLives",
+                "maxLives",
+                "timeToNextLife"
+            ],
+            "properties": {
+                "currentLives": {
+                    "type": "integer"
+                },
+                "maxLives": {
+                    "type": "integer"
+                },
+                "timeToNextLife": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.MarathonPersonalBestDTO": {
+            "type": "object",
+            "required": [
+                "achievedAt",
+                "bestScore",
+                "bestStreak",
+                "category"
+            ],
+            "properties": {
+                "achievedAt": {
+                    "type": "integer"
+                },
+                "bestScore": {
+                    "type": "integer"
+                },
+                "bestStreak": {
+                    "type": "integer"
+                },
+                "category": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonCategoryDTO"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.QuestionDTO": {
             "type": "object",
             "required": [
@@ -1540,6 +2700,33 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.ReviewAnswerDTO": {
+            "type": "object",
+            "required": [
+                "correctAnswer",
+                "isCorrect",
+                "questionId",
+                "questionText",
+                "selectedAnswer"
+            ],
+            "properties": {
+                "correctAnswer": {
+                    "type": "string"
+                },
+                "isCorrect": {
+                    "type": "boolean"
+                },
+                "questionId": {
+                    "type": "string"
+                },
+                "questionText": {
+                    "type": "string"
+                },
+                "selectedAnswer": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.SessionDTO": {
             "type": "object",
             "required": [
@@ -1659,6 +2846,107 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.StartDailyChallengeData": {
+            "type": "object",
+            "required": [
+                "firstQuestion",
+                "game",
+                "timeLimit",
+                "timeToExpire",
+                "totalPlayers"
+            ],
+            "properties": {
+                "firstQuestion": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
+                },
+                "game": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.DailyGameDTO"
+                },
+                "timeLimit": {
+                    "type": "integer"
+                },
+                "timeToExpire": {
+                    "type": "integer"
+                },
+                "totalPlayers": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.StartDailyChallengeRequest": {
+            "type": "object",
+            "required": [
+                "playerId"
+            ],
+            "properties": {
+                "date": {
+                    "description": "YYYY-MM-DD, defaults to today",
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.StartDailyChallengeResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.StartDailyChallengeData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.StartMarathonData": {
+            "type": "object",
+            "required": [
+                "firstQuestion",
+                "game",
+                "hasPersonalBest",
+                "timeLimit"
+            ],
+            "properties": {
+                "firstQuestion": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
+                },
+                "game": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonGameDTO"
+                },
+                "hasPersonalBest": {
+                    "type": "boolean"
+                },
+                "timeLimit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.StartMarathonRequest": {
+            "type": "object",
+            "required": [
+                "playerId"
+            ],
+            "properties": {
+                "categoryId": {
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.StartMarathonResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.StartMarathonData"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.StartQuizData": {
             "type": "object",
             "required": [
@@ -1705,6 +2993,29 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.StartQuizData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.StreakDTO": {
+            "type": "object",
+            "required": [
+                "brokenYesterday",
+                "currentStreak",
+                "lastPlayedAt",
+                "longestStreak"
+            ],
+            "properties": {
+                "brokenYesterday": {
+                    "type": "boolean"
+                },
+                "currentStreak": {
+                    "type": "integer"
+                },
+                "lastPlayedAt": {
+                    "type": "integer"
+                },
+                "longestStreak": {
+                    "type": "integer"
                 }
             }
         },
@@ -1792,6 +3103,164 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.SubmitDailyAnswerData": {
+            "type": "object",
+            "required": [
+                "isGameCompleted",
+                "questionIndex",
+                "remainingQuestions",
+                "totalQuestions"
+            ],
+            "properties": {
+                "gameResults": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.GameResultsDTO"
+                },
+                "isGameCompleted": {
+                    "type": "boolean"
+                },
+                "nextQuestion": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
+                },
+                "nextTimeLimit": {
+                    "type": "integer"
+                },
+                "questionIndex": {
+                    "type": "integer"
+                },
+                "remainingQuestions": {
+                    "type": "integer"
+                },
+                "totalQuestions": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.SubmitDailyAnswerRequest": {
+            "type": "object",
+            "required": [
+                "answerId",
+                "playerId",
+                "questionId",
+                "timeTaken"
+            ],
+            "properties": {
+                "answerId": {
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                },
+                "questionId": {
+                    "type": "string"
+                },
+                "timeTaken": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.SubmitDailyAnswerResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.SubmitDailyAnswerData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.SubmitMarathonAnswerData": {
+            "type": "object",
+            "required": [
+                "basePoints",
+                "correctAnswerId",
+                "currentStreak",
+                "difficultyLevel",
+                "isCorrect",
+                "isGameOver",
+                "lifeLost",
+                "maxStreak",
+                "remainingLives",
+                "timeTaken"
+            ],
+            "properties": {
+                "basePoints": {
+                    "type": "integer"
+                },
+                "correctAnswerId": {
+                    "type": "string"
+                },
+                "currentStreak": {
+                    "type": "integer"
+                },
+                "difficultyLevel": {
+                    "type": "string"
+                },
+                "gameOverResult": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonGameOverResultDTO"
+                },
+                "isCorrect": {
+                    "type": "boolean"
+                },
+                "isGameOver": {
+                    "type": "boolean"
+                },
+                "lifeLost": {
+                    "type": "boolean"
+                },
+                "maxStreak": {
+                    "type": "integer"
+                },
+                "nextQuestion": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
+                },
+                "nextTimeLimit": {
+                    "type": "integer"
+                },
+                "remainingLives": {
+                    "type": "integer"
+                },
+                "timeTaken": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.SubmitMarathonAnswerRequest": {
+            "type": "object",
+            "required": [
+                "answerId",
+                "playerId",
+                "questionId",
+                "timeTaken"
+            ],
+            "properties": {
+                "answerId": {
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                },
+                "questionId": {
+                    "type": "string"
+                },
+                "timeTaken": {
+                    "type": "integer",
+                    "minimum": 0
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.SubmitMarathonAnswerResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.SubmitMarathonAnswerData"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.UpdateUserProfileRequest": {
             "type": "object",
             "properties": {
@@ -1820,6 +3289,55 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.UserDTO"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.UseMarathonHintData": {
+            "type": "object",
+            "required": [
+                "hintResult",
+                "hintType",
+                "remainingHints"
+            ],
+            "properties": {
+                "hintResult": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonHintResultDTO"
+                },
+                "hintType": {
+                    "type": "string"
+                },
+                "remainingHints": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.UseMarathonHintRequest": {
+            "type": "object",
+            "required": [
+                "hintType",
+                "playerId",
+                "questionId"
+            ],
+            "properties": {
+                "hintType": {
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                },
+                "questionId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.UseMarathonHintResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.UseMarathonHintData"
                 }
             }
         },

@@ -91,3 +91,11 @@ import-all-quizzes: ## Import all quiz JSON files from data/quizzes directory
 .PHONY: import-all-quizzes-dry-run
 import-all-quizzes-dry-run: ## Validate all quiz JSON files without importing
 	go run cmd/import/main.go -dir=data/quizzes -dry-run
+
+# ============================================
+# Daily Challenge Debug Commands
+# ============================================
+
+.PHONY: reset-daily-challenge
+reset-daily-challenge: ## Reset today's daily challenge (usage: make reset-daily-challenge [DATE=YYYY-MM-DD])
+	@./scripts/reset-daily-challenge.sh $(DATE)

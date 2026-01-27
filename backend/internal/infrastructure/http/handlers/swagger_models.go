@@ -460,3 +460,411 @@ type GetUserActiveSessionsResponse struct {
 }
 
 // @name GetUserActiveSessionsResponse
+
+// ========================================
+// Marathon Mode Models
+// ========================================
+
+// MarathonCategoryDTO represents a marathon category
+type MarathonCategoryDTO struct {
+	ID              string `json:"id" validate:"required"`
+	Name            string `json:"name" validate:"required"`
+	IsAllCategories bool   `json:"isAllCategories" validate:"required"`
+}
+
+// @name MarathonCategoryDTO
+
+// MarathonLivesDTO represents the lives system state
+type MarathonLivesDTO struct {
+	CurrentLives   int   `json:"currentLives" validate:"required"`
+	MaxLives       int   `json:"maxLives" validate:"required"`
+	TimeToNextLife int64 `json:"timeToNextLife" validate:"required"`
+}
+
+// @name MarathonLivesDTO
+
+// MarathonHintsDTO represents available hints
+type MarathonHintsDTO struct {
+	FiftyFifty int `json:"fiftyFifty" validate:"required"`
+	ExtraTime  int `json:"extraTime" validate:"required"`
+	Skip       int `json:"skip" validate:"required"`
+}
+
+// @name MarathonHintsDTO
+
+// MarathonGameDTO represents a marathon game state
+type MarathonGameDTO struct {
+	ID                 string               `json:"id" validate:"required"`
+	PlayerID           string               `json:"playerId" validate:"required"`
+	Category           MarathonCategoryDTO  `json:"category" validate:"required"`
+	Status             string               `json:"status" validate:"required"`
+	CurrentStreak      int                  `json:"currentStreak" validate:"required"`
+	MaxStreak          int                  `json:"maxStreak" validate:"required"`
+	Lives              MarathonLivesDTO     `json:"lives" validate:"required"`
+	Hints              MarathonHintsDTO     `json:"hints" validate:"required"`
+	DifficultyLevel    string               `json:"difficultyLevel" validate:"required"`
+	PersonalBestStreak *int                 `json:"personalBestStreak,omitempty"`
+	CurrentQuestion    *QuestionDTO         `json:"currentQuestion,omitempty"`
+	BaseScore          int                  `json:"baseScore" validate:"required"`
+}
+
+// @name MarathonGameDTO
+
+// MarathonPersonalBestDTO represents a personal best record
+type MarathonPersonalBestDTO struct {
+	Category   MarathonCategoryDTO `json:"category" validate:"required"`
+	BestStreak int                 `json:"bestStreak" validate:"required"`
+	BestScore  int                 `json:"bestScore" validate:"required"`
+	AchievedAt int64               `json:"achievedAt" validate:"required"`
+}
+
+// @name MarathonPersonalBestDTO
+
+// MarathonLeaderboardEntryDTO represents a marathon leaderboard entry
+type MarathonLeaderboardEntryDTO struct {
+	PlayerID   string `json:"playerId" validate:"required"`
+	Username   string `json:"username" validate:"required"`
+	BestStreak int    `json:"bestStreak" validate:"required"`
+	BestScore  int    `json:"bestScore" validate:"required"`
+	Rank       int    `json:"rank" validate:"required"`
+	AchievedAt int64  `json:"achievedAt" validate:"required"`
+}
+
+// @name MarathonLeaderboardEntryDTO
+
+// MarathonGameOverResultDTO contains game over statistics
+type MarathonGameOverResultDTO struct {
+	FinalStreak       int  `json:"finalStreak" validate:"required"`
+	IsNewPersonalBest bool `json:"isNewPersonalBest" validate:"required"`
+	PreviousRecord    *int `json:"previousRecord,omitempty"`
+	TotalBaseScore    int  `json:"totalBaseScore" validate:"required"`
+	GlobalRank        *int `json:"globalRank,omitempty"`
+}
+
+// @name MarathonGameOverResultDTO
+
+// MarathonHintResultDTO contains the result of using a hint
+type MarathonHintResultDTO struct {
+	HiddenAnswerIDs []string     `json:"hiddenAnswerIds,omitempty"`
+	NewTimeLimit    *int         `json:"newTimeLimit,omitempty"`
+	NextQuestion    *QuestionDTO `json:"nextQuestion,omitempty"`
+	NextTimeLimit   *int         `json:"nextTimeLimit,omitempty"`
+}
+
+// @name MarathonHintResultDTO
+
+// ========================================
+// Marathon Request Models
+// ========================================
+
+// StartMarathonRequest is the HTTP request body for starting a marathon
+type StartMarathonRequest struct {
+	PlayerID   string  `json:"playerId" validate:"required"`
+	CategoryID *string `json:"categoryId,omitempty"`
+}
+
+// @name StartMarathonRequest
+
+// SubmitMarathonAnswerRequest is the HTTP request body for submitting an answer
+type SubmitMarathonAnswerRequest struct {
+	QuestionID string `json:"questionId" validate:"required"`
+	AnswerID   string `json:"answerId" validate:"required"`
+	PlayerID   string `json:"playerId" validate:"required"`
+	TimeTaken  int64  `json:"timeTaken" validate:"required,min=0"`
+}
+
+// @name SubmitMarathonAnswerRequest
+
+// UseMarathonHintRequest is the HTTP request body for using a hint
+type UseMarathonHintRequest struct {
+	QuestionID string `json:"questionId" validate:"required"`
+	HintType   string `json:"hintType" validate:"required"`
+	PlayerID   string `json:"playerId" validate:"required"`
+}
+
+// @name UseMarathonHintRequest
+
+// AbandonMarathonRequest is the HTTP request body for abandoning a marathon
+type AbandonMarathonRequest struct {
+	PlayerID string `json:"playerId" validate:"required"`
+}
+
+// @name AbandonMarathonRequest
+
+// ========================================
+// Marathon Response Models
+// ========================================
+
+// StartMarathonData contains data for a started marathon
+type StartMarathonData struct {
+	Game            MarathonGameDTO `json:"game" validate:"required"`
+	FirstQuestion   QuestionDTO     `json:"firstQuestion" validate:"required"`
+	TimeLimit       int             `json:"timeLimit" validate:"required"`
+	HasPersonalBest bool            `json:"hasPersonalBest" validate:"required"`
+}
+
+// @name StartMarathonData
+
+// StartMarathonResponse wraps the start marathon response
+type StartMarathonResponse struct {
+	Data StartMarathonData `json:"data" validate:"required"`
+}
+
+// @name StartMarathonResponse
+
+// SubmitMarathonAnswerData contains answer submission result
+type SubmitMarathonAnswerData struct {
+	IsCorrect       bool                       `json:"isCorrect" validate:"required"`
+	CorrectAnswerID string                     `json:"correctAnswerId" validate:"required"`
+	BasePoints      int                        `json:"basePoints" validate:"required"`
+	TimeTaken       int64                      `json:"timeTaken" validate:"required"`
+	CurrentStreak   int                        `json:"currentStreak" validate:"required"`
+	MaxStreak       int                        `json:"maxStreak" validate:"required"`
+	DifficultyLevel string                     `json:"difficultyLevel" validate:"required"`
+	LifeLost        bool                       `json:"lifeLost" validate:"required"`
+	RemainingLives  int                        `json:"remainingLives" validate:"required"`
+	IsGameOver      bool                       `json:"isGameOver" validate:"required"`
+	NextQuestion    *QuestionDTO               `json:"nextQuestion,omitempty"`
+	NextTimeLimit   *int                       `json:"nextTimeLimit,omitempty"`
+	GameOverResult  *MarathonGameOverResultDTO `json:"gameOverResult,omitempty"`
+}
+
+// @name SubmitMarathonAnswerData
+
+// SubmitMarathonAnswerResponse wraps the submit answer response
+type SubmitMarathonAnswerResponse struct {
+	Data SubmitMarathonAnswerData `json:"data" validate:"required"`
+}
+
+// @name SubmitMarathonAnswerResponse
+
+// UseMarathonHintData contains hint usage result
+type UseMarathonHintData struct {
+	HintType       string                `json:"hintType" validate:"required"`
+	RemainingHints int                   `json:"remainingHints" validate:"required"`
+	HintResult     MarathonHintResultDTO `json:"hintResult" validate:"required"`
+}
+
+// @name UseMarathonHintData
+
+// UseMarathonHintResponse wraps the use hint response
+type UseMarathonHintResponse struct {
+	Data UseMarathonHintData `json:"data" validate:"required"`
+}
+
+// @name UseMarathonHintResponse
+
+// AbandonMarathonResponse wraps the abandon marathon response
+type AbandonMarathonResponse struct {
+	Data MarathonGameOverResultDTO `json:"data" validate:"required"`
+}
+
+// @name AbandonMarathonResponse
+
+// GetMarathonStatusData contains marathon status information
+type GetMarathonStatusData struct {
+	HasActiveGame bool             `json:"hasActiveGame" validate:"required"`
+	Game          *MarathonGameDTO `json:"game,omitempty"`
+	TimeLimit     *int             `json:"timeLimit,omitempty"`
+}
+
+// @name GetMarathonStatusData
+
+// GetMarathonStatusResponse wraps the marathon status response
+type GetMarathonStatusResponse struct {
+	Data GetMarathonStatusData `json:"data" validate:"required"`
+}
+
+// @name GetMarathonStatusResponse
+
+// GetPersonalBestsData contains personal best records
+type GetPersonalBestsData struct {
+	PersonalBests []MarathonPersonalBestDTO `json:"personalBests" validate:"required"`
+	OverallBest   *MarathonPersonalBestDTO  `json:"overallBest,omitempty"`
+}
+
+// @name GetPersonalBestsData
+
+// GetPersonalBestsResponse wraps the personal bests response
+type GetPersonalBestsResponse struct {
+	Data GetPersonalBestsData `json:"data" validate:"required"`
+}
+
+// @name GetPersonalBestsResponse
+
+// GetMarathonLeaderboardData contains leaderboard information
+type GetMarathonLeaderboardData struct {
+	Category   MarathonCategoryDTO           `json:"category" validate:"required"`
+	TimeFrame  string                        `json:"timeFrame" validate:"required"`
+	Entries    []MarathonLeaderboardEntryDTO `json:"entries" validate:"required"`
+	PlayerRank *int                          `json:"playerRank,omitempty"`
+}
+
+// @name GetMarathonLeaderboardData
+
+// GetMarathonLeaderboardResponse wraps the leaderboard response
+type GetMarathonLeaderboardResponse struct {
+	Data GetMarathonLeaderboardData `json:"data" validate:"required"`
+}
+
+// @name GetMarathonLeaderboardResponse
+
+// ========================================
+// Daily Challenge Models
+// ========================================
+
+// StartDailyChallengeRequest is the HTTP request for starting daily challenge
+type StartDailyChallengeRequest struct {
+	PlayerID string `json:"playerId" validate:"required"`
+	Date     string `json:"date,omitempty"` // YYYY-MM-DD, defaults to today
+}
+
+// @name StartDailyChallengeRequest
+
+// SubmitDailyAnswerRequest is the HTTP request for submitting answer
+type SubmitDailyAnswerRequest struct {
+	QuestionID string `json:"questionId" validate:"required"`
+	AnswerID   string `json:"answerId" validate:"required"`
+	PlayerID   string `json:"playerId" validate:"required"`
+	TimeTaken  int64  `json:"timeTaken" validate:"required,min=0"`
+}
+
+// @name SubmitDailyAnswerRequest
+
+// DailyGameDTO represents a daily challenge game
+type DailyGameDTO struct {
+	GameID            string `json:"gameId" validate:"required"`
+	QuizID            string `json:"quizId" validate:"required"`
+	PlayerID          string `json:"playerId" validate:"required"`
+	Date              string `json:"date" validate:"required"` // YYYY-MM-DD
+	Status            string `json:"status" validate:"required"` // "in_progress" | "completed"
+	Score             int    `json:"score" validate:"required"`
+	CurrentQuestionID string `json:"currentQuestionId,omitempty"`
+	QuestionIndex     int    `json:"questionIndex" validate:"required"`
+}
+
+// @name DailyGameDTO
+
+// GameResultsDTO contains final results after completing all questions
+type GameResultsDTO struct {
+	Score          int                   `json:"score" validate:"required"`
+	CorrectAnswers int                   `json:"correctAnswers" validate:"required"`
+	TotalQuestions int                   `json:"totalQuestions" validate:"required"`
+	Rank           int                   `json:"rank" validate:"required"`
+	TotalPlayers   int                   `json:"totalPlayers" validate:"required"`
+	ReviewAnswers  []ReviewAnswerDTO     `json:"reviewAnswers" validate:"required"`
+	Leaderboard    []LeaderboardEntryDTO `json:"leaderboard" validate:"required"`
+}
+
+// @name GameResultsDTO
+
+// ReviewAnswerDTO contains answer review info
+type ReviewAnswerDTO struct {
+	QuestionID     string `json:"questionId" validate:"required"`
+	QuestionText   string `json:"questionText" validate:"required"`
+	SelectedAnswer string `json:"selectedAnswer" validate:"required"`
+	CorrectAnswer  string `json:"correctAnswer" validate:"required"`
+	IsCorrect      bool   `json:"isCorrect" validate:"required"`
+}
+
+// @name ReviewAnswerDTO
+
+// StreakDTO represents player's streak info
+type StreakDTO struct {
+	CurrentStreak int   `json:"currentStreak" validate:"required"`
+	LongestStreak int   `json:"longestStreak" validate:"required"`
+	LastPlayedAt  int64 `json:"lastPlayedAt" validate:"required"`
+	BrokenYesterday bool `json:"brokenYesterday" validate:"required"`
+}
+
+// @name StreakDTO
+
+// StartDailyChallengeData contains start response data
+type StartDailyChallengeData struct {
+	Game           DailyGameDTO `json:"game" validate:"required"`
+	FirstQuestion  QuestionDTO  `json:"firstQuestion" validate:"required"`
+	TimeLimit      int          `json:"timeLimit" validate:"required"`
+	TotalPlayers   int          `json:"totalPlayers" validate:"required"`
+	TimeToExpire   int64        `json:"timeToExpire" validate:"required"`
+}
+
+// @name StartDailyChallengeData
+
+// StartDailyChallengeResponse wraps start response
+type StartDailyChallengeResponse struct {
+	Data StartDailyChallengeData `json:"data" validate:"required"`
+}
+
+// @name StartDailyChallengeResponse
+
+// SubmitDailyAnswerData contains submit answer response data
+type SubmitDailyAnswerData struct {
+	QuestionIndex      int              `json:"questionIndex" validate:"required"`
+	TotalQuestions     int              `json:"totalQuestions" validate:"required"`
+	RemainingQuestions int              `json:"remainingQuestions" validate:"required"`
+	IsGameCompleted    bool             `json:"isGameCompleted" validate:"required"`
+	NextQuestion       *QuestionDTO     `json:"nextQuestion,omitempty"`
+	NextTimeLimit      *int             `json:"nextTimeLimit,omitempty"`
+	GameResults        *GameResultsDTO  `json:"gameResults,omitempty"`
+}
+
+// @name SubmitDailyAnswerData
+
+// SubmitDailyAnswerResponse wraps submit response
+type SubmitDailyAnswerResponse struct {
+	Data SubmitDailyAnswerData `json:"data" validate:"required"`
+}
+
+// @name SubmitDailyAnswerResponse
+
+// GetDailyStatusData contains status response data
+type GetDailyStatusData struct {
+	HasPlayed    bool          `json:"hasPlayed" validate:"required"`
+	Game         *DailyGameDTO `json:"game,omitempty"`
+	TimeLimit    *int          `json:"timeLimit,omitempty"`
+	TimeToExpire int64         `json:"timeToExpire" validate:"required"`
+	TotalPlayers int           `json:"totalPlayers" validate:"required"`
+}
+
+// @name GetDailyStatusData
+
+// GetDailyStatusResponse wraps status response
+type GetDailyStatusResponse struct {
+	Data GetDailyStatusData `json:"data" validate:"required"`
+}
+
+// @name GetDailyStatusResponse
+
+// GetDailyLeaderboardData contains leaderboard response data
+type GetDailyLeaderboardData struct {
+	Date         string                `json:"date" validate:"required"`
+	Entries      []LeaderboardEntryDTO `json:"entries" validate:"required"`
+	TotalPlayers int                   `json:"totalPlayers" validate:"required"`
+	PlayerRank   *int                  `json:"playerRank,omitempty"`
+}
+
+// @name GetDailyLeaderboardData
+
+// GetDailyLeaderboardResponse wraps leaderboard response
+type GetDailyLeaderboardResponse struct {
+	Data GetDailyLeaderboardData `json:"data" validate:"required"`
+}
+
+// @name GetDailyLeaderboardResponse
+
+// GetPlayerStreakData contains streak response data
+type GetPlayerStreakData struct {
+	Streak        StreakDTO `json:"streak" validate:"required"`
+	NextMilestone int       `json:"nextMilestone" validate:"required"`
+	DaysToNext    int       `json:"daysToNext" validate:"required"`
+	CanRestore    bool      `json:"canRestore" validate:"required"`
+}
+
+// @name GetPlayerStreakData
+
+// GetPlayerStreakResponse wraps streak response
+type GetPlayerStreakResponse struct {
+	Data GetPlayerStreakData `json:"data" validate:"required"`
+}
+
+// @name GetPlayerStreakResponse
