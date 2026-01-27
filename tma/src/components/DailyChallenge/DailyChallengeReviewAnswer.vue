@@ -1,11 +1,9 @@
 <script setup lang="ts">
 import { computed } from 'vue'
-import type { InternalInfrastructureHttpHandlersReviewAnswerDTO } from '@/api/generated'
-import QuestionCard from '@/components/shared/QuestionCard.vue'
-import AnswerButton from '@/components/shared/AnswerButton.vue'
+import type { InternalInfrastructureHttpHandlersAnsweredQuestionDTO } from '@/api/generated'
 
 interface Props {
-  reviewAnswer: InternalInfrastructureHttpHandlersReviewAnswerDTO
+  answeredQuestion: InternalInfrastructureHttpHandlersAnsweredQuestionDTO
   questionNumber: number
   totalQuestions: number
 }
@@ -16,12 +14,8 @@ const props = defineProps<Props>()
 // Computed
 // ===========================
 
-const answerLabels = ['A', 'B', 'C', 'D']
-
-const isCorrect = computed(() => props.reviewAnswer.isCorrect)
-
 const resultBadge = computed(() => {
-  if (isCorrect.value) {
+  if (props.answeredQuestion.isCorrect) {
     return {
       label: 'Correct',
       color: 'green' as const,
@@ -35,16 +29,18 @@ const resultBadge = computed(() => {
   }
 })
 
-const findAnswerById = (answerId: string) => {
-  return props.reviewAnswer.question.answers.find(a => a.id === answerId)
-}
+const formattedTime = computed(() => {
+  const ms = props.answeredQuestion.timeTaken
+  const seconds = Math.floor(ms / 1000)
+  return `${seconds}s`
+})
 </script>
 
 <template>
-  <UCard class="review-answer-card">
+  <UCard class="w-full">
     <!-- Header with result badge -->
     <template #header>
-      <div class="review-header">
+      <div class="flex justify-between items-center">
         <UBadge color="gray" variant="subtle">
           Question {{ questionNumber }} / {{ totalQuestions }}
         </UBadge>
@@ -59,146 +55,65 @@ const findAnswerById = (answerId: string) => {
       </div>
     </template>
 
-    <div class="review-content">
+    <div class="flex flex-col gap-6">
       <!-- Question -->
-      <div class="question-section">
-        <h3 class="question-text">{{ reviewAnswer.question.text }}</h3>
+      <div class="py-2">
+        <h3 class="text-lg font-semibold leading-relaxed text-gray-900 dark:text-gray-100">
+          {{ answeredQuestion.questionText }}
+        </h3>
       </div>
 
-      <!-- Answers -->
-      <div class="answers-section">
-        <AnswerButton
-          v-for="(answer, index) in reviewAnswer.question.answers"
-          :key="answer.id"
-          :answer="answer"
-          :selected="answer.id === reviewAnswer.playerAnswerId"
-          :show-feedback="true"
-          :is-correct="answer.id === reviewAnswer.correctAnswerId ? true : (answer.id === reviewAnswer.playerAnswerId && !isCorrect ? false : null)"
-          :label="answerLabels[index]"
-          :disabled="true"
-        />
-      </div>
-
-      <!-- Explanation (if player was wrong) -->
-      <div v-if="!isCorrect" class="explanation-section">
-        <UAlert color="blue" variant="soft" icon="i-heroicons-light-bulb">
-          <template #title>Correct Answer</template>
-          <template #description>
-            <p>
-              The correct answer was:
-              <strong class="ml-1">
-                {{ findAnswerById(reviewAnswer.correctAnswerId)?.text }}
-              </strong>
-            </p>
-          </template>
-        </UAlert>
-      </div>
-
-      <!-- Points info -->
-      <div class="points-section">
-        <div class="points-earned" :class="{ 'no-points': !isCorrect }">
+      <!-- Your Answer -->
+      <div class="flex flex-col gap-2">
+        <div class="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+          Your Answer:
+        </div>
+        <div
+          class="flex items-center gap-3 p-4 rounded-lg border-2"
+          :class="answeredQuestion.isCorrect
+            ? 'bg-green-50 dark:bg-green-900/30 border-green-500 dark:border-green-600 text-green-700 dark:text-green-400'
+            : 'bg-red-50 dark:bg-red-900/30 border-red-500 dark:border-red-600 text-red-700 dark:text-red-400'"
+        >
           <UIcon
-            :name="isCorrect ? 'i-heroicons-star' : 'i-heroicons-x-mark'"
-            class="size-5"
+            :name="answeredQuestion.isCorrect ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'"
+            class="text-xl flex-shrink-0"
           />
-          <span class="points-text">
-            {{ isCorrect ? `+${reviewAnswer.pointsEarned} points` : 'No points earned' }}
+          <span class="font-medium text-[15px]">{{ answeredQuestion.playerAnswerText }}</span>
+        </div>
+      </div>
+
+      <!-- Correct Answer (if wrong) -->
+      <div v-if="!answeredQuestion.isCorrect" class="flex flex-col gap-2">
+        <div class="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider">
+          Correct Answer:
+        </div>
+        <div class="flex items-center gap-3 p-4 rounded-lg border-2 bg-green-50 dark:bg-green-900/30 border-green-500 dark:border-green-600 text-green-700 dark:text-green-400">
+          <UIcon name="i-heroicons-check-circle" class="text-xl flex-shrink-0" />
+          <span class="font-medium text-[15px]">{{ answeredQuestion.correctAnswerText }}</span>
+        </div>
+      </div>
+
+      <!-- Stats -->
+      <div class="flex gap-4 pt-2 border-t border-gray-200 dark:border-gray-700">
+        <div class="flex items-center gap-2 px-3 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium">
+          <UIcon name="i-heroicons-clock" class="w-4 h-4" />
+          <span>{{ formattedTime }}</span>
+        </div>
+        <div
+          class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium"
+          :class="answeredQuestion.isCorrect
+            ? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
+            : 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'"
+        >
+          <UIcon
+            :name="answeredQuestion.isCorrect ? 'i-heroicons-star' : 'i-heroicons-x-mark'"
+            class="w-4 h-4"
+          />
+          <span>
+            {{ answeredQuestion.isCorrect ? `+${answeredQuestion.pointsEarned} points` : 'No points' }}
           </span>
         </div>
       </div>
     </div>
   </UCard>
 </template>
-
-<style scoped>
-.review-answer-card {
-  width: 100%;
-}
-
-.review-header {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-}
-
-.review-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-.question-section {
-  padding: 0.5rem 0;
-}
-
-.question-text {
-  font-size: 1.125rem;
-  font-weight: 600;
-  line-height: 1.6;
-  color: rgb(var(--color-gray-900));
-}
-
-.answers-section {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-}
-
-.explanation-section {
-  padding-top: 0.5rem;
-}
-
-.points-section {
-  padding-top: 0.5rem;
-  border-top: 1px solid rgb(var(--color-gray-200));
-}
-
-.points-earned {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.75rem;
-  border-radius: 0.5rem;
-  background: rgb(var(--color-green-50));
-  color: rgb(var(--color-green-700));
-  font-weight: 600;
-}
-
-.points-earned.no-points {
-  background: rgb(var(--color-gray-100));
-  color: rgb(var(--color-gray-600));
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .question-text {
-    color: rgb(var(--color-gray-100));
-  }
-
-  .points-section {
-    border-top-color: rgb(var(--color-gray-700));
-  }
-
-  .points-earned {
-    background: rgb(var(--color-green-900) / 0.3);
-    color: rgb(var(--color-green-400));
-  }
-
-  .points-earned.no-points {
-    background: rgb(var(--color-gray-800));
-    color: rgb(var(--color-gray-400));
-  }
-}
-
-/* Mobile optimizations */
-@media (max-width: 640px) {
-  .question-text {
-    font-size: 1rem;
-  }
-
-  .answers-section {
-    gap: 0.5rem;
-  }
-}
-</style>

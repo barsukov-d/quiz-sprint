@@ -19,19 +19,15 @@ const playerId = currentUser.value?.id || 'guest'
 // ===========================
 
 const {
-  state,
+  results,
+  game,
+  streak,
   isCompleted,
+  timeToExpireFormatted,
   initialize
 } = useDailyChallenge(playerId)
 
-const streaks = useStreaks(computed(() => state.value.streak))
-
-// ===========================
-// Computed
-// ===========================
-
-const results = computed(() => state.value.results)
-const game = computed(() => state.value.game)
+const streaks = useStreaks(streak)
 
 const scorePercentage = computed(() => {
   if (!results.value) return 0
@@ -47,8 +43,8 @@ const performanceLevel = computed(() => {
 })
 
 const hasNewStreakRecord = computed(() => {
-  if (!state.value.streak) return false
-  return state.value.streak.currentStreak > state.value.streak.longestStreak
+  if (!streak.value) return false
+  return streak.value.currentStreak > streak.value.bestStreak
 })
 
 // ===========================
@@ -109,7 +105,7 @@ onMounted(async () => {
 
           <!-- Score -->
           <div class="score-display">
-            <div class="score-value">{{ game?.score || 0 }}</div>
+            <div class="score-value">{{ game?.finalScore || 0 }}</div>
             <div class="score-label">points</div>
           </div>
 
@@ -134,7 +130,7 @@ onMounted(async () => {
       >
         <template #description>
           <p>
-            You've reached a {{ state.streak!.currentStreak }} day streak!
+            You've reached a {{ streak!.currentStreak }} day streak!
             {{ streaks.getStreakEmoji.value }}
           </p>
         </template>
@@ -203,7 +199,7 @@ onMounted(async () => {
       <div class="next-challenge-info">
         <UIcon name="i-heroicons-calendar-days" class="size-5 text-gray-400" />
         <p class="text-sm text-gray-500 dark:text-gray-400">
-          Next challenge available in <span class="font-semibold">{{ state.timeToExpire }}s</span>
+          Next challenge available in <span class="font-semibold">{{ timeToExpireFormatted }}</span>
         </p>
       </div>
     </div>

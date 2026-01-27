@@ -165,12 +165,26 @@ func (dg *DailyGame) complete(completedAt int64) error {
 
 	// 3. Update streak for this date
 	previousStreak := dg.streak.CurrentStreak()
+	println("🔥 [DailyGame.complete] Before UpdateForDate:")
+	println("   - currentStreak:", previousStreak)
+	println("   - lastPlayedDate:", dg.streak.LastPlayedDate().String())
+	println("   - playedDate:", dg.date.String())
+
 	dg.streak = dg.streak.UpdateForDate(dg.date)
+
+	println("🔥 [DailyGame.complete] After UpdateForDate:")
+	println("   - newStreak:", dg.streak.CurrentStreak())
+	println("   - lastPlayedDate:", dg.streak.LastPlayedDate().String())
 
 	// 4. Apply streak bonus to score
 	baseScore := dg.session.BaseScore().Value()
 	streakBonus := dg.streak.GetBonus()
 	finalScore := int(float64(baseScore) * streakBonus)
+
+	println("💰 [DailyGame.complete] Score calculation:")
+	println("   - baseScore:", baseScore)
+	println("   - streakBonus:", streakBonus)
+	println("   - finalScore:", finalScore)
 
 	// 5. Check for streak milestone
 	if isStreakMilestone(dg.streak.CurrentStreak()) && dg.streak.CurrentStreak() > previousStreak {

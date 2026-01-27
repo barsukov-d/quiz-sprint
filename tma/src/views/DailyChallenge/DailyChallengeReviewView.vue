@@ -18,7 +18,7 @@ const playerId = currentUser.value?.id || 'guest'
 // ===========================
 
 const {
-  state,
+  results,
   isCompleted,
   initialize
 } = useDailyChallenge(playerId)
@@ -27,10 +27,8 @@ const {
 // Computed
 // ===========================
 
-const results = computed(() => state.value.results)
-
 const reviewAnswers = computed(() => {
-  return results.value?.reviewAnswers || []
+  return results.value?.answeredQuestions || []
 })
 
 const correctCount = computed(() => {
@@ -103,9 +101,9 @@ onMounted(async () => {
       <!-- Review Answers List -->
       <div class="review-list">
         <DailyChallengeReviewAnswer
-          v-for="(reviewAnswer, index) in reviewAnswers"
-          :key="reviewAnswer.question.id"
-          :review-answer="reviewAnswer"
+          v-for="(answeredQuestion, index) in reviewAnswers"
+          :key="answeredQuestion.questionId"
+          :answered-question="answeredQuestion"
           :question-number="index + 1"
           :total-questions="reviewAnswers.length"
         />

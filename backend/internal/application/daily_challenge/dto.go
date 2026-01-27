@@ -70,13 +70,15 @@ type LeaderboardEntryDTO struct {
 
 // AnsweredQuestionDTO shows the answer after game completion
 type AnsweredQuestionDTO struct {
-	QuestionID      string   `json:"questionId"`
-	QuestionText    string   `json:"questionText"`
-	PlayerAnswerID  string   `json:"playerAnswerId"`
-	CorrectAnswerID string   `json:"correctAnswerId"`
-	IsCorrect       bool     `json:"isCorrect"`
-	TimeTaken       int64    `json:"timeTaken"` // Milliseconds
-	PointsEarned    int      `json:"pointsEarned"`
+	QuestionID       string   `json:"questionId"`
+	QuestionText     string   `json:"questionText"`
+	PlayerAnswerID   string   `json:"playerAnswerId"`
+	PlayerAnswerText string   `json:"playerAnswerText"`
+	CorrectAnswerID  string   `json:"correctAnswerId"`
+	CorrectAnswerText string  `json:"correctAnswerText"`
+	IsCorrect        bool     `json:"isCorrect"`
+	TimeTaken        int64    `json:"timeTaken"` // Milliseconds
+	PointsEarned     int      `json:"pointsEarned"`
 }
 
 // ========================================
@@ -134,16 +136,17 @@ type SubmitDailyAnswerOutput struct {
 
 // GameResultsDTO contains final results after completing all 10 questions
 type GameResultsDTO struct {
-	BaseScore       int                   `json:"baseScore"`
-	FinalScore      int                   `json:"finalScore"` // With streak bonus
-	CorrectAnswers  int                   `json:"correctAnswers"`
-	TotalQuestions  int                   `json:"totalQuestions"` // Always 10
-	StreakBonus     int                   `json:"streakBonus"` // Bonus percentage (0-100)
-	CurrentStreak   int                   `json:"currentStreak"`
-	Rank            int                   `json:"rank"` // Player's rank
-	TotalPlayers    int                   `json:"totalPlayers"`
-	Percentile      int                   `json:"percentile"` // Top X%
-	AnsweredQuestions []AnsweredQuestionDTO `json:"answeredQuestions"` // Full breakdown
+	BaseScore         int                     `json:"baseScore"`
+	FinalScore        int                     `json:"finalScore"` // With streak bonus
+	CorrectAnswers    int                     `json:"correctAnswers"`
+	TotalQuestions    int                     `json:"totalQuestions"` // Always 10
+	StreakBonus       int                     `json:"streakBonus"` // Bonus percentage (0-100)
+	CurrentStreak     int                     `json:"currentStreak"`
+	Rank              int                     `json:"rank"` // Player's rank
+	TotalPlayers      int                     `json:"totalPlayers"`
+	Percentile        int                     `json:"percentile"` // Top X%
+	AnsweredQuestions []AnsweredQuestionDTO   `json:"answeredQuestions"` // Full breakdown
+	Leaderboard       []LeaderboardEntryDTO   `json:"leaderboard"` // Top players
 }
 
 // ========================================
@@ -156,11 +159,12 @@ type GetDailyGameStatusInput struct {
 }
 
 type GetDailyGameStatusOutput struct {
-	HasPlayed       bool          `json:"hasPlayed"`
-	Game            *DailyGameDTO `json:"game,omitempty"`
-	TimeLimit       *int          `json:"timeLimit,omitempty"` // 15 seconds if in progress
-	TimeToExpire    int64         `json:"timeToExpire"` // Seconds until quiz resets
-	TotalPlayers    int           `json:"totalPlayers"` // Players who completed today
+	HasPlayed       bool              `json:"hasPlayed"`
+	Game            *DailyGameDTO     `json:"game,omitempty"`
+	Results         *GameResultsDTO   `json:"results,omitempty"` // Results if game completed
+	TimeLimit       *int              `json:"timeLimit,omitempty"` // 15 seconds if in progress
+	TimeToExpire    int64             `json:"timeToExpire"` // Seconds until quiz resets
+	TotalPlayers    int               `json:"totalPlayers"` // Players who completed today
 }
 
 // ========================================

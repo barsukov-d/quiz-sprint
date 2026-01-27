@@ -1655,6 +1655,49 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.AnsweredQuestionDTO": {
+            "type": "object",
+            "required": [
+                "correctAnswerId",
+                "correctAnswerText",
+                "isCorrect",
+                "playerAnswerId",
+                "playerAnswerText",
+                "pointsEarned",
+                "questionId",
+                "questionText",
+                "timeTaken"
+            ],
+            "properties": {
+                "correctAnswerId": {
+                    "type": "string"
+                },
+                "correctAnswerText": {
+                    "type": "string"
+                },
+                "isCorrect": {
+                    "type": "boolean"
+                },
+                "playerAnswerId": {
+                    "type": "string"
+                },
+                "playerAnswerText": {
+                    "type": "string"
+                },
+                "pointsEarned": {
+                    "type": "integer"
+                },
+                "questionId": {
+                    "type": "string"
+                },
+                "questionText": {
+                    "type": "string"
+                },
+                "timeTaken": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.CategoryDTO": {
             "type": "object",
             "required": [
@@ -1706,21 +1749,38 @@ const docTemplate = `{
         "internal_infrastructure_http_handlers.DailyGameDTO": {
             "type": "object",
             "required": [
+                "baseScore",
+                "correctAnswers",
+                "dailyQuizId",
                 "date",
+                "finalScore",
                 "gameId",
                 "playerId",
                 "questionIndex",
-                "quizId",
-                "score",
-                "status"
+                "status",
+                "streak",
+                "timeRemaining",
+                "totalQuestions"
             ],
             "properties": {
-                "currentQuestionId": {
+                "baseScore": {
+                    "type": "integer"
+                },
+                "correctAnswers": {
+                    "type": "integer"
+                },
+                "currentQuestion": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
+                },
+                "dailyQuizId": {
                     "type": "string"
                 },
                 "date": {
                     "description": "YYYY-MM-DD",
                     "type": "string"
+                },
+                "finalScore": {
+                    "type": "integer"
                 },
                 "gameId": {
                     "type": "string"
@@ -1731,15 +1791,21 @@ const docTemplate = `{
                 "questionIndex": {
                     "type": "integer"
                 },
-                "quizId": {
-                    "type": "string"
-                },
-                "score": {
+                "rank": {
                     "type": "integer"
                 },
                 "status": {
                     "description": "\"in_progress\" | \"completed\"",
                     "type": "string"
+                },
+                "streak": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.StreakDTO"
+                },
+                "timeRemaining": {
+                    "type": "integer"
+                },
+                "totalQuestions": {
+                    "type": "integer"
                 }
             }
         },
@@ -1848,34 +1914,43 @@ const docTemplate = `{
         "internal_infrastructure_http_handlers.GameResultsDTO": {
             "type": "object",
             "required": [
+                "answeredQuestions",
+                "baseScore",
                 "correctAnswers",
-                "leaderboard",
+                "currentStreak",
+                "finalScore",
+                "percentile",
                 "rank",
-                "reviewAnswers",
-                "score",
+                "streakBonus",
                 "totalPlayers",
                 "totalQuestions"
             ],
             "properties": {
+                "answeredQuestions": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.AnsweredQuestionDTO"
+                    }
+                },
+                "baseScore": {
+                    "type": "integer"
+                },
                 "correctAnswers": {
                     "type": "integer"
                 },
-                "leaderboard": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO"
-                    }
+                "currentStreak": {
+                    "type": "integer"
+                },
+                "finalScore": {
+                    "type": "integer"
+                },
+                "percentile": {
+                    "type": "integer"
                 },
                 "rank": {
                     "type": "integer"
                 },
-                "reviewAnswers": {
-                    "type": "array",
-                    "items": {
-                        "$ref": "#/definitions/internal_infrastructure_http_handlers.ReviewAnswerDTO"
-                    }
-                },
-                "score": {
+                "streakBonus": {
                     "type": "integer"
                 },
                 "totalPlayers": {
@@ -1992,6 +2067,9 @@ const docTemplate = `{
                 },
                 "hasPlayed": {
                     "type": "boolean"
+                },
+                "results": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.GameResultsDTO"
                 },
                 "timeLimit": {
                     "type": "integer"
@@ -2700,33 +2778,6 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_infrastructure_http_handlers.ReviewAnswerDTO": {
-            "type": "object",
-            "required": [
-                "correctAnswer",
-                "isCorrect",
-                "questionId",
-                "questionText",
-                "selectedAnswer"
-            ],
-            "properties": {
-                "correctAnswer": {
-                    "type": "string"
-                },
-                "isCorrect": {
-                    "type": "boolean"
-                },
-                "questionId": {
-                    "type": "string"
-                },
-                "questionText": {
-                    "type": "string"
-                },
-                "selectedAnswer": {
-                    "type": "string"
-                }
-            }
-        },
         "internal_infrastructure_http_handlers.SessionDTO": {
             "type": "object",
             "required": [
@@ -2999,23 +3050,28 @@ const docTemplate = `{
         "internal_infrastructure_http_handlers.StreakDTO": {
             "type": "object",
             "required": [
-                "brokenYesterday",
+                "bestStreak",
+                "bonusPercent",
                 "currentStreak",
-                "lastPlayedAt",
-                "longestStreak"
+                "isActive",
+                "lastPlayedDate"
             ],
             "properties": {
-                "brokenYesterday": {
-                    "type": "boolean"
+                "bestStreak": {
+                    "type": "integer"
+                },
+                "bonusPercent": {
+                    "type": "integer"
                 },
                 "currentStreak": {
                     "type": "integer"
                 },
-                "lastPlayedAt": {
-                    "type": "integer"
+                "isActive": {
+                    "type": "boolean"
                 },
-                "longestStreak": {
-                    "type": "integer"
+                "lastPlayedDate": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
                 }
             }
         },

@@ -20,8 +20,12 @@ const playerId = currentUser.value?.id || 'guest'
 // ===========================
 
 const {
-  state,
+  currentQuestion,
+  questionIndex,
+  totalQuestions,
+  timeLimit,
   isPlaying,
+  isCompleted,
   submitAnswer,
   initialize
 } = useDailyChallenge(playerId)
@@ -38,11 +42,6 @@ const timerRef = ref<InstanceType<typeof GameTimer> | null>(null)
 // ===========================
 // Computed
 // ===========================
-
-const currentQuestion = computed(() => state.value.currentQuestion)
-const questionIndex = computed(() => state.value.questionIndex)
-const totalQuestions = computed(() => state.value.totalQuestions)
-const timeLimit = computed(() => state.value.timeLimit)
 
 const answerLabels = ['A', 'B', 'C', 'D']
 
@@ -119,7 +118,7 @@ const handleNextStep = () => {
   isSubmitting.value = false
 
   // Check if game is completed
-  if (state.value.status === 'completed' && state.value.results) {
+  if (isCompleted.value) {
     // Navigate to results page
     router.push({ name: 'daily-challenge-results' })
   } else {

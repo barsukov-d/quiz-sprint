@@ -34,6 +34,37 @@ definitions:
     - position
     - text
     type: object
+  internal_infrastructure_http_handlers.AnsweredQuestionDTO:
+    properties:
+      correctAnswerId:
+        type: string
+      correctAnswerText:
+        type: string
+      isCorrect:
+        type: boolean
+      playerAnswerId:
+        type: string
+      playerAnswerText:
+        type: string
+      pointsEarned:
+        type: integer
+      questionId:
+        type: string
+      questionText:
+        type: string
+      timeTaken:
+        type: integer
+    required:
+    - correctAnswerId
+    - correctAnswerText
+    - isCorrect
+    - playerAnswerId
+    - playerAnswerText
+    - pointsEarned
+    - questionId
+    - questionText
+    - timeTaken
+    type: object
   internal_infrastructure_http_handlers.CategoryDTO:
     properties:
       id:
@@ -67,32 +98,49 @@ definitions:
     type: object
   internal_infrastructure_http_handlers.DailyGameDTO:
     properties:
-      currentQuestionId:
+      baseScore:
+        type: integer
+      correctAnswers:
+        type: integer
+      currentQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      dailyQuizId:
         type: string
       date:
         description: YYYY-MM-DD
         type: string
+      finalScore:
+        type: integer
       gameId:
         type: string
       playerId:
         type: string
       questionIndex:
         type: integer
-      quizId:
-        type: string
-      score:
+      rank:
         type: integer
       status:
         description: '"in_progress" | "completed"'
         type: string
+      streak:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.StreakDTO'
+      timeRemaining:
+        type: integer
+      totalQuestions:
+        type: integer
     required:
+    - baseScore
+    - correctAnswers
+    - dailyQuizId
     - date
+    - finalScore
     - gameId
     - playerId
     - questionIndex
-    - quizId
-    - score
     - status
+    - streak
+    - timeRemaining
+    - totalQuestions
     type: object
   internal_infrastructure_http_handlers.DailyQuizData:
     properties:
@@ -166,30 +214,37 @@ definitions:
     type: object
   internal_infrastructure_http_handlers.GameResultsDTO:
     properties:
+      answeredQuestions:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.AnsweredQuestionDTO'
+        type: array
+      baseScore:
+        type: integer
       correctAnswers:
         type: integer
-      leaderboard:
-        items:
-          $ref: '#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO'
-        type: array
+      currentStreak:
+        type: integer
+      finalScore:
+        type: integer
+      percentile:
+        type: integer
       rank:
         type: integer
-      reviewAnswers:
-        items:
-          $ref: '#/definitions/internal_infrastructure_http_handlers.ReviewAnswerDTO'
-        type: array
-      score:
+      streakBonus:
         type: integer
       totalPlayers:
         type: integer
       totalQuestions:
         type: integer
     required:
+    - answeredQuestions
+    - baseScore
     - correctAnswers
-    - leaderboard
+    - currentStreak
+    - finalScore
+    - percentile
     - rank
-    - reviewAnswers
-    - score
+    - streakBonus
     - totalPlayers
     - totalQuestions
     type: object
@@ -261,6 +316,8 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.DailyGameDTO'
       hasPlayed:
         type: boolean
+      results:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GameResultsDTO'
       timeLimit:
         type: integer
       timeToExpire:
@@ -746,25 +803,6 @@ definitions:
     required:
     - data
     type: object
-  internal_infrastructure_http_handlers.ReviewAnswerDTO:
-    properties:
-      correctAnswer:
-        type: string
-      isCorrect:
-        type: boolean
-      questionId:
-        type: string
-      questionText:
-        type: string
-      selectedAnswer:
-        type: string
-    required:
-    - correctAnswer
-    - isCorrect
-    - questionId
-    - questionText
-    - selectedAnswer
-    type: object
   internal_infrastructure_http_handlers.SessionDTO:
     properties:
       completedAt:
@@ -954,19 +992,23 @@ definitions:
     type: object
   internal_infrastructure_http_handlers.StreakDTO:
     properties:
-      brokenYesterday:
-        type: boolean
+      bestStreak:
+        type: integer
+      bonusPercent:
+        type: integer
       currentStreak:
         type: integer
-      lastPlayedAt:
-        type: integer
-      longestStreak:
-        type: integer
+      isActive:
+        type: boolean
+      lastPlayedDate:
+        description: YYYY-MM-DD
+        type: string
     required:
-    - brokenYesterday
+    - bestStreak
+    - bonusPercent
     - currentStreak
-    - lastPlayedAt
-    - longestStreak
+    - isActive
+    - lastPlayedDate
     type: object
   internal_infrastructure_http_handlers.SubmitAnswerData:
     properties:

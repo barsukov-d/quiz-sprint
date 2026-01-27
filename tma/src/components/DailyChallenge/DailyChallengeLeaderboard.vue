@@ -3,7 +3,7 @@ import { computed } from 'vue'
 import type { InternalInfrastructureHttpHandlersLeaderboardEntryDTO } from '@/api/generated'
 
 interface Props {
-  leaderboard: InternalInfrastructureHttpHandlersLeaderboardEntryDTO[]
+  leaderboard: InternalInfrastructureHttpHandlersLeaderboardEntryDTO[] | null | undefined
   currentPlayerId?: string
   showRank?: boolean
   maxEntries?: number
@@ -19,6 +19,7 @@ const props = withDefaults(defineProps<Props>(), {
 // ===========================
 
 const displayedLeaderboard = computed(() => {
+  if (!props.leaderboard) return []
   return props.leaderboard.slice(0, props.maxEntries)
 })
 

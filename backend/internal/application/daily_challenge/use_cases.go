@@ -191,17 +191,20 @@ func (uc *StartDailyChallengeUseCase) Execute(input StartDailyChallengeInput) (S
 // ========================================
 
 type SubmitDailyAnswerUseCase struct {
-	dailyGameRepo daily_challenge.DailyGameRepository
-	eventBus      EventBus
+	dailyGameRepo    daily_challenge.DailyGameRepository
+	eventBus         EventBus
+	getLeaderboardUC *GetDailyLeaderboardUseCase
 }
 
 func NewSubmitDailyAnswerUseCase(
 	dailyGameRepo daily_challenge.DailyGameRepository,
 	eventBus EventBus,
+	getLeaderboardUC *GetDailyLeaderboardUseCase,
 ) *SubmitDailyAnswerUseCase {
 	return &SubmitDailyAnswerUseCase{
-		dailyGameRepo: dailyGameRepo,
-		eventBus:      eventBus,
+		dailyGameRepo:    dailyGameRepo,
+		eventBus:         eventBus,
+		getLeaderboardUC: getLeaderboardUC,
 	}
 }
 
@@ -283,7 +286,16 @@ func (uc *SubmitDailyAnswerUseCase) Execute(input SubmitDailyAnswerInput) (Submi
 		game.SetRank(rank)
 		uc.dailyGameRepo.Save(game) // Update with rank
 
-		results := BuildGameResultsDTO(game, rank, totalPlayers)
+		// Fetch leaderboard
+		leaderboardEntries := make([]LeaderboardEntryDTO, 0)
+		if leaderboard, err := uc.getLeaderboardUC.Execute(GetDailyLeaderboardInput{
+			Date:  game.Date().String(),
+			Limit: 10,
+		}); err == nil {
+			leaderboardEntries = leaderboard.Entries
+		}
+
+		results := BuildGameResultsDTO(game, rank, totalPlayers, leaderboardEntries)
 		output.GameResults = &results
 	}
 
@@ -295,17 +307,20 @@ func (uc *SubmitDailyAnswerUseCase) Execute(input SubmitDailyAnswerInput) (Submi
 // ========================================
 
 type GetDailyGameStatusUseCase struct {
-	dailyQuizRepo daily_challenge.DailyQuizRepository
-	dailyGameRepo daily_challenge.DailyGameRepository
+	dailyQuizRepo    daily_challenge.DailyQuizRepository
+	dailyGameRepo    daily_challenge.DailyGameRepository
+	getLeaderboardUC *GetDailyLeaderboardUseCase
 }
 
 func NewGetDailyGameStatusUseCase(
 	dailyQuizRepo daily_challenge.DailyQuizRepository,
 	dailyGameRepo daily_challenge.DailyGameRepository,
+	getLeaderboardUC *GetDailyLeaderboardUseCase,
 ) *GetDailyGameStatusUseCase {
 	return &GetDailyGameStatusUseCase{
-		dailyQuizRepo: dailyQuizRepo,
-		dailyGameRepo: dailyGameRepo,
+		dailyQuizRepo:    dailyQuizRepo,
+		dailyGameRepo:    dailyGameRepo,
+		getLeaderboardUC: getLeaderboardUC,
 	}
 }
 
@@ -351,9 +366,26 @@ func (uc *GetDailyGameStatusUseCase) Execute(input GetDailyGameStatusInput) (Get
 
 	gameDTO := ToDailyGameDTO(game, now)
 	var timeLimit *int
+	var results *GameResultsDTO
+
 	if game.Status() == daily_challenge.GameStatusInProgress {
 		tl := 15
 		timeLimit = &tl
+	} else if game.Status() == daily_challenge.GameStatusCompleted {
+		// Build results for completed games
+		rank, _ := uc.dailyGameRepo.GetPlayerRankByDate(game.PlayerID(), game.Date())
+
+		// Fetch leaderboard
+		leaderboardEntries := make([]LeaderboardEntryDTO, 0)
+		if leaderboard, err := uc.getLeaderboardUC.Execute(GetDailyLeaderboardInput{
+			Date:  game.Date().String(),
+			Limit: 10,
+		}); err == nil {
+			leaderboardEntries = leaderboard.Entries
+		}
+
+		gameResults := BuildGameResultsDTO(game, rank, totalPlayers, leaderboardEntries)
+		results = &gameResults
 	}
 
 	// HasPlayed = true ONLY if game is completed
@@ -362,6 +394,7 @@ func (uc *GetDailyGameStatusUseCase) Execute(input GetDailyGameStatusInput) (Get
 	return GetDailyGameStatusOutput{
 		HasPlayed:    hasPlayed,
 		Game:         &gameDTO,
+		Results:      results,
 		TimeLimit:    timeLimit,
 		TimeToExpire: timeToExpire,
 		TotalPlayers: totalPlayers,

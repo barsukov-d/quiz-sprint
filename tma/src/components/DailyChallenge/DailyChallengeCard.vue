@@ -16,7 +16,12 @@ const router = useRouter()
 // ===========================
 
 const {
-  state,
+  game,
+  streak,
+  totalPlayers,
+  timeToExpire,
+  questionIndex,
+  totalQuestions,
   isPlaying,
   isCompleted,
   isLoading,
@@ -29,7 +34,7 @@ const {
   initialize
 } = useDailyChallenge(props.playerId)
 
-const streaks = useStreaks(computed(() => state.value.streak))
+const streaks = useStreaks(streak)
 
 // ===========================
 // Countdown Timer
@@ -40,18 +45,10 @@ const countdownInterval = ref<number | null>(null)
 const startCountdown = () => {
   if (countdownInterval.value) return
 
+  // Refresh status periodically to keep time accurate
   countdownInterval.value = window.setInterval(() => {
-    if (state.value.timeToExpire > 0) {
-      state.value.timeToExpire--
-    } else {
-      // Время вышло - обновляем статус
-      checkStatus()
-      if (countdownInterval.value) {
-        clearInterval(countdownInterval.value)
-        countdownInterval.value = null
-      }
-    }
-  }, 1000)
+    checkStatus()
+  }, 60000) // Refresh every minute
 }
 
 const stopCountdown = () => {
@@ -76,7 +73,7 @@ const cardDescription = computed(() => {
     return 'Come back tomorrow for a new challenge!'
   }
   if (isPlaying.value) {
-    return `Question ${state.value.questionIndex} of ${state.value.totalQuestions}`
+    return `Question ${questionIndex.value + 1} of ${totalQuestions.value}`
   }
   return '10 questions, one chance per day'
 })
@@ -145,6 +142,10 @@ const handleClick = async () => {
   }
 }
 
+const progressDaily = computed(
+  () =>{ return hasPlayed.value ? 100 : progress.value}
+)
+
 // ===========================
 // Lifecycle
 // ===========================
@@ -196,11 +197,11 @@ onBeforeUnmount(() => {
           <span class="font-medium">Progress</span>
           <span class="text-gray-500">{{ hasPlayed ? 100 : progress }}%</span>
         </div>
-        <UProgress :value="hasPlayed ? 100 : progress" :color="hasPlayed ? 'green' : 'primary'" />
+        <UProgress v-model="progressDaily"  />
       </div>
 
       <!-- Streak Info -->
-      <div v-if="state.streak" class="flex items-center gap-4">
+      <div v-if="streak" class="flex items-center gap-4">
         <div class="flex items-center gap-2">
           <span class="text-2xl">{{ streaks.getStreakEmoji.value }}</span>
           <div>
@@ -241,16 +242,16 @@ onBeforeUnmount(() => {
           <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Players Today</p>
           <p class="text-sm font-semibold">
             <UIcon name="i-heroicons-user-group" class="inline size-4" />
-            {{ state.totalPlayers }}
+            {{ totalPlayers }}
           </p>
         </div>
       </div>
 
       <!-- Score (если завершено) -->
-      <div v-if="hasPlayed && state.game" class="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+      <div v-if="hasPlayed && game" class="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
         <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">Your Score</p>
         <p class="text-2xl font-bold text-green-600 dark:text-green-400">
-          {{ state.game.finalScore || 0 }} points
+          {{ game?.finalScore || 0 }} points
         </p>
       </div>
     </div>

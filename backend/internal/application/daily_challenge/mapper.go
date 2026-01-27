@@ -107,12 +107,15 @@ func ToAnsweredQuestionDTO(
 	question *quiz.Question,
 	answerData kernel.AnswerData,
 ) AnsweredQuestionDTO {
-	// Find correct answer
-	var correctAnswerID string
+	// Find correct answer and player answer text
+	var correctAnswerID, correctAnswerText, playerAnswerText string
 	for _, answer := range question.Answers() {
 		if answer.IsCorrect() {
 			correctAnswerID = answer.ID().String()
-			break
+			correctAnswerText = answer.Text().String()
+		}
+		if answer.ID().String() == answerData.AnswerID().String() {
+			playerAnswerText = answer.Text().String()
 		}
 	}
 
@@ -123,13 +126,15 @@ func ToAnsweredQuestionDTO(
 	}
 
 	return AnsweredQuestionDTO{
-		QuestionID:      question.ID().String(),
-		QuestionText:    question.Text().String(),
-		PlayerAnswerID:  answerData.AnswerID().String(),
-		CorrectAnswerID: correctAnswerID,
-		IsCorrect:       answerData.IsCorrect(),
-		TimeTaken:       answerData.TimeTaken(),
-		PointsEarned:    pointsEarned,
+		QuestionID:        question.ID().String(),
+		QuestionText:      question.Text().String(),
+		PlayerAnswerID:    answerData.AnswerID().String(),
+		PlayerAnswerText:  playerAnswerText,
+		CorrectAnswerID:   correctAnswerID,
+		CorrectAnswerText: correctAnswerText,
+		IsCorrect:         answerData.IsCorrect(),
+		TimeTaken:         answerData.TimeTaken(),
+		PointsEarned:      pointsEarned,
 	}
 }
 
@@ -151,6 +156,7 @@ func BuildGameResultsDTO(
 	game *daily_challenge.DailyGame,
 	rank int,
 	totalPlayers int,
+	leaderboard []LeaderboardEntryDTO,
 ) GameResultsDTO {
 	session := game.Session()
 	streak := game.Streak()
@@ -185,5 +191,6 @@ func BuildGameResultsDTO(
 		TotalPlayers:      totalPlayers,
 		Percentile:        percentile,
 		AnsweredQuestions: answeredQuestions,
+		Leaderboard:       leaderboard,
 	}
 }

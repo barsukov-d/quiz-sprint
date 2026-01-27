@@ -4,86 +4,45 @@ import {
   usePostDailyChallengeStart,
   usePostDailyChallengeGameidAnswer,
   useGetDailyChallengeStatus,
-  useGetDailyChallengeLeaderboard,
   useGetDailyChallengeStreak
 } from '@/api/generated'
-import type {
-  InternalInfrastructureHttpHandlersDailyGameDTO,
-  InternalInfrastructureHttpHandlersQuestionDTO,
-  InternalInfrastructureHttpHandlersGameResultsDTO,
-  InternalInfrastructureHttpHandlersStreakDTO
-} from '@/api/generated'
-
-export type DailyChallengeStatus = 'idle' | 'loading' | 'playing' | 'completed' | 'error'
-
-interface DailyChallengeState {
-  status: DailyChallengeStatus
-  game: InternalInfrastructureHttpHandlersDailyGameDTO | null
-  currentQuestion: InternalInfrastructureHttpHandlersQuestionDTO | null
-  questionIndex: number
-  totalQuestions: number
-  timeLimit: number
-  results: InternalInfrastructureHttpHandlersGameResultsDTO | null
-  streak: InternalInfrastructureHttpHandlersStreakDTO | null
-  timeToExpire: number
-  totalPlayers: number
-}
-
-const STORAGE_KEY = 'daily-challenge-state'
-
-// ===========================
-// Shared State (Singleton)
-// ===========================
-// This state is shared across all components using useDailyChallenge
-// to prevent data loss when navigating between pages
-
-const sharedState = ref<DailyChallengeState>({
-  status: 'idle',
-  game: null,
-  currentQuestion: null,
-  questionIndex: 0,
-  totalQuestions: 10,
-  timeLimit: 15,
-  results: null,
-  streak: null,
-  timeToExpire: 0,
-  totalPlayers: 0
-})
 
 /**
  * Composable для управления Daily Challenge игрой
  *
+ * ✅ SERVER-SIDE STATE ARCHITECTURE:
+ * - Backend DB is the single source of truth
+ * - Frontend always fetches fresh data from API (/status)
+ * - Results are included in /status response when game is completed
+ * - No local state management (stateless)
+ *
  * Возможности:
  * - Старт игры
  * - Отправка ответов
- * - Получение статуса
- * - Локальное сохранение прогресса
- * - Управление таймером до сброса
- *
- * NOTE: Uses shared singleton state to persist data across page navigation
+ * - Получение статуса с сервера (всегда актуальный)
  */
 export function useDailyChallenge(playerId: string) {
   const router = useRouter()
 
-  // Use shared state instead of local state
-  const state = sharedState
-
   // ===========================
-  // API Hooks
+  // API Hooks (Server State)
   // ===========================
 
   const startMutation = usePostDailyChallengeStart()
   const answerMutation = usePostDailyChallengeGameidAnswer()
 
-  // Pass playerId as params (first argument), then options (second argument)
+  // Main API endpoint - single source of truth
   const { data: statusData, refetch: refetchStatus, isLoading: isLoadingStatus } = useGetDailyChallengeStatus(
     computed(() => ({ playerId })),
     {
       query: {
-        enabled: computed(() => !!playerId)
+        enabled: computed(() => !!playerId),
+        refetchOnWindowFocus: true, // Always fetch fresh data
+        staleTime: 0 // No caching, always fresh
       }
     }
   )
+
   const { data: streakData, refetch: refetchStreak } = useGetDailyChallengeStreak(
     computed(() => ({ playerId })),
     {
@@ -94,102 +53,53 @@ export function useDailyChallenge(playerId: string) {
   )
 
   // ===========================
-  // Computed Properties
+  // Computed Properties (from API)
   // ===========================
 
-  const isPlaying = computed(() => state.value.status === 'playing')
-  const isCompleted = computed(() => state.value.status === 'completed')
+  // Game state from API
+  const game = computed(() => statusData.value?.data?.game ?? null)
+  const results = computed(() => statusData.value?.data?.results ?? null)
+  const hasPlayed = computed(() => statusData.value?.data?.hasPlayed ?? false)
+  const timeToExpire = computed(() => statusData.value?.data?.timeToExpire ?? 0)
+  const totalPlayers = computed(() => statusData.value?.data?.totalPlayers ?? 0)
+  const timeLimit = computed(() => statusData.value?.data?.timeLimit ?? 15)
+
+  // Game details
+  const currentQuestion = computed(() => game.value?.currentQuestion ?? null)
+  const questionIndex = computed(() => game.value?.questionIndex ?? 0)
+  const totalQuestions = computed(() => game.value?.totalQuestions ?? 10)
+  const streak = computed(() => streakData.value?.data?.streak ?? game.value?.streak ?? null)
+
+  // Status flags
+  const isPlaying = computed(() => game.value?.status === 'in_progress')
+  const isCompleted = computed(() => game.value?.status === 'completed')
+  const canPlay = computed(() => !hasPlayed.value && !isPlaying.value)
+
   const isLoading = computed(() =>
-    state.value.status === 'loading' ||
     startMutation.isPending.value ||
     answerMutation.isPending.value ||
     isLoadingStatus.value
   )
-  const hasPlayed = computed(() => statusData.value?.data?.hasPlayed ?? false)
-  const canPlay = computed(() => !hasPlayed.value && state.value.status !== 'playing')
 
-  // Прогресс (0-100%)
+  // Progress (0-100%)
   const progress = computed(() => {
-    if (state.value.totalQuestions === 0) return 0
-    return Math.round((state.value.questionIndex / state.value.totalQuestions) * 100)
+    if (totalQuestions.value === 0) return 0
+    return Math.round((questionIndex.value / totalQuestions.value) * 100)
   })
 
-  // Осталось вопросов
+  // Remaining questions
   const remainingQuestions = computed(() =>
-    state.value.totalQuestions - state.value.questionIndex
+    totalQuestions.value - questionIndex.value
   )
 
-  // Форматированное время до сброса
+  // Formatted time to expire
   const timeToExpireFormatted = computed(() => {
-    const seconds = state.value.timeToExpire
+    const seconds = timeToExpire.value
     const hours = Math.floor(seconds / 3600)
     const minutes = Math.floor((seconds % 3600) / 60)
     const secs = seconds % 60
     return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
   })
-
-  // ===========================
-  // Local Storage
-  // ===========================
-
-  const saveToLocalStorage = () => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify({
-        playerId,
-        game: state.value.game,
-        currentQuestion: state.value.currentQuestion,
-        questionIndex: state.value.questionIndex,
-        timestamp: Date.now()
-      }))
-    } catch (error) {
-      console.error('Failed to save Daily Challenge state:', error)
-    }
-  }
-
-  const loadFromLocalStorage = () => {
-    try {
-      const saved = localStorage.getItem(STORAGE_KEY)
-      if (!saved) return false
-
-      const data = JSON.parse(saved)
-
-      // Проверяем, что данные для текущего игрока
-      if (data.playerId !== playerId) return false
-
-      // Проверяем, что данные не старше 24 часов
-      const age = Date.now() - data.timestamp
-      if (age > 24 * 60 * 60 * 1000) {
-        clearLocalStorage()
-        return false
-      }
-
-      // MIGRATION: Проверяем, что игра имеет gameId (добавлен в новой версии)
-      if (data.game && !data.game.gameId) {
-        console.warn('[useDailyChallenge] Old localStorage data detected (missing gameId), clearing...')
-        clearLocalStorage()
-        return false
-      }
-
-      // Восстанавливаем состояние
-      state.value.game = data.game
-      state.value.currentQuestion = data.currentQuestion
-      state.value.questionIndex = data.questionIndex
-      state.value.status = 'playing'
-
-      return true
-    } catch (error) {
-      console.error('Failed to load Daily Challenge state:', error)
-      return false
-    }
-  }
-
-  const clearLocalStorage = () => {
-    try {
-      localStorage.removeItem(STORAGE_KEY)
-    } catch (error) {
-      console.error('Failed to clear Daily Challenge state:', error)
-    }
-  }
 
   // ===========================
   // Game Actions
@@ -200,7 +110,7 @@ export function useDailyChallenge(playerId: string) {
    */
   const startGame = async (date?: string) => {
     try {
-      state.value.status = 'loading'
+      console.log('[useDailyChallenge] Starting game...')
 
       const response = await startMutation.mutateAsync({
         data: {
@@ -209,32 +119,20 @@ export function useDailyChallenge(playerId: string) {
         }
       })
 
-      const gameData = response.data
+      console.log('[useDailyChallenge] Game started:', response.data)
 
-      state.value.game = gameData.game
-      state.value.currentQuestion = gameData.firstQuestion
-      state.value.questionIndex = 1
-      state.value.totalQuestions = 10
-      state.value.timeLimit = gameData.timeLimit
-      state.value.timeToExpire = gameData.timeToExpire
-      state.value.totalPlayers = gameData.totalPlayers
-      state.value.status = 'playing'
+      // Refresh status to get updated game state
+      await refetchStatus()
 
-      saveToLocalStorage()
-
-      // Переходим на экран игры
+      // Navigate to play page
       router.push({ name: 'daily-challenge-play' })
 
       return true
     } catch (error: any) {
-      state.value.status = 'error'
-      console.error('Failed to start Daily Challenge:', error)
+      console.error('[useDailyChallenge] Failed to start game:', error)
 
-      // Обработка ошибок
-      if (error.response?.status === 409) {
-        // Уже играл сегодня
-        await refetchStatus()
-      }
+      // Refresh status on error
+      await refetchStatus()
 
       throw error
     }
@@ -245,36 +143,27 @@ export function useDailyChallenge(playerId: string) {
    */
   const submitAnswer = async (answerId: string, timeTaken: number) => {
     console.log('[useDailyChallenge] submitAnswer called', {
-      gameId: state.value.game?.gameId,
-      questionId: state.value.currentQuestion?.id,
+      gameId: game.value?.gameId,
+      questionId: currentQuestion.value?.id,
       answerId,
       timeTaken
     })
 
-    if (!state.value.game?.gameId || !state.value.currentQuestion?.id) {
+    if (!game.value?.gameId || !currentQuestion.value?.id) {
       console.error('[useDailyChallenge] No active game or question!', {
-        hasGame: !!state.value.game,
-        gameId: state.value.game?.gameId,
-        hasQuestion: !!state.value.currentQuestion
+        hasGame: !!game.value,
+        gameId: game.value?.gameId,
+        hasQuestion: !!currentQuestion.value
       })
-
-      // If gameId is missing, clear localStorage and reload
-      if (state.value.game && !state.value.game.gameId) {
-        console.error('[useDailyChallenge] Game data is corrupted (missing gameId). Clearing localStorage...')
-        clearLocalStorage()
-        state.value.status = 'idle'
-        throw new Error('Game data corrupted. Please start a new game.')
-      }
-
       throw new Error('No active game or question')
     }
 
     try {
       console.log('[useDailyChallenge] Sending answer mutation...')
       const response = await answerMutation.mutateAsync({
-        gameId: state.value.game.gameId,
+        gameId: game.value.gameId,
         data: {
-          questionId: state.value.currentQuestion.id,
+          questionId: currentQuestion.value.id,
           answerId,
           playerId,
           timeTaken
@@ -285,117 +174,53 @@ export function useDailyChallenge(playerId: string) {
 
       const answerData = response.data
 
-      // Обновляем индекс вопроса
-      state.value.questionIndex = answerData.questionIndex + 1
-
       console.log('[useDailyChallenge] Checking game completion:', {
         isGameCompleted: answerData.isGameCompleted,
-        hasGameResults: !!answerData.gameResults,
-        gameResults: answerData.gameResults
+        hasGameResults: !!answerData.gameResults
       })
 
-      if (answerData.isGameCompleted && answerData.gameResults) {
-        // Игра завершена
-        console.log('[useDailyChallenge] Game completed! Navigating to results...')
-        state.value.results = answerData.gameResults
-        state.value.currentQuestion = null
-        state.value.status = 'completed'
-        clearLocalStorage()
+      if (answerData.isGameCompleted) {
+        // Game completed - refresh status to get results
+        console.log('[useDailyChallenge] Game completed! Fetching results from server...')
+        await refetchStatus()
+        await refetchStreak()
 
-        // Переходим на экран результатов
+        // Navigate to results page
+        console.log('[useDailyChallenge] Navigating to results...')
         router.push({ name: 'daily-challenge-results' })
-      } else if (answerData.nextQuestion) {
-        // Следующий вопрос
-        state.value.currentQuestion = answerData.nextQuestion
-        state.value.timeLimit = answerData.nextTimeLimit ?? 15
-        saveToLocalStorage()
+      } else {
+        // Game continues - refresh status to get next question
+        console.log('[useDailyChallenge] Game continues, fetching next question...')
+        await refetchStatus()
       }
 
       return answerData
     } catch (error) {
-      console.error('Failed to submit answer:', error)
+      console.error('[useDailyChallenge] Failed to submit answer:', error)
+      // Refresh status on error to sync with server
+      await refetchStatus()
       throw error
     }
   }
 
   /**
-   * Получить статус игры
+   * Обновить статус с сервера
    */
   const checkStatus = async () => {
     try {
       await refetchStatus()
-
-      if (statusData.value?.data) {
-        const data = statusData.value.data
-        state.value.timeToExpire = data.timeToExpire
-        state.value.totalPlayers = data.totalPlayers
-
-        if (data.hasPlayed && data.game?.status === 'completed') {
-          state.value.status = 'completed'
-          state.value.game = data.game
-        } else if (data.game?.status === 'in_progress') {
-          // Есть незавершённая игра - пытаемся восстановить
-          loadFromLocalStorage()
-        }
-      }
-    } catch (error) {
-      console.error('Failed to check status:', error)
-    }
-  }
-
-  /**
-   * Получить серию игрока
-   */
-  const loadStreak = async () => {
-    try {
       await refetchStreak()
-      if (streakData.value?.data?.streak) {
-        state.value.streak = streakData.value.data.streak
-      }
     } catch (error) {
-      console.error('Failed to load streak:', error)
+      console.error('[useDailyChallenge] Failed to check status:', error)
     }
   }
 
   /**
-   * Сбросить состояние
+   * Инициализация (загрузка данных с сервера)
    */
-  const reset = () => {
-    state.value = {
-      status: 'idle',
-      game: null,
-      currentQuestion: null,
-      questionIndex: 0,
-      totalQuestions: 10,
-      timeLimit: 15,
-      results: null,
-      streak: null,
-      timeToExpire: 0,
-      totalPlayers: 0
-    }
-    clearLocalStorage()
-  }
-
-  // ===========================
-  // Lifecycle
-  // ===========================
-
-  // При создании composable пытаемся восстановить состояние
-  const initialized = ref(false)
-
   const initialize = async () => {
-    if (initialized.value) return
-
-    // Пытаемся восстановить из localStorage
-    const restored = loadFromLocalStorage()
-
-    // Загружаем статус с сервера
+    console.log('[useDailyChallenge] Initializing...')
     await checkStatus()
-    await loadStreak()
-
-    initialized.value = true
-
-    return restored
   }
 
   // ===========================
@@ -403,15 +228,21 @@ export function useDailyChallenge(playerId: string) {
   // ===========================
 
   return {
-    // State
-    state,
-
-    // Computed
+    // Computed (from API)
+    game,
+    results,
+    hasPlayed,
+    timeToExpire,
+    totalPlayers,
+    timeLimit,
+    currentQuestion,
+    questionIndex,
+    totalQuestions,
+    streak,
     isPlaying,
     isCompleted,
-    isLoading,
-    hasPlayed,
     canPlay,
+    isLoading,
     progress,
     remainingQuestions,
     timeToExpireFormatted,
@@ -420,12 +251,12 @@ export function useDailyChallenge(playerId: string) {
     startGame,
     submitAnswer,
     checkStatus,
-    loadStreak,
-    reset,
     initialize,
 
-    // Data from API
+    // Raw API data (for advanced usage)
     statusData,
-    streakData
+    streakData,
+    refetchStatus,
+    refetchStreak
   }
 }

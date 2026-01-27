@@ -242,17 +242,19 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			dailyChallengeEventBus,
 			getOrCreateDailyQuizUC,
 		)
+		getDailyLeaderboardUC = appDaily.NewGetDailyLeaderboardUseCase(
+			dailyGameRepo,
+			userRepo,
+		)
 		submitDailyAnswerUC = appDaily.NewSubmitDailyAnswerUseCase(
 			dailyGameRepo,
 			dailyChallengeEventBus,
+			getDailyLeaderboardUC,
 		)
 		getDailyGameStatusUC = appDaily.NewGetDailyGameStatusUseCase(
 			dailyQuizRepo,
 			dailyGameRepo,
-		)
-		getDailyLeaderboardUC = appDaily.NewGetDailyLeaderboardUseCase(
-			dailyGameRepo,
-			userRepo,
+			getDailyLeaderboardUC,
 		)
 		getPlayerStreakUC = appDaily.NewGetPlayerStreakUseCase(
 			dailyGameRepo,
