@@ -2,341 +2,473 @@
 
 > **Principle:** One term = one concept. Avoid synonyms and ambiguity.
 
+---
+
 ## Core Domain Concepts
 
-### Quiz (Quiz Content)
-- **Aggregate Root:** `quiz.Quiz`
-- **Definition:** Set of questions with settings (not the gameplay process)
-- **Code:** `type Quiz struct { id QuizID; questions []Question; ... }`
-- **❌ Avoid:** Test, Questionnaire, Assessment
+### Quiz (Content)
+**Aggregate Root:** `quiz.Quiz`
+**Definition:** Set of questions (content), NOT the gameplay process.
+**❌ Avoid:** Test, Questionnaire, Assessment
 
 ### Question
-- **Entity:** `quiz.Question` (part of Quiz aggregate)
-- **Definition:** One question with 4 answer options (1 correct)
-- **Code:** `type Question struct { id QuestionID; text string; answers []Answer; difficulty string }`
+**Entity:** `quiz.Question` (part of Quiz aggregate)
+**Definition:** Single question with 4 answers (1 correct).
 
 ### Answer
-- **Entity:** `quiz.Answer`
-- **Not to be confused:** `UserAnswer` (player's response)
-- **Code:** `type Answer struct { id AnswerID; text string; isCorrect bool; position int }`
+**Entity:** `quiz.Answer`
+**Definition:** One answer option (text + isCorrect flag).
+**Not confused with:** `UserAnswer` (player's submission).
 
 ### Game
-- **Definition:** Process of taking a Quiz in specific mode
-- **Types:** `MarathonGame`, `DailyGame`, `DuelGame`, `PartyGame`
-- **Not to be confused:** `Quiz` (content), `Session` (pure gameplay logic)
-- **❌ Avoid:** Match, Round, Run
+**Definition:** Process of playing Quiz in specific mode.
+**Types:** `DailyGame`, `MarathonGame`
+**❌ Avoid:** Match, Round, Session (for modes)
 
-### Session (Gameplay Session)
-- **Shared Kernel:** `kernel.QuizGameplaySession`
-- **Definition:** Pure question-answering logic without mode-specific rules
-- **Usage:** Reused by all game modes via composition
+### Session (Gameplay)
+**Shared Kernel:** `kernel.QuizGameplaySession`
+**Definition:** Pure Q&A logic (question navigation, answer tracking).
+**Usage:** Composed into all Game aggregates.
 
 ### Category
-- **Aggregate Root:** `quiz.Category`
-- **Definition:** Thematic category for questions (Geography, History, etc.)
+**Aggregate Root:** `quiz.Category`
+**Definition:** Thematic grouping (Geography, History, etc.)
 
 ---
 
-## Bounded Contexts (Game Modes)
+## Bounded Context: Daily Challenge
 
-### Daily Challenge Context
-**Aggregates:**
-- `daily_challenge.DailyQuiz` - Daily question set (one for all players, 10 questions, refreshes 00:00 UTC)
-- `daily_challenge.DailyGame` - Individual player's attempt
+### Aggregates
 
-**Key Concepts:**
-- **Daily Chest** - Main reward (🪵 Wooden/🥈 Silver/🏆 Golden) based on score (0-4/5-7/8-10 correct)
-- **Daily Streak** - Consecutive days played → resource multiplier (+10%/+25%/+50%)
-- **Chest Contents:** PvP Tickets, Coins, Marathon Bonuses (Shield, 50/50, Skip, Freeze)
+**DailyQuiz**
+- `daily_challenge.DailyQuiz`
+- Daily question set (10 questions, same for all players)
+- One active per date (00:00 UTC refresh)
+- Deterministic selection (seed-based)
 
-**Mechanics:**
-- One free attempt per day
-- Global/Friends/Country leaderboard
-- Streak recovery (monetization)
-- Second attempt (monetization)
+**DailyGame**
+- `daily_challenge.DailyGame`
+- Individual player's attempt at daily quiz
+- 1 free attempt/day
+- Max 1 free + N paid retries
 
-**API:** `/api/v1/daily/*`
-**DB:** `daily_quizzes`, `daily_games`
-**❌ Avoid:** DailyChallenge as aggregate, DailySession
+### Value Objects
 
----
+**StreakSystem**
+- `daily_challenge.StreakSystem`
+- Consecutive days played
+- Immutable (methods return new instance)
+- Bonuses: 3d→1.1x, 7d→1.25x, 30d→1.5x
 
-### Solo Marathon Context
-**Aggregate Root:** `solo_marathon.MarathonGame`
+**ChestType**
+- `daily_challenge.ChestType`
+- Enum: `wooden`, `silver`, `golden`
+- Determined by correct answers: 0-4/5-7/8-10
 
-**Key Concepts:**
-- **Lives System** - 3 lives, -1 per wrong answer, game over at 0
-- **Bonuses** (earned from Daily Chest):
-  - 🛡️ Shield - One free mistake without losing life
-  - 🔀 50/50 - Remove 2 wrong answers
-  - ⏭️ Skip - Skip question without penalty
-  - ❄️ Freeze - Add 10 seconds to timer
-- **Score** - Number of correct answers in single run
-- **Adaptive Difficulty** - Harder questions as player progresses
+**GameStatus**
+- `daily_challenge.GameStatus`
+- Enum: `in_progress`, `completed`, `abandoned`
 
-**Mechanics:**
-- Endless questions until 3 lives lost
-- Strategic bonus usage for record runs
-- Weekly leaderboard (top 100 rewards)
-- All-time hall of fame
-- Continue run (monetization: rewarded ad or premium currency)
+### Key Concepts
 
-**API:** `/api/v1/marathon/*`
-**DB:** `marathon_games`
-**❌ Avoid:** MarathonSession, SoloGame, MarathonRun
+**Daily Chest**
+- Main reward container
+- 3 types: 🪵 Wooden / 🥈 Silver / 🏆 Golden
+- Contains: Coins, PvP Tickets, Marathon Bonuses
 
----
+**Daily Streak**
+- Consecutive days played
+- Multiplies chest rewards
+- Recoverable (monetization)
 
-### PvP Duel Context (Ranked)
-**Aggregate Root:** `quick_duel.DuelGame`
+**Second Attempt**
+- Retry same day: 100 coins OR Rewarded Ad
+- Best score counts for leaderboard
 
-**Key Concepts:**
-- **PvP Ticket** - Entry cost (earned from Daily Challenge)
-- **MMR/ELO Rating** - Skill-based matchmaking and ranking
-- **League System:** 🥉 Bronze → 🥈 Silver → 🥇 Gold → 💍 Platinum → 💎 Diamond → 👑 Legend
-- **Season** - 1 month duration, partial rating reset, exclusive cosmetic rewards
+### API Routes
+`/api/v1/daily/*`
 
-**Mechanics:**
-- 1v1 synchronized gameplay (7 identical questions)
-- Winner: more correct answers OR faster time (tiebreaker)
-- **NO bonuses allowed** (pure skill)
-- Matchmaking by MMR
+### Database
+Tables: `daily_quizzes`, `daily_games`
 
-**API:** WebSocket `/ws/duel`
-**DB:** `duel_games`
-**❌ Avoid:** Match, PvPGame, QuickDuel as aggregate
+### Anti-patterns
+❌ `DailyChallenge` (aggregate name)
+❌ `DailySession` (use DailyGame)
 
 ---
 
-### Party Mode Context (Arcade PvP)
-**Aggregate Root:** `party_mode.PartyRoom` (lobby) + `party_mode.PartyGame` (active game)
+## Bounded Context: Solo Marathon
 
-**Key Concepts:**
-- **Room Code** - ABC-123 format for private rooms
-- **Host Permissions** - Room creator controls
-- **Weekly Modifiers** - Changing rules each week (Knockout, Speed, Themed, Bonuses Allowed, True/False)
+### Aggregates
 
-**Mechanics:**
-- 4 players per match
-- Last man standing
-- Quick matchmaking (no MMR)
-- Private rooms with friends
-- PvP Ticket entry cost
-- Small coin reward for winner
+**MarathonGame**
+- `solo_marathon.MarathonGame`
+- PvE endless run until 0 lives
+- Manages: lives, bonuses, score, continues
 
-**API:** WebSocket `/ws/party`
-**DB:** `party_rooms`, `party_games`
-**❌ Avoid:** Lobby as aggregate, MultiplayerGame
+### Value Objects
+
+**LivesSystem**
+- `solo_marathon.LivesSystem`
+- Start: 3 lives
+- Wrong answer: -1 life
+- Game over: 0 lives
+- Immutable
+
+**BonusInventory**
+- `solo_marathon.BonusInventory`
+- Tracks 4 bonus types + quantities
+- Immutable (use deducts)
+
+**BonusType**
+- `solo_marathon.BonusType`
+- Enum: `shield`, `fifty_fifty`, `skip`, `freeze`
+
+**PaymentMethod**
+- `solo_marathon.PaymentMethod`
+- Enum: `coins`, `ad`
+
+**GameStatus**
+- `solo_marathon.GameStatus`
+- Enum: `in_progress`, `game_over`, `completed`
+
+### Key Concepts
+
+**Lives**
+- 3 ❤️❤️❤️ at start
+- -1 per wrong answer (unless Shield active)
+- 0 → Game Over
+- ❌ Avoid: HP, Health, Hearts
+
+**Bonuses** (4 types)
+
+| Type | Icon | Effect |
+|------|------|--------|
+| Shield | 🛡️ | 1 free mistake (no life loss) |
+| 50/50 | 🔀 | Remove 2 wrong answers |
+| Skip | ⏭️ | Skip question (no penalty) |
+| Freeze | ❄️ | +10 seconds to timer |
+
+❌ Avoid: PowerUp, Boost, Help
+
+**Score**
+- Count of correct answers
+- NO time bonus (unlike Daily Challenge)
+- Tiebreaker: totalQuestions ASC, completedAt ASC
+
+**Adaptive Difficulty**
+- Timer: 15s → 12s → 10s → 8s
+- Questions: easy → medium → hard
+
+**Continue**
+- At game over: +1 life (reset to 1, not +1)
+- Cost: 200/400/600/800 coins OR Ad
+- Unlimited continues (escalating cost)
+
+**Weekly Leaderboard**
+- Monday-Sunday UTC
+- Top 100 get rewards
+- Resets weekly
+
+**All-Time Leaderboard**
+- Hall of Fame (prestige only)
+- No rewards
+
+### API Routes
+`/api/v1/marathon/*`
+
+### Database
+Tables: `marathon_games`, `marathon_personal_best`
+
+### Anti-patterns
+❌ `MarathonSession` (use MarathonGame)
+❌ `SoloGame` (use MarathonGame)
+❌ `MarathonRun` (use MarathonGame)
 
 ---
 
-## Value Objects
+## Domain Services
 
-### Lives System
-- **Context:** Solo Marathon
-- **Value Object:** `solo_marathon.LivesSystem`
-- **Rules:** Max 3, -1 per error, game over at 0
-- **❌ Avoid:** HP, Health, Hearts
+### Daily Challenge
 
-### Streak
-**Context-dependent meanings:**
-1. **Marathon Streak:** `currentStreak` - consecutive correct answers (resets on error)
-2. **Daily Streak:** `dailyStreak` - consecutive days played (NOT reset on errors)
-- **❌ Avoid:** combo, chain
+**DailyQuizSelector**
+- Selects 10 questions for date (deterministic)
 
-### ELO Rating
-- **Context:** PvP Duel
-- **Value Object:** `quick_duel.EloRating`
-- **Rules:** Start 1000, K-factor 32→16, min 100
-- **❌ Avoid:** MMR, Rank without clarification
+**ChestRewardCalculator**
+- Calculates chest contents (coins, tickets, bonuses)
 
-### Bonus Types
-- **Context:** Solo Marathon
-- **Value Object:** `solo_marathon.BonusType`
-- **Types:** `shield`, `fifty_fifty`, `skip`, `freeze`
-- **❌ Avoid:** PowerUp, Boost, Help
+### Solo Marathon
 
-### Daily Chest
-- **Context:** Daily Challenge
-- **Value Object:** `daily_challenge.ChestType`
-- **Types:** `wooden` (0-4 correct), `silver` (5-7), `golden` (8-10)
-- **Contents:** PvP Tickets, Coins, Marathon Bonuses
+**DifficultyCalculator**
+- Returns time limit for question index
+- Selects difficulty level
 
-### PvP Ticket
-- **Value Object:** `pvp.Ticket`
-- **Usage:** Entry cost for PvP Duel and Party Mode
-- **Source:** Earned from Daily Challenge Chest
+**ContinueCostCalculator**
+- Calculates continue cost: `200 + (count * 200)`
 
-### Difficulty
-- **Levels:** `easy`, `medium`, `hard`
-- **Contexts:** Question difficulty (property) vs Adaptive difficulty (Marathon progression)
-- **❌ Avoid:** level as difficulty
-
-### Leaderboard
-- **Read Model (CQRS)**
-- **Types:** Daily Global/Friends/Country, Marathon Weekly/All-Time, PvP Seasonal
-- **Storage:** Redis Sorted Sets
-- **❌ Avoid:** Ranking, TopScores
+**PersonalBestTracker**
+- Updates personal best if score higher
+- Awards 500 coin bonus
 
 ---
 
-## DDD Patterns
+## Domain Events
 
-### Aggregate Root
-**Definition:** Main entity controlling invariants and transaction boundaries
-**Examples:** `Quiz`, `MarathonGame`, `DuelGame`, `PartyRoom`, `DailyQuiz`, `User`
-**Rule:** All changes ONLY through aggregate root
+### Daily Challenge Events
 
-### Entity
-**Definition:** Object with unique identity (meaningless outside aggregate)
-**Examples:** `Question`, `Answer`, `DuelPlayer`, `PartyPlayer`
+```go
+DailyGameStartedEvent
+DailyQuestionAnsweredEvent
+DailyGameCompletedEvent
+ChestOpenedEvent
+StreakMilestoneReachedEvent
+StreakBrokenEvent
+```
 
-### Value Object
-**Definition:** Immutable object without identity
-**Examples:** `QuizID`, `Points`, `LivesSystem`, `EloRating`, `ChestType`, `Ticket`
-**Rule:** Methods return new object (NO mutation)
+### Solo Marathon Events
 
-### Domain Service
-**Definition:** Business logic coordinating multiple aggregates
-**Examples:** `DailyQuizSelector`, `MatchmakingService`, `ChestRewardCalculator`
+```go
+MarathonGameStartedEvent
+MarathonQuestionAnsweredEvent
+MarathonLifeLostEvent
+MarathonBonusUsedEvent
+MarathonGameOverEvent
+MarathonContinueUsedEvent
+MarathonNewRecordEvent
+```
 
-### Repository
-**Definition:** Interface for aggregate root persistence
-**Rule:** Defined in DOMAIN, implemented in INFRASTRUCTURE
-**❌ Avoid:** DAO, Storage
+**Naming:** Past tense + Event (e.g., `GameStartedEvent` not `StartGameEvent`)
 
-### Domain Event
-**Definition:** Fact that happened in domain (past tense!)
-**Examples:** `GameStartedEvent`, `AnswerSubmittedEvent`, `GameOverEvent`, `ChestOpenedEvent`
-**❌ Avoid:** Present tense (StartGameEvent)
+---
 
-### Shared Kernel
-**Definition:** Common domain logic shared by bounded contexts
-**In project:** `kernel.QuizGameplaySession` - used by all game modes
+## Value Object Patterns
+
+All value objects are **immutable**:
+
+```go
+// ✅ GOOD: Returns new instance
+func (s StreakSystem) UpdateForDate(date Date) StreakSystem {
+    // logic
+    return StreakSystem{...}
+}
+
+// ❌ BAD: Mutates
+func (s *StreakSystem) UpdateForDate(date Date) {
+    s.currentStreak++  // WRONG
+}
+```
 
 ---
 
 ## Naming Conventions
 
-### Go Domain
-```go
-// Aggregates - singular noun
-type MarathonGame struct { ... }
+### Go Code
 
-// Value Objects - noun
+**Aggregates:** Singular noun
+```go
+type DailyGame struct { ... }
+type MarathonGame struct { ... }
+```
+
+**Value Objects:** Noun
+```go
+type StreakSystem struct { ... }
 type LivesSystem struct { ... }
 type ChestType string
+```
 
-// Domain Services - noun + Service
-type MatchmakingService struct { ... }
+**Domain Services:** Noun + Service
+```go
+type DailyQuizSelector struct { ... }
+type ChestRewardCalculator struct { ... }
+```
 
-// Methods - imperative verb
-func (mg *MarathonGame) AnswerQuestion(...) { ... }
+**Methods:** Imperative verb
+```go
+func (dg *DailyGame) AnswerQuestion(...) { ... }
 func (mg *MarathonGame) UseBonus(...) { ... }
+```
 
-// Factory Methods
-func NewMarathonGame(...) (*MarathonGame, error) { ... }
-func ReconstructMarathonGame(...) *MarathonGame { ... }  // for DB loading
+**Factory Methods:**
+```go
+func NewDailyGame(...) (*DailyGame, error)
+func ReconstructDailyGame(...) *DailyGame  // DB loading
+```
 
-// Domain Events - past tense + Event
+**Events:** Past tense + Event
+```go
 type GameStartedEvent struct { ... }
 type ChestOpenedEvent struct { ... }
+```
 
-// Enums
-type BonusType string
+**Enums:**
+```go
+type ChestType string
 const (
-    BonusShield     BonusType = "shield"
-    BonusFiftyFifty BonusType = "fifty_fifty"
-    BonusSkip       BonusType = "skip"
-    BonusFreeze     BonusType = "freeze"
+    ChestTypeWooden ChestType = "wooden"
+    ChestTypeSilver ChestType = "silver"
+    ChestTypeGolden ChestType = "golden"
 )
 ```
 
 ### Database
-```sql
--- snake_case, plural
-CREATE TABLE marathon_games (...);
-CREATE TABLE daily_quizzes (...);
-CREATE TABLE daily_games (...);
-CREATE TABLE duel_games (...);
-CREATE TABLE party_rooms (...);
 
--- Indexes: idx_ + table + columns
-CREATE INDEX idx_marathon_games_player_active ON marathon_games(player_id, is_active);
-CREATE INDEX idx_daily_games_date ON daily_games(date DESC);
+**Tables:** snake_case, plural
+```sql
+daily_quizzes
+daily_games
+marathon_games
+marathon_personal_best
+```
+
+**Indexes:** `idx_` + table + columns
+```sql
+idx_daily_games_player_date
+idx_marathon_games_player_active
 ```
 
 ### API
+
+**REST:** `/api/v1/{mode}/{resource}/{action}`
 ```
-REST: /api/v1/{mode}/{resource}/{action}
-WebSocket messages: type in snake_case {"type": "find_match"}
+/api/v1/daily/start
+/api/v1/marathon/:gameId/answer
+```
+
+**Events:** snake_case
+```json
+{"type": "game_started"}
 ```
 
 ### Frontend
-```typescript
-// Views - PascalCase
-MarathonGame.vue
+
+**Views:** PascalCase
+```
 DailyChallenge.vue
+SoloMarathon.vue
+```
 
-// Composables - camelCase + use prefix
-useSoloMarathon()
+**Composables:** camelCase + use prefix
+```typescript
 useDailyChallenge()
+useMarathonGame()
+```
 
-// Components - PascalCase
+**Components:** PascalCase
+```
 QuestionCard.vue
+LivesDisplay.vue
 ChestReward.vue
 ```
 
 ---
 
-## Anti-patterns
+## Integration Between Contexts
+
+### Resource Flow
+```
+Daily Challenge → Daily Chest → Resources:
+  ├─ Coins → Shop, Marathon Continue, Streak Recovery
+  ├─ PvP Tickets → (future: PvP Duel, Party Mode)
+  └─ Marathon Bonuses → Solo Marathon strategic usage
+```
+
+### Anti-Corruption Layer
+- Daily Challenge does NOT import Marathon
+- Marathon does NOT import Daily Challenge
+- Integration via: Domain Events + Application Layer
+
+---
+
+## Anti-Patterns
 
 ### Avoid Synonyms
+
 | ❌ DON'T use | ✅ DO use |
 |-------------|----------|
 | Test, Questionnaire | Quiz |
-| Match | DuelGame |
-| Run | MarathonGame |
-| Session (for modes) | Game |
-| HP, Health | Lives |
-| PowerUp, Boost | Bonus |
+| Session (for mode) | Game |
+| HP, Health, Hearts | Lives |
+| PowerUp, Boost, Help | Bonus |
 | Combo, Chain | Streak |
-| Challenge (without context) | DailyGame or DailyQuiz |
+| Continue cost formula duplication | Use ContinueCostCalculator |
 
 ### Avoid Ambiguity
+
 ```go
-// ❌ BAD - mixing content and process
+// ❌ BAD: Mixing content and process
 type Quiz struct { userScore int }
 
-// ✅ GOOD - clear separation
+// ✅ GOOD: Clear separation
 type Quiz struct { questions []Question }
-type MarathonGame struct { quiz *Quiz; score int }
+type DailyGame struct { quiz *Quiz; score int }
 ```
 
 ### Avoid Generic Names
+
 ```go
 // ❌ BAD
 type GameSession struct { ... }  // Which game?
 
 // ✅ GOOD
+type DailyGame struct { ... }
 type MarathonGame struct { ... }
-type DuelPlayer struct { ... }
 ```
 
 ---
 
-## Cross-Context Integration
+## DDD Pattern Summary
 
-### Resource Flow
-```
-Daily Challenge → Daily Chest → Resources:
-  ├─ PvP Tickets → PvP Duel / Party Mode
-  ├─ Coins → Shop, Marathon Continue, Streak Recovery
-  └─ Marathon Bonuses → Solo Marathon strategic usage
-```
+**Aggregate Root**
+- Main entity controlling invariants
+- Examples: `DailyQuiz`, `DailyGame`, `MarathonGame`
+- Rule: All changes through aggregate root
 
-### Monetization Points
-- **Daily Challenge:** Second attempt, Streak recovery, Premium (chest upgrade)
-- **Solo Marathon:** Continue run, Bonus packs
-- **PvP Duel:** Ticket purchase, Cosmetics
-- **Party Mode:** Ticket purchase, Rewarded ad for free ticket
+**Entity**
+- Object with identity (part of aggregate)
+- Examples: `Question`, `Answer`
+
+**Value Object**
+- Immutable, no identity
+- Examples: `StreakSystem`, `LivesSystem`, `ChestType`, `BonusInventory`
+- Rule: Methods return NEW instance
+
+**Domain Service**
+- Business logic coordinating aggregates
+- Examples: `ChestRewardCalculator`, `DifficultyCalculator`
+
+**Repository**
+- Interface for persistence
+- Defined in DOMAIN, implemented in INFRASTRUCTURE
+- Examples: `DailyGameRepository`, `MarathonGameRepository`
+
+**Domain Event**
+- Fact that happened (past tense)
+- Examples: `GameStartedEvent`, `ChestOpenedEvent`
+
+**Shared Kernel**
+- Common logic across contexts
+- Example: `kernel.QuizGameplaySession`
+
+---
+
+## Context-Specific Terms
+
+### Daily Challenge Only
+- DailyQuiz, DailyGame
+- StreakSystem, ChestType
+- Second Attempt, Streak Recovery
+
+### Solo Marathon Only
+- MarathonGame
+- LivesSystem, BonusInventory, BonusType
+- Shield, 50/50, Skip, Freeze
+- Continue, Personal Best
+- Weekly/All-Time Leaderboard
+
+### Shared
+- Quiz, Question, Answer, Category
+- QuizGameplaySession (Shared Kernel)
+- Score, Correct Answers
+- Leaderboard (different types)
+- Coins (currency)

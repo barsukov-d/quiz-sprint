@@ -197,3 +197,48 @@ func (e StreakMilestoneReachedEvent) GameID() GameID    { return e.gameID }
 func (e StreakMilestoneReachedEvent) PlayerID() UserID  { return e.playerID }
 func (e StreakMilestoneReachedEvent) StreakDays() int   { return e.streakDays }
 func (e StreakMilestoneReachedEvent) BonusPercent() int { return e.bonusPercent }
+
+// ChestEarnedEvent fired when player earns a chest from daily challenge
+type ChestEarnedEvent struct {
+	gameID          GameID
+	playerID        UserID
+	date            Date
+	chestType       ChestType
+	coins           int
+	pvpTickets      int
+	marathonBonuses []MarathonBonus
+	streakBonus     float64
+	occurredAt      int64
+}
+
+func NewChestEarnedEvent(
+	gameID GameID,
+	playerID UserID,
+	date Date,
+	reward ChestReward,
+	streakBonus float64,
+	occurredAt int64,
+) ChestEarnedEvent {
+	return ChestEarnedEvent{
+		gameID:          gameID,
+		playerID:        playerID,
+		date:            date,
+		chestType:       reward.ChestType(),
+		coins:           reward.Coins(),
+		pvpTickets:      reward.PvpTickets(),
+		marathonBonuses: reward.MarathonBonuses(),
+		streakBonus:     streakBonus,
+		occurredAt:      occurredAt,
+	}
+}
+
+func (e ChestEarnedEvent) EventType() string           { return "chest_earned" }
+func (e ChestEarnedEvent) OccurredAt() int64           { return e.occurredAt }
+func (e ChestEarnedEvent) GameID() GameID              { return e.gameID }
+func (e ChestEarnedEvent) PlayerID() UserID            { return e.playerID }
+func (e ChestEarnedEvent) Date() Date                  { return e.date }
+func (e ChestEarnedEvent) ChestType() ChestType        { return e.chestType }
+func (e ChestEarnedEvent) Coins() int                  { return e.coins }
+func (e ChestEarnedEvent) PvpTickets() int             { return e.pvpTickets }
+func (e ChestEarnedEvent) MarathonBonuses() []MarathonBonus { return e.marathonBonuses }
+func (e ChestEarnedEvent) StreakBonus() float64        { return e.streakBonus }

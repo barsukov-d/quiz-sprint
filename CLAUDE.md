@@ -4,7 +4,6 @@ This file provides guidance to Claude Code when working with code in this reposi
 
 ## 📚 IMPORTANT: Read Before Coding
 
-It is essential to always be concise, avoid unnecessary constructions, and document only what is essential.
 
 **ALWAYS read these documents before generating code:**
 - **[docs/GLOSSARY.md](docs/GLOSSARY.md)** - Ubiquitous Language (единый словарь терминов)
@@ -93,6 +92,75 @@ api/generated/              # Auto-generated from Swagger
 ├── hooks/                  # Vue Query hooks (useGetQuiz, etc.)
 └── schemas/                # Zod validation
 ```
+
+### Architecture Principles
+
+#### Thin Client Pattern (CRITICAL)
+
+**Core Principle:** ALL game state and business logic lives on backend. Frontend is pure rendering layer.
+
+**Backend Responsibilities:**
+- ✅ Game state storage (questions, answers, scores, streaks)
+- ✅ Business logic (scoring, validations, chest calculations)
+- ✅ State transitions (in_progress → completed)
+- ✅ Timer enforcement (server-side)
+- ✅ Anti-cheat validation
+
+**Frontend Responsibilities:**
+- ✅ Render UI based on server data
+- ✅ Capture user input (answer selection)
+- ✅ Send events to backend
+- ✅ Display feedback from server responses
+- ❌ NO game logic duplication
+- ❌ NO local state for game progress
+- ❌ NO score calculations
+- ❌ NO answer validation
+
+**Example (Daily Challenge):**
+
+Bad (Fat Client):
+```typescript
+// ❌ Frontend calculates score
+const score = answers.reduce((sum, a) =>
+  a.isCorrect ? sum + 100 + timeBonus(a.time) : sum, 0
+)
+```
+
+Good (Thin Client):
+```typescript
+// ✅ Frontend only renders what backend sends
+const { data } = await submitAnswer({ questionId, answerId, timeTaken })
+// Backend returns: { isGameCompleted, finalScore, chestType }
+```
+
+**API Design Impact:**
+
+Endpoints return **everything needed for UI**:
+```json
+{
+  "finalScore": 920,
+  "correctAnswers": 8,
+  "chestType": "golden",
+  "chestLabel": "🏆 Золотой сундук",
+  "rank": 847,
+  "rankLabel": "#847 из 12,847",
+  "canRetry": true,
+  "retryCost": { "coins": 100, "hasAd": true }
+}
+```
+
+Frontend just displays, no interpretation.
+
+**Benefits:**
+1. Single source of truth (backend DB)
+2. Impossible to cheat (no client-side logic to bypass)
+3. Easy A/B testing (change backend only)
+4. Consistent behavior across platforms
+
+**When to use local state:**
+- UI state only (modal open/closed, animations)
+- Input buffering (typing, before submit)
+- Caching (React Query, TTL from backend)
 
 ## Tech Stack
 
@@ -190,8 +258,59 @@ See `docs/` for domain model and user flows:
 - `DOMAIN.md` - DDD patterns, aggregates, use cases
 - `USER_FLOW.md` - User journeys, wireframes, UI spec
 - `DOCUMENTATION_WORKFLOW.md` - When/how to update docs
+- `game_modes/` - Structured docs for each game mode (Daily Challenge, Marathon, etc.)
 
 **Workflow**: Update docs BEFORE code → Commit together
+
+### Documentation Style Guidelines
+
+**Principle: Maximum Signal-to-Noise Ratio**
+
+Write for scanning, not reading. Use tables, lists, code blocks. No water, no repetition.
+
+**Game Mode Documentation Structure** (`docs/game_modes/{mode}/`):
+```
+01_concept.md       # What? Why? For whom? (1-2 pages max)
+02_gameplay.md      # Step-by-step UX flow + wireframes
+03_rules.md         # Formulas, validations, thresholds (EXACT values)
+04_rewards.md       # Precise numbers (no "approximately")
+05_api.md           # Endpoints + request/response examples
+06_domain.md        # Aggregates, value objects, events, repositories
+07_edge_cases.md    # All "what if" scenarios
+README.md           # Completeness checklist
+```
+
+**Anti-patterns:**
+- ❌ "This is very important..." → just state the fact
+- ❌ "As mentioned above..." → link `[section](#anchor)` or repeat briefly
+- ❌ "Approximately 100-200" → give exact range or formula
+- ❌ "Without changes" / "TBD" → remove section or write it
+- ❌ Long paragraphs → use tables/lists
+
+**Good Examples:**
+
+Bad:
+```
+The streak system rewards players who play consistently.
+When playing 3 days in a row, they receive a bonus...
+```
+
+Good:
+```
+Streak: 3d → 1.1x | 7d → 1.25x | 30d → 1.5x
+```
+
+Bad:
+```
+The API endpoint accepts POST request and returns game data...
+```
+
+Good:
+```
+POST /api/v1/daily/start
+→ 201 {gameId, questions, streak}
+→ 409 Already played
+```
 
 ## Code Style
 

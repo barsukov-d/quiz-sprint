@@ -266,3 +266,132 @@ func (gs GameStatus) IsTerminal() bool {
 	transitions, exists := dailyGameTransitions[gs]
 	return exists && len(transitions) == 0
 }
+
+// ChestType represents the quality/tier of chest earned from Daily Challenge
+type ChestType string
+
+const (
+	ChestWooden ChestType = "wooden" // 0-4 correct answers
+	ChestSilver ChestType = "silver" // 5-7 correct answers
+	ChestGolden ChestType = "golden" // 8-10 correct answers
+)
+
+// CalculateChestType determines chest type based on correct answers
+func CalculateChestType(correctAnswers, totalQuestions int) ChestType {
+	if totalQuestions == 0 {
+		return ChestWooden
+	}
+
+	switch {
+	case correctAnswers >= 8:
+		return ChestGolden
+	case correctAnswers >= 5:
+		return ChestSilver
+	default:
+		return ChestWooden
+	}
+}
+
+// String returns string representation of chest type
+func (ct ChestType) String() string {
+	return string(ct)
+}
+
+// IsValid checks if chest type is valid
+func (ct ChestType) IsValid() bool {
+	switch ct {
+	case ChestWooden, ChestSilver, ChestGolden:
+		return true
+	default:
+		return false
+	}
+}
+
+// MarathonBonus represents a power-up usable in Solo Marathon mode
+type MarathonBonus string
+
+const (
+	BonusShield     MarathonBonus = "shield"      // 🛡️ One free mistake without losing life
+	BonusFiftyFifty MarathonBonus = "fifty_fifty" // 🔀 Remove 2 wrong answers
+	BonusSkip       MarathonBonus = "skip"        // ⏭️ Skip question without penalty
+	BonusFreeze     MarathonBonus = "freeze"      // ❄️ Add 10 seconds to timer
+)
+
+// String returns string representation of bonus type
+func (mb MarathonBonus) String() string {
+	return string(mb)
+}
+
+// IsValid checks if bonus type is valid
+func (mb MarathonBonus) IsValid() bool {
+	switch mb {
+	case BonusShield, BonusFiftyFifty, BonusSkip, BonusFreeze:
+		return true
+	default:
+		return false
+	}
+}
+
+// ChestReward represents the contents of a daily chest
+type ChestReward struct {
+	chestType       ChestType
+	coins           int
+	pvpTickets      int
+	marathonBonuses []MarathonBonus
+}
+
+// NewChestReward creates a chest reward based on chest type
+// Rewards are determined by chest quality:
+// - Wooden (0-4 correct): Few coins, 1 ticket, no bonuses
+// - Silver (5-7 correct): More coins, 2-3 tickets, chance for 1 bonus
+// - Golden (8-10 correct): Many coins, 4-5 tickets, guaranteed 1-2 bonuses
+func NewChestReward(chestType ChestType) ChestReward {
+	var coins, pvpTickets int
+	var marathonBonuses []MarathonBonus
+
+	switch chestType {
+	case ChestWooden:
+		coins = 50
+		pvpTickets = 1
+		marathonBonuses = []MarathonBonus{}
+
+	case ChestSilver:
+		coins = 150
+		pvpTickets = 2
+		marathonBonuses = []MarathonBonus{BonusFiftyFifty}
+
+	case ChestGolden:
+		coins = 300
+		pvpTickets = 4
+		marathonBonuses = []MarathonBonus{BonusShield, BonusSkip}
+
+	default:
+		coins = 50
+		pvpTickets = 1
+		marathonBonuses = []MarathonBonus{}
+	}
+
+	return ChestReward{
+		chestType:       chestType,
+		coins:           coins,
+		pvpTickets:      pvpTickets,
+		marathonBonuses: marathonBonuses,
+	}
+}
+
+// ApplyStreakBonus applies streak multiplier to chest rewards
+// Returns new ChestReward with multiplied values (immutable)
+func (cr ChestReward) ApplyStreakBonus(streakBonus float64) ChestReward {
+	return ChestReward{
+		chestType:       cr.chestType,
+		coins:           int(float64(cr.coins) * streakBonus),
+		pvpTickets:      cr.pvpTickets,
+		marathonBonuses: cr.marathonBonuses,
+	}
+}
+
+// Getters
+func (cr ChestReward) ChestType() ChestType              { return cr.chestType }
+func (cr ChestReward) Coins() int                        { return cr.coins }
+func (cr ChestReward) PvpTickets() int                   { return cr.pvpTickets }
+func (cr ChestReward) MarathonBonuses() []MarathonBonus  { return cr.marathonBonuses }

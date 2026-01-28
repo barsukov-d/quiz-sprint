@@ -15,6 +15,7 @@ type DailyGame struct {
 	session       *kernel.QuizGameplaySession // Composition: delegates pure gameplay logic
 	streak        StreakSystem                // Daily streak tracking
 	rank          *int                        // Player's rank in leaderboard (nil if not yet calculated)
+	chestReward   *ChestReward                // Chest earned (nil until game completed)
 
 	// Domain events collected during operations
 	events []Event
