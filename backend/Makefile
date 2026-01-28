@@ -96,6 +96,18 @@ import-all-quizzes-dry-run: ## Validate all quiz JSON files without importing
 # Daily Challenge Debug Commands
 # ============================================
 
-.PHONY: reset-daily-challenge
-reset-daily-challenge: ## Reset today's daily challenge (usage: make reset-daily-challenge [DATE=YYYY-MM-DD])
-	@./scripts/reset-daily-challenge.sh $(DATE)
+.PHONY: daily-debug
+daily-debug: ## Show daily challenge debug info (usage: make daily-debug [USER=123] [DATE=YYYY-MM-DD])
+	@./scripts/debug-daily.sh $(USER) $(DATE)
+
+.PHONY: daily-reset
+daily-reset: ## Reset daily challenge with confirmation (usage: make daily-reset [USER=123] [DATE=YYYY-MM-DD])
+	@./scripts/reset-daily.sh $(USER) $(DATE)
+
+.PHONY: daily-quick-reset
+daily-quick-reset: ## Quick reset without confirmation (usage: make daily-quick-reset [USER=123] [DATE=YYYY-MM-DD])
+	@./scripts/quick-reset.sh $(USER) $(DATE)
+
+.PHONY: daily-reset-all
+daily-reset-all: ## Reset all users for date (usage: make daily-reset-all [DATE=YYYY-MM-DD])
+	@./scripts/reset-daily.sh --all $(DATE)

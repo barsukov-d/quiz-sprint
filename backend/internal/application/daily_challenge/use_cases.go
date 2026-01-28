@@ -191,20 +191,23 @@ func (uc *StartDailyChallengeUseCase) Execute(input StartDailyChallengeInput) (S
 // ========================================
 
 type SubmitDailyAnswerUseCase struct {
-	dailyGameRepo    daily_challenge.DailyGameRepository
-	eventBus         EventBus
-	getLeaderboardUC *GetDailyLeaderboardUseCase
+	dailyGameRepo       daily_challenge.DailyGameRepository
+	eventBus            EventBus
+	getLeaderboardUC    *GetDailyLeaderboardUseCase
+	chestRewardCalc     *daily_challenge.ChestRewardCalculator
 }
 
 func NewSubmitDailyAnswerUseCase(
 	dailyGameRepo daily_challenge.DailyGameRepository,
 	eventBus EventBus,
 	getLeaderboardUC *GetDailyLeaderboardUseCase,
+	chestRewardCalc *daily_challenge.ChestRewardCalculator,
 ) *SubmitDailyAnswerUseCase {
 	return &SubmitDailyAnswerUseCase{
-		dailyGameRepo:    dailyGameRepo,
-		eventBus:         eventBus,
-		getLeaderboardUC: getLeaderboardUC,
+		dailyGameRepo:       dailyGameRepo,
+		eventBus:            eventBus,
+		getLeaderboardUC:    getLeaderboardUC,
+		chestRewardCalc:     chestRewardCalc,
 	}
 }
 
@@ -279,12 +282,38 @@ func (uc *SubmitDailyAnswerUseCase) Execute(input SubmitDailyAnswerInput) (Submi
 			output.NextTimeLimit = &timeLimit
 		}
 	} else {
-		// Game completed - calculate rank and build results
+		// Game completed - calculate rank and chest rewards
 		rank, _ := uc.dailyGameRepo.GetPlayerRankByDate(game.PlayerID(), game.Date())
 		totalPlayers, _ := uc.dailyGameRepo.GetTotalPlayersByDate(game.Date())
 
+		// Calculate chest rewards per docs/game_modes/daily_challenge/04_rewards.md
+		correctAnswers := game.GetCorrectAnswersCount()
+		totalQuestions := game.Session().Quiz().QuestionsCount()
+		chestType := daily_challenge.CalculateChestType(correctAnswers, totalQuestions)
+		streakBonus := game.Streak().GetBonus()
+
+		println("🎁 [SubmitDailyAnswer] Calculating chest rewards:")
+		println("   - correctAnswers:", correctAnswers)
+		println("   - chestType:", chestType)
+		println("   - streakBonus:", streakBonus)
+
+		chestReward := uc.chestRewardCalc.CalculateRewards(chestType, streakBonus)
+
+		println("   - coins:", chestReward.Coins())
+		println("   - pvpTickets:", chestReward.PvpTickets())
+		println("   - bonuses:", len(chestReward.MarathonBonuses()))
+
+		// Set chest reward and emit event
+		game.SetChestReward(chestReward)
+		game.EmitChestEarnedEvent(chestReward, now)
+
 		game.SetRank(rank)
-		uc.dailyGameRepo.Save(game) // Update with rank
+		uc.dailyGameRepo.Save(game) // Update with rank and chest reward
+
+		// Publish events (including ChestEarnedEvent)
+		for _, event := range game.Events() {
+			uc.eventBus.Publish(event)
+		}
 
 		// Fetch leaderboard
 		leaderboardEntries := make([]LeaderboardEntryDTO, 0)
@@ -510,8 +539,8 @@ func (uc *GetPlayerStreakUseCase) Execute(input GetPlayerStreakInput) (GetPlayer
 		streak = game.Streak()
 	}
 
-	// Calculate next milestone
-	milestones := []int{3, 7, 14, 30, 100}
+	// Calculate next milestone (per docs/GLOSSARY.md: 3, 7, 14, 30)
+	milestones := []int{3, 7, 14, 30}
 	nextMilestone := 3
 	for _, m := range milestones {
 		if streak.CurrentStreak() < m {
@@ -536,5 +565,209 @@ func (uc *GetPlayerStreakUseCase) Execute(input GetPlayerStreakInput) (GetPlayer
 		NextMilestone: nextMilestone,
 		DaysToNext:    daysToNext,
 		CanRestore:    canRestore,
+	}, nil
+}
+
+// ========================================
+// OpenChest Use Case
+// ========================================
+
+type OpenChestUseCase struct {
+	dailyGameRepo daily_challenge.DailyGameRepository
+}
+
+func NewOpenChestUseCase(
+	dailyGameRepo daily_challenge.DailyGameRepository,
+) *OpenChestUseCase {
+	return &OpenChestUseCase{
+		dailyGameRepo: dailyGameRepo,
+	}
+}
+
+func (uc *OpenChestUseCase) Execute(input OpenChestInput) (OpenChestOutput, error) {
+	// 1. Load game
+	gameID := daily_challenge.NewGameIDFromString(input.GameID)
+	game, err := uc.dailyGameRepo.FindByID(gameID)
+	if err != nil {
+		return OpenChestOutput{}, err
+	}
+
+	// 2. Authorization check
+	if game.PlayerID().String() != input.PlayerID {
+		return OpenChestOutput{}, daily_challenge.ErrGameNotFound
+	}
+
+	// 3. Verify game is completed
+	if !game.IsCompleted() {
+		return OpenChestOutput{}, daily_challenge.ErrGameNotActive
+	}
+
+	// 4. Get chest reward (should already be calculated and stored)
+	chestReward := game.ChestReward()
+	if chestReward == nil {
+		// Shouldn't happen if game completed properly
+		return OpenChestOutput{}, daily_challenge.ErrGameNotFound
+	}
+
+	// 5. Build output (idempotent - just returns stored data)
+	return OpenChestOutput{
+		ChestType:      chestReward.ChestType().String(),
+		Rewards:        ToChestRewardDTO(*chestReward),
+		StreakBonus:    game.Streak().GetBonus(),
+		PremiumApplied: false, // TODO: check if player has premium
+	}, nil
+}
+
+// ========================================
+// RetryChallenge Use Case
+// ========================================
+
+type RetryChallengeUseCase struct {
+	dailyGameRepo     daily_challenge.DailyGameRepository
+	dailyQuizRepo     daily_challenge.DailyQuizRepository
+	questionRepo      quiz.QuestionRepository
+	eventBus          EventBus
+}
+
+func NewRetryChallengeUseCase(
+	dailyGameRepo daily_challenge.DailyGameRepository,
+	dailyQuizRepo daily_challenge.DailyQuizRepository,
+	questionRepo quiz.QuestionRepository,
+	eventBus EventBus,
+) *RetryChallengeUseCase {
+	return &RetryChallengeUseCase{
+		dailyGameRepo: dailyGameRepo,
+		dailyQuizRepo: dailyQuizRepo,
+		questionRepo:  questionRepo,
+		eventBus:      eventBus,
+	}
+}
+
+func (uc *RetryChallengeUseCase) Execute(input RetryChallengeInput) (RetryChallengeOutput, error) {
+	now := time.Now().UTC().Unix()
+
+	// 1. Load original game
+	gameID := daily_challenge.NewGameIDFromString(input.GameID)
+	originalGame, err := uc.dailyGameRepo.FindByID(gameID)
+	if err != nil {
+		return RetryChallengeOutput{}, err
+	}
+
+	// 2. Authorization check
+	playerID, err := shared.NewUserID(input.PlayerID)
+	if err != nil {
+		return RetryChallengeOutput{}, err
+	}
+
+	if originalGame.PlayerID() != playerID {
+		return RetryChallengeOutput{}, daily_challenge.ErrGameNotFound
+	}
+
+	// 3. Verify original game is completed
+	if !originalGame.IsCompleted() {
+		return RetryChallengeOutput{}, daily_challenge.ErrGameNotActive
+	}
+
+	// 4. Check retry limit
+	attemptCount, err := uc.dailyGameRepo.CountAttemptsByPlayerAndDate(playerID, originalGame.Date())
+	if err != nil {
+		return RetryChallengeOutput{}, err
+	}
+
+	// TODO: check premium status - for now limit to 2 attempts (1 free + 1 retry)
+	isPremium := false
+	maxAttempts := 2
+	if isPremium {
+		maxAttempts = 999 // Unlimited for premium
+	}
+
+	if attemptCount >= maxAttempts {
+		return RetryChallengeOutput{}, daily_challenge.ErrAlreadyPlayedToday // Reuse error (TODO: specific error)
+	}
+
+	// 5. Process payment
+	coinsDeducted := 0
+	if input.PaymentMethod == "coins" {
+		coinsDeducted = 100
+		// TODO: deduct coins from user account
+		// For now just return the cost
+	} else if input.PaymentMethod == "ad" {
+		// TODO: verify ad was watched (via ad network callback)
+		coinsDeducted = 0
+	} else {
+		return RetryChallengeOutput{}, daily_challenge.ErrInvalidGameID // Invalid payment method
+	}
+
+	// 6. Load daily quiz
+	dailyQuiz, err := uc.dailyQuizRepo.FindByDate(originalGame.Date())
+	if err != nil {
+		return RetryChallengeOutput{}, err
+	}
+
+	// 7. Load questions and create Quiz aggregate
+	questions, err := uc.questionRepo.FindByIDs(dailyQuiz.QuestionIDs())
+	if err != nil {
+		return RetryChallengeOutput{}, err
+	}
+
+	quizID := quiz.NewQuizID()
+	quizTitle, _ := quiz.NewQuizTitle("Daily Challenge - Retry")
+	quizTimeLimit, _ := quiz.NewTimeLimit(15 * 10)
+	quizPassingScore, _ := quiz.NewPassingScore(0)
+
+	quizAggregate, err := quiz.NewQuiz(
+		quizID,
+		quizTitle,
+		"Retry attempt",
+		quiz.CategoryID{},
+		quizTimeLimit,
+		quizPassingScore,
+		now,
+	)
+	if err != nil {
+		return RetryChallengeOutput{}, err
+	}
+
+	for _, question := range questions {
+		if err := quizAggregate.AddQuestion(*question); err != nil {
+			return RetryChallengeOutput{}, err
+		}
+	}
+
+	// 8. Create new game (IMPORTANT: streak from ORIGINAL game, not updated)
+	newGame, err := daily_challenge.NewDailyGame(
+		playerID,
+		dailyQuiz.ID(),
+		originalGame.Date(),
+		quizAggregate,
+		originalGame.Streak(), // Use streak from first attempt
+		now,
+	)
+	if err != nil {
+		return RetryChallengeOutput{}, err
+	}
+
+	// 9. Save new game
+	if err := uc.dailyGameRepo.Save(newGame); err != nil {
+		return RetryChallengeOutput{}, err
+	}
+
+	// 10. Publish events
+	for _, event := range newGame.Events() {
+		uc.eventBus.Publish(event)
+	}
+
+	// 11. Get first question
+	firstQuestion, err := newGame.Session().GetCurrentQuestion()
+	if err != nil {
+		return RetryChallengeOutput{}, err
+	}
+
+	return RetryChallengeOutput{
+		NewGameID:      newGame.ID().String(),
+		FirstQuestion:  ToQuestionDTO(firstQuestion),
+		CoinsDeducted:  coinsDeducted,
+		RemainingCoins: 0, // TODO: get from user account
+		TimeLimit:      15,
 	}, nil
 }

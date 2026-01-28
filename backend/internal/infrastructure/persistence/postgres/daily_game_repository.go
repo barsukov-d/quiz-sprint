@@ -57,18 +57,48 @@ func (r *DailyGameRepository) Save(game *daily_challenge.DailyGame) error {
 		lastPlayedDate.Valid = true
 	}
 
+	// Chest reward fields
+	var chestType sql.NullString
+	var chestCoins, chestPvpTickets sql.NullInt32
+	var chestBonuses sql.NullString // Use NullString for JSONB
+
+	if reward := game.ChestReward(); reward != nil {
+		chestType.String = reward.ChestType().String()
+		chestType.Valid = true
+
+		chestCoins.Int32 = int32(reward.Coins())
+		chestCoins.Valid = true
+
+		chestPvpTickets.Int32 = int32(reward.PvpTickets())
+		chestPvpTickets.Valid = true
+
+		// Serialize bonuses as JSON array
+		bonuses := make([]string, len(reward.MarathonBonuses()))
+		for i, b := range reward.MarathonBonuses() {
+			bonuses[i] = b.String()
+		}
+		bonusesJSON, _ := json.Marshal(bonuses)
+		chestBonuses.String = string(bonusesJSON)
+		chestBonuses.Valid = true
+	}
+
 	query := `
 		INSERT INTO daily_games (
 			id, player_id, daily_quiz_id, date, status,
-			session_state, current_streak, best_streak, last_played_date, rank
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10)
-		ON CONFLICT (id) DO UPDATE SET
+			session_state, current_streak, best_streak, last_played_date, rank,
+			chest_type, chest_coins, chest_pvp_tickets, chest_bonuses
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14)
+		ON CONFLICT (player_id, date, attempt_number) DO UPDATE SET
 			status = EXCLUDED.status,
 			session_state = EXCLUDED.session_state,
 			current_streak = EXCLUDED.current_streak,
 			best_streak = EXCLUDED.best_streak,
 			last_played_date = EXCLUDED.last_played_date,
-			rank = EXCLUDED.rank
+			rank = EXCLUDED.rank,
+			chest_type = EXCLUDED.chest_type,
+			chest_coins = EXCLUDED.chest_coins,
+			chest_pvp_tickets = EXCLUDED.chest_pvp_tickets,
+			chest_bonuses = EXCLUDED.chest_bonuses
 	`
 
 	_, err = r.db.Exec(query,
@@ -82,6 +112,10 @@ func (r *DailyGameRepository) Save(game *daily_challenge.DailyGame) error {
 		game.Streak().BestStreak(),
 		lastPlayedDate,
 		rank,
+		chestType,
+		chestCoins,
+		chestPvpTickets,
+		chestBonuses,
 	)
 
 	return err
@@ -91,7 +125,8 @@ func (r *DailyGameRepository) Save(game *daily_challenge.DailyGame) error {
 func (r *DailyGameRepository) FindByID(id daily_challenge.GameID) (*daily_challenge.DailyGame, error) {
 	query := `
 		SELECT id, player_id, daily_quiz_id, date, status,
-			session_state, current_streak, best_streak, last_played_date, rank
+			session_state, current_streak, best_streak, last_played_date, rank,
+			chest_type, chest_coins, chest_pvp_tickets, chest_bonuses
 		FROM daily_games WHERE id = $1
 	`
 
@@ -99,32 +134,47 @@ func (r *DailyGameRepository) FindByID(id daily_challenge.GameID) (*daily_challe
 }
 
 // FindByPlayerAndDate retrieves a player's game for a specific date
+// Returns the best attempt (highest score) if multiple attempts exist
 func (r *DailyGameRepository) FindByPlayerAndDate(playerID daily_challenge.UserID, date daily_challenge.Date) (*daily_challenge.DailyGame, error) {
 	query := `
 		SELECT id, player_id, daily_quiz_id, date, status,
-			session_state, current_streak, best_streak, last_played_date, rank
-		FROM daily_games WHERE player_id = $1 AND date = $2
+			session_state, current_streak, best_streak, last_played_date, rank,
+			chest_type, chest_coins, chest_pvp_tickets, chest_bonuses
+		FROM daily_games
+		WHERE player_id = $1 AND date = $2
+		ORDER BY (session_state->>'base_score')::int DESC, attempt_number ASC
+		LIMIT 1
 	`
 
 	return r.scanGame(r.db.QueryRow(query, playerID.String(), date.String()))
 }
 
 // FindTopByDate retrieves top N players for a specific date
+// If a player has multiple attempts, only their best score counts
 func (r *DailyGameRepository) FindTopByDate(date daily_challenge.Date, limit int) ([]*daily_challenge.DailyGame, error) {
 	query := `
+		WITH best_attempts AS (
+			SELECT DISTINCT ON (player_id)
+				id, player_id, daily_quiz_id, date, status,
+				session_state, current_streak, best_streak, last_played_date, rank,
+				chest_type, chest_coins, chest_pvp_tickets, chest_bonuses,
+				(session_state->>'base_score')::int * (CASE
+					WHEN current_streak >= 30 THEN 1.5
+					WHEN current_streak >= 14 THEN 1.4
+					WHEN current_streak >= 7 THEN 1.25
+					WHEN current_streak >= 3 THEN 1.1
+					ELSE 1.0
+				END) as final_score,
+				(session_state->>'completed_at')::bigint as completed_at
+			FROM daily_games
+			WHERE date = $1 AND status = 'completed'
+			ORDER BY player_id, final_score DESC
+		)
 		SELECT id, player_id, daily_quiz_id, date, status,
-			session_state, current_streak, best_streak, last_played_date, rank
-		FROM daily_games
-		WHERE date = $1 AND status = 'completed'
-		ORDER BY (session_state->>'base_score')::int * (CASE
-			WHEN current_streak >= 100 THEN 2.0
-			WHEN current_streak >= 30 THEN 1.6
-			WHEN current_streak >= 14 THEN 1.4
-			WHEN current_streak >= 7 THEN 1.25
-			WHEN current_streak >= 3 THEN 1.1
-			ELSE 1.0
-		END) DESC,
-		(session_state->>'completed_at')::bigint ASC
+			session_state, current_streak, best_streak, last_played_date, rank,
+			chest_type, chest_coins, chest_pvp_tickets, chest_bonuses
+		FROM best_attempts
+		ORDER BY final_score DESC, completed_at ASC
 		LIMIT $2
 	`
 
@@ -151,8 +201,7 @@ func (r *DailyGameRepository) GetPlayerRankByDate(playerID daily_challenge.UserI
 	query := `
 		WITH player_score AS (
 			SELECT (session_state->>'base_score')::int * (CASE
-				WHEN current_streak >= 100 THEN 2.0
-				WHEN current_streak >= 30 THEN 1.6
+				WHEN current_streak >= 30 THEN 1.5
 				WHEN current_streak >= 14 THEN 1.4
 				WHEN current_streak >= 7 THEN 1.25
 				WHEN current_streak >= 3 THEN 1.1
@@ -164,8 +213,7 @@ func (r *DailyGameRepository) GetPlayerRankByDate(playerID daily_challenge.UserI
 		SELECT COUNT(*) + 1 FROM daily_games
 		WHERE date = $2 AND status = 'completed'
 		AND (session_state->>'base_score')::int * (CASE
-			WHEN current_streak >= 100 THEN 2.0
-			WHEN current_streak >= 30 THEN 1.6
+			WHEN current_streak >= 30 THEN 1.5
 			WHEN current_streak >= 14 THEN 1.4
 			WHEN current_streak >= 7 THEN 1.25
 			WHEN current_streak >= 3 THEN 1.1
@@ -190,6 +238,44 @@ func (r *DailyGameRepository) GetTotalPlayersByDate(date daily_challenge.Date) (
 	return count, err
 }
 
+// FindAllAttemptsByPlayerAndDate retrieves all player's attempts for a date
+func (r *DailyGameRepository) FindAllAttemptsByPlayerAndDate(playerID daily_challenge.UserID, date daily_challenge.Date) ([]*daily_challenge.DailyGame, error) {
+	query := `
+		SELECT id, player_id, daily_quiz_id, date, status,
+			session_state, current_streak, best_streak, last_played_date, rank,
+			chest_type, chest_coins, chest_pvp_tickets, chest_bonuses
+		FROM daily_games
+		WHERE player_id = $1 AND date = $2
+		ORDER BY attempt_number ASC
+	`
+
+	rows, err := r.db.Query(query, playerID.String(), date.String())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	games := make([]*daily_challenge.DailyGame, 0)
+	for rows.Next() {
+		game, err := r.scanGameFromRows(rows)
+		if err != nil {
+			return nil, err
+		}
+		games = append(games, game)
+	}
+
+	return games, rows.Err()
+}
+
+// CountAttemptsByPlayerAndDate returns number of attempts player made for date
+func (r *DailyGameRepository) CountAttemptsByPlayerAndDate(playerID daily_challenge.UserID, date daily_challenge.Date) (int, error) {
+	query := `SELECT COUNT(*) FROM daily_games WHERE player_id = $1 AND date = $2`
+
+	var count int
+	err := r.db.QueryRow(query, playerID.String(), date.String()).Scan(&count)
+	return count, err
+}
+
 // Delete removes a daily game
 func (r *DailyGameRepository) Delete(id daily_challenge.GameID) error {
 	_, err := r.db.Exec(`DELETE FROM daily_games WHERE id = $1`, id.String())
@@ -207,9 +293,16 @@ func (r *DailyGameRepository) scanGame(row *sql.Row) (*daily_challenge.DailyGame
 		currentStreak, bestStreak                int
 		lastPlayedDate                          sql.NullString
 		rank                                     sql.NullInt32
+		chestType                                sql.NullString
+		chestCoins, chestPvpTickets             sql.NullInt32
+		chestBonuses                            sql.NullString
 	)
 
-	err := row.Scan(&id, &playerID, &dailyQuizID, &date, &status, &sessionState, &currentStreak, &bestStreak, &lastPlayedDate, &rank)
+	err := row.Scan(
+		&id, &playerID, &dailyQuizID, &date, &status,
+		&sessionState, &currentStreak, &bestStreak, &lastPlayedDate, &rank,
+		&chestType, &chestCoins, &chestPvpTickets, &chestBonuses,
+	)
 	if err == sql.ErrNoRows {
 		return nil, daily_challenge.ErrGameNotFound
 	}
@@ -217,7 +310,11 @@ func (r *DailyGameRepository) scanGame(row *sql.Row) (*daily_challenge.DailyGame
 		return nil, err
 	}
 
-	return r.reconstructGame(id, playerID, dailyQuizID, date, status, sessionState, currentStreak, bestStreak, lastPlayedDate, rank)
+	return r.reconstructGame(
+		id, playerID, dailyQuizID, date, status,
+		sessionState, currentStreak, bestStreak, lastPlayedDate, rank,
+		chestType, chestCoins, chestPvpTickets, chestBonuses,
+	)
 }
 
 func (r *DailyGameRepository) scanGameFromRows(rows *sql.Rows) (*daily_challenge.DailyGame, error) {
@@ -227,14 +324,25 @@ func (r *DailyGameRepository) scanGameFromRows(rows *sql.Rows) (*daily_challenge
 		currentStreak, bestStreak                int
 		lastPlayedDate                          sql.NullString
 		rank                                     sql.NullInt32
+		chestType                                sql.NullString
+		chestCoins, chestPvpTickets             sql.NullInt32
+		chestBonuses                            sql.NullString
 	)
 
-	err := rows.Scan(&id, &playerID, &dailyQuizID, &date, &status, &sessionState, &currentStreak, &bestStreak, &lastPlayedDate, &rank)
+	err := rows.Scan(
+		&id, &playerID, &dailyQuizID, &date, &status,
+		&sessionState, &currentStreak, &bestStreak, &lastPlayedDate, &rank,
+		&chestType, &chestCoins, &chestPvpTickets, &chestBonuses,
+	)
 	if err != nil {
 		return nil, err
 	}
 
-	return r.reconstructGame(id, playerID, dailyQuizID, date, status, sessionState, currentStreak, bestStreak, lastPlayedDate, rank)
+	return r.reconstructGame(
+		id, playerID, dailyQuizID, date, status,
+		sessionState, currentStreak, bestStreak, lastPlayedDate, rank,
+		chestType, chestCoins, chestPvpTickets, chestBonuses,
+	)
 }
 
 func (r *DailyGameRepository) reconstructGame(
@@ -243,6 +351,9 @@ func (r *DailyGameRepository) reconstructGame(
 	currentStreak, bestStreak int,
 	lastPlayedDate sql.NullString,
 	rank sql.NullInt32,
+	chestType sql.NullString,
+	chestCoins, chestPvpTickets sql.NullInt32,
+	chestBonuses sql.NullString,
 ) (*daily_challenge.DailyGame, error) {
 	// Deserialize session - need daily quiz ID to reconstruct the quiz
 	session, err := r.deserializeDailyChallengeSession(sessionState, dailyQuizID)
@@ -271,6 +382,39 @@ func (r *DailyGameRepository) reconstructGame(
 		rankPtr = &r
 	}
 
+	// Reconstruct chest reward
+	var chestRewardPtr *daily_challenge.ChestReward
+	if chestType.Valid && chestCoins.Valid && chestPvpTickets.Valid {
+		// Parse chest type
+		ct := daily_challenge.ChestType(chestType.String)
+		if !ct.IsValid() {
+			return nil, fmt.Errorf("invalid chest_type: %s", chestType.String)
+		}
+
+		// Parse bonuses
+		var bonuses []daily_challenge.MarathonBonus
+		if chestBonuses.Valid && chestBonuses.String != "" {
+			var bonusStrings []string
+			if err := json.Unmarshal([]byte(chestBonuses.String), &bonusStrings); err == nil {
+				bonuses = make([]daily_challenge.MarathonBonus, 0, len(bonusStrings))
+				for _, bs := range bonusStrings {
+					bonus := daily_challenge.MarathonBonus(bs)
+					if bonus.IsValid() {
+						bonuses = append(bonuses, bonus)
+					}
+				}
+			}
+		}
+
+		reward := daily_challenge.NewChestReward(
+			ct,
+			int(chestCoins.Int32),
+			int(chestPvpTickets.Int32),
+			bonuses,
+		)
+		chestRewardPtr = &reward
+	}
+
 	// Parse user ID
 	userID, err := daily_challenge.UserID{}, nil
 	if playerID != "" {
@@ -289,6 +433,7 @@ func (r *DailyGameRepository) reconstructGame(
 		session,
 		streak,
 		rankPtr,
+		chestRewardPtr,
 	), nil
 }
 

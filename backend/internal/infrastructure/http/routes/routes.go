@@ -2,6 +2,8 @@ package routes
 
 import (
 	"database/sql"
+	"math/rand"
+	"time"
 
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
@@ -225,9 +227,16 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		getDailyGameStatusUC   *appDaily.GetDailyGameStatusUseCase
 		getDailyLeaderboardUC  *appDaily.GetDailyLeaderboardUseCase
 		getPlayerStreakUC      *appDaily.GetPlayerStreakUseCase
+		openChestUC            *appDaily.OpenChestUseCase
+		retryUC                *appDaily.RetryChallengeUseCase
 	)
 
 	if dailyQuizRepo != nil && dailyGameRepo != nil && questionRepo != nil && quizRepo != nil && userRepo != nil {
+		// Create ChestRewardCalculator with RNG
+		// Using time-based seed for randomness per docs/game_modes/daily_challenge/04_rewards.md
+		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+		chestRewardCalc := domainDaily.NewChestRewardCalculator(rng)
+
 		getOrCreateDailyQuizUC = appDaily.NewGetOrCreateDailyQuizUseCase(
 			dailyQuizRepo,
 			dailyGameRepo,
@@ -250,6 +259,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			dailyGameRepo,
 			dailyChallengeEventBus,
 			getDailyLeaderboardUC,
+			chestRewardCalc,
 		)
 		getDailyGameStatusUC = appDaily.NewGetDailyGameStatusUseCase(
 			dailyQuizRepo,
@@ -258,6 +268,15 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		)
 		getPlayerStreakUC = appDaily.NewGetPlayerStreakUseCase(
 			dailyGameRepo,
+		)
+		openChestUC = appDaily.NewOpenChestUseCase(
+			dailyGameRepo,
+		)
+		retryUC = appDaily.NewRetryChallengeUseCase(
+			dailyGameRepo,
+			dailyQuizRepo,
+			questionRepo,
+			dailyChallengeEventBus,
 		)
 	}
 
@@ -323,6 +342,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			getDailyGameStatusUC,
 			getDailyLeaderboardUC,
 			getPlayerStreakUC,
+			openChestUC,
+			retryUC,
 		)
 	}
 
@@ -410,6 +431,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		daily := v1.Group("/daily-challenge")
 		daily.Post("/start", dailyChallengeHandler.StartDailyChallenge)
 		daily.Post("/:gameId/answer", dailyChallengeHandler.SubmitDailyAnswer)
+		daily.Post("/:gameId/chest/open", dailyChallengeHandler.OpenChest)
+		daily.Post("/:gameId/retry", dailyChallengeHandler.RetryChallenge)
 		daily.Get("/status", dailyChallengeHandler.GetDailyStatus)
 		daily.Get("/leaderboard", dailyChallengeHandler.GetDailyLeaderboard)
 		daily.Get("/streak", dailyChallengeHandler.GetPlayerStreak)

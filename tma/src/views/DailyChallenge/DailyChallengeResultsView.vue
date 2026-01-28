@@ -24,7 +24,9 @@ const {
   streak,
   isCompleted,
   timeToExpireFormatted,
-  initialize
+  initialize,
+  retryChallenge,
+  isLoading
 } = useDailyChallenge(playerId)
 
 const streaks = useStreaks(streak)
@@ -47,6 +49,50 @@ const hasNewStreakRecord = computed(() => {
   return streak.value.currentStreak > streak.value.bestStreak
 })
 
+const chestReward = computed(() => results.value?.chestReward || null)
+
+const chestEmoji = computed(() => {
+  if (!chestReward.value) return '📦'
+  switch (chestReward.value.chestType) {
+    case 'golden':
+      return '🏆'
+    case 'silver':
+      return '🥈'
+    case 'wooden':
+      return '📦'
+    default:
+      return '📦'
+  }
+})
+
+const chestLabel = computed(() => {
+  if (!chestReward.value) return 'Chest'
+  switch (chestReward.value.chestType) {
+    case 'golden':
+      return 'Golden Chest'
+    case 'silver':
+      return 'Silver Chest'
+    case 'wooden':
+      return 'Wooden Chest'
+    default:
+      return 'Chest'
+  }
+})
+
+const chestColor = computed(() => {
+  if (!chestReward.value) return 'gray'
+  switch (chestReward.value.chestType) {
+    case 'golden':
+      return 'yellow'
+    case 'silver':
+      return 'gray'
+    case 'wooden':
+      return 'amber'
+    default:
+      return 'gray'
+  }
+})
+
 // ===========================
 // Methods
 // ===========================
@@ -57,6 +103,24 @@ const handleReviewAnswers = () => {
 
 const handleGoHome = () => {
   router.push({ name: 'home' })
+}
+
+const handleRetryWithCoins = async () => {
+  try {
+    await retryChallenge('coins')
+  } catch (error: any) {
+    console.error('Failed to retry with coins:', error)
+    // TODO: Show error toast
+  }
+}
+
+const handleRetryWithAd = async () => {
+  try {
+    await retryChallenge('ad')
+  } catch (error: any) {
+    console.error('Failed to retry with ad:', error)
+    // TODO: Show error toast
+  }
 }
 
 // ===========================
@@ -93,28 +157,28 @@ onMounted(async () => {
     </div>
 
     <!-- Results View -->
-    <div v-else class="results-content">
+    <div v-else class="flex flex-col gap-6">
       <!-- Header: Score Card -->
-      <UCard class="score-card">
-        <div class="score-content">
+      <UCard class="bg-gradient-to-br from-primary-50 to-primary-100 dark:from-primary-900/30 dark:to-primary-800/30">
+        <div class="flex flex-col items-center gap-6 p-4">
           <!-- Performance Level -->
-          <div class="performance-badge">
-            <span class="performance-emoji">{{ performanceLevel.emoji }}</span>
-            <h2 class="performance-label">{{ performanceLevel.label }}</h2>
+          <div class="text-center">
+            <span class="block text-5xl mb-2">{{ performanceLevel.emoji }}</span>
+            <h2 class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ performanceLevel.label }}</h2>
           </div>
 
           <!-- Score -->
-          <div class="score-display">
-            <div class="score-value">{{ game?.finalScore || 0 }}</div>
-            <div class="score-label">points</div>
+          <div class="text-center">
+            <div class="text-6xl font-black text-primary-600 dark:text-primary-400 leading-none">{{ game?.finalScore || 0 }}</div>
+            <div class="text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wider mt-1">points</div>
           </div>
 
           <!-- Accuracy -->
-          <div class="accuracy-display">
+          <div class="w-full flex flex-col gap-2">
             <UProgress :value="scorePercentage" :color="performanceLevel.color" size="lg" />
-            <p class="accuracy-text">
+            <p class="text-center text-sm text-gray-700 dark:text-gray-300 font-semibold">
               {{ results.correctAnswers }} / {{ results.totalQuestions }} correct
-              <span class="accuracy-percentage">({{ scorePercentage }}%)</span>
+              <span class="text-gray-500">({{ scorePercentage }}%)</span>
             </p>
           </div>
         </div>
@@ -136,27 +200,72 @@ onMounted(async () => {
         </template>
       </UAlert>
 
+      <!-- Chest Reward -->
+      <UCard v-if="chestReward" :class="chestColor === 'yellow' ? 'bg-yellow-50 dark:bg-yellow-950' : ''">
+        <div class="flex flex-col gap-6">
+          <div class="flex items-center gap-4 pb-4 border-b border-gray-200 dark:border-gray-700">
+            <span class="text-5xl">{{ chestEmoji }}</span>
+            <div>
+              <h3 class="text-xl font-bold">{{ chestLabel }}</h3>
+              <p class="text-sm text-gray-500 dark:text-gray-400">Your Rewards</p>
+            </div>
+          </div>
+
+          <div class="grid grid-cols-2 gap-6">
+            <div class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl">
+              <UIcon name="i-heroicons-currency-dollar" class="w-6 h-6 text-yellow-500" />
+              <div>
+                <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ chestReward.coins }}</div>
+                <div class="text-xs text-gray-500 uppercase tracking-wider">Coins</div>
+              </div>
+            </div>
+
+            <div class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl">
+              <UIcon name="i-heroicons-ticket" class="w-6 h-6 text-blue-500" />
+              <div>
+                <div class="text-2xl font-bold text-gray-900 dark:text-gray-100">{{ chestReward.pvpTickets }}</div>
+                <div class="text-xs text-gray-500 uppercase tracking-wider">PVP Tickets</div>
+              </div>
+            </div>
+          </div>
+
+          <div v-if="chestReward.marathonBonuses && chestReward.marathonBonuses.length > 0" class="pt-4 border-t border-gray-200 dark:border-gray-700">
+            <h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">Bonus Items</h4>
+            <div class="flex flex-wrap gap-2">
+              <UBadge
+                v-for="bonus in chestReward.marathonBonuses"
+                :key="bonus"
+                color="primary"
+                variant="soft"
+              >
+                {{ bonus }}
+              </UBadge>
+            </div>
+          </div>
+        </div>
+      </UCard>
+
       <!-- Rank Card -->
       <UCard>
-        <div class="rank-content">
-          <div class="rank-header">
-            <UIcon name="i-heroicons-chart-bar" class="size-6 text-primary" />
+        <div class="flex flex-col gap-4">
+          <div class="flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700">
+            <UIcon name="i-heroicons-chart-bar" class="w-6 h-6 text-primary" />
             <h3 class="text-lg font-semibold">Your Ranking</h3>
           </div>
-          <div class="rank-stats">
-            <div class="rank-stat">
-              <div class="stat-value">
+          <div class="grid grid-cols-2 gap-8 py-4">
+            <div class="text-center">
+              <div class="mb-2">
                 <UBadge color="primary" size="xl" variant="soft">
                   #{{ results.rank }}
                 </UBadge>
               </div>
-              <div class="stat-label">Your Rank</div>
+              <div class="text-sm text-gray-500">Your Rank</div>
             </div>
-            <div class="rank-stat">
-              <div class="stat-value text-2xl font-bold text-gray-700 dark:text-gray-300">
+            <div class="text-center">
+              <div class="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">
                 {{ results.totalPlayers }}
               </div>
-              <div class="stat-label">Total Players</div>
+              <div class="text-sm text-gray-500">Total Players</div>
             </div>
           </div>
         </div>
@@ -172,7 +281,7 @@ onMounted(async () => {
       </UCard>
 
       <!-- Action Buttons -->
-      <div class="actions">
+      <div class="flex flex-col gap-3">
         <UButton
           color="primary"
           size="xl"
@@ -182,6 +291,50 @@ onMounted(async () => {
         >
           Review Answers
         </UButton>
+
+        <!-- Retry Section -->
+        <UCard class="bg-gray-50 dark:bg-gray-900">
+          <div class="flex flex-col gap-3">
+            <div class="flex items-center gap-2 pb-3 border-b border-gray-200 dark:border-gray-700">
+              <UIcon name="i-heroicons-arrow-path" class="w-5 h-5 text-primary" />
+              <h3 class="text-lg font-semibold">Try Again?</h3>
+            </div>
+
+            <p class="text-sm text-gray-600 dark:text-gray-400">
+              You can retry today's challenge to improve your score. Your best score will count for the leaderboard.
+            </p>
+
+            <div class="grid grid-cols-2 gap-3">
+              <UButton
+                color="yellow"
+                size="lg"
+                icon="i-heroicons-currency-dollar"
+                block
+                :loading="isLoading"
+                @click="handleRetryWithCoins"
+              >
+                <div class="flex flex-col items-center gap-1">
+                  <span class="font-bold">100 Coins</span>
+                  <span class="text-xs opacity-80">Retry</span>
+                </div>
+              </UButton>
+
+              <UButton
+                color="blue"
+                size="lg"
+                icon="i-heroicons-play"
+                block
+                :loading="isLoading"
+                @click="handleRetryWithAd"
+              >
+                <div class="flex flex-col items-center gap-1">
+                  <span class="font-bold">Watch Ad</span>
+                  <span class="text-xs opacity-80">Free Retry</span>
+                </div>
+              </UButton>
+            </div>
+          </div>
+        </UCard>
 
         <UButton
           color="gray"
@@ -196,8 +349,8 @@ onMounted(async () => {
       </div>
 
       <!-- Next Challenge Info -->
-      <div class="next-challenge-info">
-        <UIcon name="i-heroicons-calendar-days" class="size-5 text-gray-400" />
+      <div class="flex items-center justify-center gap-2 p-4 text-center">
+        <UIcon name="i-heroicons-calendar-days" class="w-5 h-5 text-gray-400" />
         <p class="text-sm text-gray-500 dark:text-gray-400">
           Next challenge available in <span class="font-semibold">{{ timeToExpireFormatted }}</span>
         </p>
@@ -224,175 +377,11 @@ onMounted(async () => {
   min-height: 50vh;
 }
 
-.results-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1.5rem;
-}
-
-/* Score Card */
-.score-card {
-  background: linear-gradient(135deg, rgb(var(--color-primary-50)) 0%, rgb(var(--color-primary-100)) 100%);
-}
-
-.score-content {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 1.5rem;
-  padding: 1rem;
-}
-
-.performance-badge {
-  text-align: center;
-}
-
-.performance-emoji {
-  font-size: 3rem;
-  display: block;
-  margin-bottom: 0.5rem;
-}
-
-.performance-label {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: rgb(var(--color-gray-900));
-}
-
-.score-display {
-  text-align: center;
-}
-
-.score-value {
-  font-size: 4rem;
-  font-weight: 900;
-  color: rgb(var(--color-primary-600));
-  line-height: 1;
-}
-
-.score-label {
-  font-size: 0.875rem;
-  color: rgb(var(--color-gray-600));
-  text-transform: uppercase;
-  letter-spacing: 0.05em;
-  margin-top: 0.25rem;
-}
-
-.accuracy-display {
-  width: 100%;
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.accuracy-text {
-  text-align: center;
-  font-size: 0.875rem;
-  color: rgb(var(--color-gray-700));
-  font-weight: 600;
-}
-
-.accuracy-percentage {
-  color: rgb(var(--color-gray-500));
-}
-
-/* Rank Card */
-.rank-content {
-  display: flex;
-  flex-direction: column;
-  gap: 1rem;
-}
-
-.rank-header {
-  display: flex;
-  align-items: center;
-  gap: 0.75rem;
-  padding-bottom: 1rem;
-  border-bottom: 1px solid rgb(var(--color-gray-200));
-}
-
-.rank-stats {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 2rem;
-  padding: 1rem 0;
-}
-
-.rank-stat {
-  text-align: center;
-}
-
-.stat-value {
-  margin-bottom: 0.5rem;
-}
-
-.stat-label {
-  font-size: 0.875rem;
-  color: rgb(var(--color-gray-500));
-}
-
-/* Actions */
-.actions {
-  display: flex;
-  flex-direction: column;
-  gap: 0.75rem;
-  margin-top: 1rem;
-}
-
-/* Next Challenge Info */
-.next-challenge-info {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 1rem;
-  text-align: center;
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .score-card {
-    background: linear-gradient(135deg, rgb(var(--color-primary-900) / 0.3) 0%, rgb(var(--color-primary-800) / 0.3) 100%);
-  }
-
-  .performance-label {
-    color: rgb(var(--color-gray-100));
-  }
-
-  .score-value {
-    color: rgb(var(--color-primary-400));
-  }
-
-  .score-label {
-    color: rgb(var(--color-gray-400));
-  }
-
-  .accuracy-text {
-    color: rgb(var(--color-gray-300));
-  }
-
-  .rank-header {
-    border-bottom-color: rgb(var(--color-gray-700));
-  }
-}
-
 /* Mobile optimizations */
 @media (max-width: 640px) {
   .results-container {
     padding: 0.75rem;
     padding-top: 5rem;
-  }
-
-  .score-value {
-    font-size: 3rem;
-  }
-
-  .performance-emoji {
-    font-size: 2.5rem;
-  }
-
-  .rank-stats {
-    gap: 1rem;
   }
 }
 </style>

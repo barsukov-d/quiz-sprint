@@ -762,7 +762,9 @@ type GameResultsDTO struct {
 	Rank               int                     `json:"rank" validate:"required"`
 	TotalPlayers       int                     `json:"totalPlayers" validate:"required"`
 	Percentile         int                     `json:"percentile" validate:"required"`
+	ChestReward        ChestRewardDTO          `json:"chestReward" validate:"required"`
 	AnsweredQuestions  []AnsweredQuestionDTO   `json:"answeredQuestions" validate:"required"`
+	Leaderboard        []LeaderboardEntryDTO   `json:"leaderboard" validate:"required"`
 }
 
 // @name GameResultsDTO
@@ -894,3 +896,63 @@ type GetPlayerStreakResponse struct {
 }
 
 // @name GetPlayerStreakResponse
+
+// ChestRewardDTO represents chest rewards
+type ChestRewardDTO struct {
+	ChestType       string   `json:"chestType" validate:"required"`
+	Coins           int      `json:"coins" validate:"required"`
+	PvpTickets      int      `json:"pvpTickets" validate:"required"`
+	MarathonBonuses []string `json:"marathonBonuses" validate:"required"`
+}
+
+// @name ChestRewardDTO
+
+// OpenChestRequest is the HTTP request for opening chest
+type OpenChestRequest struct {
+	PlayerID string `json:"playerId" validate:"required"`
+}
+
+// @name OpenChestRequest
+
+// OpenChestData contains chest opening response data
+type OpenChestData struct {
+	ChestType      string         `json:"chestType" validate:"required"`
+	Rewards        ChestRewardDTO `json:"rewards" validate:"required"`
+	StreakBonus    float64        `json:"streakBonus" validate:"required"`
+	PremiumApplied bool           `json:"premiumApplied" validate:"required"`
+}
+
+// @name OpenChestData
+
+// OpenChestResponse wraps chest opening response
+type OpenChestResponse struct {
+	Data OpenChestData `json:"data" validate:"required"`
+}
+
+// @name OpenChestResponse
+
+// RetryChallengeRequest is the HTTP request for retrying challenge
+type RetryChallengeRequest struct {
+	PlayerID      string `json:"playerId" validate:"required"`
+	PaymentMethod string `json:"paymentMethod" validate:"required"` // "coins" or "ad"
+}
+
+// @name RetryChallengeRequest
+
+// RetryChallengeData contains retry response data
+type RetryChallengeData struct {
+	NewGameID      string      `json:"newGameId" validate:"required"`
+	FirstQuestion  QuestionDTO `json:"firstQuestion" validate:"required"`
+	CoinsDeducted  int         `json:"coinsDeducted" validate:"required"`
+	RemainingCoins int         `json:"remainingCoins" validate:"required"`
+	TimeLimit      int         `json:"timeLimit" validate:"required"`
+}
+
+// @name RetryChallengeData
+
+// RetryChallengeResponse wraps retry response
+type RetryChallengeResponse struct {
+	Data RetryChallengeData `json:"data" validate:"required"`
+}
+
+// @name RetryChallengeResponse

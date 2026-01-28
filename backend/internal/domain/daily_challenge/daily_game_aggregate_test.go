@@ -330,8 +330,8 @@ func TestDailyGame_StreakBonus(t *testing.T) {
 		{"No streak", 0, 1.0},
 		{"3-day streak", 3, 1.1},
 		{"7-day streak", 7, 1.25},
-		{"30-day streak", 30, 1.6},
-		{"100-day streak", 100, 2.0},
+		{"30-day streak", 30, 1.5},
+		{"100-day streak", 100, 1.5},
 	}
 
 	for _, tt := range tests {
@@ -468,6 +468,7 @@ func TestDailyGame_ReconstructDailyGame(t *testing.T) {
 		nil, // Session would be reconstructed separately
 		streak,
 		&rank,
+		nil, // ChestReward would be reconstructed if present
 	)
 
 	if game == nil {

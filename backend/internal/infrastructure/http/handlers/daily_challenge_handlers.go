@@ -16,6 +16,8 @@ type DailyChallengeHandler struct {
 	getStatusUC       *appDaily.GetDailyGameStatusUseCase
 	getLeaderboardUC  *appDaily.GetDailyLeaderboardUseCase
 	getStreakUC       *appDaily.GetPlayerStreakUseCase
+	openChestUC       *appDaily.OpenChestUseCase
+	retryUC           *appDaily.RetryChallengeUseCase
 }
 
 func NewDailyChallengeHandler(
@@ -25,6 +27,8 @@ func NewDailyChallengeHandler(
 	getStatusUC *appDaily.GetDailyGameStatusUseCase,
 	getLeaderboardUC *appDaily.GetDailyLeaderboardUseCase,
 	getStreakUC *appDaily.GetPlayerStreakUseCase,
+	openChestUC *appDaily.OpenChestUseCase,
+	retryUC *appDaily.RetryChallengeUseCase,
 ) *DailyChallengeHandler {
 	return &DailyChallengeHandler{
 		getOrCreateQuizUC: getOrCreateQuizUC,
@@ -33,6 +37,8 @@ func NewDailyChallengeHandler(
 		getStatusUC:       getStatusUC,
 		getLeaderboardUC:  getLeaderboardUC,
 		getStreakUC:       getStreakUC,
+		openChestUC:       openChestUC,
+		retryUC:           retryUC,
 	}
 }
 
@@ -193,6 +199,80 @@ func (h *DailyChallengeHandler) GetPlayerStreak(c fiber.Ctx) error {
 	}
 
 	return c.JSON(fiber.Map{"data": output})
+}
+
+// OpenChest handles POST /api/v1/daily-challenge/:gameId/chest/open
+// @Summary Open chest
+// @Description Get chest rewards (idempotent)
+// @Tags daily-challenge
+// @Accept json
+// @Produce json
+// @Param gameId path string true "Game ID"
+// @Param request body OpenChestRequest true "Open chest request"
+// @Success 200 {object} OpenChestResponse "Chest opened"
+// @Failure 400 {object} ErrorResponse "Game not completed"
+// @Failure 404 {object} ErrorResponse "Game not found"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /daily-challenge/{gameId}/chest/open [post]
+func (h *DailyChallengeHandler) OpenChest(c fiber.Ctx) error {
+	var req OpenChestRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if req.PlayerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+
+	output, err := h.openChestUC.Execute(appDaily.OpenChestInput{
+		GameID:   c.Params("gameId"),
+		PlayerID: req.PlayerID,
+	})
+	if err != nil {
+		return mapDailyChallengeError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
+}
+
+// RetryChallenge handles POST /api/v1/daily-challenge/:gameId/retry
+// @Summary Retry challenge
+// @Description Create second attempt (costs 100 coins or ad)
+// @Tags daily-challenge
+// @Accept json
+// @Produce json
+// @Param gameId path string true "Original Game ID"
+// @Param request body RetryChallengeRequest true "Retry request"
+// @Success 201 {object} RetryChallengeResponse "Retry started"
+// @Failure 400 {object} ErrorResponse "Invalid request or insufficient coins"
+// @Failure 404 {object} ErrorResponse "Game not found"
+// @Failure 409 {object} ErrorResponse "Retry limit reached"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /daily-challenge/{gameId}/retry [post]
+func (h *DailyChallengeHandler) RetryChallenge(c fiber.Ctx) error {
+	var req RetryChallengeRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if req.PlayerID == "" || req.PaymentMethod == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Missing required fields")
+	}
+
+	if req.PaymentMethod != "coins" && req.PaymentMethod != "ad" {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid payment method")
+	}
+
+	output, err := h.retryUC.Execute(appDaily.RetryChallengeInput{
+		GameID:        c.Params("gameId"),
+		PlayerID:      req.PlayerID,
+		PaymentMethod: req.PaymentMethod,
+	})
+	if err != nil {
+		return mapDailyChallengeError(err)
+	}
+
+	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": output})
 }
 
 // ========================================

@@ -24,12 +24,18 @@ type DailyGameRepository interface {
 	// FindByID retrieves a daily game by ID
 	FindByID(id GameID) (*DailyGame, error)
 
-	// FindByPlayerAndDate retrieves a player's game for a specific date
-	// Returns nil if player hasn't played on that date
+	// FindByPlayerAndDate retrieves a player's best game for a specific date
+	// Returns best attempt if multiple exist, nil if player hasn't played
 	FindByPlayerAndDate(playerID UserID, date Date) (*DailyGame, error)
 
+	// FindAllAttemptsByPlayerAndDate retrieves all player's attempts for a date
+	FindAllAttemptsByPlayerAndDate(playerID UserID, date Date) ([]*DailyGame, error)
+
+	// CountAttemptsByPlayerAndDate returns number of attempts player made for date
+	CountAttemptsByPlayerAndDate(playerID UserID, date Date) (int, error)
+
 	// FindTopByDate retrieves top N players for a specific date (leaderboard)
-	// Sorted by score descending
+	// Sorted by score descending, best attempt per player
 	FindTopByDate(date Date, limit int) ([]*DailyGame, error)
 
 	// GetPlayerRankByDate calculates player's rank for a specific date

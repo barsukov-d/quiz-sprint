@@ -81,6 +81,14 @@ type AnsweredQuestionDTO struct {
 	PointsEarned     int      `json:"pointsEarned"`
 }
 
+// ChestRewardDTO represents chest rewards earned from Daily Challenge
+type ChestRewardDTO struct {
+	ChestType       string   `json:"chestType"` // "wooden", "silver", "golden"
+	Coins           int      `json:"coins"`
+	PvpTickets      int      `json:"pvpTickets"`
+	MarathonBonuses []string `json:"marathonBonuses"` // ["shield", "fifty_fifty", etc.]
+}
+
 // ========================================
 // GetOrCreateDailyQuiz Use Case
 // ========================================
@@ -145,6 +153,7 @@ type GameResultsDTO struct {
 	Rank              int                     `json:"rank"` // Player's rank
 	TotalPlayers      int                     `json:"totalPlayers"`
 	Percentile        int                     `json:"percentile"` // Top X%
+	ChestReward       ChestRewardDTO          `json:"chestReward"` // Chest earned
 	AnsweredQuestions []AnsweredQuestionDTO   `json:"answeredQuestions"` // Full breakdown
 	Leaderboard       []LeaderboardEntryDTO   `json:"leaderboard"` // Top players
 }
@@ -194,7 +203,41 @@ type GetPlayerStreakInput struct {
 
 type GetPlayerStreakOutput struct {
 	Streak         StreakDTO `json:"streak"`
-	NextMilestone  int       `json:"nextMilestone"` // Next milestone (3, 7, 14, 30, 100)
+	NextMilestone  int       `json:"nextMilestone"` // Next milestone (3, 7, 14, 30)
 	DaysToNext     int       `json:"daysToNext"` // Days until next milestone
 	CanRestore     bool      `json:"canRestore"` // If streak was broken yesterday
+}
+
+// ========================================
+// OpenChest Use Case
+// ========================================
+
+type OpenChestInput struct {
+	GameID   string `json:"gameId"`
+	PlayerID string `json:"playerId"` // For authorization
+}
+
+type OpenChestOutput struct {
+	ChestType      string         `json:"chestType"`
+	Rewards        ChestRewardDTO `json:"rewards"`
+	StreakBonus    float64        `json:"streakBonus"`
+	PremiumApplied bool           `json:"premiumApplied"`
+}
+
+// ========================================
+// RetryChallenge Use Case
+// ========================================
+
+type RetryChallengeInput struct {
+	GameID        string `json:"gameId"` // Original game ID
+	PlayerID      string `json:"playerId"` // For authorization
+	PaymentMethod string `json:"paymentMethod"` // "coins" or "ad"
+}
+
+type RetryChallengeOutput struct {
+	NewGameID      string       `json:"newGameId"`
+	FirstQuestion  QuestionDTO  `json:"firstQuestion"`
+	CoinsDeducted  int          `json:"coinsDeducted"` // 0 if paid with ad
+	RemainingCoins int          `json:"remainingCoins"`
+	TimeLimit      int          `json:"timeLimit"` // 15 seconds
 }

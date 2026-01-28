@@ -195,12 +195,12 @@ func (ss StreakSystem) UpdateForDate(playedDate Date) StreakSystem {
 }
 
 // GetBonus returns score multiplier based on current streak
+// Per docs/game_modes/daily_challenge/03_rules.md:
+// 0-2 days: 1.0 | 3-6 days: 1.1 | 7-13 days: 1.25 | 14-29 days: 1.4 | 30+ days: 1.5
 func (ss StreakSystem) GetBonus() float64 {
 	switch {
-	case ss.currentStreak >= 100:
-		return 2.0 // +100%
 	case ss.currentStreak >= 30:
-		return 1.6 // +60%
+		return 1.5 // +50%
 	case ss.currentStreak >= 14:
 		return 1.4 // +40%
 	case ss.currentStreak >= 7:
@@ -333,6 +333,8 @@ func (mb MarathonBonus) IsValid() bool {
 }
 
 // ChestReward represents the contents of a daily chest
+// NOTE: Use ChestRewardCalculator domain service to create rewards with proper randomization
+// Per docs/game_modes/daily_challenge/04_rewards.md
 type ChestReward struct {
 	chestType       ChestType
 	coins           int
@@ -340,37 +342,13 @@ type ChestReward struct {
 	marathonBonuses []MarathonBonus
 }
 
-// NewChestReward creates a chest reward based on chest type
-// Rewards are determined by chest quality:
-// - Wooden (0-4 correct): Few coins, 1 ticket, no bonuses
-// - Silver (5-7 correct): More coins, 2-3 tickets, chance for 1 bonus
-// - Golden (8-10 correct): Many coins, 4-5 tickets, guaranteed 1-2 bonuses
-func NewChestReward(chestType ChestType) ChestReward {
-	var coins, pvpTickets int
-	var marathonBonuses []MarathonBonus
-
-	switch chestType {
-	case ChestWooden:
-		coins = 50
-		pvpTickets = 1
-		marathonBonuses = []MarathonBonus{}
-
-	case ChestSilver:
-		coins = 150
-		pvpTickets = 2
-		marathonBonuses = []MarathonBonus{BonusFiftyFifty}
-
-	case ChestGolden:
-		coins = 300
-		pvpTickets = 4
-		marathonBonuses = []MarathonBonus{BonusShield, BonusSkip}
-
-	default:
-		coins = 50
-		pvpTickets = 1
-		marathonBonuses = []MarathonBonus{}
-	}
-
+// NewChestReward creates a chest reward (used by ChestRewardCalculator or reconstruction)
+func NewChestReward(
+	chestType ChestType,
+	coins int,
+	pvpTickets int,
+	marathonBonuses []MarathonBonus,
+) ChestReward {
 	return ChestReward{
 		chestType:       chestType,
 		coins:           coins,
@@ -379,19 +357,8 @@ func NewChestReward(chestType ChestType) ChestReward {
 	}
 }
 
-// ApplyStreakBonus applies streak multiplier to chest rewards
-// Returns new ChestReward with multiplied values (immutable)
-func (cr ChestReward) ApplyStreakBonus(streakBonus float64) ChestReward {
-	return ChestReward{
-		chestType:       cr.chestType,
-		coins:           int(float64(cr.coins) * streakBonus),
-		pvpTickets:      cr.pvpTickets,
-		marathonBonuses: cr.marathonBonuses,
-	}
-}
-
 // Getters
-func (cr ChestReward) ChestType() ChestType              { return cr.chestType }
-func (cr ChestReward) Coins() int                        { return cr.coins }
-func (cr ChestReward) PvpTickets() int                   { return cr.pvpTickets }
-func (cr ChestReward) MarathonBonuses() []MarathonBonus  { return cr.marathonBonuses }
+func (cr ChestReward) ChestType() ChestType             { return cr.chestType }
+func (cr ChestReward) Coins() int                       { return cr.coins }
+func (cr ChestReward) PvpTickets() int                  { return cr.pvpTickets }
+func (cr ChestReward) MarathonBonuses() []MarathonBonus { return cr.marathonBonuses }

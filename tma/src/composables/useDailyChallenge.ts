@@ -4,7 +4,9 @@ import {
   usePostDailyChallengeStart,
   usePostDailyChallengeGameidAnswer,
   useGetDailyChallengeStatus,
-  useGetDailyChallengeStreak
+  useGetDailyChallengeStreak,
+  usePostDailyChallengeGameidRetry,
+  usePostDailyChallengeGameidChestOpen
 } from '@/api/generated'
 
 /**
@@ -30,6 +32,8 @@ export function useDailyChallenge(playerId: string) {
 
   const startMutation = usePostDailyChallengeStart()
   const answerMutation = usePostDailyChallengeGameidAnswer()
+  const retryMutation = usePostDailyChallengeGameidRetry()
+  const openChestMutation = usePostDailyChallengeGameidChestOpen()
 
   // Main API endpoint - single source of truth
   const { data: statusData, refetch: refetchStatus, isLoading: isLoadingStatus } = useGetDailyChallengeStatus(
@@ -78,6 +82,8 @@ export function useDailyChallenge(playerId: string) {
   const isLoading = computed(() =>
     startMutation.isPending.value ||
     answerMutation.isPending.value ||
+    retryMutation.isPending.value ||
+    openChestMutation.isPending.value ||
     isLoadingStatus.value
   )
 
@@ -223,6 +229,64 @@ export function useDailyChallenge(playerId: string) {
     await checkStatus()
   }
 
+  /**
+   * Открыть сундук (получить награды)
+   */
+  const openChest = async () => {
+    if (!game.value?.gameId) {
+      throw new Error('No game to open chest for')
+    }
+
+    try {
+      console.log('[useDailyChallenge] Opening chest...')
+      const response = await openChestMutation.mutateAsync({
+        gameId: game.value.gameId,
+        data: {
+          playerId
+        }
+      })
+
+      console.log('[useDailyChallenge] Chest opened:', response.data)
+      return response.data
+    } catch (error) {
+      console.error('[useDailyChallenge] Failed to open chest:', error)
+      throw error
+    }
+  }
+
+  /**
+   * Повторить челлендж (создать вторую попытку)
+   */
+  const retryChallenge = async (paymentMethod: 'coins' | 'ad') => {
+    if (!game.value?.gameId) {
+      throw new Error('No game to retry')
+    }
+
+    try {
+      console.log('[useDailyChallenge] Retrying challenge...', { paymentMethod })
+      const response = await retryMutation.mutateAsync({
+        gameId: game.value.gameId,
+        data: {
+          playerId,
+          paymentMethod
+        }
+      })
+
+      console.log('[useDailyChallenge] Retry successful:', response.data)
+
+      // Refresh status to get new game
+      await refetchStatus()
+
+      // Navigate to play page
+      router.push({ name: 'daily-challenge-play' })
+
+      return response.data
+    } catch (error) {
+      console.error('[useDailyChallenge] Failed to retry challenge:', error)
+      throw error
+    }
+  }
+
   // ===========================
   // Return
   // ===========================
@@ -252,6 +316,8 @@ export function useDailyChallenge(playerId: string) {
     submitAnswer,
     checkStatus,
     initialize,
+    openChest,
+    retryChallenge,
 
     // Raw API data (for advanced usage)
     statusData,

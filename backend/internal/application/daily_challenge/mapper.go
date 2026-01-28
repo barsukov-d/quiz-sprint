@@ -151,6 +151,21 @@ func ToLeaderboardEntryDTO(game *daily_challenge.DailyGame, username string, ran
 	}
 }
 
+// ToChestRewardDTO converts domain ChestReward to DTO
+func ToChestRewardDTO(reward daily_challenge.ChestReward) ChestRewardDTO {
+	bonuses := make([]string, len(reward.MarathonBonuses()))
+	for i, bonus := range reward.MarathonBonuses() {
+		bonuses[i] = bonus.String()
+	}
+
+	return ChestRewardDTO{
+		ChestType:       reward.ChestType().String(),
+		Coins:           reward.Coins(),
+		PvpTickets:      reward.PvpTickets(),
+		MarathonBonuses: bonuses,
+	}
+}
+
 // BuildGameResultsDTO creates game results with full answer breakdown
 func BuildGameResultsDTO(
 	game *daily_challenge.DailyGame,
@@ -180,6 +195,17 @@ func BuildGameResultsDTO(
 	bonusMultiplier := streak.GetBonus()
 	bonusPercent := int((bonusMultiplier - 1.0) * 100)
 
+	// Get chest reward (should be set by use case)
+	chestReward := ChestRewardDTO{
+		ChestType:       "wooden",
+		Coins:           0,
+		PvpTickets:      0,
+		MarathonBonuses: []string{},
+	}
+	if game.ChestReward() != nil {
+		chestReward = ToChestRewardDTO(*game.ChestReward())
+	}
+
 	return GameResultsDTO{
 		BaseScore:         session.BaseScore().Value(),
 		FinalScore:        game.GetFinalScore(),
@@ -190,6 +216,7 @@ func BuildGameResultsDTO(
 		Rank:              rank,
 		TotalPlayers:      totalPlayers,
 		Percentile:        percentile,
+		ChestReward:       chestReward,
 		AnsweredQuestions: answeredQuestions,
 		Leaderboard:       leaderboard,
 	}

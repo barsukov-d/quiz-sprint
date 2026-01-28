@@ -1,10 +1,10 @@
-import { computed } from 'vue'
+import { computed, type Ref } from 'vue'
 import type { InternalInfrastructureHttpHandlersStreakDTO } from '@/api/generated'
 
 /**
  * Milestone значения для серий (дни подряд)
  */
-export const STREAK_MILESTONES = [3, 7, 14, 30, 100] as const
+export const STREAK_MILESTONES = [3, 7, 14, 30] as const
 
 export type StreakMilestone = typeof STREAK_MILESTONES[number]
 
@@ -50,13 +50,6 @@ export const MILESTONES_INFO: Record<StreakMilestone, MilestoneInfo> = {
     emoji: '💎',
     description: 'Месяц подряд',
     color: 'text-purple-500'
-  },
-  100: {
-    value: 100,
-    label: 'Легенда',
-    emoji: '👑',
-    description: '100 дней подряд!',
-    color: 'text-pink-500'
   }
 }
 
@@ -69,7 +62,7 @@ export const MILESTONES_INFO: Record<StreakMilestone, MilestoneInfo> = {
  * - Milestone анимации и уведомления
  * - Форматирование отображения серии
  */
-export function useStreaks(streak: InternalInfrastructureHttpHandlersStreakDTO | null) {
+export function useStreaks(streakRef: Ref<InternalInfrastructureHttpHandlersStreakDTO | null>) {
   // ===========================
   // Computed Properties
   // ===========================
@@ -77,22 +70,12 @@ export function useStreaks(streak: InternalInfrastructureHttpHandlersStreakDTO |
   /**
    * Текущая серия
    */
-  const currentStreak = computed(() => streak?.currentStreak ?? 0)
+  const currentStreak = computed(() => streakRef.value?.currentStreak ?? 0)
 
   /**
-   * Самая длинная серия
+   * Самая длинная серия (best streak)
    */
-  const longestStreak = computed(() => streak?.longestStreak ?? 0)
-
-  /**
-   * Была ли серия прервана вчера
-   */
-  const brokenYesterday = computed(() => streak?.brokenYesterday ?? false)
-
-  /**
-   * Можно ли восстановить серию
-   */
-  const canRestore = computed(() => brokenYesterday.value && currentStreak.value === 0)
+  const longestStreak = computed(() => streakRef.value?.bestStreak ?? 0)
 
   /**
    * Текущий достигнутый milestone
@@ -300,8 +283,6 @@ export function useStreaks(streak: InternalInfrastructureHttpHandlersStreakDTO |
     // Basic info
     currentStreak,
     longestStreak,
-    brokenYesterday,
-    canRestore,
 
     // Milestones
     currentMilestone,

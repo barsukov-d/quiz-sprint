@@ -221,9 +221,10 @@ func (dg *DailyGame) complete(completedAt int64) error {
 	return nil
 }
 
-// isStreakMilestone checks if streak is a milestone (3, 7, 14, 30, 100)
+// isStreakMilestone checks if streak is a milestone (3, 7, 14, 30)
+// Per docs/game_modes/daily_challenge/03_rules.md
 func isStreakMilestone(streak int) bool {
-	milestones := []int{3, 7, 14, 30, 100}
+	milestones := []int{3, 7, 14, 30}
 	for _, m := range milestones {
 		if streak == m {
 			return true
@@ -249,16 +250,38 @@ func (dg *DailyGame) SetRank(rank int) {
 	dg.rank = &rank
 }
 
+// SetChestReward sets the chest reward (called by application layer after calculation)
+func (dg *DailyGame) SetChestReward(reward ChestReward) error {
+	if !dg.status.IsTerminal() {
+		return ErrGameNotActive
+	}
+	dg.chestReward = &reward
+	return nil
+}
+
+// EmitChestEarnedEvent emits chest earned event (called by application layer)
+func (dg *DailyGame) EmitChestEarnedEvent(reward ChestReward, occurredAt int64) {
+	dg.events = append(dg.events, NewChestEarnedEvent(
+		dg.id,
+		dg.playerID,
+		dg.date,
+		reward,
+		dg.streak.GetBonus(),
+		occurredAt,
+	))
+}
+
 // Getters
-func (dg *DailyGame) ID() GameID                     { return dg.id }
-func (dg *DailyGame) PlayerID() UserID               { return dg.playerID }
-func (dg *DailyGame) DailyQuizID() DailyQuizID       { return dg.dailyQuizID }
-func (dg *DailyGame) Date() Date                     { return dg.date }
-func (dg *DailyGame) Status() GameStatus             { return dg.status }
+func (dg *DailyGame) ID() GameID                           { return dg.id }
+func (dg *DailyGame) PlayerID() UserID                     { return dg.playerID }
+func (dg *DailyGame) DailyQuizID() DailyQuizID             { return dg.dailyQuizID }
+func (dg *DailyGame) Date() Date                           { return dg.date }
+func (dg *DailyGame) Status() GameStatus                   { return dg.status }
 func (dg *DailyGame) Session() *kernel.QuizGameplaySession { return dg.session }
-func (dg *DailyGame) Streak() StreakSystem           { return dg.streak }
-func (dg *DailyGame) Rank() *int                     { return dg.rank }
-func (dg *DailyGame) IsCompleted() bool              { return dg.status.IsTerminal() }
+func (dg *DailyGame) Streak() StreakSystem                 { return dg.streak }
+func (dg *DailyGame) Rank() *int                           { return dg.rank }
+func (dg *DailyGame) ChestReward() *ChestReward            { return dg.chestReward }
+func (dg *DailyGame) IsCompleted() bool                    { return dg.status.IsTerminal() }
 
 // Events returns collected domain events and clears them
 func (dg *DailyGame) Events() []Event {
@@ -278,6 +301,7 @@ func ReconstructDailyGame(
 	session *kernel.QuizGameplaySession,
 	streak StreakSystem,
 	rank *int,
+	chestReward *ChestReward,
 ) *DailyGame {
 	return &DailyGame{
 		id:          id,
@@ -288,6 +312,7 @@ func ReconstructDailyGame(
 		session:     session,
 		streak:      streak,
 		rank:        rank,
+		chestReward: chestReward,
 		events:      make([]Event, 0), // Don't replay events from DB
 	}
 }

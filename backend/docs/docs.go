@@ -352,6 +352,130 @@ const docTemplate = `{
                 }
             }
         },
+        "/daily-challenge/{gameId}/chest/open": {
+            "post": {
+                "description": "Get chest rewards (idempotent)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "daily-challenge"
+                ],
+                "summary": "Open chest",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID",
+                        "name": "gameId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Open chest request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.OpenChestRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Chest opened",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.OpenChestResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Game not completed",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/daily-challenge/{gameId}/retry": {
+            "post": {
+                "description": "Create second attempt (costs 100 coins or ad)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "daily-challenge"
+                ],
+                "summary": "Retry challenge",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Original Game ID",
+                        "name": "gameId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Retry request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RetryChallengeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Retry started",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RetryChallengeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or insufficient coins",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Retry limit reached",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/leaderboard": {
             "get": {
                 "description": "Get the global leaderboard across all quizzes (sum of best scores per quiz)",
@@ -1713,6 +1837,32 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.ChestRewardDTO": {
+            "type": "object",
+            "required": [
+                "chestType",
+                "coins",
+                "marathonBonuses",
+                "pvpTickets"
+            ],
+            "properties": {
+                "chestType": {
+                    "type": "string"
+                },
+                "coins": {
+                    "type": "integer"
+                },
+                "marathonBonuses": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pvpTickets": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.CreateCategoryData": {
             "type": "object",
             "required": [
@@ -1916,9 +2066,11 @@ const docTemplate = `{
             "required": [
                 "answeredQuestions",
                 "baseScore",
+                "chestReward",
                 "correctAnswers",
                 "currentStreak",
                 "finalScore",
+                "leaderboard",
                 "percentile",
                 "rank",
                 "streakBonus",
@@ -1935,6 +2087,9 @@ const docTemplate = `{
                 "baseScore": {
                     "type": "integer"
                 },
+                "chestReward": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.ChestRewardDTO"
+                },
                 "correctAnswers": {
                     "type": "integer"
                 },
@@ -1943,6 +2098,12 @@ const docTemplate = `{
                 },
                 "finalScore": {
                     "type": "integer"
+                },
+                "leaderboard": {
+                    "type": "array",
+                    "items": {
+                        "$ref": "#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO"
+                    }
                 },
                 "percentile": {
                     "type": "integer"
@@ -2645,6 +2806,51 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.OpenChestData": {
+            "type": "object",
+            "required": [
+                "chestType",
+                "premiumApplied",
+                "rewards",
+                "streakBonus"
+            ],
+            "properties": {
+                "chestType": {
+                    "type": "string"
+                },
+                "premiumApplied": {
+                    "type": "boolean"
+                },
+                "rewards": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.ChestRewardDTO"
+                },
+                "streakBonus": {
+                    "type": "number"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.OpenChestRequest": {
+            "type": "object",
+            "required": [
+                "playerId"
+            ],
+            "properties": {
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.OpenChestResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.OpenChestData"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.QuestionDTO": {
             "type": "object",
             "required": [
@@ -2775,6 +2981,60 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.RegisterUserData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.RetryChallengeData": {
+            "type": "object",
+            "required": [
+                "coinsDeducted",
+                "firstQuestion",
+                "newGameId",
+                "remainingCoins",
+                "timeLimit"
+            ],
+            "properties": {
+                "coinsDeducted": {
+                    "type": "integer"
+                },
+                "firstQuestion": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
+                },
+                "newGameId": {
+                    "type": "string"
+                },
+                "remainingCoins": {
+                    "type": "integer"
+                },
+                "timeLimit": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.RetryChallengeRequest": {
+            "type": "object",
+            "required": [
+                "paymentMethod",
+                "playerId"
+            ],
+            "properties": {
+                "paymentMethod": {
+                    "description": "\"coins\" or \"ad\"",
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.RetryChallengeResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.RetryChallengeData"
                 }
             }
         },
