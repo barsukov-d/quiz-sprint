@@ -14,11 +14,19 @@ interface TelegramWebAppUser {
 	photo_url?: string
 }
 
+interface TelegramWebAppChat {
+	id: number
+	type: string
+	title: string
+	username?: string
+	photo_url?: string
+}
+
 interface TelegramWebAppInitData {
 	query_id?: string
 	user?: TelegramWebAppUser
 	receiver?: TelegramWebAppUser
-	chat?: any
+	chat?: TelegramWebAppChat
 	chat_type?: string
 	chat_instance?: string
 	start_param?: string
@@ -27,22 +35,55 @@ interface TelegramWebAppInitData {
 	hash: string
 }
 
+interface TelegramWebAppThemeParams {
+	bg_color?: string
+	text_color?: string
+	hint_color?: string
+	link_color?: string
+	button_color?: string
+	button_text_color?: string
+	secondary_bg_color?: string
+}
+
+interface TelegramWebAppButton {
+	isVisible: boolean
+	isActive: boolean
+	text: string
+	color: string
+	textColor: string
+	isProgressVisible: boolean
+	setText(text: string): void
+	onClick(callback: () => void): void
+	offClick(callback: () => void): void
+	show(): void
+	hide(): void
+	enable(): void
+	disable(): void
+	showProgress(leaveActive?: boolean): void
+	hideProgress(): void
+	setParams(params: { text?: string; color?: string; text_color?: string; is_active?: boolean; is_visible?: boolean }): void
+}
+
 interface TelegramWebApp {
 	initData: string
 	initDataUnsafe: TelegramWebAppInitData
 	version: string
 	platform: string
 	colorScheme: 'light' | 'dark'
-	themeParams: any
+	themeParams: TelegramWebAppThemeParams
 	isExpanded: boolean
 	viewportHeight: number
 	viewportStableHeight: number
 	headerColor: string
 	backgroundColor: string
 	isClosingConfirmationEnabled: boolean
-	BackButton: any
-	MainButton: any
-	HapticFeedback: any
+	BackButton: TelegramWebAppButton
+	MainButton: TelegramWebAppButton
+	HapticFeedback: {
+		impactOccurred(style: 'light' | 'medium' | 'heavy' | 'rigid' | 'soft'): void
+		notificationOccurred(type: 'error' | 'success' | 'warning'): void
+		selectionChanged(): void
+	}
 
 	ready(): void
 	expand(): void
@@ -56,10 +97,10 @@ interface TelegramWebApp {
 	openLink(url: string, options?: { try_instant_view?: boolean }): void
 	openTelegramLink(url: string): void
 	openInvoice(url: string, callback?: (status: string) => void): void
-	showPopup(params: any, callback?: (button_id: string) => void): void
+	showPopup(params: { title?: string; message: string; buttons?: { id?: string; type?: string; text?: string }[] }, callback?: (button_id: string) => void): void
 	showAlert(message: string, callback?: () => void): void
 	showConfirm(message: string, callback?: (confirmed: boolean) => void): void
-	showScanQrPopup(params: any, callback?: (data: string) => void): void
+	showScanQrPopup(params: { text?: string }, callback?: (data: string) => void): void
 	closeScanQrPopup(): void
 	readTextFromClipboard(callback?: (text: string) => void): void
 	requestWriteAccess(callback?: (granted: boolean) => void): void

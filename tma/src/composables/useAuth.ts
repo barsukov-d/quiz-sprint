@@ -44,7 +44,7 @@ export function useAuth() {
 	const initializeTMA = async () => {
 		try {
 			// Используем нативный Telegram.WebApp API
-			const webApp = (window as any).Telegram?.WebApp
+			const webApp = window.Telegram?.WebApp
 
 			console.log('🔍 Telegram WebApp:', webApp)
 			console.log('🔍 initDataUnsafe:', webApp?.initDataUnsafe)
