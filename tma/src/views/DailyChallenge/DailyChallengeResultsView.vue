@@ -108,7 +108,7 @@ const handleGoHome = () => {
 const handleRetryWithCoins = async () => {
   try {
     await retryChallenge('coins')
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to retry with coins:', error)
     // TODO: Show error toast
   }
@@ -117,7 +117,7 @@ const handleRetryWithCoins = async () => {
 const handleRetryWithAd = async () => {
   try {
     await retryChallenge('ad')
-  } catch (error: any) {
+  } catch (error: unknown) {
     console.error('Failed to retry with ad:', error)
     // TODO: Show error toast
   }

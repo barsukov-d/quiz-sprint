@@ -1,4 +1,4 @@
-import { ref, computed } from 'vue'
+import { computed } from 'vue'
 import { useRouter } from 'vue-router'
 import {
   usePostDailyChallengeStart,
@@ -134,7 +134,7 @@ export function useDailyChallenge(playerId: string) {
       router.push({ name: 'daily-challenge-play' })
 
       return true
-    } catch (error: any) {
+    } catch (error: unknown) {
       console.error('[useDailyChallenge] Failed to start game:', error)
 
       // Refresh status on error

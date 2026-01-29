@@ -41,13 +41,6 @@ const buttonColor = computed(() => {
   return 'gray'
 })
 
-const buttonVariant = computed(() => {
-  if (props.showFeedback || props.selected) {
-    return 'solid' as const
-  }
-  return 'outline' as const
-})
-
 const buttonIcon = computed(() => {
   if (props.showFeedback && props.isCorrect !== null) {
     return props.isCorrect ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'

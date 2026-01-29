@@ -1,6 +1,6 @@
 <script setup lang="ts">
-import { computed, watch, onMounted } from 'vue'
-import { useGameTimer, type GameTimerOptions } from '@/composables/useGameTimer'
+import { computed, watch } from 'vue'
+import { useGameTimer } from '@/composables/useGameTimer'
 
 interface Props {
   initialTime: number

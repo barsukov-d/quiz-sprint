@@ -6,8 +6,7 @@ import {
   usePostMarathonGameidHint,
   useDeleteMarathonGameid,
   useGetMarathonStatus,
-  useGetMarathonPersonalBests,
-  useGetMarathonLeaderboard
+  useGetMarathonPersonalBests
 } from '@/api/generated'
 import type {
   InternalInfrastructureHttpHandlersMarathonGameDTO,
@@ -39,7 +38,6 @@ interface MarathonState {
 }
 
 const STORAGE_KEY = 'marathon-state'
-const LIFE_RESTORE_INTERVAL = 3 * 60 * 60 // 3 часа в секундах
 
 /**
  * Composable для управления Marathon игрой
@@ -264,14 +262,17 @@ export function useMarathon(playerId: string) {
       router.push({ name: 'marathon-play' })
 
       return true
-    } catch (error: any) {
+    } catch (error: unknown) {
       state.value.status = 'error'
       console.error('Failed to start Marathon:', error)
 
       // Обработка ошибок
-      if (error.response?.status === 409) {
-        // Уже есть активная игра
-        await refetchStatus()
+      if (error && typeof error === 'object' && 'response' in error) {
+        const axiosError = error as { response?: { status?: number } }
+        if (axiosError.response?.status === 409) {
+          // Уже есть активная игра
+          await refetchStatus()
+        }
       }
 
       throw error

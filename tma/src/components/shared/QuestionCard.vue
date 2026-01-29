@@ -9,7 +9,7 @@ interface Props {
   points?: number
 }
 
-const props = withDefaults(defineProps<Props>(), {
+withDefaults(defineProps<Props>(), {
   showBadge: true
 })
 </script>
