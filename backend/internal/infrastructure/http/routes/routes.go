@@ -2,14 +2,20 @@ package routes
 
 import (
 	"database/sql"
+	"math/rand"
+	"time"
 
 	"github.com/gofiber/contrib/v3/websocket"
 	"github.com/gofiber/fiber/v3"
 
 	appQuiz "github.com/barsukov/quiz-sprint/backend/internal/application/quiz"
 	appUser "github.com/barsukov/quiz-sprint/backend/internal/application/user"
+	appMarathon "github.com/barsukov/quiz-sprint/backend/internal/application/marathon"
+	appDaily "github.com/barsukov/quiz-sprint/backend/internal/application/daily_challenge"
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
 	domainUser "github.com/barsukov/quiz-sprint/backend/internal/domain/user"
+	domainMarathon "github.com/barsukov/quiz-sprint/backend/internal/domain/solo_marathon"
+	domainDaily "github.com/barsukov/quiz-sprint/backend/internal/domain/daily_challenge"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/handlers"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/middleware"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/messaging"
@@ -34,9 +40,21 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		// quizRepo = memory.NewQuizRepository()
 	}
 
-	// Session and Leaderboard: still use memory for now
-	sessionRepo := memory.NewSessionRepository()
-	leaderboardRepo := memory.NewLeaderboardRepository(sessionRepo)
+	// Session and Leaderboard: use PostgreSQL if available, fallback to memory
+	var sessionRepo quiz.SessionRepository
+	var leaderboardRepo interface {
+		quiz.LeaderboardRepository
+		quiz.GlobalLeaderboardRepository
+	}
+
+	if db != nil {
+		sessionRepo = postgres.NewSessionRepository(db)
+		leaderboardRepo = postgres.NewLeaderboardRepository(db)
+	} else {
+		memSessionRepo := memory.NewSessionRepository()
+		sessionRepo = memSessionRepo
+		leaderboardRepo = memory.NewLeaderboardRepository(memSessionRepo)
+	}
 
 	// User repository: use PostgreSQL if available
 	var userRepo domainUser.UserRepository
@@ -50,11 +68,61 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		categoryRepo = postgres.NewCategoryRepository(db)
 	}
 
+	// Marathon repositories: only available with PostgreSQL
+	var (
+		questionRepo      quiz.QuestionRepository
+		marathonRepo      domainMarathon.Repository
+		personalBestRepo  domainMarathon.PersonalBestRepository
+	)
+	if db != nil {
+		questionRepo = postgres.NewQuestionRepository(db)
+		marathonRepo = postgres.NewMarathonRepository(db, questionRepo)
+		personalBestRepo = postgres.NewPersonalBestRepository(db)
+	}
+
+	// Daily Challenge repositories: only available with PostgreSQL
+	var (
+		dailyQuizRepo domainDaily.DailyQuizRepository
+		dailyGameRepo domainDaily.DailyGameRepository
+	)
+	if db != nil && quizRepo != nil && questionRepo != nil {
+		dailyQuizRepo = postgres.NewDailyQuizRepository(db)
+		dailyGameRepo = postgres.NewDailyGameRepository(db, quizRepo, questionRepo, dailyQuizRepo)
+	}
+
 	// ========================================
 	// Infrastructure Layer: Event Bus
 	// ========================================
 	eventBus := messaging.NewInMemoryEventBus()
 	loggingEventBus := messaging.NewLoggingEventBus(eventBus)
+
+	// Marathon event bus (separate from quiz events)
+	marathonEventBus := messaging.NewMarathonEventBus(true) // Enable logging
+
+	// Daily Challenge event bus
+	dailyChallengeEventBus := messaging.NewDailyChallengeEventBus(true) // Enable logging
+
+	// ========================================
+	// Infrastructure Layer: WebSocket Hub
+	// ========================================
+	wsHub := handlers.NewWebSocketHub(leaderboardRepo)
+
+	// ========================================
+	// Infrastructure Layer: Event Handlers
+	// ========================================
+	// Register QuizCompletedEvent handler to broadcast leaderboard updates
+	loggingEventBus.Subscribe("quiz.completed", func(event quiz.Event) {
+		completedEvent, ok := event.(quiz.QuizCompletedEvent)
+		if !ok {
+			return
+		}
+
+		// Broadcast to per-quiz leaderboard WebSocket
+		wsHub.BroadcastLeaderboardUpdate(completedEvent.QuizID().String())
+
+		// Broadcast to global leaderboard WebSocket
+		wsHub.BroadcastGlobalLeaderboardUpdate()
+	})
 
 	// ========================================
 	// Application Layer: Use Cases
@@ -67,8 +135,13 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	startQuizUC := appQuiz.NewStartQuizUseCase(quizRepo, sessionRepo, loggingEventBus)
 	submitAnswerUC := appQuiz.NewSubmitAnswerUseCase(quizRepo, sessionRepo, loggingEventBus)
 	getLeaderboardUC := appQuiz.NewGetLeaderboardUseCase(leaderboardRepo)
+	getGlobalLeaderboardUC := appQuiz.NewGetGlobalLeaderboardUseCase(leaderboardRepo)
 	getActiveSessionUC := appQuiz.NewGetActiveSessionUseCase(quizRepo, sessionRepo)
 	abandonSessionUC := appQuiz.NewAbandonSessionUseCase(sessionRepo)
+	getSessionResultsUC := appQuiz.NewGetSessionResultsUseCase(sessionRepo, quizRepo)
+	getDailyQuizUC := appQuiz.NewGetDailyQuizUseCase(quizRepo, sessionRepo, leaderboardRepo)
+	getRandomQuizUC := appQuiz.NewGetRandomQuizUseCase(quizRepo)
+	getUserActiveSessionsUC := appQuiz.NewGetUserActiveSessionsUseCase(quizRepo, sessionRepo)
 
 	// Category use cases (only if database is available)
 	var (
@@ -99,6 +172,114 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		getUserByUsernameUC = appUser.NewGetUserByTelegramUsernameUseCase(userRepo)
 	}
 
+	// Marathon use cases (only if database is available)
+	var (
+		startMarathonUC           *appMarathon.StartMarathonUseCase
+		submitMarathonAnswerUC    *appMarathon.SubmitMarathonAnswerUseCase
+		useMarathonHintUC         *appMarathon.UseMarathonHintUseCase
+		abandonMarathonUC         *appMarathon.AbandonMarathonUseCase
+		getMarathonStatusUC       *appMarathon.GetMarathonStatusUseCase
+		getPersonalBestsUC        *appMarathon.GetPersonalBestsUseCase
+		getMarathonLeaderboardUC  *appMarathon.GetMarathonLeaderboardUseCase
+	)
+
+	if marathonRepo != nil && personalBestRepo != nil && questionRepo != nil && categoryRepo != nil && userRepo != nil {
+		startMarathonUC = appMarathon.NewStartMarathonUseCase(
+			marathonRepo,
+			personalBestRepo,
+			questionRepo,
+			categoryRepo,
+			marathonEventBus,
+		)
+		submitMarathonAnswerUC = appMarathon.NewSubmitMarathonAnswerUseCase(
+			marathonRepo,
+			personalBestRepo,
+			questionRepo,
+			marathonEventBus,
+		)
+		useMarathonHintUC = appMarathon.NewUseMarathonHintUseCase(
+			marathonRepo,
+			marathonEventBus,
+		)
+		abandonMarathonUC = appMarathon.NewAbandonMarathonUseCase(
+			marathonRepo,
+			personalBestRepo,
+			marathonEventBus,
+		)
+		getMarathonStatusUC = appMarathon.NewGetMarathonStatusUseCase(
+			marathonRepo,
+		)
+		getPersonalBestsUC = appMarathon.NewGetPersonalBestsUseCase(
+			personalBestRepo,
+		)
+		getMarathonLeaderboardUC = appMarathon.NewGetMarathonLeaderboardUseCase(
+			personalBestRepo,
+			categoryRepo,
+			userRepo,
+		)
+	}
+
+	// Daily Challenge use cases (only if database is available)
+	var (
+		getOrCreateDailyQuizUC *appDaily.GetOrCreateDailyQuizUseCase
+		startDailyChallengeUC  *appDaily.StartDailyChallengeUseCase
+		submitDailyAnswerUC    *appDaily.SubmitDailyAnswerUseCase
+		getDailyGameStatusUC   *appDaily.GetDailyGameStatusUseCase
+		getDailyLeaderboardUC  *appDaily.GetDailyLeaderboardUseCase
+		getPlayerStreakUC      *appDaily.GetPlayerStreakUseCase
+		openChestUC            *appDaily.OpenChestUseCase
+		retryUC                *appDaily.RetryChallengeUseCase
+	)
+
+	if dailyQuizRepo != nil && dailyGameRepo != nil && questionRepo != nil && quizRepo != nil && userRepo != nil {
+		// Create ChestRewardCalculator with RNG
+		// Using time-based seed for randomness per docs/game_modes/daily_challenge/04_rewards.md
+		rng := rand.New(rand.NewSource(time.Now().UnixNano()))
+		chestRewardCalc := domainDaily.NewChestRewardCalculator(rng)
+
+		getOrCreateDailyQuizUC = appDaily.NewGetOrCreateDailyQuizUseCase(
+			dailyQuizRepo,
+			dailyGameRepo,
+			questionRepo,
+			dailyChallengeEventBus,
+		)
+		startDailyChallengeUC = appDaily.NewStartDailyChallengeUseCase(
+			dailyQuizRepo,
+			dailyGameRepo,
+			questionRepo,
+			quizRepo,
+			dailyChallengeEventBus,
+			getOrCreateDailyQuizUC,
+		)
+		getDailyLeaderboardUC = appDaily.NewGetDailyLeaderboardUseCase(
+			dailyGameRepo,
+			userRepo,
+		)
+		submitDailyAnswerUC = appDaily.NewSubmitDailyAnswerUseCase(
+			dailyGameRepo,
+			dailyChallengeEventBus,
+			getDailyLeaderboardUC,
+			chestRewardCalc,
+		)
+		getDailyGameStatusUC = appDaily.NewGetDailyGameStatusUseCase(
+			dailyQuizRepo,
+			dailyGameRepo,
+			getDailyLeaderboardUC,
+		)
+		getPlayerStreakUC = appDaily.NewGetPlayerStreakUseCase(
+			dailyGameRepo,
+		)
+		openChestUC = appDaily.NewOpenChestUseCase(
+			dailyGameRepo,
+		)
+		retryUC = appDaily.NewRetryChallengeUseCase(
+			dailyGameRepo,
+			dailyQuizRepo,
+			questionRepo,
+			dailyChallengeEventBus,
+		)
+	}
+
 	// ========================================
 	// Infrastructure Layer: HTTP Handlers
 	// ========================================
@@ -109,8 +290,13 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		startQuizUC,
 		submitAnswerUC,
 		getLeaderboardUC,
+		getGlobalLeaderboardUC,
 		getActiveSessionUC,
 		abandonSessionUC,
+		getSessionResultsUC,
+		getDailyQuizUC,
+		getRandomQuizUC,
+		getUserActiveSessionsUC,
 	)
 
 	// Category handler (only if database is available)
@@ -118,8 +304,6 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	if categoryRepo != nil {
 		categoryHandler = handlers.NewCategoryHandler(createCategoryUC, listCategoriesUC)
 	}
-
-	wsHub := handlers.NewWebSocketHub(leaderboardRepo)
 
 	// User handler (only if database is available)
 	var userHandler *handlers.UserHandler
@@ -134,6 +318,35 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		)
 	}
 
+	// Marathon handler (only if database is available)
+	var marathonHandler *handlers.MarathonHandler
+	if startMarathonUC != nil {
+		marathonHandler = handlers.NewMarathonHandler(
+			startMarathonUC,
+			submitMarathonAnswerUC,
+			useMarathonHintUC,
+			abandonMarathonUC,
+			getMarathonStatusUC,
+			getPersonalBestsUC,
+			getMarathonLeaderboardUC,
+		)
+	}
+
+	// Daily Challenge handler (only if database is available)
+	var dailyChallengeHandler *handlers.DailyChallengeHandler
+	if startDailyChallengeUC != nil {
+		dailyChallengeHandler = handlers.NewDailyChallengeHandler(
+			getOrCreateDailyQuizUC,
+			startDailyChallengeUC,
+			submitDailyAnswerUC,
+			getDailyGameStatusUC,
+			getDailyLeaderboardUC,
+			getPlayerStreakUC,
+			openChestUC,
+			retryUC,
+		)
+	}
+
 	// ========================================
 	// Routes
 	// ========================================
@@ -145,14 +358,21 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	// Quiz routes
 	quiz := v1.Group("/quiz")
 	quiz.Get("/", quizHandler.GetAllQuizzes)
+	quiz.Get("/daily", middleware.TelegramAuthMiddleware(), quizHandler.GetDailyQuiz) // Daily quiz with auth (before /:id)
+	quiz.Get("/random", quizHandler.GetRandomQuiz)                                    // Random quiz (before /:id)
 	quiz.Get("/:id", quizHandler.GetQuizByID)
 	quiz.Post("/:id/start", quizHandler.StartQuiz)
 	quiz.Get("/:id/active-session", quizHandler.GetActiveSession)
 	quiz.Get("/:id/leaderboard", quizHandler.GetLeaderboard)
 
+	// Global leaderboard route
+	v1.Get("/leaderboard", quizHandler.GetGlobalLeaderboard)
+
 	// Session routes
 	session := v1.Group("/quiz/session")
+	// IMPORTANT: More specific routes MUST come before generic /:sessionId
 	session.Post("/:sessionId/answer", quizHandler.SubmitAnswer)
+	session.Get("/:sessionId", quizHandler.GetSessionResults)
 	session.Delete("/:sessionId", quizHandler.AbandonSession)
 
 	// Category routes
@@ -174,6 +394,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	})
 
 	ws.Get("/leaderboard/:id", websocket.New(wsHub.HandleLeaderboardWebSocket))
+	ws.Get("/leaderboard/global", websocket.New(wsHub.HandleGlobalLeaderboardWebSocket))
 
 	// User routes (only if database is available)
 	if userHandler != nil {
@@ -184,12 +405,37 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 		// Public routes (for now - can add auth later)
 		user.Get("/:id", userHandler.GetUser)
+		user.Get("/:userId/sessions/active", quizHandler.GetUserActiveSessions) // Active sessions
 		user.Put("/:id", userHandler.UpdateUserProfile)
 		user.Get("/by-username/:username", userHandler.GetUserByTelegramUsername)
 
 		// Admin routes
 		users := v1.Group("/users")
 		users.Get("/", userHandler.ListUsers)
+	}
+
+	// Marathon routes (only if database is available)
+	if marathonHandler != nil {
+		marathon := v1.Group("/marathon")
+		marathon.Post("/start", marathonHandler.StartMarathon)
+		marathon.Post("/:gameId/answer", marathonHandler.SubmitMarathonAnswer)
+		marathon.Post("/:gameId/hint", marathonHandler.UseMarathonHint)
+		marathon.Delete("/:gameId", marathonHandler.AbandonMarathon)
+		marathon.Get("/status", marathonHandler.GetMarathonStatus)
+		marathon.Get("/personal-bests", marathonHandler.GetPersonalBests)
+		marathon.Get("/leaderboard", marathonHandler.GetMarathonLeaderboard)
+	}
+
+	// Daily Challenge routes (only if database is available)
+	if dailyChallengeHandler != nil {
+		daily := v1.Group("/daily-challenge")
+		daily.Post("/start", dailyChallengeHandler.StartDailyChallenge)
+		daily.Post("/:gameId/answer", dailyChallengeHandler.SubmitDailyAnswer)
+		daily.Post("/:gameId/chest/open", dailyChallengeHandler.OpenChest)
+		daily.Post("/:gameId/retry", dailyChallengeHandler.RetryChallenge)
+		daily.Get("/status", dailyChallengeHandler.GetDailyStatus)
+		daily.Get("/leaderboard", dailyChallengeHandler.GetDailyLeaderboard)
+		daily.Get("/streak", dailyChallengeHandler.GetPlayerStreak)
 	}
 
 	// Swagger documentation

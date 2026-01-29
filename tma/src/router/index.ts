@@ -4,15 +4,24 @@ import QuizListView from '../views/QuizListView.vue'
 import QuizDetailsView from '../views/QuizDetailsView.vue'
 import QuizPlayView from '../views/QuizPlayView.vue'
 import QuizResultsView from '../views/QuizResultsView.vue'
+import LeaderboardView from '../views/LeaderboardView.vue'
+import ProfileView from '../views/ProfileView.vue'
 import HomeView from '../views/HomeView.vue'
+
+// Daily Challenge Views
+import DailyChallengePlayView from '../views/DailyChallenge/DailyChallengePlayView.vue'
+import DailyChallengeResultsView from '../views/DailyChallenge/DailyChallengeResultsView.vue'
+import DailyChallengeReviewView from '../views/DailyChallenge/DailyChallengeReviewView.vue'
+// TODO: Import DailyChallengeIntroView when created
+// import DailyChallengeIntroView from '../views/DailyChallenge/DailyChallengeIntroView.vue'
 
 const router = createRouter({
   history: createWebHistory(import.meta.env.BASE_URL),
   routes: [
     {
       path: '/',
-      name: 'categories',
-      component: CategoriesView,
+      name: 'home',
+      component: HomeView,
     },
     {
       path: '/quizzes',
@@ -34,11 +43,48 @@ const router = createRouter({
       name: 'quiz-results',
       component: QuizResultsView,
     },
+    {
+      path: '/leaderboard/:quizId?',
+      name: 'leaderboard',
+      component: LeaderboardView,
+    },
+    {
+      path: '/profile',
+      name: 'profile',
+      component: ProfileView,
+    },
+    // Daily Challenge Routes
+    {
+      path: '/daily-challenge',
+      children: [
+        // TODO: Uncomment when DailyChallengeIntroView is created
+        // {
+        //   path: '',
+        //   name: 'daily-challenge-intro',
+        //   component: DailyChallengeIntroView,
+        // },
+        {
+          path: 'play',
+          name: 'daily-challenge-play',
+          component: DailyChallengePlayView,
+        },
+        {
+          path: 'results',
+          name: 'daily-challenge-results',
+          component: DailyChallengeResultsView,
+        },
+        {
+          path: 'review',
+          name: 'daily-challenge-review',
+          component: DailyChallengeReviewView,
+        },
+      ],
+    },
     // Legacy route (для обратной совместимости)
     {
-      path: '/home',
-      name: 'home',
-      component: HomeView,
+      path: '/categories',
+      name: 'categories',
+      component: CategoriesView,
     },
   ],
 })

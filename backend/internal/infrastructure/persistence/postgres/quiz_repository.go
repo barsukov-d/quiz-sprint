@@ -3,6 +3,8 @@ package postgres
 import (
 	"database/sql"
 	"fmt"
+	"strings"
+	"time"
 
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
 )
@@ -25,6 +27,12 @@ func (r *QuizRepository) FindByID(id quiz.QuizID) (*quiz.Quiz, error) {
 		return nil, err
 	}
 
+	// Load tags
+	tags, err := r.loadTags(id)
+	if err != nil {
+		return nil, err
+	}
+
 	// Load questions with answers
 	questions, err := r.loadQuestions(id)
 	if err != nil {
@@ -41,6 +49,14 @@ func (r *QuizRepository) FindByID(id quiz.QuizID) (*quiz.Quiz, error) {
 		quizData.passingScore,
 		quizData.createdAt,
 		quizData.updatedAt,
+		tags,
+		quizData.importBatchID,
+		quizData.generatedAt,
+		quizData.basePoints,
+		quizData.timeLimitPerQuestion,
+		quizData.maxTimeBonus,
+		quizData.streakThreshold,
+		quizData.streakBonus,
 	)
 
 	// Add questions
@@ -56,7 +72,8 @@ func (r *QuizRepository) FindByID(id quiz.QuizID) (*quiz.Quiz, error) {
 // FindAll retrieves all quizzes (without questions for performance)
 func (r *QuizRepository) FindAll() ([]quiz.Quiz, error) {
 	query := `
-		SELECT id, title, description, category_id, time_limit, passing_score, created_at, updated_at
+		SELECT id, title, description, category_id, time_limit, passing_score, created_at, updated_at, import_batch_id, generated_at,
+		       base_points, time_limit_per_question, max_time_bonus, streak_threshold, streak_bonus
 		FROM quizzes
 		ORDER BY created_at DESC
 	`
@@ -75,7 +92,7 @@ func (r *QuizRepository) FindAll() ([]quiz.Quiz, error) {
 			return nil, err
 		}
 
-		// Reconstruct quiz without questions
+		// Reconstruct quiz without questions and tags (performance)
 		q := quiz.ReconstructQuiz(
 			quizData.id,
 			quizData.title,
@@ -85,6 +102,14 @@ func (r *QuizRepository) FindAll() ([]quiz.Quiz, error) {
 			quizData.passingScore,
 			quizData.createdAt,
 			quizData.updatedAt,
+			[]quiz.Tag{},
+			quizData.importBatchID,
+			quizData.generatedAt,
+			quizData.basePoints,
+			quizData.timeLimitPerQuestion,
+			quizData.maxTimeBonus,
+			quizData.streakThreshold,
+			quizData.streakBonus,
 		)
 
 		quizzes = append(quizzes, *q)
@@ -294,6 +319,27 @@ func (r *QuizRepository) Save(q *quiz.Quiz) error {
 		return err
 	}
 
+	// Save tags to tags table
+	tags := q.Tags()
+	if len(tags) > 0 {
+		err = r.saveTags(tx, tags)
+		if err != nil {
+			return err
+		}
+
+		// Delete existing quiz-tag relationships
+		_, err = tx.Exec("DELETE FROM quiz_tags WHERE quiz_id = $1", q.ID().String())
+		if err != nil {
+			return fmt.Errorf("failed to delete existing quiz tags: %w", err)
+		}
+
+		// Create new quiz-tag relationships
+		err = r.assignTagsToQuiz(tx, q.ID(), tags)
+		if err != nil {
+			return err
+		}
+	}
+
 	// Delete existing questions and answers (will be re-inserted)
 	_, err = tx.Exec("DELETE FROM questions WHERE quiz_id = $1", q.ID().String())
 	if err != nil {
@@ -337,20 +383,29 @@ func (r *QuizRepository) Delete(id quiz.QuizID) error {
 // ========================================
 
 type quizData struct {
-	id           quiz.QuizID
-	title        quiz.QuizTitle
-	description  string
-	categoryID   quiz.CategoryID
-	timeLimit    quiz.TimeLimit
-	passingScore quiz.PassingScore
-	createdAt    int64
-	updatedAt    int64
+	id                   quiz.QuizID
+	title                quiz.QuizTitle
+	description          string
+	categoryID           quiz.CategoryID
+	timeLimit            quiz.TimeLimit
+	passingScore         quiz.PassingScore
+	createdAt            int64
+	updatedAt            int64
+	tags                 []quiz.Tag
+	importBatchID        *string
+	generatedAt          *int64
+	basePoints           quiz.Points
+	timeLimitPerQuestion int
+	maxTimeBonus         quiz.Points
+	streakThreshold      int
+	streakBonus          quiz.Points
 }
 
 // loadQuiz loads a quiz from database (without questions)
 func (r *QuizRepository) loadQuiz(id quiz.QuizID) (*quizData, error) {
 	query := `
-		SELECT id, title, description, category_id, time_limit, passing_score, created_at, updated_at
+		SELECT id, title, description, category_id, time_limit, passing_score, created_at, updated_at, import_batch_id, generated_at,
+		       base_points, time_limit_per_question, max_time_bonus, streak_threshold, streak_bonus
 		FROM quizzes
 		WHERE id = $1
 	`
@@ -364,17 +419,25 @@ func (r *QuizRepository) scanQuizRow(scanner interface {
 	Scan(dest ...interface{}) error
 }) (*quizData, error) {
 	var (
-		idStr         string
-		title         string
-		description   sql.NullString
-		categoryIDStr sql.NullString
-		timeLimit     int
-		passingScore  int
-		createdAt     int64
-		updatedAt     int64
+		idStr                string
+		title                string
+		description          sql.NullString
+		categoryIDStr        sql.NullString
+		timeLimit            int
+		passingScore         int
+		createdAt            int64
+		updatedAt            int64
+		importBatchID        sql.NullString
+		generatedAtSQL       sql.NullTime
+		basePoints           int
+		timeLimitPerQuestion int
+		maxTimeBonus         int
+		streakThreshold      int
+		streakBonus          int
 	)
 
-	err := scanner.Scan(&idStr, &title, &description, &categoryIDStr, &timeLimit, &passingScore, &createdAt, &updatedAt)
+	err := scanner.Scan(&idStr, &title, &description, &categoryIDStr, &timeLimit, &passingScore, &createdAt, &updatedAt, &importBatchID, &generatedAtSQL,
+		&basePoints, &timeLimitPerQuestion, &maxTimeBonus, &streakThreshold, &streakBonus)
 	if err == sql.ErrNoRows {
 		return nil, quiz.ErrQuizNotFound
 	}
@@ -417,15 +480,50 @@ func (r *QuizRepository) scanQuizRow(scanner interface {
 		desc = description.String
 	}
 
+	var batchID *string
+	if importBatchID.Valid {
+		batchID = &importBatchID.String
+	}
+
+	var generatedAt *int64
+	if generatedAtSQL.Valid {
+		ts := generatedAtSQL.Time.Unix()
+		generatedAt = &ts
+	}
+
+	// Reconstruct scoring value objects
+	quizBasePoints, err := quiz.NewPoints(basePoints)
+	if err != nil {
+		return nil, fmt.Errorf("invalid base points: %w", err)
+	}
+
+	quizMaxTimeBonus, err := quiz.NewPoints(maxTimeBonus)
+	if err != nil {
+		return nil, fmt.Errorf("invalid max time bonus: %w", err)
+	}
+
+	quizStreakBonus, err := quiz.NewPoints(streakBonus)
+	if err != nil {
+		return nil, fmt.Errorf("invalid streak bonus: %w", err)
+	}
+
 	return &quizData{
-		id:           quizID,
-		title:        quizTitle,
-		description:  desc,
-		categoryID:   categoryID,
-		timeLimit:    quizTimeLimit,
-		passingScore: quizPassingScore,
-		createdAt:    createdAt,
-		updatedAt:    updatedAt,
+		id:                   quizID,
+		title:                quizTitle,
+		description:          desc,
+		categoryID:           categoryID,
+		timeLimit:            quizTimeLimit,
+		passingScore:         quizPassingScore,
+		createdAt:            createdAt,
+		updatedAt:            updatedAt,
+		tags:                 []quiz.Tag{}, // Will be loaded separately
+		importBatchID:        batchID,
+		generatedAt:          generatedAt,
+		basePoints:           quizBasePoints,
+		timeLimitPerQuestion: timeLimitPerQuestion,
+		maxTimeBonus:         quizMaxTimeBonus,
+		streakThreshold:      streakThreshold,
+		streakBonus:          quizStreakBonus,
 	}, nil
 }
 
@@ -563,20 +661,42 @@ func (r *QuizRepository) loadAnswers(questionID quiz.QuestionID) ([]quiz.Answer,
 // saveQuiz saves or updates a quiz
 func (r *QuizRepository) saveQuiz(tx *sql.Tx, q *quiz.Quiz) error {
 	query := `
-		INSERT INTO quizzes (id, title, description, category_id, time_limit, passing_score, created_at, updated_at)
-		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+		INSERT INTO quizzes (id, title, description, category_id, time_limit, passing_score, created_at, updated_at, tags, import_batch_id, generated_at,
+		                     base_points, time_limit_per_question, max_time_bonus, streak_threshold, streak_bonus)
+		VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13, $14, $15, $16)
 		ON CONFLICT (id) DO UPDATE SET
 			title = EXCLUDED.title,
 			description = EXCLUDED.description,
 			category_id = EXCLUDED.category_id,
 			time_limit = EXCLUDED.time_limit,
 			passing_score = EXCLUDED.passing_score,
-			updated_at = EXCLUDED.updated_at
+			updated_at = EXCLUDED.updated_at,
+			tags = EXCLUDED.tags,
+			import_batch_id = EXCLUDED.import_batch_id,
+			generated_at = EXCLUDED.generated_at,
+			base_points = EXCLUDED.base_points,
+			time_limit_per_question = EXCLUDED.time_limit_per_question,
+			max_time_bonus = EXCLUDED.max_time_bonus,
+			streak_threshold = EXCLUDED.streak_threshold,
+			streak_bonus = EXCLUDED.streak_bonus
 	`
 
 	var categoryIDStr interface{}
 	if !q.CategoryID().IsZero() {
 		categoryIDStr = q.CategoryID().String()
+	}
+
+	// Convert tags to string array for denormalized storage
+	tagNames := q.TagNames()
+	var tagsArray interface{}
+	if len(tagNames) > 0 {
+		tagsArray = "{" + strings.Join(tagNames, ",") + "}"
+	}
+
+	// Convert generated_at from Unix timestamp to SQL timestamp
+	var generatedAtSQL interface{}
+	if q.GeneratedAt() != nil {
+		generatedAtSQL = time.Unix(*q.GeneratedAt(), 0)
 	}
 
 	_, err := tx.Exec(
@@ -589,6 +709,14 @@ func (r *QuizRepository) saveQuiz(tx *sql.Tx, q *quiz.Quiz) error {
 		q.PassingScore().Percentage(),
 		q.CreatedAt(),
 		q.UpdatedAt(),
+		tagsArray,
+		q.ImportBatchID(),
+		generatedAtSQL,
+		q.BasePoints().Value(),
+		q.TimeLimitPerQuestion(),
+		q.MaxTimeBonus().Value(),
+		q.StreakThreshold(),
+		q.StreakBonus().Value(),
 	)
 
 	if err != nil {
@@ -651,4 +779,101 @@ func (r *QuizRepository) saveAnswer(tx *sql.Tx, questionID quiz.QuestionID, a qu
 	}
 
 	return nil
+}
+
+// saveTags saves multiple tags to the tags table
+func (r *QuizRepository) saveTags(tx *sql.Tx, tags []quiz.Tag) error {
+	if len(tags) == 0 {
+		return nil
+	}
+
+	// Build batch insert
+	valueStrings := make([]string, 0, len(tags))
+	valueArgs := make([]interface{}, 0, len(tags)*2)
+
+	for i, tag := range tags {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, CURRENT_TIMESTAMP)", i*2+1, i*2+2))
+		valueArgs = append(valueArgs, tag.ID().String(), tag.Name().String())
+	}
+
+	query := fmt.Sprintf(`
+		INSERT INTO tags (id, name, created_at)
+		VALUES %s
+		ON CONFLICT (name) DO NOTHING
+	`, strings.Join(valueStrings, ","))
+
+	_, err := tx.Exec(query, valueArgs...)
+	if err != nil {
+		return fmt.Errorf("failed to save tags: %w", err)
+	}
+
+	return nil
+}
+
+// assignTagsToQuiz creates relationships between quiz and tags in quiz_tags table
+func (r *QuizRepository) assignTagsToQuiz(tx *sql.Tx, quizID quiz.QuizID, tags []quiz.Tag) error {
+	if len(tags) == 0 {
+		return nil
+	}
+
+	// Build batch insert
+	valueStrings := make([]string, 0, len(tags))
+	valueArgs := make([]interface{}, 0, len(tags)*2)
+
+	for i, tag := range tags {
+		valueStrings = append(valueStrings, fmt.Sprintf("($%d, $%d, CURRENT_TIMESTAMP)", i*2+1, i*2+2))
+		valueArgs = append(valueArgs, quizID.String(), tag.ID().String())
+	}
+
+	query := fmt.Sprintf(`
+		INSERT INTO quiz_tags (quiz_id, tag_id, created_at)
+		VALUES %s
+		ON CONFLICT (quiz_id, tag_id) DO NOTHING
+	`, strings.Join(valueStrings, ","))
+
+	_, err := tx.Exec(query, valueArgs...)
+	if err != nil {
+		return fmt.Errorf("failed to assign tags to quiz: %w", err)
+	}
+
+	return nil
+}
+
+// loadTags loads tags for a quiz from quiz_tags and tags tables
+func (r *QuizRepository) loadTags(quizID quiz.QuizID) ([]quiz.Tag, error) {
+	query := `
+		SELECT t.id, t.name
+		FROM tags t
+		INNER JOIN quiz_tags qt ON t.id = qt.tag_id
+		WHERE qt.quiz_id = $1
+		ORDER BY t.name
+	`
+
+	rows, err := r.db.Query(query, quizID.String())
+	if err != nil {
+		return nil, fmt.Errorf("failed to load tags: %w", err)
+	}
+	defer rows.Close()
+
+	var tags []quiz.Tag
+
+	for rows.Next() {
+		var (
+			id      string
+			tagName string
+		)
+
+		if err := rows.Scan(&id, &tagName); err != nil {
+			return nil, fmt.Errorf("failed to scan tag: %w", err)
+		}
+
+		tag := quiz.ReconstructTag(id, tagName)
+		tags = append(tags, *tag)
+	}
+
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating tag rows: %w", err)
+	}
+
+	return tags, nil
 }

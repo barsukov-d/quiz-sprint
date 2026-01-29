@@ -31,6 +31,7 @@ var (
 	ErrNoQuestions      = errors.New("quiz has no questions")
 	ErrTooManyQuestions = errors.New("too many questions")
 	ErrTooManyAnswers   = errors.New("too many answers per question")
+	ErrTooManyTags      = errors.New("too many tags (maximum 10 per quiz)")
 
 	// Session errors
 	ErrSessionNotFound      = errors.New("quiz session not found")
@@ -46,4 +47,8 @@ var (
 
 	// User errors
 	ErrUnauthorized = errors.New("unauthorized")
+
+	// Timing errors
+	ErrInvalidTimeTaken  = errors.New("invalid time taken (must be non-negative)")
+	ErrTimeTakenTooLong  = errors.New("time taken too long (max 1 hour)")
 )

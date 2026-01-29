@@ -1,0 +1,185 @@
+{
+  "title": "Advanced JavaScript",
+  "description": "Challenge yourself with advanced JavaScript concepts including closures, async/await, and ES6+ features",
+  "categoryId": null,
+  "timeLimit": 900,
+  "passingScore": 75,
+  "questions": [
+    {
+      "text": "What will `console.log(typeof null)` output?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "null",
+          "isCorrect": false
+        },
+        {
+          "text": "undefined",
+          "isCorrect": false
+        },
+        {
+          "text": "object",
+          "isCorrect": true
+        },
+        {
+          "text": "number",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "What is a closure in JavaScript?",
+      "points": 15,
+      "answers": [
+        {
+          "text": "A way to close browser windows",
+          "isCorrect": false
+        },
+        {
+          "text": "A function that has access to variables in its outer scope",
+          "isCorrect": true
+        },
+        {
+          "text": "A method to close database connections",
+          "isCorrect": false
+        },
+        {
+          "text": "A syntax error",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "Which method is used to execute code after a Promise resolves?",
+      "points": 10,
+      "answers": [
+        {
+          "text": ".then()",
+          "isCorrect": true
+        },
+        {
+          "text": ".next()",
+          "isCorrect": false
+        },
+        {
+          "text": ".after()",
+          "isCorrect": false
+        },
+        {
+          "text": ".resolve()",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "What does the spread operator (...) do?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "Multiplies numbers",
+          "isCorrect": false
+        },
+        {
+          "text": "Expands an iterable into individual elements",
+          "isCorrect": true
+        },
+        {
+          "text": "Creates a new variable",
+          "isCorrect": false
+        },
+        {
+          "text": "Divides arrays",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "What is the difference between `let` and `const`?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "let is block-scoped, const is function-scoped",
+          "isCorrect": false
+        },
+        {
+          "text": "const variables cannot be reassigned, let variables can",
+          "isCorrect": true
+        },
+        {
+          "text": "There is no difference",
+          "isCorrect": false
+        },
+        {
+          "text": "const is faster than let",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "What does `async/await` do in JavaScript?",
+      "points": 15,
+      "answers": [
+        {
+          "text": "Speeds up code execution",
+          "isCorrect": false
+        },
+        {
+          "text": "Makes asynchronous code look and behave like synchronous code",
+          "isCorrect": true
+        },
+        {
+          "text": "Creates new threads",
+          "isCorrect": false
+        },
+        {
+          "text": "Compresses files",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "What is event bubbling?",
+      "points": 15,
+      "answers": [
+        {
+          "text": "When events travel from child to parent elements",
+          "isCorrect": true
+        },
+        {
+          "text": "When events are delayed",
+          "isCorrect": false
+        },
+        {
+          "text": "When events are cancelled",
+          "isCorrect": false
+        },
+        {
+          "text": "A CSS animation technique",
+          "isCorrect": false
+        }
+      ]
+    },
+    {
+      "text": "What is the purpose of `Object.freeze()`?",
+      "points": 10,
+      "answers": [
+        {
+          "text": "To stop code execution",
+          "isCorrect": false
+        },
+        {
+          "text": "To prevent modifications to an object",
+          "isCorrect": true
+        },
+        {
+          "text": "To convert objects to strings",
+          "isCorrect": false
+        },
+        {
+          "text": "To clone objects",
+          "isCorrect": false
+        }
+      ]
+    }
+  ]
+}

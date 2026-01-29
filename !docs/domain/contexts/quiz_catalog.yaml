@@ -1,0 +1,69 @@
+bounded_context:
+  name: "QuizCatalog"
+  type: "Supporting"
+  description: "Manages the content of all quizzes, including questions, answers, categories, and tags."
+
+aggregates:
+  - name: "Quiz"
+    description: "A collection of questions and rules for a quiz."
+    state:
+      - name: "ID"
+        type: "uuid.UUID"
+      - name: "Title"
+        type: "string"
+      - name: "Description"
+        type: "string"
+      - name: "Questions"
+        type: "[]Question"
+      - name: "CategoryID"
+        type: "uuid.UUID"
+      - name: "Tags"
+        type: "[]string"
+      - name: "PassingScore"
+        type: "int"
+      - name: "TimeLimitPerQuestion"
+        type: "int"
+
+entities:
+  - name: "Question"
+    state:
+      - name: "ID"
+        type: "uuid.UUID"
+      - name: "Text"
+        type: "string"
+      - name: "Answers"
+        type: "[]Answer"
+      - name: "CorrectAnswerID"
+        type: "uuid.UUID"
+
+  - name: "Answer"
+    state:
+      - name: "ID"
+        type: "uuid.UUID"
+      - name: "Text"
+        type: "string"
+
+  - name: "Category"
+    state:
+      - name: "ID"
+        type: "uuid.UUID"
+      - name: "Name"
+        type: "string"
+
+repositories:
+  - name: "QuizRepository"
+    aggregate: "Quiz"
+    methods:
+      - name: "FindByID"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "id", type: "uuid.UUID" }
+        returns:
+          - { type: "*Quiz" }
+          - { type: "error" }
+      - name: "Save"
+        params:
+          - { name: "ctx", type: "context.Context" }
+          - { name: "quiz", type: "*Quiz" }
+        returns:
+          - { type: "error" }

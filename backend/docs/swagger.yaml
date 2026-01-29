@@ -1,5 +1,19 @@
 basePath: /api/v1
 definitions:
+  internal_infrastructure_http_handlers.AbandonMarathonRequest:
+    properties:
+      playerId:
+        type: string
+    required:
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.AbandonMarathonResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonGameOverResultDTO'
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.AbandonSessionRequest:
     properties:
       userId:
@@ -20,6 +34,37 @@ definitions:
     - position
     - text
     type: object
+  internal_infrastructure_http_handlers.AnsweredQuestionDTO:
+    properties:
+      correctAnswerId:
+        type: string
+      correctAnswerText:
+        type: string
+      isCorrect:
+        type: boolean
+      playerAnswerId:
+        type: string
+      playerAnswerText:
+        type: string
+      pointsEarned:
+        type: integer
+      questionId:
+        type: string
+      questionText:
+        type: string
+      timeTaken:
+        type: integer
+    required:
+    - correctAnswerId
+    - correctAnswerText
+    - isCorrect
+    - playerAnswerId
+    - playerAnswerText
+    - pointsEarned
+    - questionId
+    - questionText
+    - timeTaken
+    type: object
   internal_infrastructure_http_handlers.CategoryDTO:
     properties:
       id:
@@ -29,6 +74,24 @@ definitions:
     required:
     - id
     - name
+    type: object
+  internal_infrastructure_http_handlers.ChestRewardDTO:
+    properties:
+      chestType:
+        type: string
+      coins:
+        type: integer
+      marathonBonuses:
+        items:
+          type: string
+        type: array
+      pvpTickets:
+        type: integer
+    required:
+    - chestType
+    - coins
+    - marathonBonuses
+    - pvpTickets
     type: object
   internal_infrastructure_http_handlers.CreateCategoryData:
     properties:
@@ -50,6 +113,83 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.CreateCategoryData'
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.DailyGameDTO:
+    properties:
+      baseScore:
+        type: integer
+      correctAnswers:
+        type: integer
+      currentQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      dailyQuizId:
+        type: string
+      date:
+        description: YYYY-MM-DD
+        type: string
+      finalScore:
+        type: integer
+      gameId:
+        type: string
+      playerId:
+        type: string
+      questionIndex:
+        type: integer
+      rank:
+        type: integer
+      status:
+        description: '"in_progress" | "completed"'
+        type: string
+      streak:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.StreakDTO'
+      timeRemaining:
+        type: integer
+      totalQuestions:
+        type: integer
+    required:
+    - baseScore
+    - correctAnswers
+    - dailyQuizId
+    - date
+    - finalScore
+    - gameId
+    - playerId
+    - questionIndex
+    - status
+    - streak
+    - timeRemaining
+    - totalQuestions
+    type: object
+  internal_infrastructure_http_handlers.DailyQuizData:
+    properties:
+      completionStatus:
+        description: '"not_attempted" | "completed"'
+        type: string
+      quiz:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuizDetailDTO'
+      topScores:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO'
+        type: array
+      userResult:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.DailyQuizUserResultDTO'
+    required:
+    - completionStatus
+    - quiz
+    - topScores
+    type: object
+  internal_infrastructure_http_handlers.DailyQuizUserResultDTO:
+    properties:
+      completedAt:
+        type: integer
+      rank:
+        type: integer
+      score:
+        type: integer
+    required:
+    - completedAt
+    - rank
+    - score
     type: object
   internal_infrastructure_http_handlers.ErrorDetail:
     properties:
@@ -90,6 +230,50 @@ definitions:
     - questionsCount
     - totalScore
     type: object
+  internal_infrastructure_http_handlers.GameResultsDTO:
+    properties:
+      answeredQuestions:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.AnsweredQuestionDTO'
+        type: array
+      baseScore:
+        type: integer
+      chestReward:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.ChestRewardDTO'
+      correctAnswers:
+        type: integer
+      currentStreak:
+        type: integer
+      finalScore:
+        type: integer
+      leaderboard:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO'
+        type: array
+      percentile:
+        type: integer
+      rank:
+        type: integer
+      streakBonus:
+        type: integer
+      totalPlayers:
+        type: integer
+      totalQuestions:
+        type: integer
+    required:
+    - answeredQuestions
+    - baseScore
+    - chestReward
+    - correctAnswers
+    - currentStreak
+    - finalScore
+    - leaderboard
+    - percentile
+    - rank
+    - streakBonus
+    - totalPlayers
+    - totalQuestions
+    type: object
   internal_infrastructure_http_handlers.GetActiveSessionData:
     properties:
       currentQuestion:
@@ -98,12 +282,15 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.SessionDTO'
       timeLimit:
         type: integer
+      timeLimitPerQuestion:
+        type: integer
       totalQuestions:
         type: integer
     required:
     - currentQuestion
     - session
     - timeLimit
+    - timeLimitPerQuestion
     - totalQuestions
     type: object
   internal_infrastructure_http_handlers.GetActiveSessionRequest:
@@ -118,12 +305,161 @@ definitions:
       data:
         $ref: '#/definitions/internal_infrastructure_http_handlers.GetActiveSessionData'
     type: object
+  internal_infrastructure_http_handlers.GetDailyLeaderboardData:
+    properties:
+      date:
+        type: string
+      entries:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO'
+        type: array
+      playerRank:
+        type: integer
+      totalPlayers:
+        type: integer
+    required:
+    - date
+    - entries
+    - totalPlayers
+    type: object
+  internal_infrastructure_http_handlers.GetDailyLeaderboardResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GetDailyLeaderboardData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetDailyQuizResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.DailyQuizData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetDailyStatusData:
+    properties:
+      game:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.DailyGameDTO'
+      hasPlayed:
+        type: boolean
+      results:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GameResultsDTO'
+      timeLimit:
+        type: integer
+      timeToExpire:
+        type: integer
+      totalPlayers:
+        type: integer
+    required:
+    - hasPlayed
+    - timeToExpire
+    - totalPlayers
+    type: object
+  internal_infrastructure_http_handlers.GetDailyStatusResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GetDailyStatusData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.GlobalLeaderboardEntryDTO'
+        type: array
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.GetLeaderboardResponse:
     properties:
       data:
         items:
           $ref: '#/definitions/internal_infrastructure_http_handlers.LeaderboardEntryDTO'
         type: array
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetMarathonLeaderboardData:
+    properties:
+      category:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonCategoryDTO'
+      entries:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonLeaderboardEntryDTO'
+        type: array
+      playerRank:
+        type: integer
+      timeFrame:
+        type: string
+    required:
+    - category
+    - entries
+    - timeFrame
+    type: object
+  internal_infrastructure_http_handlers.GetMarathonLeaderboardResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GetMarathonLeaderboardData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetMarathonStatusData:
+    properties:
+      game:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonGameDTO'
+      hasActiveGame:
+        type: boolean
+      timeLimit:
+        type: integer
+    required:
+    - hasActiveGame
+    type: object
+  internal_infrastructure_http_handlers.GetMarathonStatusResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GetMarathonStatusData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetPersonalBestsData:
+    properties:
+      overallBest:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonPersonalBestDTO'
+      personalBests:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonPersonalBestDTO'
+        type: array
+    required:
+    - personalBests
+    type: object
+  internal_infrastructure_http_handlers.GetPersonalBestsResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GetPersonalBestsData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetPlayerStreakData:
+    properties:
+      canRestore:
+        type: boolean
+      daysToNext:
+        type: integer
+      nextMilestone:
+        type: integer
+      streak:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.StreakDTO'
+    required:
+    - canRestore
+    - daysToNext
+    - nextMilestone
+    - streak
+    type: object
+  internal_infrastructure_http_handlers.GetPlayerStreakResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GetPlayerStreakData'
     required:
     - data
     type: object
@@ -146,12 +482,66 @@ definitions:
     required:
     - data
     type: object
+  internal_infrastructure_http_handlers.GetRandomQuizResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GetQuizDetailsData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetSessionResultsResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.SessionResultsData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetUserActiveSessionsResponse:
+    properties:
+      data:
+        items:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.SessionSummaryDTO'
+        type: array
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.GetUserResponse:
     properties:
       data:
         $ref: '#/definitions/internal_infrastructure_http_handlers.UserDTO'
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.GlobalLeaderboardEntryDTO:
+    properties:
+      lastActivityAt:
+        example: 1674567890
+        type: integer
+      quizzesCompleted:
+        example: 5
+        minimum: 0
+        type: integer
+      rank:
+        example: 1
+        minimum: 1
+        type: integer
+      totalScore:
+        example: 850
+        minimum: 0
+        type: integer
+      userId:
+        example: user123
+        type: string
+      username:
+        example: JohnDoe
+        type: string
+    required:
+    - lastActivityAt
+    - quizzesCompleted
+    - rank
+    - totalScore
+    - userId
+    - username
     type: object
   internal_infrastructure_http_handlers.LeaderboardEntryDTO:
     properties:
@@ -201,6 +591,181 @@ definitions:
     required:
     - data
     - total
+    type: object
+  internal_infrastructure_http_handlers.MarathonCategoryDTO:
+    properties:
+      id:
+        type: string
+      isAllCategories:
+        type: boolean
+      name:
+        type: string
+    required:
+    - id
+    - isAllCategories
+    - name
+    type: object
+  internal_infrastructure_http_handlers.MarathonGameDTO:
+    properties:
+      baseScore:
+        type: integer
+      category:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonCategoryDTO'
+      currentQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      currentStreak:
+        type: integer
+      difficultyLevel:
+        type: string
+      hints:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonHintsDTO'
+      id:
+        type: string
+      lives:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonLivesDTO'
+      maxStreak:
+        type: integer
+      personalBestStreak:
+        type: integer
+      playerId:
+        type: string
+      status:
+        type: string
+    required:
+    - baseScore
+    - category
+    - currentStreak
+    - difficultyLevel
+    - hints
+    - id
+    - lives
+    - maxStreak
+    - playerId
+    - status
+    type: object
+  internal_infrastructure_http_handlers.MarathonGameOverResultDTO:
+    properties:
+      finalStreak:
+        type: integer
+      globalRank:
+        type: integer
+      isNewPersonalBest:
+        type: boolean
+      previousRecord:
+        type: integer
+      totalBaseScore:
+        type: integer
+    required:
+    - finalStreak
+    - isNewPersonalBest
+    - totalBaseScore
+    type: object
+  internal_infrastructure_http_handlers.MarathonHintResultDTO:
+    properties:
+      hiddenAnswerIds:
+        items:
+          type: string
+        type: array
+      newTimeLimit:
+        type: integer
+      nextQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      nextTimeLimit:
+        type: integer
+    type: object
+  internal_infrastructure_http_handlers.MarathonHintsDTO:
+    properties:
+      extraTime:
+        type: integer
+      fiftyFifty:
+        type: integer
+      skip:
+        type: integer
+    required:
+    - extraTime
+    - fiftyFifty
+    - skip
+    type: object
+  internal_infrastructure_http_handlers.MarathonLeaderboardEntryDTO:
+    properties:
+      achievedAt:
+        type: integer
+      bestScore:
+        type: integer
+      bestStreak:
+        type: integer
+      playerId:
+        type: string
+      rank:
+        type: integer
+      username:
+        type: string
+    required:
+    - achievedAt
+    - bestScore
+    - bestStreak
+    - playerId
+    - rank
+    - username
+    type: object
+  internal_infrastructure_http_handlers.MarathonLivesDTO:
+    properties:
+      currentLives:
+        type: integer
+      maxLives:
+        type: integer
+      timeToNextLife:
+        type: integer
+    required:
+    - currentLives
+    - maxLives
+    - timeToNextLife
+    type: object
+  internal_infrastructure_http_handlers.MarathonPersonalBestDTO:
+    properties:
+      achievedAt:
+        type: integer
+      bestScore:
+        type: integer
+      bestStreak:
+        type: integer
+      category:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonCategoryDTO'
+    required:
+    - achievedAt
+    - bestScore
+    - bestStreak
+    - category
+    type: object
+  internal_infrastructure_http_handlers.OpenChestData:
+    properties:
+      chestType:
+        type: string
+      premiumApplied:
+        type: boolean
+      rewards:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.ChestRewardDTO'
+      streakBonus:
+        type: number
+    required:
+    - chestType
+    - premiumApplied
+    - rewards
+    - streakBonus
+    type: object
+  internal_infrastructure_http_handlers.OpenChestRequest:
+    properties:
+      playerId:
+        type: string
+    required:
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.OpenChestResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.OpenChestData'
+    required:
+    - data
     type: object
   internal_infrastructure_http_handlers.QuestionDTO:
     properties:
@@ -294,6 +859,43 @@ definitions:
     required:
     - data
     type: object
+  internal_infrastructure_http_handlers.RetryChallengeData:
+    properties:
+      coinsDeducted:
+        type: integer
+      firstQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      newGameId:
+        type: string
+      remainingCoins:
+        type: integer
+      timeLimit:
+        type: integer
+    required:
+    - coinsDeducted
+    - firstQuestion
+    - newGameId
+    - remainingCoins
+    - timeLimit
+    type: object
+  internal_infrastructure_http_handlers.RetryChallengeRequest:
+    properties:
+      paymentMethod:
+        description: '"coins" or "ad"'
+        type: string
+      playerId:
+        type: string
+    required:
+    - paymentMethod
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.RetryChallengeResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.RetryChallengeData'
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.SessionDTO:
     properties:
       completedAt:
@@ -321,6 +923,133 @@ definitions:
     - status
     - userId
     type: object
+  internal_infrastructure_http_handlers.SessionResultsData:
+    properties:
+      avgAnswerTime:
+        description: seconds
+        type: number
+      correctAnswers:
+        type: integer
+      longestStreak:
+        type: integer
+      passed:
+        type: boolean
+      quiz:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuizDTO'
+      scorePercentage:
+        description: 0-100
+        type: integer
+      session:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.SessionDTO'
+      timeSpent:
+        description: seconds
+        type: integer
+      totalQuestions:
+        type: integer
+    required:
+    - avgAnswerTime
+    - correctAnswers
+    - longestStreak
+    - passed
+    - quiz
+    - scorePercentage
+    - session
+    - timeSpent
+    - totalQuestions
+    type: object
+  internal_infrastructure_http_handlers.SessionSummaryDTO:
+    properties:
+      currentQuestion:
+        type: integer
+      quizId:
+        type: string
+      quizTitle:
+        type: string
+      score:
+        type: integer
+      sessionId:
+        type: string
+      startedAt:
+        type: integer
+      totalQuestions:
+        type: integer
+    required:
+    - currentQuestion
+    - quizId
+    - quizTitle
+    - score
+    - sessionId
+    - startedAt
+    - totalQuestions
+    type: object
+  internal_infrastructure_http_handlers.StartDailyChallengeData:
+    properties:
+      firstQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      game:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.DailyGameDTO'
+      timeLimit:
+        type: integer
+      timeToExpire:
+        type: integer
+      totalPlayers:
+        type: integer
+    required:
+    - firstQuestion
+    - game
+    - timeLimit
+    - timeToExpire
+    - totalPlayers
+    type: object
+  internal_infrastructure_http_handlers.StartDailyChallengeRequest:
+    properties:
+      date:
+        description: YYYY-MM-DD, defaults to today
+        type: string
+      playerId:
+        type: string
+    required:
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.StartDailyChallengeResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.StartDailyChallengeData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.StartMarathonData:
+    properties:
+      firstQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      game:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonGameDTO'
+      hasPersonalBest:
+        type: boolean
+      timeLimit:
+        type: integer
+    required:
+    - firstQuestion
+    - game
+    - hasPersonalBest
+    - timeLimit
+    type: object
+  internal_infrastructure_http_handlers.StartMarathonRequest:
+    properties:
+      categoryId:
+        type: string
+      playerId:
+        type: string
+    required:
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.StartMarathonResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.StartMarathonData'
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.StartQuizData:
     properties:
       firstQuestion:
@@ -329,12 +1058,15 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.SessionDTO'
       timeLimit:
         type: integer
+      timeLimitPerQuestion:
+        type: integer
       totalQuestions:
         type: integer
     required:
     - firstQuestion
     - session
     - timeLimit
+    - timeLimitPerQuestion
     - totalQuestions
     type: object
   internal_infrastructure_http_handlers.StartQuizRequest:
@@ -351,10 +1083,34 @@ definitions:
     required:
     - data
     type: object
+  internal_infrastructure_http_handlers.StreakDTO:
+    properties:
+      bestStreak:
+        type: integer
+      bonusPercent:
+        type: integer
+      currentStreak:
+        type: integer
+      isActive:
+        type: boolean
+      lastPlayedDate:
+        description: YYYY-MM-DD
+        type: string
+    required:
+    - bestStreak
+    - bonusPercent
+    - currentStreak
+    - isActive
+    - lastPlayedDate
+    type: object
   internal_infrastructure_http_handlers.SubmitAnswerData:
     properties:
+      basePoints:
+        type: integer
       correctAnswerId:
         type: string
+      currentStreak:
+        type: integer
       finalResult:
         $ref: '#/definitions/internal_infrastructure_http_handlers.FinalResultDTO'
       isCorrect:
@@ -365,13 +1121,21 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
       pointsEarned:
         type: integer
+      streakBonus:
+        type: integer
+      timeBonus:
+        type: integer
       totalScore:
         type: integer
     required:
+    - basePoints
     - correctAnswerId
+    - currentStreak
     - isCorrect
     - isQuizCompleted
     - pointsEarned
+    - streakBonus
+    - timeBonus
     - totalScore
     type: object
   internal_infrastructure_http_handlers.SubmitAnswerRequest:
@@ -380,17 +1144,131 @@ definitions:
         type: string
       questionId:
         type: string
+      timeTaken:
+        minimum: 0
+        type: integer
       userId:
         type: string
     required:
     - answerId
     - questionId
+    - timeTaken
     - userId
     type: object
   internal_infrastructure_http_handlers.SubmitAnswerResponse:
     properties:
       data:
         $ref: '#/definitions/internal_infrastructure_http_handlers.SubmitAnswerData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.SubmitDailyAnswerData:
+    properties:
+      gameResults:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.GameResultsDTO'
+      isGameCompleted:
+        type: boolean
+      nextQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      nextTimeLimit:
+        type: integer
+      questionIndex:
+        type: integer
+      remainingQuestions:
+        type: integer
+      totalQuestions:
+        type: integer
+    required:
+    - isGameCompleted
+    - questionIndex
+    - remainingQuestions
+    - totalQuestions
+    type: object
+  internal_infrastructure_http_handlers.SubmitDailyAnswerRequest:
+    properties:
+      answerId:
+        type: string
+      playerId:
+        type: string
+      questionId:
+        type: string
+      timeTaken:
+        minimum: 0
+        type: integer
+    required:
+    - answerId
+    - playerId
+    - questionId
+    - timeTaken
+    type: object
+  internal_infrastructure_http_handlers.SubmitDailyAnswerResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.SubmitDailyAnswerData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.SubmitMarathonAnswerData:
+    properties:
+      basePoints:
+        type: integer
+      correctAnswerId:
+        type: string
+      currentStreak:
+        type: integer
+      difficultyLevel:
+        type: string
+      gameOverResult:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonGameOverResultDTO'
+      isCorrect:
+        type: boolean
+      isGameOver:
+        type: boolean
+      lifeLost:
+        type: boolean
+      maxStreak:
+        type: integer
+      nextQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      nextTimeLimit:
+        type: integer
+      remainingLives:
+        type: integer
+      timeTaken:
+        type: integer
+    required:
+    - basePoints
+    - correctAnswerId
+    - currentStreak
+    - difficultyLevel
+    - isCorrect
+    - isGameOver
+    - lifeLost
+    - maxStreak
+    - remainingLives
+    - timeTaken
+    type: object
+  internal_infrastructure_http_handlers.SubmitMarathonAnswerRequest:
+    properties:
+      answerId:
+        type: string
+      playerId:
+        type: string
+      questionId:
+        type: string
+      timeTaken:
+        minimum: 0
+        type: integer
+    required:
+    - answerId
+    - playerId
+    - questionId
+    - timeTaken
+    type: object
+  internal_infrastructure_http_handlers.SubmitMarathonAnswerResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.SubmitMarathonAnswerData'
     required:
     - data
     type: object
@@ -411,6 +1289,39 @@ definitions:
     properties:
       data:
         $ref: '#/definitions/internal_infrastructure_http_handlers.UserDTO'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.UseMarathonHintData:
+    properties:
+      hintResult:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonHintResultDTO'
+      hintType:
+        type: string
+      remainingHints:
+        type: integer
+    required:
+    - hintResult
+    - hintType
+    - remainingHints
+    type: object
+  internal_infrastructure_http_handlers.UseMarathonHintRequest:
+    properties:
+      hintType:
+        type: string
+      playerId:
+        type: string
+      questionId:
+        type: string
+    required:
+    - hintType
+    - playerId
+    - questionId
+    type: object
+  internal_infrastructure_http_handlers.UseMarathonHintResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.UseMarathonHintData'
     required:
     - data
     type: object
@@ -504,6 +1415,548 @@ paths:
       summary: Create a new category
       tags:
       - category
+  /daily-challenge/{gameId}/answer:
+    post:
+      consumes:
+      - application/json
+      description: Submit answer for current question (no immediate feedback)
+      parameters:
+      - description: Game ID
+        in: path
+        name: gameId
+        required: true
+        type: string
+      - description: Submit request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.SubmitDailyAnswerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Answer submitted
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.SubmitDailyAnswerResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Game not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Submit answer
+      tags:
+      - daily-challenge
+  /daily-challenge/{gameId}/chest/open:
+    post:
+      consumes:
+      - application/json
+      description: Get chest rewards (idempotent)
+      parameters:
+      - description: Game ID
+        in: path
+        name: gameId
+        required: true
+        type: string
+      - description: Open chest request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.OpenChestRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Chest opened
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.OpenChestResponse'
+        "400":
+          description: Game not completed
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Game not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Open chest
+      tags:
+      - daily-challenge
+  /daily-challenge/{gameId}/retry:
+    post:
+      consumes:
+      - application/json
+      description: Create second attempt (costs 100 coins or ad)
+      parameters:
+      - description: Original Game ID
+        in: path
+        name: gameId
+        required: true
+        type: string
+      - description: Retry request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.RetryChallengeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Retry started
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.RetryChallengeResponse'
+        "400":
+          description: Invalid request or insufficient coins
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Game not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "409":
+          description: Retry limit reached
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Retry challenge
+      tags:
+      - daily-challenge
+  /daily-challenge/leaderboard:
+    get:
+      consumes:
+      - application/json
+      description: Get daily challenge leaderboard for a specific date
+      parameters:
+      - description: Date (YYYY-MM-DD, defaults to today)
+        in: query
+        name: date
+        type: string
+      - description: Limit (default 10, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Player ID (to get rank)
+        in: query
+        name: playerId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Leaderboard
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetDailyLeaderboardResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get leaderboard
+      tags:
+      - daily-challenge
+  /daily-challenge/start:
+    post:
+      consumes:
+      - application/json
+      description: Start today's daily challenge (one attempt per day)
+      parameters:
+      - description: Start request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.StartDailyChallengeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Challenge started
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.StartDailyChallengeResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "409":
+          description: Already played today
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Start daily challenge
+      tags:
+      - daily-challenge
+  /daily-challenge/status:
+    get:
+      consumes:
+      - application/json
+      description: Get player's daily challenge status for today
+      parameters:
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      - description: Date (YYYY-MM-DD, defaults to today)
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Status
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetDailyStatusResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get daily status
+      tags:
+      - daily-challenge
+  /daily-challenge/streak:
+    get:
+      consumes:
+      - application/json
+      description: Get player's daily streak information
+      parameters:
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Streak info
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetPlayerStreakResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get player streak
+      tags:
+      - daily-challenge
+  /leaderboard:
+    get:
+      consumes:
+      - application/json
+      description: Get the global leaderboard across all quizzes (sum of best scores
+        per quiz)
+      parameters:
+      - description: Number of entries to return (default 10, max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Global leaderboard entries
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get global leaderboard
+      tags:
+      - leaderboard
+  /marathon/{gameId}:
+    delete:
+      consumes:
+      - application/json
+      description: Abandon an active marathon game. Game ends immediately and final
+        statistics are returned.
+      parameters:
+      - description: Game ID
+        in: path
+        name: gameId
+        required: true
+        type: string
+      - description: Abandon game request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.AbandonMarathonRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Game abandoned with final statistics
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.AbandonMarathonResponse'
+        "400":
+          description: Invalid game ID or game not in progress
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized - game belongs to another player
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Game not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Abandon a marathon game
+      tags:
+      - marathon
+  /marathon/{gameId}/answer:
+    post:
+      consumes:
+      - application/json
+      description: Submit an answer for the current question in a marathon game. Game
+        continues if correct, loses life if incorrect.
+      parameters:
+      - description: Game ID
+        in: path
+        name: gameId
+        required: true
+        type: string
+      - description: Submit answer request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.SubmitMarathonAnswerRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Answer result with next question or game over details
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.SubmitMarathonAnswerResponse'
+        "400":
+          description: Invalid request, game not in progress, or wrong question
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized - game belongs to another player
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Game, question, or answer not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Submit an answer in marathon mode
+      tags:
+      - marathon
+  /marathon/{gameId}/hint:
+    post:
+      consumes:
+      - application/json
+      description: 'Use a hint to help with the current question. Available hints:
+        fifty_fifty (remove 2 wrong answers), extra_time (+10 seconds), skip (skip
+        question without losing life)'
+      parameters:
+      - description: Game ID
+        in: path
+        name: gameId
+        required: true
+        type: string
+      - description: Use hint request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.UseMarathonHintRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Hint result with remaining hints
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.UseMarathonHintResponse'
+        "400":
+          description: Invalid request, hint not available, or wrong question
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized - game belongs to another player
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Game or question not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Use a hint in marathon mode
+      tags:
+      - marathon
+  /marathon/leaderboard:
+    get:
+      consumes:
+      - application/json
+      description: Get the leaderboard for a specific category or all categories,
+        with optional time frame filter
+      parameters:
+      - description: Category ID (empty or 'all' for all categories)
+        in: query
+        name: categoryId
+        type: string
+      - description: 'Time frame: all_time (default), weekly, daily'
+        in: query
+        name: timeFrame
+        type: string
+      - description: Number of entries to return (default 10, max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Leaderboard entries
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetMarathonLeaderboardResponse'
+        "400":
+          description: Invalid parameters
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get marathon leaderboard
+      tags:
+      - marathon
+  /marathon/personal-bests:
+    get:
+      consumes:
+      - application/json
+      description: Get all personal best records for a player across all marathon
+        categories
+      parameters:
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Personal best records
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetPersonalBestsResponse'
+        "400":
+          description: Invalid player ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: No personal bests found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get personal best records
+      tags:
+      - marathon
+  /marathon/start:
+    post:
+      consumes:
+      - application/json
+      description: Start a new marathon game session with adaptive difficulty and
+        dynamic question loading
+      parameters:
+      - description: Start marathon request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.StartMarathonRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Marathon game started with first question
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.StartMarathonResponse'
+        "400":
+          description: Invalid request or player ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "409":
+          description: Active game already exists
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Start a marathon game
+      tags:
+      - marathon
+  /marathon/status:
+    get:
+      consumes:
+      - application/json
+      description: Get the status of the player's active marathon game, if any exists
+      parameters:
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Marathon game status
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetMarathonStatusResponse'
+        "400":
+          description: Invalid player ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get marathon game status
+      tags:
+      - marathon
   /quiz:
     get:
       consumes:
@@ -682,6 +2135,64 @@ paths:
       summary: Start a quiz session
       tags:
       - quiz
+  /quiz/daily:
+    get:
+      consumes:
+      - application/json
+      description: Get the quiz of the day with completion status. Same quiz for all
+        users on the same date. Deterministic selection based on date. Requires authentication.
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Daily quiz details with completion status
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetDailyQuizResponse'
+        "401":
+          description: Unauthorized - missing or invalid authentication
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: No quizzes available
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      security:
+      - TelegramAuth: []
+      summary: Get daily quiz
+      tags:
+      - quiz
+  /quiz/random:
+    get:
+      consumes:
+      - application/json
+      description: Get a random quiz, optionally filtered by category
+      parameters:
+      - description: Category ID to filter quizzes by
+        in: query
+        name: categoryId
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Random quiz details with questions
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetRandomQuizResponse'
+        "404":
+          description: No quizzes available
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get random quiz
+      tags:
+      - quiz
   /quiz/session/{sessionId}:
     delete:
       consumes:
@@ -721,6 +2232,39 @@ paths:
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Abandon a quiz session
+      tags:
+      - quiz
+    get:
+      consumes:
+      - application/json
+      description: Get detailed results for a quiz session including statistics and
+        quiz info
+      parameters:
+      - description: Session ID
+        in: path
+        name: sessionId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Session results with statistics
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetSessionResultsResponse'
+        "400":
+          description: Invalid session ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Session not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get session results
       tags:
       - quiz
   /quiz/session/{sessionId}/answer:
@@ -838,11 +2382,42 @@ paths:
       summary: Update user profile
       tags:
       - user
+  /user/{userId}/sessions/active:
+    get:
+      consumes:
+      - application/json
+      description: Get all active (not completed) quiz sessions for a user. Used for
+        "Continue Playing" feature.
+      parameters:
+      - description: User ID
+        in: path
+        name: userId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: List of active sessions
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetUserActiveSessionsResponse'
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get user's active quiz sessions
+      tags:
+      - quiz
   /user/by-username/{username}:
     get:
       consumes:
       - application/json
       description: Retrieve user profile by Telegram @username
+      operationId: GetUserByUsername
       parameters:
       - description: Telegram username (without @)
         in: path

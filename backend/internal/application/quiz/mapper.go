@@ -206,3 +206,24 @@ func FindCorrectAnswerID(q *quiz.Question) string {
 	}
 	return ""
 }
+
+// ToGlobalLeaderboardEntryDTO converts a GlobalLeaderboardEntry to DTO
+func ToGlobalLeaderboardEntryDTO(e quiz.GlobalLeaderboardEntry) GlobalLeaderboardEntryDTO {
+	return GlobalLeaderboardEntryDTO{
+		UserID:           e.UserID().String(),
+		Username:         e.Username(),
+		TotalScore:       e.TotalScore().Value(),
+		QuizzesCompleted: e.QuizzesCompleted(),
+		Rank:             e.Rank(),
+		LastActivityAt:   e.LastActivityAt(),
+	}
+}
+
+// ToGlobalLeaderboardEntriesDTO converts a slice of GlobalLeaderboardEntry to DTOs
+func ToGlobalLeaderboardEntriesDTO(entries []quiz.GlobalLeaderboardEntry) []GlobalLeaderboardEntryDTO {
+	dtos := make([]GlobalLeaderboardEntryDTO, 0, len(entries))
+	for _, entry := range entries {
+		dtos = append(dtos, ToGlobalLeaderboardEntryDTO(entry))
+	}
+	return dtos
+}

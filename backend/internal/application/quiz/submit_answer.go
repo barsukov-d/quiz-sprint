@@ -50,6 +50,14 @@ func (uc *SubmitAnswerUseCase) Execute(input SubmitAnswerInput) (SubmitAnswerOut
 		return SubmitAnswerOutput{}, err
 	}
 
+	// 1a. Validate timeTaken
+	if input.TimeTaken < 0 {
+		return SubmitAnswerOutput{}, quiz.ErrInvalidTimeTaken
+	}
+	if input.TimeTaken > 3600000 { // Max 1 hour in milliseconds
+		return SubmitAnswerOutput{}, quiz.ErrTimeTakenTooLong
+	}
+
 	// 2. Load session aggregate
 	session, err := uc.sessionRepo.FindByID(sessionID)
 	if err != nil {
@@ -73,9 +81,10 @@ func (uc *SubmitAnswerUseCase) Execute(input SubmitAnswerInput) (SubmitAnswerOut
 		return SubmitAnswerOutput{}, err
 	}
 
-	// 6. Submit answer (domain business logic)
+	// 6. Submit answer (domain business logic with new scoring system)
 	now := time.Now().Unix()
-	if err := session.SubmitAnswer(question, answerID, now); err != nil {
+	result, err := session.SubmitAnswer(question, answerID, now, input.TimeTaken, quizAggregate)
+	if err != nil {
 		return SubmitAnswerOutput{}, err
 	}
 
@@ -97,20 +106,17 @@ func (uc *SubmitAnswerUseCase) Execute(input SubmitAnswerInput) (SubmitAnswerOut
 		uc.eventBus.Publish(session.Events()...)
 	}
 
-	// 10. Get the submitted answer details
-	answer, _ := question.GetAnswer(answerID)
-
-	// 11. Build output
+	// 10. Build output with detailed points breakdown
 	output := SubmitAnswerOutput{
-		IsCorrect:       answer.IsCorrect(),
+		IsCorrect:       result.IsCorrect,
 		CorrectAnswerID: FindCorrectAnswerID(question),
-		PointsEarned:    0,
+		BasePoints:      result.BasePoints.Value(),
+		TimeBonus:       result.TimeBonus.Value(),
+		StreakBonus:     result.StreakBonus.Value(),
+		PointsEarned:    result.TotalPoints.Value(),
+		CurrentStreak:   result.CurrentStreak,
 		TotalScore:      session.Score().Value(),
 		IsQuizCompleted: isCompleted,
-	}
-
-	if answer.IsCorrect() {
-		output.PointsEarned = question.Points().Value()
 	}
 
 	// 12. Include next question or final result

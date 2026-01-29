@@ -84,9 +84,10 @@ func (uc *StartQuizUseCase) Execute(input StartQuizInput) (StartQuizOutput, erro
 
 	// 9. Return DTO (not domain models!)
 	return StartQuizOutput{
-		Session:        ToSessionDTO(session),
-		FirstQuestion:  ToQuestionDTO(firstQuestion),
-		TotalQuestions: quizAggregate.QuestionsCount(),
-		TimeLimit:      quizAggregate.TimeLimit().Seconds(),
+		Session:              ToSessionDTO(session),
+		FirstQuestion:        ToQuestionDTO(firstQuestion),
+		TotalQuestions:       quizAggregate.QuestionsCount(),
+		TimeLimit:            quizAggregate.TimeLimit().Seconds(),
+		TimeLimitPerQuestion: quizAggregate.TimeLimitPerQuestion(),
 	}, nil
 }

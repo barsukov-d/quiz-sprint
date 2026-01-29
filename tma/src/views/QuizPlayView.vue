@@ -1,15 +1,15 @@
 <script setup lang="ts">
-import { ref, computed, onMounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import {
 	usePostQuizIdStart,
 	usePostQuizSessionSessionidAnswer,
-	useDeleteQuizSessionSessionid
+	useDeleteQuizSessionSessionid,
 } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import type {
 	InternalInfrastructureHttpHandlersQuestionDTO as QuestionDTO,
-	InternalInfrastructureHttpHandlersSessionDTO as SessionDTO
+	InternalInfrastructureHttpHandlersSessionDTO as SessionDTO,
 } from '@/api/generated/types/internalInfrastructureHttpHandlers'
 import axios from 'axios'
 
@@ -27,9 +27,19 @@ const selectedAnswerId = ref<string | null>(null)
 const isAnswerSubmitted = ref(false)
 const answerResult = ref<{
 	isCorrect: boolean
-	points: number
+	basePoints: number
+	timeBonus: number
+	streakBonus: number
+	pointsEarned: number
+	currentStreak: number
 	correctAnswerId?: string
 } | null>(null)
+
+// Timer state
+const questionStartTime = ref<number>(0)
+const timeElapsed = ref<number>(0)
+const timerInterval = ref<NodeJS.Timeout | null>(null)
+const timeLimitPerQuestion = ref<number>(30)
 
 // Error state
 const showConflictModal = ref(false)
@@ -44,6 +54,28 @@ const { mutateAsync: startQuiz, isPending: isStarting } = usePostQuizIdStart()
 const { mutateAsync: submitAnswer, isPending: isSubmitting } = usePostQuizSessionSessionidAnswer()
 const { mutateAsync: abandonSession } = useDeleteQuizSessionSessionid()
 
+// Timer functions
+const startQuestionTimer = () => {
+	questionStartTime.value = Date.now()
+	timeElapsed.value = 0
+
+	timerInterval.value = setInterval(() => {
+		timeElapsed.value = Math.floor((Date.now() - questionStartTime.value) / 1000)
+	}, 100) // Update every 100ms for smoothness
+}
+
+const stopQuestionTimer = () => {
+	if (timerInterval.value) {
+		clearInterval(timerInterval.value)
+		timerInterval.value = null
+	}
+}
+
+const timeRemaining = computed(() => {
+	const remaining = timeLimitPerQuestion.value - timeElapsed.value
+	return Math.max(0, remaining)
+})
+
 // Handle resuming existing session
 const handleResumeSession = async () => {
 	if (!currentUser.value) return
@@ -55,7 +87,7 @@ const handleResumeSession = async () => {
 
 	try {
 		const response = await axios.get(
-			`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value.id}`
+			`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value.id}`,
 		)
 
 		if (response.data?.data) {
@@ -64,13 +96,14 @@ const handleResumeSession = async () => {
 			session.value = response.data.data.session
 			currentQuestion.value = response.data.data.currentQuestion
 			totalQuestions.value = response.data.data.totalQuestions
+			timeLimitPerQuestion.value = response.data.data.timeLimitPerQuestion || 30
 			currentQuestionIndex.value = response.data.data.session.currentQuestion + 1
 			isSessionResumed.value = true // Mark as successfully resumed
 
 			console.log('Session resumed:', {
 				sessionId: session.value?.id,
 				questionIndex: currentQuestionIndex.value,
-				hasQuestion: !!currentQuestion.value
+				hasQuestion: !!currentQuestion.value,
 			})
 		} else {
 			throw new Error('Invalid response data')
@@ -97,7 +130,7 @@ const handleStartFresh = async () => {
 		// Delete the existing session
 		await abandonSession({
 			sessionId: session.value.id,
-			data: { userId: currentUser.value.id }
+			data: { userId: currentUser.value.id },
 		})
 
 		// Reset session resumed flag
@@ -135,7 +168,7 @@ const initializeQuiz = async () => {
 	try {
 		// First, check if there's an active session
 		const activeSessionResponse = await axios.get(
-			`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value.id}`
+			`/api/v1/quiz/${quizId}/active-session?userId=${currentUser.value.id}`,
 		)
 
 		if (activeSessionResponse.data?.data) {
@@ -170,14 +203,15 @@ const startNewQuiz = async () => {
 		const result = await startQuiz({
 			id: quizId,
 			data: {
-				userId: currentUser.value.id
-			}
+				userId: currentUser.value.id,
+			},
 		})
 
 		if (result?.data) {
 			session.value = result.data.session
 			currentQuestion.value = result.data.firstQuestion
 			totalQuestions.value = result.data.totalQuestions
+			timeLimitPerQuestion.value = result.data.timeLimitPerQuestion || 30
 			currentQuestionIndex.value = 1
 			isSessionResumed.value = false
 		}
@@ -190,6 +224,18 @@ const startNewQuiz = async () => {
 // Начать квиз при монтировании
 onMounted(async () => {
 	await initializeQuiz()
+})
+
+// Cleanup timer on unmount
+onUnmounted(() => {
+	stopQuestionTimer()
+})
+
+// Start timer when question changes
+watch(currentQuestion, (newQuestion) => {
+	if (newQuestion && !isAnswerSubmitted.value) {
+		startQuestionTimer()
+	}
 })
 
 // Progress percentage
@@ -212,28 +258,37 @@ const confirmAnswer = async () => {
 	try {
 		isAnswerSubmitted.value = true
 
+		// Stop timer and calculate time taken
+		stopQuestionTimer()
+		const timeTaken = Date.now() - questionStartTime.value // milliseconds
+
 		const result = await submitAnswer({
 			sessionId: session.value.id,
 			data: {
 				questionId: currentQuestion.value.id,
 				answerId: selectedAnswerId.value,
-				userId: currentUser.value.id
-			}
+				userId: currentUser.value.id,
+				timeTaken: timeTaken,
+			},
 		})
 
 		if (result?.data) {
 			answerResult.value = {
 				isCorrect: result.data.isCorrect,
-				points: result.data.pointsEarned || 0,
-				correctAnswerId: result.data.correctAnswerId
+				basePoints: result.data.basePoints || 0,
+				timeBonus: result.data.timeBonus || 0,
+				streakBonus: result.data.streakBonus || 0,
+				pointsEarned: result.data.pointsEarned || 0,
+				currentStreak: result.data.currentStreak || 0,
+				correctAnswerId: result.data.correctAnswerId,
 			}
 
 			// Обновить счет сессии
 			if (session.value) {
-				session.value.score += result.data.pointsEarned || 0
+				session.value.score = result.data.totalScore || 0
 			}
 
-			// Показать результат на 2 секунды, затем переход
+			// Показать результат на 3 секунды (дать время увидеть бонусы), затем переход
 			setTimeout(() => {
 				if (result.data.nextQuestion) {
 					// Есть следующий вопрос
@@ -244,10 +299,10 @@ const confirmAnswer = async () => {
 					// Квиз завершен
 					router.push({
 						name: 'quiz-results',
-						params: { sessionId: session.value!.id }
+						params: { sessionId: session.value!.id },
 					})
 				}
-			}, 2000)
+			}, 3000)
 		}
 	} catch (error) {
 		console.error('Failed to submit answer:', error)
@@ -282,10 +337,19 @@ const getAnswerButtonClass = (answerId: string) => {
 <template>
 	<div class="container mx-auto p-4 pt-20">
 		<!-- Loading -->
-		<div v-if="isInitializing || isStarting || isResuming" class="flex justify-center items-center py-12">
+		<div
+			v-if="isInitializing || isStarting || isResuming"
+			class="flex justify-center items-center py-12"
+		>
 			<UProgress animation="carousel" />
 			<span class="ml-4">
-				{{ isResuming ? 'Resuming session...' : isInitializing ? 'Loading quiz...' : 'Starting quiz...' }}
+				{{
+					isResuming
+						? 'Resuming session...'
+						: isInitializing
+							? 'Loading quiz...'
+							: 'Starting quiz...'
+				}}
 			</span>
 		</div>
 
@@ -297,9 +361,35 @@ const getAnswerButtonClass = (answerId: string) => {
 					<span class="text-sm font-semibold text-gray-600"
 						>Question {{ currentQuestionIndex }} of {{ totalQuestions }}</span
 					>
-					<span class="text-sm font-semibold text-gray-600">Score: {{ session.score }}</span>
+					<div class="flex items-center gap-4">
+						<!-- Timer -->
+						<div
+							class="flex items-center gap-1"
+							:class="{
+								'text-yellow-500': timeRemaining <= timeLimitPerQuestion * 0.5 && timeRemaining > timeLimitPerQuestion * 0.25,
+								'text-red-500 font-bold': timeRemaining <= timeLimitPerQuestion * 0.25,
+							}"
+						>
+							<span>⏱</span>
+							<span class="text-sm font-semibold">{{ timeRemaining }}s</span>
+						</div>
+						<!-- Score -->
+						<span class="text-sm font-semibold text-gray-600"
+							>Score: {{ session.score }}</span
+						>
+					</div>
 				</div>
-				<UProgress :value="progress" color="primary" />
+				<UProgress v-model="progress" color="primary" />
+			</div>
+
+			<!-- Streak Indicator -->
+			<div
+				v-if="answerResult && answerResult.currentStreak > 0"
+				class="mb-4 p-3 bg-orange-50 border-2 border-orange-300 rounded-lg text-center"
+			>
+				<span class="text-orange-700 font-bold">
+					🔥 {{ answerResult.currentStreak }} Streak!
+				</span>
 			</div>
 
 			<!-- Question Card -->
@@ -321,7 +411,9 @@ const getAnswerButtonClass = (answerId: string) => {
 				>
 					<div class="flex items-center justify-between">
 						<span class="font-medium">{{ answer.text }}</span>
-						<span v-if="isAnswerSubmitted && answerResult?.correctAnswerId === answer.id">
+						<span
+							v-if="isAnswerSubmitted && answerResult?.correctAnswerId === answer.id"
+						>
 							✓
 						</span>
 						<span
@@ -337,17 +429,43 @@ const getAnswerButtonClass = (answerId: string) => {
 				</button>
 			</div>
 
-			<!-- Answer feedback banner -->
-			<div v-if="answerResult" class="mb-6">
+			<!-- Answer feedback banners -->
+			<div v-if="answerResult" class="mb-6 space-y-3">
+				<!-- Main feedback -->
 				<UAlert
 					:color="answerResult.isCorrect ? 'green' : 'red'"
 					:title="answerResult.isCorrect ? '✓ Correct!' : '✗ Incorrect'"
-					:description="
-						answerResult.isCorrect
-							? `+${answerResult.points} points`
-							: 'Better luck next time'
-					"
-				/>
+				>
+					<template #description>
+						<div v-if="answerResult.isCorrect" class="space-y-1">
+							<div class="font-semibold text-lg">
+								+{{ answerResult.pointsEarned }} points
+							</div>
+							<div class="text-sm mt-2 space-y-1">
+								<div>Base: {{ answerResult.basePoints }}</div>
+								<div v-if="answerResult.timeBonus > 0" class="text-green-700">
+									Speed Bonus: +{{ answerResult.timeBonus }} ⚡
+								</div>
+								<div v-if="answerResult.streakBonus > 0" class="text-orange-700">
+									Streak Bonus: +{{ answerResult.streakBonus }} 🔥
+								</div>
+							</div>
+						</div>
+						<div v-else>Better luck next time! Streak lost.</div>
+					</template>
+				</UAlert>
+
+				<!-- Streak achievement notification -->
+				<UAlert
+					v-if="answerResult.streakBonus > 0"
+					color="orange"
+					title="🔥 Streak Bonus!"
+				>
+					<template #description>
+						Amazing! {{ answerResult.currentStreak }} correct answers in a row!
+						+{{ answerResult.streakBonus }} bonus points
+					</template>
+				</UAlert>
 			</div>
 
 			<!-- Submit button -->
@@ -393,8 +511,8 @@ const getAnswerButtonClass = (answerId: string) => {
 
 				<div class="space-y-4">
 					<p class="text-gray-700">
-						You already have an active quiz session. Would you like to continue where you left off
-						or start fresh?
+						You already have an active quiz session. Would you like to continue where
+						you left off or start fresh?
 					</p>
 
 					<!-- Error message -->

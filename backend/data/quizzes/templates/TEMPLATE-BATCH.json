@@ -1,0 +1,79 @@
+{
+  "batch": {
+    "version": 1,
+    "generated": "2024-01-20T10:00:00Z",
+    "cat": "programming",
+    "tags": ["language:go", "difficulty:easy"]
+  },
+  "quizzes": [
+    {
+      "t": "Go Variables and Types",
+      "d": "Master the basics of Go variable declarations and type system.",
+      "tags": ["topic:variables"],
+      "q": [
+        {
+          "t": "Which keyword is used to declare a variable in Go?",
+          "a": ["let", "var", "const", "dim"],
+          "c": 1
+        },
+        {
+          "t": "What is the zero value for a boolean in Go?",
+          "a": ["null", "undefined", "false", "0"],
+          "c": 2
+        },
+        {
+          "t": "How do you declare multiple variables at once?",
+          "a": ["var x, y int", "let x, y int", "x, y := int", "const x, y int"],
+          "c": 0
+        }
+      ]
+    },
+    {
+      "t": "Go Functions Fundamentals",
+      "d": "Learn the essentials of Go function declarations and usage.",
+      "tags": ["topic:functions"],
+      "l": 90,
+      "q": [
+        {
+          "t": "What keyword is used to define a function in Go?",
+          "a": ["func", "function", "def", "fn"],
+          "c": 0
+        },
+        {
+          "t": "Can Go functions return multiple values?",
+          "a": ["Yes", "No", "Only with pointers", "Only with interfaces"],
+          "c": 0
+        },
+        {
+          "t": "What is a variadic function in Go?",
+          "a": ["A function with no parameters", "A function that accepts variable number of arguments", "A function that returns multiple values", "A function with default parameters"],
+          "c": 1
+        }
+      ]
+    },
+    {
+      "t": "Go Slices and Arrays",
+      "d": "Understand the difference between slices and arrays in Go.",
+      "cat": "programming",
+      "tags": ["topic:data-structures"],
+      "p": 75,
+      "q": [
+        {
+          "t": "What is the main difference between an array and a slice in Go?",
+          "a": ["Arrays are dynamic, slices are fixed", "Slices are dynamic, arrays are fixed", "No difference", "Slices can only hold integers"],
+          "c": 1
+        },
+        {
+          "t": "How do you create a slice with make()?",
+          "a": ["make([]int)", "make([]int, 5)", "make(slice, 5)", "slice(int, 5)"],
+          "c": 1
+        },
+        {
+          "t": "What function is used to add elements to a slice?",
+          "a": ["push", "append", "add", "insert"],
+          "c": 1
+        }
+      ]
+    }
+  ]
+}

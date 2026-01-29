@@ -107,21 +107,52 @@ func (q *Question) Answers() []Answer {
 
 // UserAnswer represents a user's answer to a question (entity within QuizSession aggregate)
 type UserAnswer struct {
-	questionID QuestionID
-	answerID   AnswerID
-	isCorrect  bool
-	points     Points
-	answeredAt int64 // Unix timestamp (no time.Time to keep domain pure)
+	questionID  QuestionID
+	answerID    AnswerID
+	isCorrect   bool
+	basePoints  Points // Base points for correct answer
+	timeBonus   Points // Bonus points for speed
+	streakBonus Points // Bonus points for streak
+	totalPoints Points // Total points earned (sum of above)
+	timeSpent   int64  // Time spent on question in milliseconds
+	answeredAt  int64  // Unix timestamp (no time.Time to keep domain pure)
 }
 
-// NewUserAnswer creates a new UserAnswer
+// NewUserAnswer creates a new UserAnswer (legacy, for backward compatibility)
 func NewUserAnswer(questionID QuestionID, answerID AnswerID, isCorrect bool, points Points, answeredAt int64) UserAnswer {
 	return UserAnswer{
-		questionID: questionID,
-		answerID:   answerID,
-		isCorrect:  isCorrect,
-		points:     points,
-		answeredAt: answeredAt,
+		questionID:  questionID,
+		answerID:    answerID,
+		isCorrect:   isCorrect,
+		basePoints:  points, // Legacy: store total points as base
+		timeBonus:   Points{},
+		streakBonus: Points{},
+		totalPoints: points,
+		timeSpent:   0,
+		answeredAt:  answeredAt,
+	}
+}
+
+// NewUserAnswerWithBreakdown creates a new UserAnswer with detailed points breakdown
+func NewUserAnswerWithBreakdown(
+	questionID QuestionID,
+	answerID AnswerID,
+	isCorrect bool,
+	basePoints, timeBonus, streakBonus Points,
+	timeSpent int64,
+	answeredAt int64,
+) UserAnswer {
+	totalPoints := basePoints.Add(timeBonus).Add(streakBonus)
+	return UserAnswer{
+		questionID:  questionID,
+		answerID:    answerID,
+		isCorrect:   isCorrect,
+		basePoints:  basePoints,
+		timeBonus:   timeBonus,
+		streakBonus: streakBonus,
+		totalPoints: totalPoints,
+		timeSpent:   timeSpent,
+		answeredAt:  answeredAt,
 	}
 }
 
@@ -129,7 +160,12 @@ func NewUserAnswer(questionID QuestionID, answerID AnswerID, isCorrect bool, poi
 func (ua UserAnswer) QuestionID() QuestionID { return ua.questionID }
 func (ua UserAnswer) AnswerID() AnswerID     { return ua.answerID }
 func (ua UserAnswer) IsCorrect() bool        { return ua.isCorrect }
-func (ua UserAnswer) Points() Points         { return ua.points }
+func (ua UserAnswer) Points() Points         { return ua.totalPoints } // Returns total for compatibility
+func (ua UserAnswer) BasePoints() Points     { return ua.basePoints }
+func (ua UserAnswer) TimeBonus() Points      { return ua.timeBonus }
+func (ua UserAnswer) StreakBonus() Points    { return ua.streakBonus }
+func (ua UserAnswer) TotalPoints() Points    { return ua.totalPoints }
+func (ua UserAnswer) TimeSpent() int64       { return ua.timeSpent }
 func (ua UserAnswer) AnsweredAt() int64      { return ua.answeredAt }
 
 // QuizSummary represents a lightweight view of a quiz for list displays.

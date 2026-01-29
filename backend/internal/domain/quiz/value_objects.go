@@ -196,7 +196,9 @@ func NewPoints(value int) (Points, error) {
 	if value < 0 {
 		return Points{}, ErrNegativePoints
 	}
-	if value > 1000 {
+	// Увеличен лимит для поддержки глобального лидерборда (сумма очков со всех квизов)
+	// Практический лимит для защиты от некорректных данных
+	if value > 10000000 {
 		return Points{}, ErrPointsTooHigh
 	}
 	return Points{value: value}, nil

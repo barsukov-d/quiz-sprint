@@ -84,10 +84,11 @@ type StartQuizInput struct {
 
 // StartQuizOutput is the output DTO for StartQuiz use case
 type StartQuizOutput struct {
-	Session        SessionDTO  `json:"session"`
-	FirstQuestion  QuestionDTO `json:"firstQuestion"`
-	TotalQuestions int         `json:"totalQuestions"`
-	TimeLimit      int         `json:"timeLimit"`
+	Session              SessionDTO  `json:"session"`
+	FirstQuestion        QuestionDTO `json:"firstQuestion"`
+	TotalQuestions       int         `json:"totalQuestions"`
+	TimeLimit            int         `json:"timeLimit"`            // Total quiz time limit in seconds
+	TimeLimitPerQuestion int         `json:"timeLimitPerQuestion"` // Time limit per question in seconds
 }
 
 // ========================================
@@ -100,15 +101,20 @@ type SubmitAnswerInput struct {
 	QuestionID string `json:"questionId"`
 	AnswerID   string `json:"answerId"`
 	UserID     string `json:"userId"`
+	TimeTaken  int64  `json:"timeTaken"` // Time taken to answer in milliseconds
 }
 
 // SubmitAnswerOutput is the output DTO for SubmitAnswer use case
 type SubmitAnswerOutput struct {
 	IsCorrect       bool            `json:"isCorrect"`
 	CorrectAnswerID string          `json:"correctAnswerId"`
-	PointsEarned    int             `json:"pointsEarned"`
-	TotalScore      int             `json:"totalScore"`
-	IsQuizCompleted bool            `json:"isQuizCompleted"`
+	BasePoints      int             `json:"basePoints"`      // Base points for correct answer
+	TimeBonus       int             `json:"timeBonus"`       // Bonus points for speed
+	StreakBonus     int             `json:"streakBonus"`     // Bonus points for streak
+	PointsEarned    int             `json:"pointsEarned"`    // Total points (sum of above)
+	CurrentStreak   int             `json:"currentStreak"`   // Current streak count
+	TotalScore      int             `json:"totalScore"`      // Total session score
+	IsQuizCompleted bool            `json:"isQuizCompleted"` // Whether quiz is completed
 	NextQuestion    *QuestionDTO    `json:"nextQuestion,omitempty"`
 	FinalResult     *FinalResultDTO `json:"finalResult,omitempty"`
 }
@@ -195,4 +201,78 @@ type GetQuizDetailsInput struct {
 type GetQuizDetailsOutput struct {
 	Quiz      QuizDetailDTO         `json:"quiz"`
 	TopScores []LeaderboardEntryDTO `json:"topScores"`
+}
+
+// ========================================
+// GetGlobalLeaderboard Use Case
+// ========================================
+
+// GetGlobalLeaderboardInput is the input DTO for GetGlobalLeaderboard use case
+type GetGlobalLeaderboardInput struct {
+	Limit int `json:"limit"`
+}
+
+// GetGlobalLeaderboardOutput is the output DTO for GetGlobalLeaderboard use case
+type GetGlobalLeaderboardOutput struct {
+	Entries []GlobalLeaderboardEntryDTO `json:"entries"`
+}
+
+// GlobalLeaderboardEntryDTO is a data transfer object for GlobalLeaderboardEntry
+type GlobalLeaderboardEntryDTO struct {
+	UserID           string `json:"userId"`
+	Username         string `json:"username"`
+	TotalScore       int    `json:"totalScore"`
+	QuizzesCompleted int    `json:"quizzesCompleted"`
+	Rank             int    `json:"rank"`
+	LastActivityAt   int64  `json:"lastActivityAt"`
+}
+
+// GetRandomQuizInput is the input DTO for GetRandomQuiz use case
+type GetRandomQuizInput struct {
+	CategoryID string `json:"categoryId,omitempty"` // Optional category filter
+}
+
+// SessionSummaryDTO is a data transfer object for active session summary
+type SessionSummaryDTO struct {
+	SessionID       string `json:"sessionId"`
+	QuizID          string `json:"quizId"`
+	QuizTitle       string `json:"quizTitle"`
+	CurrentQuestion int    `json:"currentQuestion"`
+	TotalQuestions  int    `json:"totalQuestions"`
+	Score           int    `json:"score"`
+	StartedAt       int64  `json:"startedAt"`
+}
+
+// GetUserActiveSessionsInput is the input DTO for GetUserActiveSessions use case
+type GetUserActiveSessionsInput struct {
+	UserID string `json:"userId"`
+}
+
+// GetUserActiveSessionsOutput is the output DTO for GetUserActiveSessions use case
+type GetUserActiveSessionsOutput struct {
+	Sessions []SessionSummaryDTO `json:"sessions"`
+}
+
+// ========================================
+// GetDailyQuiz Use Case
+// ========================================
+
+// GetDailyQuizInput is the input DTO for GetDailyQuiz use case
+type GetDailyQuizInput struct {
+	UserID string `json:"userId"`
+}
+
+// GetDailyQuizOutput is the output DTO for GetDailyQuiz use case
+type GetDailyQuizOutput struct {
+	Quiz             QuizDetailDTO             `json:"quiz"`
+	CompletionStatus string                    `json:"completionStatus"` // "not_attempted" | "completed"
+	UserResult       *DailyQuizUserResultDTO   `json:"userResult,omitempty"`
+	TopScores        []LeaderboardEntryDTO     `json:"topScores"`
+}
+
+// DailyQuizUserResultDTO contains user's result for daily quiz (if completed)
+type DailyQuizUserResultDTO struct {
+	Score       int   `json:"score"`
+	Rank        int   `json:"rank"`
+	CompletedAt int64 `json:"completedAt"`
 }

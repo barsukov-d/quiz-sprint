@@ -1,995 +1,360 @@
 # CLAUDE.md
 
-This file provides guidance to Claude Code (claude.ai/code) when working with code in this repository.
+This file provides guidance to Claude Code when working with code in this repository.
+
+## 📚 IMPORTANT: Read Before Coding
+
+
+**ALWAYS read these documents before generating code:**
+- **[docs/GLOSSARY.md](docs/GLOSSARY.md)** - Ubiquitous Language (единый словарь терминов)
+  - Используй ТОЛЬКО термины из глоссария
+  - Следуй naming conventions
+  - Избегай anti-patterns
 
 ## Project Overview
 
-Quiz Sprint TMA is a full-stack Telegram Mini App:
-- **Frontend**: Vue 3 + TypeScript + Vite (in `tma/` subdirectory)
-- **Backend**: Go + Fiber + DDD architecture (in `backend/` subdirectory)
-- **Infrastructure**: VPS with nginx, Docker, Docker Compose, PostgreSQL, Redis
+Quiz Sprint TMA - Telegram Mini App for quizzes:
+- **Frontend**: Vue 3 + TypeScript + Vite (`tma/`)
+- **Backend**: Go + Fiber + DDD architecture (`backend/`)
+- **Infrastructure**: Docker, PostgreSQL, Redis, nginx
 
-## Commands
+## Quick Start
 
-### Frontend (TMA)
-All commands run from the `tma/` directory using pnpm:
-
+### Frontend (from `tma/`)
 ```bash
-# Development
-pnpm dev              # Start dev server (port 5173)
-pnpm preview          # Preview production build (port 4173)
-
-# Building
-pnpm build            # Type-check + build for production
-pnpm build-only       # Build only (skip type-check)
-
-# Type Checking
-pnpm type-check       # Run vue-tsc
-
-# Linting
-pnpm lint             # Run all linters (oxlint + eslint)
-pnpm format           # Format with Prettier
-
-# Testing
-pnpm test:unit                              # Run Vitest unit tests
-pnpm test:e2e                               # Run Playwright E2E tests
-pnpm test:e2e --project=chromium            # Run E2E on specific browser
-npx playwright install                       # Install browser drivers (first run)
-
-# API Code Generation (from Swagger/OpenAPI)
-pnpm run generate:swagger    # Generate Swagger docs from Go code (backend)
-pnpm run generate:api        # Generate TypeScript types from Swagger
-pnpm run generate:all        # Generate both (Swagger + TypeScript)
-
-# Telegram Mini App Setup
-pnpm add @telegram-apps/sdk @telegram-apps/sdk-vue    # Official TMA SDK
-pnpm add -D eruda                                      # Mobile debugging console
-pnpm add pinia                                         # State management
-pnpm add @vueuse/core                                  # Vue composables
-pnpm add -D tailwindcss postcss autoprefixer          # Utility CSS (optional)
-pnpm add @iconify/vue                                  # Icons (optional)
+pnpm dev                    # Dev server (port 5173)
+pnpm build                  # Build for production
+pnpm run generate:all       # Generate Swagger + TypeScript types
+pnpm lint                   # Lint code
+pnpm test:unit              # Run tests
 ```
 
-### Backend (Go API)
-All commands run from the `backend/` directory:
-
+### Backend (from `backend/`)
 ```bash
-# Development (Recommended - Docker with hot reload)
+# Development (Docker - recommended)
 docker compose -f docker-compose.dev.yml up        # Start all services
-docker compose -f docker-compose.dev.yml up -d     # Start in background
-docker compose -f docker-compose.dev.yml down      # Stop all services
-docker compose -f docker-compose.dev.yml down -v   # Stop and remove volumes (clean slate)
-docker compose -f docker-compose.dev.yml logs -f api  # View API logs
+docker compose -f docker-compose.dev.yml logs -f api  # View logs
 
-# Services available:
-# - API: http://localhost:3000 (with hot reload via air)
-# - PostgreSQL: localhost:5432 (quiz_user/quiz_password_dev/quiz_sprint_dev)
-# - Redis: localhost:6379
-# - Adminer (DB UI): http://localhost:8080
-# - Redis Commander: http://localhost:8081
-# - Swagger UI: http://localhost:3000/swagger/index.html
+# Services: http://localhost:3000 (API), http://localhost:8080 (Adminer)
+# PostgreSQL: localhost:5432 (quiz_user/quiz_password_dev/quiz_sprint_dev)
 
-# Local Development (Alternative - without Docker)
-go run cmd/api/main.go                      # Start dev server (port 3000)
-# Note: Requires PostgreSQL and Redis running locally or via docker-compose.dev.yml
-
-# Building
-go build -o quiz-sprint-api cmd/api/main.go # Build binary
-docker build -t quiz-sprint-api .           # Build production Docker image
-docker build -t quiz-sprint-api --target development .  # Build dev image
+# Swagger
+make swagger                # Generate Swagger docs
+pnpm run generate:all       # From tma/ - generates Swagger + TypeScript
 
 # Testing
-go test ./...                                # Run all tests
-go test -v ./internal/domain/quiz           # Run specific package tests
+go test ./...               # Run all tests
 
-# Dependencies
-go mod download                              # Download dependencies
-go mod tidy                                  # Clean up dependencies
-
-# Formatting
-go fmt ./...                                 # Format code
-
-# Swagger Generation (Makefile commands)
-make swagger                                 # Generate Swagger docs
-make swagger-install                         # Install swag CLI globally
-make dev                                     # Generate swagger + run server
-make help                                    # Show all Makefile commands
-
-# Manual Swagger generation (if needed)
-go run github.com/swaggo/swag/v2/cmd/swag@latest init --generalInfo cmd/api/main.go --output docs --parseDependency --parseInternal
-
-# Database
-docker compose -f docker-compose.dev.yml exec postgres psql -U quiz_user -d quiz_sprint_dev
-# Run migrations: docker compose -f docker-compose.dev.yml exec api go run migrations/migrate.go
+# Quiz Import
+make import-quiz FILE=data/quizzes/my-quiz.json
+make import-all-quizzes
+# See backend/IMPORT.md for details
 ```
 
 ## Architecture
 
 ### Monorepo Structure
-- `tma/` - Vue 3 frontend application
-- `backend/` - Go backend API with DDD architecture
-- `infrastructure/` - VPS server configurations, nginx, systemd services
-- `dev-tunnel/` - SSH tunnel scripts for HTTPS development
-- `.github/workflows/` - CI/CD pipelines for frontend and backend
+```
+quiz-sprint/
+├── tma/                    # Vue 3 frontend
+├── backend/                # Go backend (DDD)
+├── infrastructure/         # VPS configs (nginx, systemd)
+├── dev-tunnel/             # SSH tunnels for HTTPS dev
+└── docs/                   # Domain docs (DOMAIN.md, USER_FLOW.md)
+```
+
+### Backend DDD Layers (`backend/internal/`)
+```
+domain/                     # Pure business logic (NO external deps)
+├── quiz/                   # Quiz, Question, Answer, Session
+├── user/                   # User aggregate
+└── shared/                 # Shared value objects
+
+application/                # Use cases (DTOs, orchestration)
+├── quiz/                   # StartQuiz, SubmitAnswer, etc.
+└── user/                   # RegisterUser, GetUser, etc.
+
+infrastructure/             # Technical implementations
+├── http/handlers/          # Fiber handlers + Swagger
+├── persistence/postgres/   # PostgreSQL repositories
+└── persistence/memory/     # In-memory fallback
+```
 
 ### Frontend Structure (`tma/src/`)
-- `main.ts` - Vue app initialization
-- `App.vue` - Root component
-- `router/` - Vue Router configuration
-- `views/` - Page components
-- `api/client.ts` - Axios client with runtime hostname detection for API URLs
-- `api/generated/` - Auto-generated TypeScript types and Vue Query hooks (from Swagger)
-- `__tests__/` - Vitest unit tests
-
-**API Code Generation:**
-The frontend uses [Kubb v4](https://kubb.dev/) to auto-generate TypeScript types and Vue Query hooks from the backend's Swagger/OpenAPI spec:
-- **Types**: `src/api/generated/types/` - TypeScript interfaces from Swagger schemas
-- **Hooks**: `src/api/generated/hooks/` - Vue Query hooks (useGetQuiz, usePostQuizIdStart, etc.)
-- **Schemas**: `src/api/generated/schemas/` - Zod validation schemas
-- **Config**: `kubb.config.ts` - Generation configuration
-- **Trigger**: Run `pnpm run generate:api` after backend Swagger changes
-
-### Backend Structure (`backend/`)
-- `cmd/api/` - Application entry point with DB connection setup
-- `internal/domain/` - Domain models, business rules, repository interfaces (pure Go)
-  - `quiz/` - Quiz aggregate (Quiz, Question, Answer entities)
-  - `user/` - User aggregate (User entity with profile management)
-  - `shared/` - Shared value objects (UserID, etc.)
-- `internal/application/` - Use cases orchestrating domain logic
-  - `quiz/` - Quiz use cases (StartQuiz, SubmitAnswer, GetLeaderboard)
-  - `user/` - User use cases (RegisterUser, UpdateProfile, GetUser)
-- `internal/infrastructure/` - Technical implementations
-  - `http/handlers/` - Fiber HTTP handlers with Swagger annotations
-  - `http/handlers/swagger_models.go` - Response DTOs for Swagger
-  - `persistence/postgres/` - PostgreSQL repository implementations
-  - `persistence/memory/` - In-memory repositories (fallback/testing)
-  - `messaging/` - Event bus implementation
-- `migrations/` - SQL database migrations (auto-applied on startup)
-  - `init.sql` - Initial schema (quizzes, questions, answers, sessions, leaderboard VIEW)
-  - `002_create_users_table.sql` - Users table
-- `docs/` - Auto-generated Swagger documentation (swagger.json, swagger.yaml)
-- `pkg/database/` - PostgreSQL connection utilities
-
-Backend follows **Domain-Driven Design (DDD)** with clean architecture:
-- **Domain layer**: Pure business logic, no external dependencies (not even context.Context)
-- **Application layer**: Use cases coordinating domain objects, DTOs for data transfer
-- **Infrastructure layer**: Fiber HTTP handlers, PostgreSQL repositories, WebSocket hub
-
-**Data Persistence Architecture:**
 ```
-PostgreSQL (Production):
-✅ users            → postgres.UserRepository
-✅ quizzes          → postgres.QuizRepository (with questions & answers)
-⚠️  quiz_sessions   → memory.SessionRepository (TODO: migrate to PostgreSQL)
-⚠️  user_answers    → (part of session, TODO)
-⚠️  leaderboard     → memory.LeaderboardRepository (TODO: use PostgreSQL VIEW)
-
-In-Memory (Development/Fallback):
-- memory.QuizRepository (with seed data)
-- memory.SessionRepository
-- memory.LeaderboardRepository
+main.ts                     # Vue app init
+App.vue                     # Root component
+router/                     # Vue Router
+views/                      # Page components
+api/client.ts               # Axios client (runtime hostname detection)
+api/generated/              # Auto-generated from Swagger
+├── types/                  # TypeScript interfaces
+├── hooks/                  # Vue Query hooks (useGetQuiz, etc.)
+└── schemas/                # Zod validation
 ```
 
-**Repository Pattern:**
-- Interfaces defined in domain layer (pure Go)
-- Implementations in infrastructure/persistence/
-- Routes automatically select PostgreSQL if available, fallback to memory
-- `main.go` establishes DB connection, passes to `routes.SetupRoutes(app, db)`
+### Architecture Principles
 
-**Swagger/OpenAPI Integration:**
-- Uses [swaggo/swag](https://github.com/swaggo/swag) for Go annotations
-- All handlers in `internal/infrastructure/http/handlers/` have Swagger comments
-- Response types are defined in `swagger_models.go` for type safety
-- Frontend auto-generates TypeScript types from `docs/swagger.json`
+#### Thin Client Pattern (CRITICAL)
 
-### Build Once, Deploy Many
-The CI/CD uses a two-stage workflow for both frontend and backend:
+**Core Principle:** ALL game state and business logic lives on backend. Frontend is pure rendering layer.
 
-**Frontend:**
-1. `build.yml` - Runs quality checks (type-check, lint), builds, and uploads artifact
-2. `deploy.yml` - Downloads artifact and deploys to staging or production
+**Backend Responsibilities:**
+- ✅ Game state storage (questions, answers, scores, streaks)
+- ✅ Business logic (scoring, validations, chest calculations)
+- ✅ State transitions (in_progress → completed)
+- ✅ Timer enforcement (server-side)
+- ✅ Anti-cheat validation
 
-**Backend:**
-1. `backend-build.yml` - Builds Go binary, runs tests, uploads artifact
-2. `backend-docker-deploy.yml` - Builds Docker image, pushes to GHCR, deploys via docker-compose
+**Frontend Responsibilities:**
+- ✅ Render UI based on server data
+- ✅ Capture user input (answer selection)
+- ✅ Send events to backend
+- ✅ Display feedback from server responses
+- ❌ NO game logic duplication
+- ❌ NO local state for game progress
+- ❌ NO score calculations
+- ❌ NO answer validation
 
-### Environments
+**Example (Daily Challenge):**
 
-| Environment | Frontend URL | Backend API | Backend Port | Database |
-|-------------|-------------|-------------|--------------|----------|
-| Development | `dev.quiz-sprint-tma.online` | Local tunnel | 3000 (local) | PostgreSQL (Docker) |
-| Staging | `staging.quiz-sprint-tma.online` | `/api`, `/ws` | 3001 (Docker) | PostgreSQL (Docker) |
-| Production | `quiz-sprint-tma.online` | `/api`, `/ws` | 3000 (Docker) | PostgreSQL (Docker) |
-
-**API Endpoints:**
-- REST API: `https://<domain>/api/v1/*`
-- WebSocket: `wss://<domain>/ws/leaderboard/:id`
-- Health: `https://<domain>/api/health`
-
-### Development Tunnel Setup
-
-For TMA development, you need HTTPS (Telegram requires it). Use SSH tunnels to expose localhost to your VPS with nginx reverse proxy:
-
-**Setup:**
-1. Start backend locally: `cd backend && go run cmd/api/main.go` (port 3000)
-2. Start frontend locally: `cd tma && pnpm dev` (port 5173)
-3. Start backend tunnel: `./dev-tunnel/start-backend-tunnel.sh` (forwards localhost:3000 → VPS:3000)
-4. Start frontend tunnel: `./dev-tunnel/start-frontend-tunnel.sh` (forwards localhost:5173 → VPS:5173)
-5. Access TMA at: `https://dev.quiz-sprint-tma.online`
-
-**How it works:**
-- Frontend client (`src/api/client.ts`) detects `window.location.hostname` at runtime
-- When accessed via `dev.quiz-sprint-tma.online`, it uses `https://dev.quiz-sprint-tma.online/api/v1`
-- nginx on VPS proxies `/api/*` → `localhost:3000` and `/` → `localhost:5173`
-- SSH tunnels forward VPS ports to your MacBook's localhost
-
-**Environment Variables:**
-- `.env.development` - Used when running `pnpm dev` locally (localhost URLs)
-- `.env.local` - For tunnel development (overrides .env.development, but runtime detection is more reliable)
-- `.env.staging` - Staging environment
-- `.env.production` - Production environment
-
-All env files include `/api/v1` and `/ws` suffixes in base URLs.
-
-## Documentation
-
-### Overview
-
-The project maintains comprehensive documentation in the `docs/` folder:
-
-```
-docs/
-├── DOMAIN.md                    # Domain model, DDD patterns, use cases
-├── USER_FLOW.md                 # User journey, wireframes, UX/UI spec
-└── DOCUMENTATION_WORKFLOW.md    # How to update documentation
+Bad (Fat Client):
+```typescript
+// ❌ Frontend calculates score
+const score = answers.reduce((sum, a) =>
+  a.isCorrect ? sum + 100 + timeBonus(a.time) : sum, 0
+)
 ```
 
-### When to Update Documentation
-
-**Quick Reference:**
-
-| Type of Change | Start With | Order |
-|----------------|------------|-------|
-| 🔧 New domain logic | `DOMAIN.md` | DOMAIN → Backend → USER_FLOW → Frontend |
-| 🎨 UI/UX improvements | `USER_FLOW.md` | USER_FLOW → Frontend → DOMAIN (if needed) |
-| 🚀 Full-stack feature | Both docs | DOMAIN + USER_FLOW → Backend → Frontend |
-
-**Key Principles:**
-1. **Documentation-First** - Update docs BEFORE writing code
-2. **Commit Together** - Documentation + code in same commit
-3. **Cross-Reference** - Link between documents for consistency
-4. **Version Control** - Use changelog in docs for major changes
-
-**Example Workflow (New Feature):**
-
-```bash
-# 1. Update documentation
-vim docs/DOMAIN.md        # Add new aggregate/use case
-vim docs/USER_FLOW.md     # Add wireframes/journey
-
-# 2. Implement backend
-cd backend
-# ... implement domain, use cases, handlers ...
-make swagger              # Generate API docs
-
-# 3. Implement frontend
-cd ../tma
-pnpm run generate:api     # Generate TypeScript types
-# ... implement components ...
-
-# 4. Commit everything together
-git add docs/ backend/ tma/
-git commit -m "feat: Add category filtering
-
-- Added Category aggregate (see docs/DOMAIN.md)
-- Updated Quiz List UI (see docs/USER_FLOW.md)
-"
+Good (Thin Client):
+```typescript
+// ✅ Frontend only renders what backend sends
+const { data } = await submitAnswer({ questionId, answerId, timeTaken })
+// Backend returns: { isGameCompleted, finalScore, chestType }
 ```
 
-**Detailed Guide:**
-See `docs/DOCUMENTATION_WORKFLOW.md` for complete workflow, examples, and best practices.
+**API Design Impact:**
 
-**Key Documents:**
+Endpoints return **everything needed for UI**:
+```json
+{
+  "finalScore": 920,
+  "correctAnswers": 8,
+  "chestType": "golden",
+  "chestLabel": "🏆 Золотой сундук",
+  "rank": 847,
+  "rankLabel": "#847 из 12,847",
+  "canRetry": true,
+  "retryCost": { "coins": 100, "hasAd": true }
+}
+```
 
-1. **`docs/DOMAIN.md`** - Domain-Driven Design documentation
-   - Bounded Contexts (Quiz Taking, Quiz Catalog, Leaderboard, Identity)
-   - Ubiquitous Language (terms, invariants)
-   - Aggregates & Entities (Quiz, QuizSession, User)
-   - Domain Events (QuizStarted, AnswerSubmitted, QuizCompleted)
-   - Use Cases with signatures
-   - Update when: new business logic, aggregates, or domain rules
+Frontend just displays, no interpretation.
 
-2. **`docs/USER_FLOW.md`** - UX/UI Specification
-   - Complete User Journey (entry to completion)
-   - Wireframes for all screens (ASCII format)
-   - UI Components (reusable elements)
-   - Interactive mechanics (animations, transitions)
-   - Edge cases & error handling
-   - Update when: new screens, UI changes, or user flows
+**Benefits:**
+1. Single source of truth (backend DB)
+2. Impossible to cheat (no client-side logic to bypass)
+3. Easy A/B testing (change backend only)
+4. Consistent behavior across platforms
 
-3. **`docs/DOCUMENTATION_WORKFLOW.md`** - Documentation Guide
-   - When to update each document
-   - Order of updates (domain-first vs UX-first)
-   - Examples for typical changes
-   - Checklist for new features
-   - Git hooks and automation
+**When to use local state:**
+- UI state only (modal open/closed, animations)
+- Input buffering (typing, before submit)
+- Caching (React Query, TTL from backend)
 
 ## Tech Stack
 
-### Frontend
-- Vue 3.5 with Composition API (`<script setup>`)
-- TypeScript 5.9
-- Vite (dev server and bundler)
-- Vue Router 4
-- Vitest + Vue Test Utils (unit testing)
-- Playwright (E2E testing)
-- ESLint + Oxlint + Prettier (code quality)
-- pnpm 9 (package manager)
-- Node.js ^20.19.0 || >=22.12.0
+**Frontend**: Vue 3.5, TypeScript 5.9, Vite, Vue Router, Vitest, Playwright, @telegram-apps/sdk
 
-**Telegram Mini App (TMA) Stack:**
-- `@telegram-apps/sdk` - Official Telegram Mini Apps SDK (initialization, theme, events)
-- `@telegram-apps/sdk-vue` - Vue 3 bindings for TMA SDK (composables)
-- `@vkruglikov/react-telegram-web-app` - Alternative TMA library (optional)
-- `eruda` - Mobile debugging console (dev tool for testing in Telegram)
-- `vconsole` - Alternative mobile console (optional)
+**Backend**: Go 1.25, Fiber v3, PostgreSQL 16, Redis 7, swaggo/swag, Air (hot reload)
 
-**Recommended additions for TMA:**
-- `@tanstack/vue-query` or `@vueuse/core` - Data fetching and state management
-- `pinia` - State management (for quiz session, user data)
-- `@vueuse/core` - Vue composables utilities (useLocalStorage, useWebSocket)
-- `tailwindcss` or `unocss` - Utility-first CSS (better than plain CSS for TMA)
-- `@iconify/vue` - Icon components (Telegram-style icons)
+**Infrastructure**: Docker, nginx, Let's Encrypt, GitHub Actions
 
-### Backend
-- Go 1.25
-- Fiber v3 (web framework)
-- WebSocket support (gofiber/contrib/websocket)
-- PostgreSQL 16 (database, runs in Docker)
-  - `lib/pq` - PostgreSQL driver
-  - Automatic migrations on startup (`migrations/` folder)
-  - Connection pooling and health checks
-- Redis 7 (caching, runs in Docker) - **TODO: not yet integrated**
-- Docker + Docker Compose (containerized deployment)
-- **swaggo/swag** - Swagger/OpenAPI 2.0 documentation generator
-- **kubb** - TypeScript code generator from OpenAPI (frontend)
-- **Air** - Hot reload for Go development in Docker
+## DDD Guidelines (Backend)
 
-### Infrastructure
-- nginx (reverse proxy, SSL termination)
-- Let's Encrypt (SSL certificates)
-- GitHub Actions (CI/CD)
-- VPS (Ubuntu 20.04+)
+### Domain Layer (`internal/domain/`)
+**Pure business logic - NO external dependencies:**
+- ✅ Use: Value Objects, Factory methods (`NewQuiz`), `ReconstructEntity()` for DB loading
+- ❌ NO: `context.Context`, JSON tags, database imports, `time.Time` (use `int64` Unix timestamps)
+
+### Application Layer (`internal/application/`)
+**Use Cases:**
+- ✅ Use: Input/Output DTOs, `context.Context`, orchestration
+- ❌ NO: Business logic (delegate to domain), HTTP concerns
+
+### Infrastructure Layer (`internal/infrastructure/`)
+**Technical implementations:**
+- ✅ Use: HTTP handlers (thin adapters), Repository implementations, DB/SQL
+- ❌ NO: Business logic
+
+**Error Mapping**: Each handler has domain-specific error mapper (e.g., `quiz.ErrQuizNotFound` → HTTP 404)
+
+## Swagger/OpenAPI Workflow
+
+**Code-first approach:**
+```
+Go Handlers (@annotations) → swag → swagger.json → kubb → TypeScript types + Vue Query hooks
+```
+
+**After changing backend API:**
+1. Update Go handler annotations in `backend/internal/infrastructure/http/handlers/`
+2. Define DTOs in `swagger_models.go` (use concrete types, never `map[string]interface{}`)
+3. Run `pnpm run generate:all` from `tma/` (generates Swagger + TypeScript)
+4. Use generated hooks: `import { useGetQuizId } from '@/api/generated/hooks/quizController'`
+
+**Required fields**: Use `validate:"required"` tag in Go structs → non-optional TypeScript types
+
+## Environments
+
+| Environment | URL | API Port | Database |
+|-------------|-----|----------|----------|
+| Development | `dev.quiz-sprint-tma.online` | 3000 (local) | PostgreSQL (Docker) |
+| Staging | `staging.quiz-sprint-tma.online` | 3001 (Docker) | PostgreSQL (Docker) |
+| Production | `quiz-sprint-tma.online` | 3000 (Docker) | PostgreSQL (Docker) |
+
+**API Endpoints**: `https://<domain>/api/v1/*`, WebSocket: `wss://<domain>/ws/leaderboard/:id`
+
+## Development with HTTPS (Telegram requires it)
+
+1. Start backend: `cd backend && docker compose -f docker-compose.dev.yml up`
+2. Start frontend: `cd tma && pnpm dev`
+3. Start tunnels:
+   ```bash
+   ./dev-tunnel/start-backend-tunnel.sh   # localhost:3000 → VPS:3000
+   ./dev-tunnel/start-frontend-tunnel.sh  # localhost:5173 → VPS:5173
+   ```
+4. Access: `https://dev.quiz-sprint-tma.online`
+
+**How it works**: nginx on VPS proxies `/api/*` → localhost:3000, `/` → localhost:5173. Frontend detects hostname at runtime (`window.location.hostname`).
+
+## Database
+
+**Tables** (PostgreSQL):
+- `users` - User profiles (Telegram auth)
+- `quizzes`, `questions`, `answers` - Quiz data
+- `quiz_sessions` - User attempts (⚠️ TODO: migrate from in-memory)
+- `categories` - Quiz categories
+- `tags` (⚠️ planned) - Quiz tags
+
+**Viewing DB**:
+- Web: http://localhost:8080 (Adminer: postgres/quiz_user/quiz_password_dev/quiz_sprint_dev)
+- CLI: `docker compose -f docker-compose.dev.yml exec postgres psql -U quiz_user -d quiz_sprint_dev`
+
+## Quiz Import
+
+See `backend/IMPORT.md` for detailed guide.
+
+**Quick commands**:
+```bash
+make import-quiz FILE=data/quizzes/my-quiz.json   # Import single quiz
+make import-all-quizzes                           # Import all from data/quizzes/
+```
+
+**Formats**: Verbose (full field names) and Compact (LLM-optimized, 64% token reduction). See `backend/data/quizzes/SCHEMA.md`.
+
+## Documentation
+
+See `docs/` for domain model and user flows:
+- `DOMAIN.md` - DDD patterns, aggregates, use cases
+- `USER_FLOW.md` - User journeys, wireframes, UI spec
+- `DOCUMENTATION_WORKFLOW.md` - When/how to update docs
+- `game_modes/` - Structured docs for each game mode (Daily Challenge, Marathon, etc.)
+
+**Workflow**: Update docs BEFORE code → Commit together
+
+### Documentation Style Guidelines
+
+**Principle: Maximum Signal-to-Noise Ratio**
+
+Write for scanning, not reading. Use tables, lists, code blocks. No water, no repetition.
+
+**Game Mode Documentation Structure** (`docs/game_modes/{mode}/`):
+```
+01_concept.md       # What? Why? For whom? (1-2 pages max)
+02_gameplay.md      # Step-by-step UX flow + wireframes
+03_rules.md         # Formulas, validations, thresholds (EXACT values)
+04_rewards.md       # Precise numbers (no "approximately")
+05_api.md           # Endpoints + request/response examples
+06_domain.md        # Aggregates, value objects, events, repositories
+07_edge_cases.md    # All "what if" scenarios
+README.md           # Completeness checklist
+```
+
+**Anti-patterns:**
+- ❌ "This is very important..." → just state the fact
+- ❌ "As mentioned above..." → link `[section](#anchor)` or repeat briefly
+- ❌ "Approximately 100-200" → give exact range or formula
+- ❌ "Without changes" / "TBD" → remove section or write it
+- ❌ Long paragraphs → use tables/lists
+
+**Good Examples:**
+
+Bad:
+```
+The streak system rewards players who play consistently.
+When playing 3 days in a row, they receive a bonus...
+```
+
+Good:
+```
+Streak: 3d → 1.1x | 7d → 1.25x | 30d → 1.5x
+```
+
+Bad:
+```
+The API endpoint accepts POST request and returns game data...
+```
+
+Good:
+```
+POST /api/v1/daily/start
+→ 201 {gameId, questions, streak}
+→ 409 Already played
+```
 
 ## Code Style
 
-- No semicolons
-- Single quotes
-- 100 character line width
-- Path alias: `@` maps to `./src`
+- No semicolons, single quotes, 100 char line width
+- Path alias: `@` → `./src`
+- No `any` types (TypeScript strict mode)
 
-## Swagger/OpenAPI Code Generation
+## Telegram Authentication
 
-### Overview
+**Security**:
+- ✅ Cryptographic signature validation (server-side)
+- ✅ 1-hour expiration (prevents replay attacks)
+- ✅ Base64-encoded init data in Authorization header: `Authorization: tma <base64>`
+- ✅ Client cannot forge user data
 
-The project uses a **code-first** approach with automatic type generation:
+**Flow**: Frontend SDK → Base64 encode → Auth header → Backend middleware validates signature → Handler uses validated data
 
-```
-Go Handlers (with @annotations)
-    ↓ swag generates
-Swagger/OpenAPI spec (swagger.json)
-    ↓ kubb generates
-TypeScript types + Vue Query hooks
-```
+## Deployment
 
-### Quick Commands
+**Frontend**: GitHub Actions → Build → Deploy to VPS
 
-**From `tma/` directory (Recommended):**
+**Backend**: GitHub Actions → Docker build → Push to GHCR → Deploy via docker-compose
+
+**Manual restart** (on VPS):
 ```bash
-pnpm run generate:swagger    # Generate Swagger from Go code (backend)
-pnpm run generate:api        # Generate TypeScript from Swagger (frontend)
-pnpm run generate:all        # Generate both in one command ✨
-```
-
-**From `backend/` directory:**
-```bash
-make swagger                 # Generate Swagger documentation
-make help                    # Show all Makefile commands
-```
-
-### Generated Files
-
-**Backend:**
-- `backend/docs/swagger.json` - OpenAPI 2.0 specification (used by frontend)
-- `backend/docs/swagger.yaml` - YAML version
-- `backend/docs/docs.go` - Embedded Swagger UI
-
-**Frontend:**
-- `tma/src/api/generated/types/` - TypeScript type definitions
-- `tma/src/api/generated/schemas/` - Zod validation schemas
-- `tma/src/api/generated/hooks/` - Vue Query hooks (useGetQuiz, etc.)
-
-### Typical Workflow
-
-1. **Add/modify Go handler annotations:**
-```go
-// @Summary Get quiz by ID
-// @Tags quiz
-// @Param id path string true "Quiz ID"
-// @Success 200 {object} handlers.QuizDTO
-// @Router /quiz/{id} [get]
-func (h *QuizHandler) GetQuiz(c *fiber.Ctx) error {
-    // implementation
-}
-```
-
-2. **Generate Swagger + TypeScript:**
-```bash
-cd tma
-pnpm run generate:all
-```
-
-3. **Use in Vue components:**
-```typescript
-import { useGetQuizId } from '@/api/generated/hooks/quizController'
-
-const { data: quiz, isLoading } = useGetQuizId({ id: '123' })
-// quiz is fully typed with IntelliSense!
-```
-
-### Required Fields
-
-To mark fields as required (generates non-optional TypeScript types):
-
-```go
-type QuizDTO struct {
-    ID    string `json:"id" validate:"required"`       // required in TypeScript
-    Title string `json:"title" validate:"required"`    // required in TypeScript
-    Description string `json:"description"`             // optional in TypeScript
-}
-```
-
-Generated TypeScript:
-```typescript
-export type QuizDTO = {
-    id: string;          // required (no ?)
-    title: string;       // required (no ?)
-    description?: string; // optional (with ?)
-}
-```
-
-### Documentation
-
-- Detailed guide: `backend/SWAGGER.md`
-- Quick reference: `QUICKSTART.md`
-
-## Backend Deployment
-
-### Deployment via GitHub Actions (Docker)
-
-1. Go to Actions tab
-2. Run "Deploy Backend (Docker)" workflow:
-   - Select environment (staging/production)
-   - Builds Docker image and pushes to GitHub Container Registry
-   - Deploys via docker-compose on VPS
-3. Health check will run automatically
-
-The workflow automatically:
-- Builds the Docker image with the Go API
-- Pushes to `ghcr.io/<repo>/quiz-sprint-api`
-- Generates `docker-compose.yml` with API + PostgreSQL + Redis
-- Pulls and starts all containers on VPS
-- Runs health check
-
-### Manual Deployment (if needed)
-
-```bash
-# On VPS
 cd /opt/quiz-sprint/staging  # or production
-
-# Check running containers
-docker compose ps
-
-# View logs
-docker compose logs -f api
-
-# Restart services
 docker compose restart api
-
-# Full restart (including DB)
-docker compose down
-docker compose up -d
+docker compose logs -f api
 ```
 
-### Backend API Structure
+## Key API Endpoints
 
-**Quiz Endpoints:**
-- `GET /api/v1/quiz` - List all quizzes
-- `GET /api/v1/quiz/:id` - Get quiz details (with questions & top scores)
-- `POST /api/v1/quiz/:id/start` - Start quiz session
-- `GET /api/v1/quiz/:id/active-session` - Get active session for user (query param: userId)
-- `POST /api/v1/quiz/session/:sessionId/answer` - Submit answer
-- `DELETE /api/v1/quiz/session/:sessionId` - Abandon/delete a session
-- `GET /api/v1/quiz/:id/leaderboard` - Get leaderboard
+- **Quiz**: `GET /api/v1/quiz`, `GET /api/v1/quiz/:id`, `POST /api/v1/quiz/:id/start`
+- **Session**: `POST /api/v1/quiz/session/:sessionId/answer`, `DELETE /api/v1/quiz/session/:sessionId`
+- **User**: `POST /api/v1/user/register`, `GET /api/v1/user/:id`
+- **Categories**: `GET /api/v1/categories`, `POST /api/v1/categories`
+- **Docs**: `GET /swagger/index.html`, `GET /health`
 
-**User Endpoints:**
-- `POST /api/v1/user/register` - Register or update user from Telegram (idempotent)
-- `GET /api/v1/user/:id` - Get user profile by Telegram ID
-- `PUT /api/v1/user/:id` - Update user profile
-- `GET /api/v1/user/username/:username` - Get user by Telegram @username
-- `GET /api/v1/users` - List all users (admin, with pagination)
+Full API docs: http://localhost:3000/swagger/index.html
 
-**WebSocket:**
-- `GET /ws/leaderboard/:id` - Real-time leaderboard updates
+## Workflow Requirements
 
-**Health & Docs:**
-- `GET /health` - Health check endpoint
-- `GET /swagger/index.html` - Swagger UI documentation
-
-## Swagger → TypeScript Type Generation Workflow
-
-When you update backend API handlers, follow this workflow to keep frontend types in sync:
-
-1. **Update Go Handler** - Add/modify endpoint in `backend/internal/infrastructure/http/handlers/`
-2. **Add Swagger Annotations** - Use swaggo comments with concrete types from `swagger_models.go`
-3. **Generate Swagger Docs** - Run `swag init -g cmd/api/main.go -o docs` in `backend/`
-4. **Generate TypeScript Types** - Run `pnpm run generate:api` in `tma/`
-5. **Use Generated Hooks** - Import from `@/api/generated/hooks/`
-
-**Example:**
-```go
-// In swagger_models.go - Define response DTO
-type GetQuizDetailsResponse struct {
-    Data GetQuizDetailsData `json:"data"`
-}
-
-// In quiz_handler.go - Use in Swagger annotation
-// @Success 200 {object} handlers.GetQuizDetailsResponse "Quiz details"
-```
-
-**Generated TypeScript:**
-```typescript
-// Auto-generated in src/api/generated/hooks/quizController/useGetQuizId.ts
-import { useGetQuizId } from '@/api'
-
-const { data, isLoading, error } = useGetQuizId({ id: quizId })
-// data is typed as GetQuizDetailsResponse
-```
-
-**Important:**
-- Always use concrete types in `swagger_models.go`, never `map[string]interface{}`
-- Response wrapper format: `{ data: ActualData }` for consistency
-- Kubb config uses `dataReturnType: 'data'` but response still has `.data` property
-- Frontend components must access `response.data` (e.g., `quizzes?.data`)
-
-## Domain-Driven Design (DDD) Guidelines
-
-### Working with Domains
-
-The backend strictly follows **DDD + Clean Architecture** principles:
-
-#### Domain Layer (`internal/domain/`)
-**Pure business logic - NO external dependencies:**
-- ✅ Use: Pure Go structs, interfaces, business methods
-- ✅ Use: Value Objects for all IDs, measurements, descriptive objects
-- ✅ Use: Factory methods (`NewQuiz`, `NewUser`)
-- ✅ Use: `ReconstructEntity()` methods for loading from database
-- ❌ NO: `context.Context`, JSON tags, database imports, HTTP imports
-- ❌ NO: `time.Time` (use `int64` Unix timestamps)
-
-**Example:**
-```go
-// Value Object
-type UserID struct { value string }
-func NewUserID(value string) (UserID, error) { ... }
-
-// Entity with business logic
-type User struct {
-    id UserID
-    username Username
-    // ...
-}
-
-func (u *User) UpdateProfile(...) error {
-    // Business rules here
-}
-
-// Reconstruct from DB (no validation)
-func ReconstructUser(...) *User { return &User{...} }
-```
-
-#### Application Layer (`internal/application/`)
-**Use Cases orchestrating domain logic:**
-- ✅ Use: Input/Output DTOs (never domain models!)
-- ✅ Use: `context.Context` for timeouts/cancellation
-- ✅ Use: Orchestration of multiple aggregates
-- ❌ NO: Business logic (delegate to domain)
-- ❌ NO: HTTP concerns, database details
-
-**Example:**
-```go
-type RegisterUserInput struct {
-    UserID string
-    Username string
-}
-
-type RegisterUserOutput struct {
-    User UserDTO
-    IsNewUser bool
-}
-
-func (uc *RegisterUserUseCase) Execute(input RegisterUserInput) (RegisterUserOutput, error) {
-    // 1. Convert to domain types
-    // 2. Execute domain logic
-    // 3. Save via repository
-    // 4. Return DTO
-}
-```
-
-#### Infrastructure Layer (`internal/infrastructure/`)
-**Technical implementations:**
-- ✅ Use: HTTP handlers (thin adapters)
-- ✅ Use: Repository implementations (PostgreSQL, in-memory)
-- ✅ Use: Database/SQL, JSON tags, framework code
-- ❌ NO: Business logic
-
-**Handler Pattern:**
-```go
-func (h *UserHandler) RegisterUser(c fiber.Ctx) error {
-    // 1. Parse HTTP request
-    // 2. Convert to Use Case Input
-    // 3. Execute Use Case
-    // 4. Map domain errors → HTTP errors
-    // 5. Return HTTP response
-}
-```
-
-### Repository Pattern
-
-**Interface in Domain, Implementation in Infrastructure:**
-
-```go
-// domain/user/repository.go
-type UserRepository interface {
-    FindByID(id UserID) (*User, error)  // NO context.Context!
-    Save(user *User) error
-}
-
-// infrastructure/persistence/postgres/user_repository.go
-type UserRepository struct { db *sql.DB }
-
-func (r *UserRepository) FindByID(id UserID) (*User, error) {
-    ctx := context.Background()  // Infrastructure adds context
-    // SQL query with ctx
-    // Use ReconstructUser() to rebuild entity
-}
-```
-
-### Error Handling
-
-**Domain Errors → HTTP Status Codes:**
-
-Each handler has its own error mapper:
-```go
-// quiz_handler.go
-func mapError(err error) error {
-    switch err {
-    case quiz.ErrQuizNotFound:
-        return fiber.NewError(404, "Quiz not found")
-    case quiz.ErrInvalidQuizID:
-        return fiber.NewError(400, "Invalid quiz ID")
-    // ...
-    }
-}
-
-// user_handler.go
-func mapUserError(err error) error {
-    switch err {
-    case user.ErrUserNotFound:
-        return fiber.NewError(404, "User not found")
-    // ...
-    }
-}
-```
-
-**Separation by Domain** - Each domain has its own error mapper for clean separation of concerns.
-
-## Implementation Status & Recent Changes
-
-### ✅ Fully Implemented Features
-
-#### User Authentication & Management
-- **Telegram Auth Middleware** (`backend/internal/infrastructure/http/middleware/telegram_auth.go`)
-  - ✅ Base64 decoding of init data from Authorization header
-  - ✅ Cryptographic signature validation using bot token
-  - ✅ Expiration check (1 hour window, prevents replay attacks)
-  - ✅ Stores validated `InitData` in request context (as pointer)
-  - ✅ Secure: Client cannot forge user data (server validates signature)
-  - **Format:** `Authorization: tma <base64-encoded-init-data-raw>`
-
-- **User Registration Flow** (End-to-end working)
-  - ✅ Frontend: `useAuth.ts` composable retrieves init data from Telegram SDK
-  - ✅ Frontend: Base64-encodes and sends in Authorization header
-  - ✅ Backend: Middleware validates signature
-  - ✅ Backend: Handler extracts user info from validated data
-  - ✅ Backend: Creates/updates user in PostgreSQL (idempotent)
-  - ✅ Frontend: Receives user DTO and stores in global state
-
-- **User Domain** (`backend/internal/domain/user/`)
-  - ✅ Value Objects: UserID, Username, TelegramUsername, Email, AvatarURL, LanguageCode
-  - ✅ Entity: User with profile management methods
-  - ✅ Repository: PostgreSQL implementation with all CRUD operations
-  - ✅ Database: `users` table created (migration 002)
-
-- **User Use Cases** (`backend/internal/application/user/`)
-  - ✅ RegisterUser - Register/update from Telegram (idempotent)
-  - ✅ GetUser - Get user by ID
-  - ✅ UpdateUserProfile - Update profile fields
-  - ✅ UpdateUserLanguage - Update language preference
-  - ✅ ListUsers - Paginated user list (admin)
-  - ✅ GetUserByTelegramUsername - Find by @username
-
-#### Quiz Domain
-- **Quiz Aggregate** (`backend/internal/domain/quiz/`)
-  - ✅ Entities: Quiz, Question, Answer, Session, UserAnswer
-  - ✅ PostgreSQL repository for Quiz (with questions & answers)
-  - ✅ In-memory repositories for Session and Leaderboard (fallback)
-
-- **Quiz Use Cases** (`backend/internal/application/quiz/`)
-  - ✅ StartQuiz - Create quiz session
-  - ✅ GetActiveSession - Retrieve active session for user/quiz
-  - ✅ AbandonSession - Delete session (with authorization)
-  - ✅ SubmitAnswer - Submit answer and get feedback
-  - ✅ GetLeaderboard - Get top scores
-
-#### Category Domain
-- **Category Aggregate** (`backend/internal/domain/quiz/category_aggregate.go`)
-  - ✅ Aggregate: `Category` with `ID` and `Name`.
-  - ✅ Value Objects: `CategoryID`, `CategoryName` with validation.
-- **Category Repository**
-  - ✅ Interface: `CategoryRepository` in `domain/quiz/repository.go`.
-  - ✅ Implementation: `PostgresCategoryRepository` with `Save`, `FindByID`, `FindAll`, `Delete`.
-- **Category Use Cases**
-  - ✅ `CreateCategoryUseCase` - Creates a new category.
-  - ✅ `ListCategoriesUseCase` - Retrieves all categories.
-- **API Endpoint**
-  - ✅ `GET /api/v1/categories` - Lists all categories.
-  - ✅ `POST /api/v1/categories` - Creates a new category.
-
-#### Frontend
-- **Composables** (`tma/src/composables/`)
-  - ✅ `useAuth.ts` - Telegram authentication & user state management
-  - ✅ Type-safe with custom `ParsedInitData` interface
-  - ✅ Handles both SDK and hash-based init data extraction
-  - ✅ Base64 encoding for Authorization header
-
-- **Quiz Session Management** (`tma/src/views/QuizPlayView.vue`)
-  - ✅ 409 Conflict detection when starting quiz with active session
-  - ✅ User-friendly modal with "Continue Session" or "Start Fresh" options
-  - ✅ Resume from where user left off (preserves progress, score, question index)
-  - ✅ Abandon session with authorization check
-
-- **API Integration**
-  - ✅ Automatic type generation from Swagger
-  - ✅ Vue Query hooks for all endpoints
-  - ✅ Axios interceptor adds Authorization header automatically
-  - ✅ Runtime hostname detection for multi-environment support
-
-- **Code Quality**
-  - ✅ TypeScript strict mode - zero errors
-  - ✅ ESLint + Oxlint - zero errors
-  - ✅ Generated files excluded from linting
-  - ✅ No `any` types (all properly typed)
-
-### ⚠️ In Progress / TODO
-
-#### Database
-- [x] Add `categories` table and link to `quizzes`. Foreign key is `ON DELETE SET NULL`. (See `migrations/003_add_categories.sql`)
-- ⚠️ Migrate `SessionRepository` from in-memory to PostgreSQL
-- ⚠️ Migrate `LeaderboardRepository` to PostgreSQL VIEW
-- [ ] Seed initial categories (e.g., "Programming", "History", "Movies").
-- ⚠️ Add database indexes for performance optimization
-- ⚠️ Quiz session timeout/cleanup mechanism
-
-#### Backend
-- [x] Implement `Category` aggregate and repository.
-- [x] Create `CreateCategory` and `ListCategories` use cases.
-- [x] Add `/api/v1/categories` endpoint (GET, POST).
-- [x] Update `Quiz`-related use cases to handle `category_id`.
-- [ ] Add authorization to category creation (e.g., admin-only).
-- ⚠️ Redis integration for caching
-- ⚠️ WebSocket real-time updates (infrastructure exists, needs testing)
-- ⚠️ Rate limiting middleware
-- ⚠️ Admin endpoints for quiz CRUD operations
-- ⚠️ File upload support for quiz images
-
-#### Frontend
-- ✅ Quiz playing UI components (with session management)
-- ⚠️ Leaderboard display with real-time updates
-- ⚠️ User profile page
-- ⚠️ Quiz results/statistics page
-- ⚠️ Telegram theme integration
-
-### 🔧 Recent Fixes & Features
-
-#### Session Management Enhancement (2026-01-19)
-**Feature:** Graceful handling of active quiz sessions
-
-**Problem:**
-- Users received a 409 Conflict error when trying to start a quiz they already had an active session for
-- No way to resume or abandon existing sessions
-- Poor user experience with generic error message
-
-**Solution:**
-1. **Backend - New Use Cases:**
-   - `GetActiveSessionUseCase` - Retrieves active session with current question
-   - `AbandonSessionUseCase` - Deletes session with authorization check
-
-2. **Backend - New API Endpoints:**
-   - `GET /api/v1/quiz/:id/active-session?userId=xxx` - Get active session
-   - `DELETE /api/v1/quiz/session/:sessionId` - Abandon session
-
-3. **Backend - Repository Enhancement:**
-   - Added `Delete()` method to `SessionRepository` interface
-   - Implemented in memory repository
-
-4. **Frontend - Conflict Resolution Modal:**
-   - Detects 409 Conflict error on quiz start
-   - Shows user-friendly modal with two options:
-     - **Continue Session** - Resumes from current question with preserved score
-     - **Start Fresh** - Abandons old session and creates new one
-   - Fetches active session details for context
-
-**Files Modified:**
-- `backend/internal/application/quiz/get_active_session.go` (new)
-- `backend/internal/application/quiz/abandon_session.go` (new)
-- `backend/internal/domain/quiz/repository.go`
-- `backend/internal/infrastructure/persistence/memory/quiz_repository.go`
-- `backend/internal/infrastructure/http/handlers/quiz_handler.go`
-- `backend/internal/infrastructure/http/handlers/swagger_models.go`
-- `backend/internal/infrastructure/http/routes/routes.go`
-- `tma/src/views/QuizPlayView.vue`
-
-**Impact:**
-- Improved UX - users can resume or restart without confusion
-- Proper authorization - users can only abandon their own sessions
-- Type-safe - full TypeScript support for new endpoints
-
-#### Backend Fixes (2026-01-18)
-1. **`questionsCount` always 0 in Quiz List**
-   - **Issue:** The API endpoint `GET /api/v1/quiz` returned `questionsCount: 0` for all quizzes.
-   - **Reason:** For performance, the `QuizRepository.FindAll()` method intentionally did not load the associated questions for each quiz.
-   - **Solution:**
-     - A new read-model `QuizSummary` was introduced in the domain layer to represent the data needed for the quiz list.
-     - `QuizRepository` now has a `FindAllSummaries()` method that uses a `LEFT JOIN` with `COUNT()` to efficiently fetch quizzes with their question counts in a single query.
-     - The `ListQuizzesUseCase` was updated to use this new method.
-   - **Impact:** The bug is fixed while respecting DDD principles by not polluting the `Quiz` aggregate with concerns related to specific queries.
-
-2. **Implemented Category Feature (Backend)**
-   - **Feature:** Added support for quiz categories.
-   - **Changes:**
-     - Created `Category` aggregate and `CategoryName` value object.
-     - Implemented `CategoryRepository` for PostgreSQL.
-     - Added `CreateCategory` and `ListCategories` use cases.
-     - Exposed `GET /api/v1/categories` and `POST /api/v1/categories` endpoints.
-     - Added `categories` table and foreign key to `quizzes` table via `003_add_categories.sql` migration.
-
-3. **Telegram Auth Context Storage Bug**
-   - **Issue:** Middleware stored init data as value, getter expected pointer → type assertion failed → nil
-   - **Fix:** Changed `c.Locals("telegram_init_data", parsedData)` to `c.Locals("telegram_init_data", &parsedData)`
-   - **File:** `backend/internal/infrastructure/http/middleware/telegram_auth.go:66`
-   - **Impact:** Handler now successfully retrieves validated init data
-
-4. **Users Table Migration**
-   - **Issue:** `002_create_users_table.sql` existed but wasn't applied (Docker entrypoint only runs on first DB init)
-   - **Fix:** Manually applied migration via `docker compose exec postgres psql -f /docker-entrypoint-initdb.d/002_create_users_table.sql`
-   - **Result:** Users table created with all indexes
-
-5. **RegisterUserRequest Swagger Schema**
-   - **Issue:** Swagger schema required `userId` field in body, but handler uses Authorization header (not body)
-   - **Fix:** Made `RegisterUserRequest` an empty struct with comment explaining data comes from header
-   - **File:** `backend/internal/infrastructure/http/handlers/swagger_models.go:218-225`
-   - **Impact:** TypeScript types now correctly reflect that endpoint doesn't need body data
-
-#### Frontend Fixes
-1. **TypeScript Type Errors in useAuth.ts**
-   - **Issue:** `launchParams.initData` had type `unknown`, causing assignment errors
-   - **Fix:** Created `ParsedInitData` interface and added type assertions
-   - **Result:** Strict typing without `any`
-
-2. **User Field Names (snake_case vs camelCase)**
-   - **Issue:** TelegramUser type uses `first_name`, code used `firstName`
-   - **Fix:** Updated all references to use SDK's snake_case convention
-   - **Files:** `useAuth.ts:71-78, 118`
-
-3. **App.vue registerUser Call**
-   - **Issue:** After Swagger regeneration, `registerUser()` became parameterless (void)
-   - **Fix:** Changed from `registerUser({ data: {} })` to `registerUser()`
-   - **File:** `tma/src/App.vue:53`
-
-4. **ESLint Configuration**
-   - **Issue:** Linter errors in auto-generated Kubb files
-   - **Fix:** Added `src/api/generated/**` to `globalIgnores`
-   - **File:** `tma/eslint.config.ts:20`
-
-5. **Unused Type Parameter**
-   - **Issue:** `TError` parameter in fetch function was unused
-   - **Fix:** Renamed to `_TError` (convention for intentionally unused params)
-   - **File:** `tma/src/api/client.ts:30`
-
-6. **Incorrect Import in Generated Schema**
-   - **Issue:** Kubb generated wrong import path: `GetUserUsername.ts` instead of `GetUserUsernameUsername.ts`
-   - **Fix:** Manually corrected import path
-   - **File:** `tma/src/api/generated/schemas/userController/getUserUsernameUsernameSchema.ts:6`
-
-### 📊 Current Database Status
-
-**Viewing Database:**
-- Web UI: http://localhost:8080 (Adminer)
-  - Server: `postgres`
-  - Username: `quiz_user`
-  - Password: `quiz_password_dev`
-  - Database: `quiz_sprint_dev`
-
-- CLI:
-  ```bash
-  docker compose -f docker-compose.dev.yml exec postgres psql -U quiz_user -d quiz_sprint_dev
-  ```
-
-**Tables:**
-- ✅ `users` - User profiles (Telegram integration)
-- ✅ `quizzes` - Quiz metadata
-- ✅ `questions` - Quiz questions
-- ✅ `answers` - Answer options
-- ✅ `quiz_sessions` - User quiz attempts (schema exists, using in-memory for now)
-
-**Migrations Applied:**
-- ✅ `init.sql` - Initial schema
-- ✅ `002_create_users_table.sql` - Users table
-
-### 🚀 How to Test End-to-End
-
-1. **Start Backend:**
-   ```bash
-   docker compose -f docker-compose.dev.yml up -d
-   # Check logs: docker compose -f docker-compose.dev.yml logs -f api
-   ```
-
-2. **Start Frontend:**
-   ```bash
-   cd tma && pnpm dev
-   ```
-
-3. **Start Tunnels (for Telegram access):**
-   ```bash
-   ./dev-tunnel/start-backend-tunnel.sh
-   ./dev-tunnel/start-frontend-tunnel.sh
-   ```
-
-4. **Open in Telegram:**
-   - URL: `https://dev.quiz-sprint-tma.online`
-   - User registration happens automatically on load
-   - Check backend logs for auth flow
-   - Check Adminer for new user in database
-
-### 🔐 Security Notes
-
-**Telegram Authentication:**
-- ✅ All user data comes from Telegram-signed init data (not client input)
-- ✅ Server validates cryptographic signature before trusting data
-- ✅ 1-hour expiration window prevents replay attacks
-- ✅ Client cannot forge user IDs or usernames
-- ✅ Base64 encoding for safe HTTP header transmission
-
-**Best Practices:**
-- ✅ Separate error mappers per domain
-- ✅ No sensitive data in logs (bot token truncated)
-- ✅ Database connection pooling
-- ✅ CORS configuration per environment
-- ✅ Type-safe DTOs prevent data leaks
-
-## Workflow Requirements (from AGENTS.md)
-
-Before completing a session:
+Before completing session:
 1. Track issues with `bd` (beads) tool
-2. Always push to remote: `git push` is required
+2. Always push to remote: `git push` required
+- to memorize general
+- to memorize deed use Nuxt UI and only TAilwind tma/nuxt-ui.md

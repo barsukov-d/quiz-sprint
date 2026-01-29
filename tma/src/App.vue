@@ -3,13 +3,23 @@ import eruda from 'eruda'
 if (import.meta.env.DEV) {
 	eruda.init()
 }
-import { onMounted, ref } from 'vue'
+import { onMounted, ref, computed } from 'vue'
+import { useRoute } from 'vue-router'
 import { useAuth } from './composables/useAuth'
 import { usePostUserRegister } from './api/generated/hooks/userController/usePostUserRegister'
+import BottomTabBar from './components/BottomTabBar.vue'
 
 import { viewport } from '@tma.js/sdk'
 
 viewport.safeAreaInsetTop()
+
+const route = useRoute()
+
+// Show bottom navigation only on main screens, hide during quiz play and results
+const showBottomNav = computed(() => {
+	const hiddenRoutes = ['quiz-play', 'quiz-results', 'quiz-details']
+	return !hiddenRoutes.includes(route.name as string)
+})
 
 const { isInitialized, getRawInitData, setCurrentUser } = useAuth()
 
@@ -92,7 +102,10 @@ onMounted(async () => {
 		</div>
 
 		<!-- Основное приложение -->
-		<RouterView v-else />
+		<div v-else class="app-container">
+			<RouterView />
+			<BottomTabBar v-if="showBottomNav" />
+		</div>
 	</UApp>
 </template>
 
@@ -141,5 +154,10 @@ onMounted(async () => {
 .error-content .hint {
 	font-size: 14px;
 	color: #999;
+}
+
+.app-container {
+	min-height: 100vh;
+	position: relative;
 }
 </style>

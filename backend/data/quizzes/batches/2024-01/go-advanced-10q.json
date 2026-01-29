@@ -1,0 +1,305 @@
+{
+  "batch": {
+    "version": 1,
+    "generated": "2024-01-20T16:00:00Z",
+    "cat": "programming",
+    "tags": ["language:go", "difficulty:medium"]
+  },
+  "quizzes": [
+    {
+      "t": "Go Concurrency Fundamentals",
+      "d": "Master goroutines, channels, and concurrent patterns in Go",
+      "tags": ["topic:concurrency"],
+      "l": 120,
+      "p": 75,
+      "q": [
+        {
+          "t": "What keyword is used to create a goroutine?",
+          "a": ["async", "go", "thread", "spawn"],
+          "c": 1
+        },
+        {
+          "t": "What is a channel in Go?",
+          "a": ["A function", "A type for goroutine communication", "A loop construct", "A memory allocation"],
+          "c": 1
+        },
+        {
+          "t": "How do you create a buffered channel with capacity 5?",
+          "a": ["make(chan int)", "make(chan int, 5)", "chan int{5}", "buffer(chan, 5)"],
+          "c": 1
+        },
+        {
+          "t": "What does the <- operator do with channels?",
+          "a": ["Compares channels", "Sends or receives values", "Creates a channel", "Closes a channel"],
+          "c": 1
+        },
+        {
+          "t": "How do you close a channel?",
+          "a": ["channel.close()", "close(channel)", "delete(channel)", "channel <- nil"],
+          "c": 1
+        },
+        {
+          "t": "What happens when you send to a closed channel?",
+          "a": ["Nothing", "Blocks forever", "Returns false", "Panics"],
+          "c": 3
+        },
+        {
+          "t": "What is the select statement used for?",
+          "a": ["Selecting variables", "Multiplexing channel operations", "Database queries", "Switch statements"],
+          "c": 1
+        },
+        {
+          "t": "Can you read from a nil channel?",
+          "a": ["Yes, returns zero value", "Yes, but blocks forever", "No, panics immediately", "No, compile error"],
+          "c": 1
+        },
+        {
+          "t": "What is a common pattern to signal goroutine completion?",
+          "a": ["Return value", "Global variable", "Channel or WaitGroup", "Sleep timer"],
+          "c": 2
+        },
+        {
+          "t": "What package provides synchronization primitives?",
+          "a": ["concurrent", "sync", "parallel", "goroutine"],
+          "c": 1
+        }
+      ]
+    },
+    {
+      "t": "Go Interfaces and Methods",
+      "d": "Deep dive into Go's interface system and method receivers",
+      "tags": ["topic:interfaces"],
+      "l": 120,
+      "p": 75,
+      "q": [
+        {
+          "t": "What is an interface in Go?",
+          "a": ["A class", "A set of method signatures", "A struct", "A package"],
+          "c": 1
+        },
+        {
+          "t": "How many methods does the empty interface have?",
+          "a": ["0", "1", "Unlimited", "Depends on implementation"],
+          "c": 0
+        },
+        {
+          "t": "What is the empty interface written as?",
+          "a": ["interface{}", "any", "void", "null"],
+          "c": 0
+        },
+        {
+          "t": "What is the difference between pointer and value receivers?",
+          "a": ["No difference", "Pointer can modify, value cannot", "Value is faster", "Pointer is deprecated"],
+          "c": 1
+        },
+        {
+          "t": "Can a type implement multiple interfaces?",
+          "a": ["Yes", "No", "Only with embedding", "Only structs"],
+          "c": 0
+        },
+        {
+          "t": "How do you check if a value implements an interface?",
+          "a": ["instanceof", "Type assertion", "implements keyword", "interface.check()"],
+          "c": 1
+        },
+        {
+          "t": "What is type assertion syntax?",
+          "a": ["value.(Type)", "Type(value)", "value as Type", "cast(value, Type)"],
+          "c": 0
+        },
+        {
+          "t": "What does the comma-ok idiom return in type assertion?",
+          "a": ["Value only", "Value and boolean", "Error", "Type and value"],
+          "c": 1
+        },
+        {
+          "t": "Can interfaces be nil?",
+          "a": ["Yes", "No", "Only empty interface", "Only after initialization"],
+          "c": 0
+        },
+        {
+          "t": "What is interface embedding?",
+          "a": ["Including one interface in another", "Copying methods", "Inheritance", "Composition of structs"],
+          "c": 0
+        }
+      ]
+    },
+    {
+      "t": "Go Pointers and Memory",
+      "d": "Understanding pointers, memory allocation, and the garbage collector",
+      "tags": ["topic:pointers"],
+      "l": 120,
+      "p": 75,
+      "q": [
+        {
+          "t": "What operator gets the address of a variable?",
+          "a": ["*", "&", "@", "->"],
+          "c": 1
+        },
+        {
+          "t": "What operator dereferences a pointer?",
+          "a": ["*", "&", "->", "."],
+          "c": 0
+        },
+        {
+          "t": "What is the zero value of a pointer?",
+          "a": ["0", "null", "nil", "undefined"],
+          "c": 2
+        },
+        {
+          "t": "Can you do pointer arithmetic in Go?",
+          "a": ["Yes, freely", "No, not supported", "Only with unsafe package", "Only for slices"],
+          "c": 1
+        },
+        {
+          "t": "What does new() function do?",
+          "a": ["Creates a slice", "Allocates memory and returns pointer", "Initializes a struct", "Creates a map"],
+          "c": 1
+        },
+        {
+          "t": "What is the difference between new() and make()?",
+          "a": ["No difference", "new for value types, make for reference types", "make is deprecated", "new is faster"],
+          "c": 1
+        },
+        {
+          "t": "Does Go have manual memory management?",
+          "a": ["Yes, like C", "No, has garbage collector", "Optional", "Only for pointers"],
+          "c": 1
+        },
+        {
+          "t": "Can a function return a pointer to a local variable?",
+          "a": ["No, will be destroyed", "Yes, moved to heap", "Only if static", "Compile error"],
+          "c": 1
+        },
+        {
+          "t": "What happens when you dereference a nil pointer?",
+          "a": ["Returns zero value", "Returns nil", "Panics", "Compile error"],
+          "c": 2
+        },
+        {
+          "t": "Which package allows unsafe pointer operations?",
+          "a": ["runtime", "unsafe", "memory", "reflect"],
+          "c": 1
+        }
+      ]
+    },
+    {
+      "t": "Go Testing and Benchmarking",
+      "d": "Learn Go's built-in testing framework and benchmarking tools",
+      "tags": ["topic:testing"],
+      "l": 120,
+      "p": 75,
+      "q": [
+        {
+          "t": "What package is used for testing in Go?",
+          "a": ["test", "testing", "unittest", "assert"],
+          "c": 1
+        },
+        {
+          "t": "What suffix must test files have?",
+          "a": ["_test.go", ".test.go", "_spec.go", ".spec.go"],
+          "c": 0
+        },
+        {
+          "t": "What is the signature of a test function?",
+          "a": ["func Test()", "func TestXxx(t *testing.T)", "func test()", "func UnitTest()"],
+          "c": 1
+        },
+        {
+          "t": "How do you mark a test as failed?",
+          "a": ["return error", "t.Fail()", "panic()", "assert.False()"],
+          "c": 1
+        },
+        {
+          "t": "What is the difference between t.Error() and t.Fatal()?",
+          "a": ["No difference", "Fatal stops test immediately", "Error is deprecated", "Fatal logs more info"],
+          "c": 1
+        },
+        {
+          "t": "How do you run benchmarks?",
+          "a": ["go test", "go bench", "go test -bench", "go run -bench"],
+          "c": 2
+        },
+        {
+          "t": "What is the signature of a benchmark function?",
+          "a": ["func Bench()", "func BenchmarkXxx(b *testing.B)", "func Test(b *B)", "func Benchmark()"],
+          "c": 1
+        },
+        {
+          "t": "What does b.N represent in benchmarks?",
+          "a": ["Number of tests", "Number of iterations", "Benchmark score", "CPU cores"],
+          "c": 1
+        },
+        {
+          "t": "How do you skip a test conditionally?",
+          "a": ["return", "t.Skip()", "if false", "// skip"],
+          "c": 1
+        },
+        {
+          "t": "What command runs tests with coverage?",
+          "a": ["go test -cover", "go cover", "go test -c", "go coverage"],
+          "c": 0
+        }
+      ]
+    },
+    {
+      "t": "Go Packages and Modules",
+      "d": "Master Go's package system, module management, and dependency handling",
+      "tags": ["topic:modules"],
+      "l": 120,
+      "p": 75,
+      "q": [
+        {
+          "t": "What file defines a Go module?",
+          "a": ["package.json", "go.mod", "module.go", "go.sum"],
+          "c": 1
+        },
+        {
+          "t": "What command initializes a new module?",
+          "a": ["go init", "go mod init", "go create", "go new"],
+          "c": 1
+        },
+        {
+          "t": "What is the purpose of go.sum?",
+          "a": ["Module configuration", "Dependency checksums", "Build cache", "Test results"],
+          "c": 1
+        },
+        {
+          "t": "How do you add a dependency?",
+          "a": ["go get", "go add", "go install", "go dep"],
+          "c": 0
+        },
+        {
+          "t": "What does go mod tidy do?",
+          "a": ["Formats code", "Removes unused dependencies", "Runs tests", "Builds binary"],
+          "c": 1
+        },
+        {
+          "t": "How are exported identifiers named?",
+          "a": ["lowercase", "Uppercase", "underscore prefix", "export keyword"],
+          "c": 1
+        },
+        {
+          "t": "Can a package have multiple files?",
+          "a": ["No, one file only", "Yes, same directory", "Yes, any directory", "Only with subpackages"],
+          "c": 1
+        },
+        {
+          "t": "What is the special package name for executables?",
+          "a": ["app", "main", "program", "executable"],
+          "c": 1
+        },
+        {
+          "t": "What does go mod vendor do?",
+          "a": ["Removes dependencies", "Copies dependencies to vendor/", "Updates go.sum", "Publishes module"],
+          "c": 1
+        },
+        {
+          "t": "Can you import a package by its relative path?",
+          "a": ["Yes, always", "No, use module path", "Only in same directory", "Only for local packages"],
+          "c": 1
+        }
+      ]
+    }
+  ]
+}

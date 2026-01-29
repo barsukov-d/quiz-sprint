@@ -1,0 +1,80 @@
+# This file defines the Shared Kernel for the Quiz Gameplay.
+# It contains the core domain model for the act of a single player taking a quiz or a round of questions.
+
+kernel_models:
+  - name: "QuizGameplaySession"
+    description: "Represents a single player's session of answering a set of questions against the clock. Focuses on answer tracking, not scoring logic."
+    state:
+      - name: "ID"
+        type: "uuid.UUID"
+      - name: "Quiz"
+        type: "catalog.Quiz"
+      - name: "UserAnswers"
+        type: "map[uuid.UUID]uuid.UUID" # map[QuestionID]AnswerID
+      - name: "CurrentQuestionIndex"
+        type: "int"
+      - name: "StartedAt"
+        type: "int64" # Unix timestamp
+      - name: "FinishedAt"
+        type: "int64" # Unix timestamp
+    methods:
+      - name: "NewQuizGameplaySession"
+        params:
+          - { name: "quiz", type: "catalog.Quiz" }
+        returns:
+          - { type: "*QuizGameplaySession" }
+        description: "Factory to create a new session."
+      - name: "AnswerQuestion"
+        params:
+          - { name: "questionID", type: "uuid.UUID" }
+          - { name: "answerID", type: "uuid.UUID" }
+        returns:
+          - { type: "bool" } # is_correct
+          - { type: "error" }
+        description: "Records a user's answer. Scoring is handled by the specific game mode aggregate."
+      - name: "IsFinished"
+        returns:
+          - { type: "bool" }
+        description: "Checks if all questions have been answered."
+
+# This section contains value objects shared across many contexts.
+shared_value_objects:
+  - name: "UserID"
+    description: "Unique identifier for a User."
+    type: "uuid.UUID"
+  - name: "QuizID"
+    description: "Unique identifier for a Quiz."
+    type: "uuid.UUID"
+  - name: "QuestionID"
+    description: "Unique identifier for a Question."
+    type: "uuid.UUID"
+  - name: "AnswerID"
+    description: "Unique identifier for an Answer."
+    type: "uuid.UUID"
+  - name: "Points"
+    description: "Represents score units. Must be non-negative."
+    type: "int"
+    invariants: ["Must be >= 0"]
+  - name: "Multiplier"
+    description: "Score multiplier based on streak."
+    type: "float64"
+    allowed_values: [1.0, 1.5, 2.0]
+  - name: "TimeBonus"
+    description: "Bonus points awarded for speed."
+    type: "int"
+    invariants: ["Calculated as: MaxBonus * (RemainingTime / TotalTime)"]
+
+# Centralized scoring logic to be used by various game modes.
+scoring:
+  - name: "ScoringPolicy"
+    description: "Defines how points are calculated for a correct answer."
+    logic: |
+      FinalScore = (BasePoints + TimeBonus) * Multiplier
+    methods:
+      - name: "CalculateQuestionScore"
+        params:
+          - { name: "basePoints", type: "int" }
+          - { name: "timeBonus", type: "int" }
+          - { name: "multiplier", type: "float64" }
+        returns:
+          - { type: "int" }
