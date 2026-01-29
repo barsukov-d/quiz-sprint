@@ -43,6 +43,10 @@ jobs:
         working-directory: ./tma
         run: pnpm install --frozen-lockfile
 
+      - name: Generate API types
+        working-directory: ./tma
+        run: pnpm run generate:api
+
       - name: Type check
         working-directory: ./tma
         run: pnpm type-check
@@ -73,6 +77,10 @@ jobs:
       - name: Install dependencies
         working-directory: ./tma
         run: pnpm install --frozen-lockfile
+
+      - name: Generate API types
+        working-directory: ./tma
+        run: pnpm run generate:api
 
       - name: Build application
         working-directory: ./tma
