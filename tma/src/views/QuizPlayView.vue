@@ -38,7 +38,7 @@ const answerResult = ref<{
 // Timer state
 const questionStartTime = ref<number>(0)
 const timeElapsed = ref<number>(0)
-const timerInterval = ref<NodeJS.Timeout | null>(null)
+const timerInterval = ref<ReturnType<typeof setInterval> | null>(null)
 const timeLimitPerQuestion = ref<number>(30)
 
 // Error state
