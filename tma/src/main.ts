@@ -2,7 +2,6 @@ import './assets/main.css'
 
 import { createApp } from 'vue'
 import { VueQueryPlugin, type VueQueryPluginOptions } from '@tanstack/vue-query'
-import { init } from '@tma.js/sdk'
 import App from './App.vue'
 import router from './router'
 import ui from '@nuxt/ui/vue-plugin'
@@ -12,8 +11,14 @@ import { useAuth } from './composables/useAuth'
 async function initializeApp() {
 	try {
 		// 1. Инициализируем TMA SDK (@tma.js/sdk v3)
-		init()
-		console.log('TMA SDK initialized')
+		// NOTE: init() может падать в некоторых окружениях, оборачиваем в try-catch
+		try {
+			const { init } = await import('@tma.js/sdk')
+			init()
+			console.log('TMA SDK initialized')
+		} catch (sdkError) {
+			console.warn('TMA SDK init failed (may be normal in browser):', sdkError)
+		}
 
 		// 2. Инициализируем auth composable
 		const { initializeTMA } = useAuth()
