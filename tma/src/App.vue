@@ -9,10 +9,6 @@ import { useAuth } from './composables/useAuth'
 import { usePostUserRegister } from './api/generated/hooks/userController/usePostUserRegister'
 import BottomTabBar from './components/BottomTabBar.vue'
 
-import { viewport } from '@tma.js/sdk'
-
-viewport.safeAreaInsetTop()
-
 const route = useRoute()
 
 // Show bottom navigation only on main screens, hide during quiz play and results
@@ -32,6 +28,15 @@ const { mutateAsync: registerUser } = usePostUserRegister()
 // Автоматическая регистрация/логин при загрузке
 onMounted(async () => {
 	try {
+		// Инициализируем viewport (если доступен)
+		try {
+			const { viewport } = await import('@tma.js/sdk')
+			viewport.safeAreaInsetTop()
+			console.log('[App] Viewport initialized')
+		} catch (vpError) {
+			console.warn('[App] Viewport init failed (normal in browser):', vpError)
+		}
+
 		// Ждем инициализации TMA
 		if (!isInitialized.value) {
 			console.warn('TMA not initialized yet')

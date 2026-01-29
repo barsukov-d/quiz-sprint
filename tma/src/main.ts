@@ -10,19 +10,11 @@ import { useAuth } from './composables/useAuth'
 // Инициализация Telegram Mini App
 async function initializeApp() {
 	try {
-		// 1. Инициализируем TMA SDK (@tma.js/sdk v3)
-		// NOTE: init() может падать в некоторых окружениях, оборачиваем в try-catch
-		try {
-			const { init } = await import('@tma.js/sdk')
-			init()
-			console.log('TMA SDK initialized')
-		} catch (sdkError) {
-			console.warn('TMA SDK init failed (may be normal in browser):', sdkError)
-		}
-
-		// 2. Инициализируем auth composable
+		// 1. Инициализируем auth composable (SDK инициализируется внутри)
+		console.log('[App] Starting initialization...')
 		const { initializeTMA } = useAuth()
 		await initializeTMA()
+		console.log('[App] Auth initialized')
 
 		// 3. Создаем Vue приложение
 		const app = createApp(App)
