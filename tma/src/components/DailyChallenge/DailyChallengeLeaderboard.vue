@@ -55,9 +55,9 @@ const isCurrentPlayer = (playerId: string) => {
     <div class="leaderboard-list">
       <div
         v-for="entry in displayedLeaderboard"
-        :key="entry.playerId"
+        :key="entry.userId"
         class="leaderboard-entry"
-        :class="{ 'current-player': isCurrentPlayer(entry.playerId) }"
+        :class="{ 'current-player': isCurrentPlayer(entry.userId) }"
       >
         <!-- Rank -->
         <div class="entry-rank">
@@ -75,14 +75,13 @@ const isCurrentPlayer = (playerId: string) => {
         <!-- Avatar & Name -->
         <div class="entry-player">
           <UAvatar
-            :src="entry.avatarUrl"
             :alt="entry.username"
             size="md"
           />
           <div class="player-info">
             <p class="player-name">
               {{ entry.username }}
-              <UBadge v-if="isCurrentPlayer(entry.playerId)" color="primary" size="xs">
+              <UBadge v-if="isCurrentPlayer(entry.userId)" color="primary" size="xs">
                 You
               </UBadge>
             </p>

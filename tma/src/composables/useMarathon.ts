@@ -243,18 +243,18 @@ export function useMarathon(playerId: string) {
       const gameData = response.data
 
       state.value.game = gameData.game
-      state.value.currentQuestion = gameData.currentQuestion
-      state.value.lives = gameData.game.lives.current
-      state.value.maxLives = gameData.game.lives.max
+      state.value.currentQuestion = gameData.firstQuestion
+      state.value.lives = gameData.game.lives.currentLives
+      state.value.maxLives = gameData.game.lives.maxLives
       state.value.hints = {
         fiftyFifty: gameData.game.hints.fiftyFifty,
         extraTime: gameData.game.hints.extraTime,
         skip: gameData.game.hints.skip,
-        hint: gameData.game.hints.hint
+        hint: 0 // hint not in DTO
       }
       state.value.currentStreak = gameData.game.currentStreak
-      state.value.score = gameData.game.score
-      state.value.personalBest = gameData.personalBest?.score ?? null
+      state.value.score = gameData.game.baseScore
+      state.value.personalBest = gameData.hasPersonalBest ? 0 : null
       state.value.status = 'playing'
       state.value.lastAnswerCorrect = null
 
@@ -282,13 +282,13 @@ export function useMarathon(playerId: string) {
    * Отправить ответ на текущий вопрос
    */
   const submitAnswer = async (answerId: string, timeTaken: number) => {
-    if (!state.value.game?.gameId || !state.value.currentQuestion?.id) {
+    if (!state.value.game?.id || !state.value.currentQuestion?.id) {
       throw new Error('No active game or question')
     }
 
     try {
       const response = await answerMutation.mutateAsync({
-        gameId: state.value.game.gameId,
+        gameId: state.value.game.id,
         data: {
           questionId: state.value.currentQuestion.id,
           answerId,
@@ -302,7 +302,7 @@ export function useMarathon(playerId: string) {
       // Сохраняем правильность ответа для feedback UI
       state.value.lastAnswerCorrect = answerData.isCorrect
 
-      if (answerData.gameOver) {
+      if (answerData.isGameOver) {
         // Игра окончена
         state.value.status = 'game-over'
         state.value.currentQuestion = null
@@ -317,8 +317,8 @@ export function useMarathon(playerId: string) {
         // Следующий вопрос
         state.value.currentQuestion = answerData.nextQuestion
         state.value.currentStreak = answerData.currentStreak
-        state.value.score = answerData.score
-        state.value.lives = answerData.livesRemaining ?? state.value.lives
+        state.value.score = state.value.score + answerData.basePoints
+        state.value.lives = answerData.remainingLives
 
         saveToLocalStorage()
       }
@@ -334,45 +334,50 @@ export function useMarathon(playerId: string) {
    * Использовать подсказку
    */
   const useHint = async (hintType: HintType) => {
-    if (!state.value.game?.gameId) {
+    if (!state.value.game?.id) {
       throw new Error('No active game')
     }
 
     // Проверяем доступность подсказки
-    if (state.value.hints[hintType] <= 0) {
+    if (state.value.hints.fiftyFifty <= 0) {
       throw new Error(`No ${hintType} hints available`)
     }
 
     try {
       const response = await hintMutation.mutateAsync({
-        gameId: state.value.game.gameId,
+        gameId: state.value.game.id,
         data: {
           hintType,
-          playerId
+          playerId,
+          questionId: state.value.currentQuestion?.id || ''
         }
       })
 
       const hintData = response.data
 
-      // Обновляем оставшиеся подсказки
+      // Обновляем оставшиеся подсказки (remainingHints is now a number, not an object)
+      // We'll decrement the specific hint type
+      const hintKeyMap: Record<HintType, keyof typeof state.value.hints> = {
+        'fifty_fifty': 'fiftyFifty',
+        'extra_time': 'extraTime',
+        'skip': 'skip',
+        'hint': 'hint'
+      }
+      const hintKey = hintKeyMap[hintType]
       state.value.hints = {
-        fiftyFifty: hintData.remainingHints.fiftyFifty,
-        extraTime: hintData.remainingHints.extraTime,
-        skip: hintData.remainingHints.skip,
-        hint: hintData.remainingHints.hint
+        ...state.value.hints,
+        [hintKey]: state.value.hints[hintKey] - 1
       }
 
       // Обработка результата подсказки
-      if (hintType === 'skip' && hintData.nextQuestion) {
+      if (hintType === 'skip' && hintData.hintResult.nextQuestion) {
         // Skip - показываем следующий вопрос
-        state.value.currentQuestion = hintData.nextQuestion
-      } else if (hintType === 'fifty_fifty' && hintData.eliminatedAnswers) {
+        state.value.currentQuestion = hintData.hintResult.nextQuestion
+      } else if (hintType === 'fifty_fifty' && hintData.hintResult.hiddenAnswerIds) {
         // 50/50 - обновляем текущий вопрос с убранными вариантами
-        // (UI должен отфильтровать eliminatedAnswers)
+        // (UI должен отфильтровать hiddenAnswerIds)
       } else if (hintType === 'extra_time') {
         // +10 сек - таймер обновится автоматически
-      } else if (hintType === 'hint' && hintData.hintText) {
-        // Hint - показываем подсказку в UI
       }
 
       saveToLocalStorage()
@@ -388,13 +393,13 @@ export function useMarathon(playerId: string) {
    * Завершить игру досрочно
    */
   const abandonGame = async () => {
-    if (!state.value.game?.gameId) {
+    if (!state.value.game?.id) {
       throw new Error('No active game')
     }
 
     try {
       await abandonMutation.mutateAsync({
-        gameId: state.value.game.gameId,
+        gameId: state.value.game.id,
         data: {
           playerId
         }
@@ -427,12 +432,14 @@ export function useMarathon(playerId: string) {
 
       if (statusData.value?.data) {
         const data = statusData.value.data
-        state.value.lives = data.lives.current
-        state.value.maxLives = data.lives.max
-        state.value.timeToLifeRestore = data.lives.timeToNextLife ?? 0
+        if (data.game?.lives) {
+          state.value.lives = data.game.lives.currentLives
+          state.value.maxLives = data.game.lives.maxLives
+          state.value.timeToLifeRestore = data.game.lives.timeToNextLife ?? 0
+        }
 
         // Если есть активная игра - восстанавливаем
-        if (data.activeGame) {
+        if (data.hasActiveGame) {
           loadFromLocalStorage()
         }
       }
@@ -452,11 +459,11 @@ export function useMarathon(playerId: string) {
         // Находим рекорд для текущей категории
         const currentCategoryBest = personalBestsData.value.data.personalBests.find(
           (pb: InternalInfrastructureHttpHandlersMarathonPersonalBestDTO) =>
-            pb.categoryId === state.value.categoryId
+            pb.category.id === state.value.categoryId
         )
 
         if (currentCategoryBest) {
-          state.value.personalBest = currentCategoryBest.score
+          state.value.personalBest = currentCategoryBest.bestScore
         }
       }
     } catch (error) {

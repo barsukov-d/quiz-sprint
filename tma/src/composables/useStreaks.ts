@@ -85,8 +85,9 @@ export function useStreaks(streakRef: Ref<InternalInfrastructureHttpHandlersStre
 
     // Находим максимальный достигнутый milestone
     for (let i = STREAK_MILESTONES.length - 1; i >= 0; i--) {
-      if (current >= STREAK_MILESTONES[i]) {
-        return STREAK_MILESTONES[i]
+      const milestone = STREAK_MILESTONES[i]
+      if (milestone !== undefined && current >= milestone) {
+        return milestone
       }
     }
 

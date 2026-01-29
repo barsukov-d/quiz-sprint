@@ -54,7 +54,7 @@ const canSubmit = computed(() => {
 // ===========================
 
 const handleAnswerSelect = async (answerId: string) => {
-  if (isSubmitting.value || showSubmittedFeedback.value || timerRef.value?.remainingTime.value === 0) return
+  if (isSubmitting.value || showSubmittedFeedback.value || timerRef.value?.remainingTime === 0) return
 
   console.log('[Daily Challenge] Answer selected:', answerId)
   selectedAnswerId.value = answerId
@@ -70,7 +70,7 @@ const handleSubmit = async () => {
 
   try {
     // Calculate time taken
-    const timeTaken = timeLimit.value - (timerRef.value?.remainingTime.value || 0)
+    const timeTaken = timeLimit.value - (timerRef.value?.remainingTime || 0)
 
     // Submit answer
     await submitAnswer(selectedAnswerId.value, timeTaken)
@@ -206,7 +206,7 @@ onUnmounted(() => {
           :key="answer.id"
           :answer="answer"
           :selected="selectedAnswerId === answer.id"
-          :disabled="isSubmitting || showSubmittedFeedback || (timerRef?.remainingTime.value === 0)"
+          :disabled="isSubmitting || showSubmittedFeedback || (timerRef?.remainingTime === 0)"
           :label="answerLabels[index]"
           @click="handleAnswerSelect"
         />
