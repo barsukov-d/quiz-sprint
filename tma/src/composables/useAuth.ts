@@ -1,7 +1,17 @@
 import { ref, computed } from 'vue'
-import { retrieveLaunchParams } from '@tma.js/sdk'
-import type { User as TelegramUser } from '@tma.js/sdk'
 import type { InternalInfrastructureHttpHandlersUserDTO } from '@/api/generated/types/internalInfrastructureHttpHandlers/UserDTO'
+
+// Используем нативный Telegram WebApp вместо @tma.js/sdk
+interface TelegramUser {
+	id: number
+	first_name: string
+	last_name?: string
+	username?: string
+	language_code?: string
+	is_premium?: boolean
+	allows_write_to_pm?: boolean
+	photo_url?: string
+}
 
 // Тип для parsed init data
 interface ParsedInitData {
@@ -33,19 +43,42 @@ export function useAuth() {
 	 */
 	const initializeTMA = async () => {
 		try {
-			// Получаем launch params (включая RAW init data и parsed init data)
-			const launchParams = retrieveLaunchParams()
+			// Используем нативный Telegram.WebApp API
+			const webApp = (window as any).Telegram?.WebApp
 
-			// 🔍 DEBUG: Смотрим что вернул retrieveLaunchParams
-			console.log('🔍 Full launch params:', launchParams)
-			console.log('🔍 initDataRaw from SDK:', launchParams.initDataRaw)
-			console.log('🔍 initData from SDK:', launchParams.initData)
+			console.log('🔍 Telegram WebApp:', webApp)
+			console.log('🔍 initDataUnsafe:', webApp?.initDataUnsafe)
+			console.log('🔍 initData:', webApp?.initData)
 
-			let rawData: string | undefined = launchParams.initDataRaw as string | undefined
-			let parsedData: ParsedInitData | undefined = launchParams.initData as ParsedInitData | undefined
+			let rawData: string | undefined
+			let parsedData: ParsedInitData | undefined
 
-			// 🔧 WORKAROUND: Если SDK не вернул initDataRaw, парсим из hash вручную
-			// Telegram Desktop передает данные в hash параметрах
+			// Получаем данные из нативного API
+			if (webApp?.initData) {
+				rawData = webApp.initData
+
+				if (webApp.initDataUnsafe?.user) {
+					const user = webApp.initDataUnsafe.user
+					parsedData = {
+						user: {
+							id: user.id,
+							first_name: user.first_name,
+							last_name: user.last_name,
+							username: user.username,
+							language_code: user.language_code,
+							is_premium: user.is_premium || false,
+							allows_write_to_pm: user.allows_write_to_pm || false,
+							photo_url: user.photo_url,
+						} as TelegramUser,
+						authDate: new Date((webApp.initDataUnsafe.auth_date || 0) * 1000),
+						hash: webApp.initDataUnsafe.hash || '',
+						queryId: webApp.initDataUnsafe.query_id,
+					}
+					console.log('✅ Got data from Telegram.WebApp')
+				}
+			}
+
+			// Fallback: парсим из hash параметров
 			if (!rawData && typeof window !== 'undefined') {
 				const hash = window.location.hash
 				console.log('🔧 Trying to parse from hash:', hash)
