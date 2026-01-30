@@ -73,7 +73,7 @@ jobs:
     if: ${{ github.event.inputs.environment == 'staging' }}
     environment:
       name: backend-staging
-      url: https://staging.quiz-sprint-tma.online/api/health
+      url: https://staging.quiz-sprint-tma.online/health
 
     steps:
       - name: Checkout code
@@ -180,7 +180,7 @@ jobs:
       - name: Health check
         run: |
           sleep 5
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://staging.quiz-sprint-tma.online/api/health)
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://staging.quiz-sprint-tma.online/health)
           if [ "$RESPONSE" = "200" ]; then
             echo "✅ Staging health check passed"
           else
@@ -198,7 +198,7 @@ jobs:
     if: ${{ github.event.inputs.environment == 'production' }}
     environment:
       name: backend-production
-      url: https://quiz-sprint-tma.online/api/health
+      url: https://quiz-sprint-tma.online/health
 
     steps:
       - name: Checkout code
@@ -307,7 +307,7 @@ jobs:
       - name: Health check
         run: |
           sleep 5
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://quiz-sprint-tma.online/api/health)
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://quiz-sprint-tma.online/health)
           if [ "$RESPONSE" = "200" ]; then
             echo "✅ Production health check passed"
           else
@@ -334,10 +334,10 @@ jobs:
         run: |
           if [ "$ENV" = "staging" ]; then
             STATUS="$STAGING_RESULT"
-            URL="https://staging.quiz-sprint-tma.online/api/health"
+            URL="https://staging.quiz-sprint-tma.online/health"
           else
             STATUS="$PROD_RESULT"
-            URL="https://quiz-sprint-tma.online/api/health"
+            URL="https://quiz-sprint-tma.online/health"
           fi
 
           if [ "$STATUS" = "success" ]; then
