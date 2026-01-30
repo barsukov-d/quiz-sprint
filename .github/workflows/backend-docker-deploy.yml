@@ -102,7 +102,7 @@ jobs:
             DB_PASSWORD=${{ secrets.STAGING_DB_PASSWORD }}
             DB_NAME=quiz_sprint_staging
             CORS_ORIGINS=https://staging.quiz-sprint-tma.online
-            TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+            TELEGRAM_BOT_TOKEN=${{ secrets.STAGING_TELEGRAM_BOT_TOKEN }}
             EOF
 
             # Update docker-compose with correct image
