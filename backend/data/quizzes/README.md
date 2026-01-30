@@ -17,35 +17,42 @@
 
 ---
 
-## 🚀 Быстрый старт
+## Быстрый старт
 
-### Импорт одного квиза
-
-```bash
-# Компактный формат (рекомендуется)
-./bin/import-quiz -file data/quizzes/templates/TEMPLATE-COMPACT.json
-
-# Старый формат (для совместимости)
-./bin/import-quiz -file data/quizzes/legacy/programming-basics.json
-```
-
-### Импорт batch (10+ квизов одновременно)
+### Development (локально)
 
 ```bash
-./bin/import-quiz -file data/quizzes/batches/2024-01/go-fundamentals.json
+cd backend/
+
+# Все квизы (рекурсивно из всех подпапок)
+make import-all-quizzes
+
+# Один файл
+make import-quiz FILE=data/quizzes/legacy/movie-trivia.json
+
+# Dry-run (валидация без импорта)
+make import-all-quizzes-dry-run
+make import-quiz-dry-run FILE=data/quizzes/my-quiz.json
 ```
 
-### Валидация без импорта (dry-run)
+### Staging / Production (Docker)
 
 ```bash
-./bin/import-quiz -file data/quizzes/my-quiz.json -dry-run
+# На сервере:
+cd /opt/quiz-sprint/staging   # или /opt/quiz-sprint/production
+
+# Все квизы
+make docker-import-all
+
+# Один файл (путь относительно data/quizzes/)
+make docker-import-quiz FILE=legacy/movie-trivia.json
+
+# Или напрямую через docker compose:
+docker compose exec api /app/quiz-sprint-import -dir=/app/data/quizzes
+docker compose exec api /app/quiz-sprint-import -file=/app/data/quizzes/legacy/movie-trivia.json
 ```
 
-### Импорт всех файлов из директории
-
-```bash
-./bin/import-quiz -dir data/quizzes/batches/2024-01
-```
+> Import binary и quiz data встроены в Docker-образ. Чтобы новые квизы попали на staging, нужно: закоммитить JSON → задеплоить → запустить `make docker-import-all`.
 
 ---
 
@@ -65,11 +72,6 @@ data/quizzes/
 │   └── 2024-02/
 │       └── ...
 │
-├── legacy/            # Старые файлы (verbose формат)
-│   ├── programming-basics.json
-│   ├── javascript-advanced.json
-│   └── ...
-│
 └── README.md          # Этот файл
 ```
 
@@ -79,35 +81,7 @@ data/quizzes/
 
 Система автоматически определяет формат при импорте.
 
-### 1. Verbose формат (Legacy) 📄
-
-**Использование:** Старый формат с полными именами полей
-**Токенов на квиз:** ~640
-**Файл-пример:** `templates/TEMPLATE.json`
-
-```json
-{
-  "title": "Quiz Title",
-  "description": "Description",
-  "categoryId": null,
-  "timeLimit": 600,
-  "passingScore": 70,
-  "tags": ["language:go", "difficulty:easy"],
-  "questions": [
-    {
-      "text": "Question text?",
-      "points": 10,
-      "answers": [
-        { "text": "Answer 1", "isCorrect": false },
-        { "text": "Answer 2", "isCorrect": true },
-        { "text": "Answer 3", "isCorrect": false }
-      ]
-    }
-  ]
-}
-```
-
-### 2. Compact формат (LLM-оптимизированный) ⚡
+### 1. Compact формат (основной) ⚡
 
 **Использование:** Генерация квизов с помощью LLM
 **Токенов на квиз:** ~230 (**экономия 64%!**)
@@ -142,7 +116,7 @@ data/quizzes/
 - `a` → answers (варианты ответа, массив строк)
 - `c` → correctIndex (индекс правильного ответа, 0-based)
 
-### 3. Batch формат (Массовый импорт) 🚀
+### 2. Batch формат (массовый импорт) 🚀
 
 **Использование:** Импорт 10+ квизов с общими метаданными
 **Токенов на квиз:** ~210 (**экономия 67%!**)
@@ -304,8 +278,11 @@ data/quizzes/
 # Сохраните JSON от LLM в файл
 nano data/quizzes/batches/2024-01/my-batch.json
 
-# Импортируйте
-./bin/import-quiz -file data/quizzes/batches/2024-01/my-batch.json
+# Dev (локально)
+make import-quiz FILE=data/quizzes/batches/2024-01/my-batch.json
+
+# Staging (после деплоя, на сервере)
+make docker-import-quiz FILE=batches/2024-01/my-batch.json
 ```
 
 ### 📊 Экономия токенов
@@ -387,32 +364,7 @@ nano data/quizzes/batches/2024-01/my-batch.json
 
 ## 📋 JSON Schema
 
-### Verbose формат (полная схема)
-
-```json
-{
-  "title": "string (required, 3-200 characters)",
-  "description": "string (optional)",
-  "categoryId": "string (optional, UUID format)",
-  "tags": ["array of strings (optional, 1-10 tags)"],
-  "timeLimit": "integer (required, seconds, must be > 0)",
-  "passingScore": "integer (required, percentage 0-100)",
-  "questions": [
-    {
-      "text": "string (required, 5-500 characters)",
-      "points": "integer (required, must be > 0)",
-      "answers": [
-        {
-          "text": "string (required, 1-200 characters)",
-          "isCorrect": "boolean (required)"
-        }
-      ]
-    }
-  ]
-}
-```
-
-### Compact формат (краткая схема)
+### Compact формат
 
 ```json
 {
@@ -513,39 +465,6 @@ nano data/quizzes/batches/2024-01/my-batch.json
 }
 ```
 
-### Пример 3: Verbose формат (полный)
-
-```json
-{
-  "title": "Programming Basics",
-  "description": "Test your knowledge of fundamental programming concepts",
-  "categoryId": null,
-  "tags": ["domain:programming", "difficulty:easy"],
-  "timeLimit": 600,
-  "passingScore": 70,
-  "questions": [
-    {
-      "text": "What does HTML stand for?",
-      "points": 10,
-      "answers": [
-        {
-          "text": "Hyper Text Markup Language",
-          "isCorrect": true
-        },
-        {
-          "text": "High Tech Modern Language",
-          "isCorrect": false
-        },
-        {
-          "text": "Home Tool Markup Language",
-          "isCorrect": false
-        }
-      ]
-    }
-  ]
-}
-```
-
 ---
 
 ## ⚠️ Валидация и ошибки
@@ -586,7 +505,7 @@ Warning: category not found: java (quiz will have no category)
 
 ```bash
 # Dry-run для проверки валидности
-./bin/import-quiz -file my-quiz.json -dry-run
+make import-quiz-dry-run FILE=my-quiz.json
 
 # Если успешно:
 ✓ Title: My Quiz
@@ -628,9 +547,8 @@ DELETE FROM quizzes WHERE id = 'uuid';
 
 ### Q: Какой формат использовать?
 **A:**
-- **Compact** - для LLM генерации (экономия токенов)
-- **Batch** - для массового импорта (10+ квизов)
-- **Verbose** - для ручного создания или legacy совместимости
+- **Batch** - для массового импорта (10+ квизов, рекомендуется)
+- **Compact** - для одиночного квиза
 
 ### Q: Сколько времени давать на квиз?
 **A:** Базовая формула: `(количество_вопросов × 60) + 60` секунд
@@ -702,7 +620,7 @@ git push
 
 - **Backend IMPORT.md** - Полная документация по импорту
 - **Templates** - Примеры всех форматов в `templates/`
-- **Examples** - Готовые квизы в `legacy/` и `batches/`
+- **Examples** - Готовые квизы в `batches/`
 - **LLM Generation Guide** - `backend/docs/LLM_GENERATION_GUIDE.md`
 
 ---
