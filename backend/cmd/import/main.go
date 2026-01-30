@@ -243,9 +243,27 @@ func main() {
 	if *filePath != "" {
 		files = []string{*filePath}
 	} else {
-		files, err = filepath.Glob(filepath.Join(*dirPath, "*.json"))
+		// Walk directory recursively to find all .json files
+		err = filepath.WalkDir(*dirPath, func(path string, d os.DirEntry, err error) error {
+			if err != nil {
+				return err
+			}
+			if d.IsDir() {
+				return nil
+			}
+			name := d.Name()
+			if !strings.HasSuffix(name, ".json") {
+				return nil
+			}
+			// Skip templates and schema files
+			if strings.HasPrefix(strings.ToUpper(name), "TEMPLATE") {
+				return nil
+			}
+			files = append(files, path)
+			return nil
+		})
 		if err != nil {
-			log.Fatalf("Failed to read directory: %v", err)
+			log.Fatalf("Failed to walk directory: %v", err)
 		}
 	}
 

@@ -93,6 +93,23 @@ import-all-quizzes-dry-run: ## Validate all quiz JSON files without importing
 	go run cmd/import/main.go -dir=data/quizzes -dry-run
 
 # ============================================
+# Docker Import Commands (staging/production)
+# ============================================
+
+.PHONY: docker-import-all
+docker-import-all: ## Import all quizzes via Docker (for staging/production)
+	docker compose exec api /app/quiz-sprint-import -dir=/app/data/quizzes
+
+.PHONY: docker-import-quiz
+docker-import-quiz: ## Import a single quiz via Docker (usage: make docker-import-quiz FILE=legacy/movie-trivia.json)
+	@if [ -z "$(FILE)" ]; then \
+		echo "Error: FILE parameter is required"; \
+		echo "Usage: make docker-import-quiz FILE=legacy/movie-trivia.json"; \
+		exit 1; \
+	fi
+	docker compose exec api /app/quiz-sprint-import -file=/app/data/quizzes/$(FILE)
+
+# ============================================
 # Daily Challenge Debug Commands
 # ============================================
 

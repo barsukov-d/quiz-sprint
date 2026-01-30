@@ -40,13 +40,18 @@ FROM base AS builder
 # Copy source code
 COPY . .
 
-# Build binary
+# Build binaries
 # - CGO_ENABLED=0: Static binary (no C dependencies)
 # - -ldflags="-s -w": Strip debug info (smaller binary)
 RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -ldflags="-s -w" \
     -o /app/quiz-sprint-api \
     ./cmd/api
+
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-s -w" \
+    -o /app/quiz-sprint-import \
+    ./cmd/import
 
 # ==========================================
 # Stage 4: Production - Minimal runtime
@@ -63,9 +68,11 @@ RUN addgroup -g 1000 app && \
 # Set working directory
 WORKDIR /app
 
-# Copy binary and migrations from builder
+# Copy binaries, migrations, and quiz data from builder
 COPY --from=builder /app/quiz-sprint-api .
+COPY --from=builder /app/quiz-sprint-import .
 COPY --from=builder /app/migrations ./migrations
+COPY --from=builder /app/data ./data
 
 # Copy timezone data
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo

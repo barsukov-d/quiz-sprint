@@ -410,3 +410,17 @@ TELEGRAM_BOT_TOKEN=your_bot_token
 ## License
 
 Private project - Quiz Sprint TMA
+
+
+
+ # Все логи API (последние 100 строк + follow)
+  ssh root@144.31.199.226 "cd /opt/quiz-sprint/staging && docker compose logs -f api --tail=100"
+
+  # Только ошибки
+  ssh root@144.31.199.226 "cd /opt/quiz-sprint/staging && docker compose logs api 2>&1 | grep -i error"
+
+  # Логи всех сервисов
+  ssh root@144.31.199.226 "cd /opt/quiz-sprint/staging && docker compose logs -f --tail=50"
+
+  # Логи конкретного сервиса (postgres, redis, etc.)
+  ssh root@144.31.199.226 "cd /opt/quiz-sprint/staging && docker compose logs -f postgres --tail=50"
