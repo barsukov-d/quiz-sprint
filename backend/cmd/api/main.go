@@ -53,6 +53,14 @@ func main() {
 		db = nil
 	}
 
+	// Run migrations
+	if db != nil {
+		migrationsDir := getEnv("MIGRATIONS_DIR", "migrations")
+		if err := database.RunMigrations(db, migrationsDir); err != nil {
+			log.Fatalf("❌ Failed to run migrations: %v", err)
+		}
+	}
+
 	// Ensure database connection is closed on shutdown
 	if db != nil {
 		defer func() {

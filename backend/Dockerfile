@@ -63,8 +63,9 @@ RUN addgroup -g 1000 app && \
 # Set working directory
 WORKDIR /app
 
-# Copy binary from builder
+# Copy binary and migrations from builder
 COPY --from=builder /app/quiz-sprint-api .
+COPY --from=builder /app/migrations ./migrations
 
 # Copy timezone data
 COPY --from=builder /usr/share/zoneinfo /usr/share/zoneinfo
