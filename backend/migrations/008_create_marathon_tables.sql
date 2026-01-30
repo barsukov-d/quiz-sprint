@@ -57,11 +57,11 @@ CREATE TABLE IF NOT EXISTS marathon_games (
 -- ALTER TABLE marathon_games ADD CONSTRAINT fk_marathon_current_question FOREIGN KEY (current_question_id) REFERENCES questions(id) ON DELETE SET NULL;
 
 -- Indexes
-CREATE INDEX idx_marathon_player_active ON marathon_games(player_id, status) WHERE status = 'in_progress';
-CREATE INDEX idx_marathon_player ON marathon_games(player_id);
-CREATE INDEX idx_marathon_category ON marathon_games(category_id) WHERE category_id IS NOT NULL;
-CREATE INDEX idx_marathon_current_question ON marathon_games(current_question_id) WHERE current_question_id IS NOT NULL;
-CREATE INDEX idx_marathon_started_at ON marathon_games(started_at DESC);
+CREATE INDEX IF NOT EXISTS idx_marathon_player_active ON marathon_games(player_id, status) WHERE status = 'in_progress';
+CREATE INDEX IF NOT EXISTS idx_marathon_player ON marathon_games(player_id);
+CREATE INDEX IF NOT EXISTS idx_marathon_category ON marathon_games(category_id) WHERE category_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_marathon_current_question ON marathon_games(current_question_id) WHERE current_question_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_marathon_started_at ON marathon_games(started_at DESC);
 
 -- Comments
 COMMENT ON TABLE marathon_games IS 'Marathon game sessions with dynamic question loading';
@@ -91,10 +91,10 @@ CREATE TABLE IF NOT EXISTS marathon_personal_bests (
 -- ALTER TABLE marathon_personal_bests ADD CONSTRAINT fk_personal_best_category FOREIGN KEY (category_id) REFERENCES categories(id) ON DELETE CASCADE;
 
 -- Indexes
-CREATE INDEX idx_personal_bests_player ON marathon_personal_bests(player_id);
-CREATE INDEX idx_personal_bests_category ON marathon_personal_bests(category_id) WHERE category_id IS NOT NULL;
-CREATE INDEX idx_personal_bests_leaderboard ON marathon_personal_bests(category_id, best_streak DESC, best_score DESC, achieved_at ASC);
-CREATE INDEX idx_personal_bests_global ON marathon_personal_bests(best_streak DESC, best_score DESC, achieved_at ASC) WHERE category_id IS NULL;
+CREATE INDEX IF NOT EXISTS idx_personal_bests_player ON marathon_personal_bests(player_id);
+CREATE INDEX IF NOT EXISTS idx_personal_bests_category ON marathon_personal_bests(category_id) WHERE category_id IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_personal_bests_leaderboard ON marathon_personal_bests(category_id, best_streak DESC, best_score DESC, achieved_at ASC);
+CREATE INDEX IF NOT EXISTS idx_personal_bests_global ON marathon_personal_bests(best_streak DESC, best_score DESC, achieved_at ASC) WHERE category_id IS NULL;
 
 -- Comments
 COMMENT ON TABLE marathon_personal_bests IS 'Personal best records for marathon mode per category';

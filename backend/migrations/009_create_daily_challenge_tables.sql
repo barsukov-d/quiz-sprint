@@ -22,8 +22,8 @@ CREATE TABLE IF NOT EXISTS daily_quizzes (
 );
 
 -- Indexes
-CREATE INDEX idx_daily_quizzes_date ON daily_quizzes(date DESC);
-CREATE INDEX idx_daily_quizzes_expires_at ON daily_quizzes(expires_at);
+CREATE INDEX IF NOT EXISTS idx_daily_quizzes_date ON daily_quizzes(date DESC);
+CREATE INDEX IF NOT EXISTS idx_daily_quizzes_expires_at ON daily_quizzes(expires_at);
 
 -- Comments
 COMMENT ON TABLE daily_quizzes IS 'Daily quiz content - one quiz per day, same for all players';
@@ -59,13 +59,13 @@ CREATE TABLE IF NOT EXISTS daily_games (
 -- ALTER TABLE daily_games ADD CONSTRAINT fk_daily_game_quiz FOREIGN KEY (daily_quiz_id) REFERENCES daily_quizzes(id) ON DELETE CASCADE;
 
 -- Indexes
-CREATE INDEX idx_daily_games_player ON daily_games(player_id);
-CREATE INDEX idx_daily_games_date ON daily_games(date DESC);
-CREATE INDEX idx_daily_games_player_date ON daily_games(player_id, date);
-CREATE INDEX idx_daily_games_leaderboard ON daily_games(date, status) WHERE status = 'completed';
+CREATE INDEX IF NOT EXISTS idx_daily_games_player ON daily_games(player_id);
+CREATE INDEX IF NOT EXISTS idx_daily_games_date ON daily_games(date DESC);
+CREATE INDEX IF NOT EXISTS idx_daily_games_player_date ON daily_games(player_id, date);
+CREATE INDEX IF NOT EXISTS idx_daily_games_leaderboard ON daily_games(date, status) WHERE status = 'completed';
 
 -- Leaderboard index (score = base_score * streak_bonus)
-CREATE INDEX idx_daily_games_score ON daily_games(
+CREATE INDEX IF NOT EXISTS idx_daily_games_score ON daily_games(
     date,
     ((session_state->>'base_score')::int * (
         CASE

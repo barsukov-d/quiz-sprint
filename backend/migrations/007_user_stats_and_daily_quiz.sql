@@ -20,8 +20,8 @@ CREATE TABLE IF NOT EXISTS user_stats (
     updated_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())
 );
 
-CREATE INDEX idx_user_stats_streak ON user_stats(current_streak DESC);
-CREATE INDEX idx_user_stats_last_daily ON user_stats(last_daily_quiz_date);
+CREATE INDEX IF NOT EXISTS idx_user_stats_streak ON user_stats(current_streak DESC);
+CREATE INDEX IF NOT EXISTS idx_user_stats_last_daily ON user_stats(last_daily_quiz_date);
 
 -- ==========================================
 -- Initialize user_stats for existing users
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS daily_quiz_selection (
     created_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())
 );
 
-CREATE INDEX idx_daily_quiz_date ON daily_quiz_selection(date DESC);
+CREATE INDEX IF NOT EXISTS idx_daily_quiz_date ON daily_quiz_selection(date DESC);
 
 -- ==========================================
 -- Notes

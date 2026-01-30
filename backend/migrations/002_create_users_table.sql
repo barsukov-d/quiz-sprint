@@ -15,9 +15,9 @@ CREATE TABLE IF NOT EXISTS users (
 );
 
 -- Indexes
-CREATE INDEX idx_users_telegram_username ON users(telegram_username) WHERE telegram_username IS NOT NULL;
-CREATE INDEX idx_users_created_at ON users(created_at DESC);
-CREATE INDEX idx_users_is_blocked ON users(is_blocked) WHERE is_blocked = TRUE;
+CREATE INDEX IF NOT EXISTS idx_users_telegram_username ON users(telegram_username) WHERE telegram_username IS NOT NULL;
+CREATE INDEX IF NOT EXISTS idx_users_created_at ON users(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_users_is_blocked ON users(is_blocked) WHERE is_blocked = TRUE;
 
 -- Update quiz_sessions to use users table (if needed in future)
 -- Note: Currently quiz_sessions.user_id is VARCHAR(100) which matches users.id

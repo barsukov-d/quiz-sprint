@@ -18,7 +18,7 @@ CREATE TABLE IF NOT EXISTS quizzes (
     updated_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())
 );
 
-CREATE INDEX idx_quizzes_created_at ON quizzes(created_at DESC);
+CREATE INDEX IF NOT EXISTS idx_quizzes_created_at ON quizzes(created_at DESC);
 
 -- ==========================================
 -- Questions Table
@@ -31,8 +31,8 @@ CREATE TABLE IF NOT EXISTS questions (
     position INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE INDEX idx_questions_quiz_id ON questions(quiz_id);
-CREATE INDEX idx_questions_position ON questions(quiz_id, position);
+CREATE INDEX IF NOT EXISTS idx_questions_quiz_id ON questions(quiz_id);
+CREATE INDEX IF NOT EXISTS idx_questions_position ON questions(quiz_id, position);
 
 -- ==========================================
 -- Answers Table
@@ -45,7 +45,7 @@ CREATE TABLE IF NOT EXISTS answers (
     position INTEGER NOT NULL DEFAULT 0
 );
 
-CREATE INDEX idx_answers_question_id ON answers(question_id);
+CREATE INDEX IF NOT EXISTS idx_answers_question_id ON answers(question_id);
 
 -- ==========================================
 -- Quiz Sessions Table
@@ -61,10 +61,10 @@ CREATE TABLE IF NOT EXISTS quiz_sessions (
     completed_at BIGINT
 );
 
-CREATE INDEX idx_sessions_quiz_id ON quiz_sessions(quiz_id);
-CREATE INDEX idx_sessions_user_id ON quiz_sessions(user_id);
-CREATE INDEX idx_sessions_status ON quiz_sessions(status);
-CREATE INDEX idx_sessions_user_quiz ON quiz_sessions(user_id, quiz_id, status);
+CREATE INDEX IF NOT EXISTS idx_sessions_quiz_id ON quiz_sessions(quiz_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_id ON quiz_sessions(user_id);
+CREATE INDEX IF NOT EXISTS idx_sessions_status ON quiz_sessions(status);
+CREATE INDEX IF NOT EXISTS idx_sessions_user_quiz ON quiz_sessions(user_id, quiz_id, status);
 
 -- ==========================================
 -- User Answers Table
@@ -79,8 +79,8 @@ CREATE TABLE IF NOT EXISTS user_answers (
     answered_at BIGINT NOT NULL DEFAULT EXTRACT(EPOCH FROM NOW())
 );
 
-CREATE INDEX idx_user_answers_session_id ON user_answers(session_id);
-CREATE UNIQUE INDEX idx_user_answers_unique ON user_answers(session_id, question_id);
+CREATE INDEX IF NOT EXISTS idx_user_answers_session_id ON user_answers(session_id);
+CREATE UNIQUE INDEX IF NOT EXISTS idx_user_answers_unique ON user_answers(session_id, question_id);
 
 -- ==========================================
 -- Leaderboard View (for fast queries)

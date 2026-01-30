@@ -17,9 +17,9 @@ CREATE TABLE IF NOT EXISTS categories (
 );
 
 -- Create indexes
-CREATE INDEX idx_categories_slug ON categories(slug);
-CREATE INDEX idx_categories_is_active ON categories(is_active);
-CREATE INDEX idx_categories_display_order ON categories(display_order);
+CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
+CREATE INDEX IF NOT EXISTS idx_categories_is_active ON categories(is_active);
+CREATE INDEX IF NOT EXISTS idx_categories_display_order ON categories(display_order);
 
 -- Add category_id to quizzes table
 ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS category_id UUID REFERENCES categories(id) ON DELETE SET NULL;
@@ -82,5 +82,3 @@ ON CONFLICT (id) DO NOTHING;
 UPDATE quizzes
 SET category_id = '11111111-1111-1111-1111-111111111111'
 WHERE title = 'Go Programming Basics';
-
-RAISE NOTICE 'Categories table created and seeded successfully';

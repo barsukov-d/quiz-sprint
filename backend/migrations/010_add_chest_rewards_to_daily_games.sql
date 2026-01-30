@@ -20,13 +20,16 @@ ALTER TABLE daily_games ADD COLUMN IF NOT EXISTS chest_coins INT;
 ALTER TABLE daily_games ADD COLUMN IF NOT EXISTS chest_pvp_tickets INT;
 ALTER TABLE daily_games ADD COLUMN IF NOT EXISTS chest_bonuses JSONB; -- Array of bonus types
 
--- Add constraints
+-- Add constraints (drop first for idempotency)
+ALTER TABLE daily_games DROP CONSTRAINT IF EXISTS chest_type_check;
 ALTER TABLE daily_games ADD CONSTRAINT chest_type_check
     CHECK (chest_type IS NULL OR chest_type IN ('wooden', 'silver', 'golden'));
 
+ALTER TABLE daily_games DROP CONSTRAINT IF EXISTS chest_coins_check;
 ALTER TABLE daily_games ADD CONSTRAINT chest_coins_check
     CHECK (chest_coins IS NULL OR chest_coins >= 0);
 
+ALTER TABLE daily_games DROP CONSTRAINT IF EXISTS chest_pvp_tickets_check;
 ALTER TABLE daily_games ADD CONSTRAINT chest_pvp_tickets_check
     CHECK (chest_pvp_tickets IS NULL OR chest_pvp_tickets >= 0);
 
@@ -45,7 +48,7 @@ DROP INDEX IF EXISTS idx_daily_games_score;
 
 -- Create new index with correct multipliers per docs/GLOSSARY.md:
 -- 0-2 days: 1.0 | 3-6 days: 1.1 | 7-13 days: 1.25 | 14-29 days: 1.4 | 30+ days: 1.5
-CREATE INDEX idx_daily_games_score ON daily_games(
+CREATE INDEX IF NOT EXISTS idx_daily_games_score ON daily_games(
     date,
     ((session_state->>'base_score')::int * (
         CASE
@@ -69,6 +72,7 @@ ALTER TABLE daily_games ADD COLUMN IF NOT EXISTS attempt_number INT NOT NULL DEF
 ALTER TABLE daily_games DROP CONSTRAINT IF EXISTS daily_games_player_date_unique;
 
 -- New constraint: unique (player_id, date, attempt_number)
+ALTER TABLE daily_games DROP CONSTRAINT IF EXISTS daily_games_player_date_attempt_unique;
 ALTER TABLE daily_games ADD CONSTRAINT daily_games_player_date_attempt_unique
     UNIQUE (player_id, date, attempt_number);
 

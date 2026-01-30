@@ -5,11 +5,18 @@ CREATE TABLE IF NOT EXISTS categories (
 );
 
 -- Add category_id to quizzes table
-ALTER TABLE quizzes
-ADD COLUMN category_id UUID,
-ADD CONSTRAINT fk_quizzes_category
-    FOREIGN KEY (category_id)
-    REFERENCES categories(id)
-    ON DELETE SET NULL;
+ALTER TABLE quizzes ADD COLUMN IF NOT EXISTS category_id UUID;
 
-CREATE INDEX idx_quizzes_category_id ON quizzes(category_id);
+DO $$
+BEGIN
+    IF NOT EXISTS (
+        SELECT 1 FROM pg_constraint WHERE conname = 'fk_quizzes_category'
+    ) THEN
+        ALTER TABLE quizzes ADD CONSTRAINT fk_quizzes_category
+            FOREIGN KEY (category_id)
+            REFERENCES categories(id)
+            ON DELETE SET NULL;
+    END IF;
+END $$;
+
+CREATE INDEX IF NOT EXISTS idx_quizzes_category_id ON quizzes(category_id);
