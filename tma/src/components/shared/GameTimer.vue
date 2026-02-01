@@ -19,10 +19,6 @@ const props = withDefaults(defineProps<Props>(), {
   size: 'md'
 })
 
-// ===========================
-// Timer Composable
-// ===========================
-
 const timer = useGameTimer({
   initialTime: props.initialTime,
   autoStart: props.autoStart,
@@ -31,53 +27,31 @@ const timer = useGameTimer({
   warningThreshold: props.warningThreshold
 })
 
-// ===========================
-// Computed
-// ===========================
-
-const timerClass = computed(() => {
-  if (timer.isExpired.value) return 'timer-expired'
-  if (timer.isWarning.value) return 'timer-warning'
-  return 'timer-normal'
+const timerColorClass = computed(() => {
+  if (timer.isExpired.value) return 'text-red-500'
+  if (timer.isWarning.value) return 'text-orange-500'
+  return 'text-green-500'
 })
 
 const progressColor = computed(() => {
-  if (timer.isExpired.value) return 'red'
-  if (timer.isWarning.value) return 'orange'
-  return 'green'
+  if (timer.isExpired.value) return 'error'
+  if (timer.isWarning.value) return 'warning'
+  return 'success'
 })
 
-const sizeClasses = computed(() => {
+const sizeClass = computed(() => {
   switch (props.size) {
-    case 'sm':
-      return {
-        text: 'text-sm',
-        icon: 'size-4'
-      }
-    case 'lg':
-      return {
-        text: 'text-2xl',
-        icon: 'size-8'
-      }
-    default: // md
-      return {
-        text: 'text-xl',
-        icon: 'size-6'
-      }
+    case 'sm': return 'text-sm'
+    case 'lg': return 'text-2xl'
+    default: return 'text-lg'
   }
 })
 
-// ===========================
-// Watch for initialTime changes
-// ===========================
+const progressTimer = computed(() => timer.progress.value)
 
 watch(() => props.initialTime, (newTime) => {
   timer.reset(newTime)
 })
-
-// ===========================
-// Expose timer methods
-// ===========================
 
 defineExpose({
   start: timer.start,
@@ -92,122 +66,33 @@ defineExpose({
 </script>
 
 <template>
-  <div class="game-timer" :class="timerClass">
-    <!-- Timer Display -->
-    <div class="timer-display" :class="sizeClasses.text">
+  <div class="flex flex-col gap-1.5">
+    <!-- Timer digits -->
+    <div class="flex items-center justify-center gap-1.5">
       <UIcon
         name="i-heroicons-clock"
-        :class="[sizeClasses.icon, timer.isWarning ? 'animate-pulse' : '']"
+        :class="[timerColorClass, timer.isWarning.value && !timer.isExpired.value ? 'animate-pulse' : '', size === 'sm' ? 'size-4' : size === 'lg' ? 'size-7' : 'size-5']"
       />
-      <span class="timer-value font-mono font-bold">
+      <span
+        :class="[sizeClass, timerColorClass, 'font-mono font-bold tabular-nums', timer.isWarning.value && !timer.isExpired.value ? 'animate-pulse' : '']"
+      >
         {{ timer.formattedTime }}
       </span>
     </div>
 
-    <!-- Progress Bar -->
+    <!-- Progress bar -->
     <UProgress
       v-if="showProgress"
-      :value="timer.progress"
+	  v-model="progressTimer"
       :color="progressColor"
-      :class="timer.isWarning ? 'animate-pulse' : ''"
+      size="xs"
     />
 
-    <!-- Warning Message -->
-    <div v-if="timer.isWarning && !timer.isExpired" class="timer-warning-text">
-      <UIcon name="i-heroicons-exclamation-triangle" class="size-4" />
-      <span class="text-xs">Time running out!</span>
-    </div>
 
-    <!-- Expired Message -->
-    <div v-if="timer.isExpired" class="timer-expired-text">
+    <!-- Expired label -->
+    <div v-if="timer.isExpired.value" class="flex items-center justify-center gap-1 text-red-500">
       <UIcon name="i-heroicons-x-circle" class="size-4" />
       <span class="text-xs font-semibold">Time's up!</span>
     </div>
   </div>
 </template>
-
-<style scoped>
-.game-timer {
-  display: flex;
-  flex-direction: column;
-  gap: 0.5rem;
-}
-
-.timer-display {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.5rem;
-  padding: 0.5rem;
-  border-radius: 0.5rem;
-  transition: all 0.2s;
-}
-
-.timer-normal .timer-display {
-  background: rgb(var(--color-green-50));
-  color: rgb(var(--color-green-700));
-}
-
-.timer-warning .timer-display {
-  background: rgb(var(--color-orange-50));
-  color: rgb(var(--color-orange-700));
-  animation: pulse 1s ease-in-out infinite;
-}
-
-.timer-expired .timer-display {
-  background: rgb(var(--color-red-50));
-  color: rgb(var(--color-red-700));
-}
-
-.timer-warning-text,
-.timer-expired-text {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 0.25rem;
-  padding: 0.25rem;
-}
-
-.timer-warning-text {
-  color: rgb(var(--color-orange-600));
-}
-
-.timer-expired-text {
-  color: rgb(var(--color-red-600));
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .timer-normal .timer-display {
-    background: rgb(var(--color-green-900) / 0.3);
-    color: rgb(var(--color-green-400));
-  }
-
-  .timer-warning .timer-display {
-    background: rgb(var(--color-orange-900) / 0.3);
-    color: rgb(var(--color-orange-400));
-  }
-
-  .timer-expired .timer-display {
-    background: rgb(var(--color-red-900) / 0.3);
-    color: rgb(var(--color-red-400));
-  }
-
-  .timer-warning-text {
-    color: rgb(var(--color-orange-400));
-  }
-
-  .timer-expired-text {
-    color: rgb(var(--color-red-400));
-  }
-}
-
-@keyframes pulse {
-  0%, 100% {
-    opacity: 1;
-  }
-  50% {
-    opacity: 0.7;
-  }
-}
-</style>

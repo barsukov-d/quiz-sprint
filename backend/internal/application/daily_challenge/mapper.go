@@ -34,12 +34,30 @@ func ToDailyGameDTO(game *daily_challenge.DailyGame, now int64) DailyGameDTO {
 	// Current question (only if in progress)
 	var currentQuestion *QuestionDTO
 	var questionIndex int
+	var questionTimeRemaining *int
 	if game.Status() == daily_challenge.GameStatusInProgress {
 		if q, err := session.GetCurrentQuestion(); err == nil {
 			questionDTO := ToQuestionDTO(q)
 			currentQuestion = &questionDTO
 		}
 		questionIndex = session.CurrentQuestionIndex()
+
+		// Calculate time remaining for current question
+		// timeRemaining = timeLimit - (now - questionStartedAt)
+		timeLimit := 15
+		elapsed := now - game.QuestionStartedAt()
+		remaining := int64(timeLimit) - elapsed
+
+		// Clamp to [0, timeLimit]
+		if remaining < 0 {
+			remaining = 0
+		}
+		if remaining > int64(timeLimit) {
+			remaining = int64(timeLimit)
+		}
+
+		tr := int(remaining)
+		questionTimeRemaining = &tr
 	} else {
 		questionIndex = session.Quiz().QuestionsCount() // All answered
 	}
@@ -50,21 +68,22 @@ func ToDailyGameDTO(game *daily_challenge.DailyGame, now int64) DailyGameDTO {
 
 	gameIDString := game.ID().String()
 	return DailyGameDTO{
-		ID:              gameIDString, // Deprecated, use GameID
-		GameID:          gameIDString, // Matches Swagger spec
-		PlayerID:        game.PlayerID().String(),
-		DailyQuizID:     game.DailyQuizID().String(),
-		Date:            game.Date().String(),
-		Status:          string(game.Status()),
-		CurrentQuestion: currentQuestion,
-		QuestionIndex:   questionIndex,
-		TotalQuestions:  session.Quiz().QuestionsCount(),
-		BaseScore:       session.BaseScore().Value(),
-		FinalScore:      game.GetFinalScore(),
-		CorrectAnswers:  game.GetCorrectAnswersCount(),
-		Streak:          ToStreakDTO(streak, game.Date()),
-		Rank:            game.Rank(),
-		TimeRemaining:   timeRemaining,
+		ID:                    gameIDString, // Deprecated, use GameID
+		GameID:                gameIDString, // Matches Swagger spec
+		PlayerID:              game.PlayerID().String(),
+		DailyQuizID:           game.DailyQuizID().String(),
+		Date:                  game.Date().String(),
+		Status:                string(game.Status()),
+		CurrentQuestion:       currentQuestion,
+		QuestionIndex:         questionIndex,
+		TotalQuestions:        session.Quiz().QuestionsCount(),
+		BaseScore:             session.BaseScore().Value(),
+		FinalScore:            game.GetFinalScore(),
+		CorrectAnswers:        game.GetCorrectAnswersCount(),
+		Streak:                ToStreakDTO(streak, game.Date()),
+		Rank:                  game.Rank(),
+		TimeRemaining:         timeRemaining,
+		QuestionTimeRemaining: questionTimeRemaining,
 	}
 }
 

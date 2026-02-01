@@ -1,5 +1,11 @@
 # Daily Challenge - Concept
 
+## Changes
+
+| Date | Change | Reason |
+|------|--------|--------|
+| 2026-01-31 | Feedback: `after completion only` → `instant (after each answer)` | UX: player sees correct/incorrect immediately after answering |
+
 ## What?
 Central daily event where all players answer same 10 questions.
 
@@ -20,7 +26,7 @@ Central daily event where all players answer same 10 questions.
 | Time per question | 15 sec |
 | Attempts (free) | 1/day |
 | Reset | 00:00 UTC daily |
-| Feedback | After completion only |
+| Feedback | Instant (after each answer) |
 
 ## Core Loop
 ```

@@ -114,6 +114,14 @@ func (uc *StartDailyChallengeUseCase) Execute(input StartDailyChallengeInput) (S
 		return StartDailyChallengeOutput{}, err
 	}
 
+	// Daily Challenge scoring: basePoints=100, timeBonus=max(0, (15-timeTaken)*5) → max 75
+	// Per docs/game_modes/daily_challenge/03_rules.md
+	dailyBasePoints, _ := quiz.NewPoints(100)
+	dailyMaxTimeBonus, _ := quiz.NewPoints(75)
+	quizAggregate.SetBasePoints(dailyBasePoints)
+	quizAggregate.SetTimeLimitPerQuestion(15)
+	quizAggregate.SetMaxTimeBonus(dailyMaxTimeBonus)
+
 	println("✅ [StartDailyChallenge] Created quiz aggregate, adding questions...")
 
 	// Add questions to quiz
@@ -265,12 +273,14 @@ func (uc *SubmitDailyAnswerUseCase) Execute(input SubmitDailyAnswerInput) (Submi
 		uc.eventBus.Publish(event)
 	}
 
-	// 6. Build output
+	// 6. Build output (with instant feedback)
 	output := SubmitDailyAnswerOutput{
 		QuestionIndex:      result.QuestionIndex,
 		TotalQuestions:     10,
 		RemainingQuestions: result.RemainingQuestions,
 		IsGameCompleted:    result.IsGameCompleted,
+		IsCorrect:          result.IsCorrect,
+		CorrectAnswerID:    result.CorrectAnswerID,
 	}
 
 	// 7. If game continues, return next question
@@ -395,11 +405,28 @@ func (uc *GetDailyGameStatusUseCase) Execute(input GetDailyGameStatusInput) (Get
 
 	gameDTO := ToDailyGameDTO(game, now)
 	var timeLimit *int
+	var timeRemaining *int
 	var results *GameResultsDTO
 
 	if game.Status() == daily_challenge.GameStatusInProgress {
 		tl := 15
 		timeLimit = &tl
+
+		// Calculate time remaining for current question
+		// timeRemaining = timeLimit - (now - questionStartedAt)
+		elapsed := now - game.QuestionStartedAt()
+		remaining := int64(tl) - elapsed
+
+		// Clamp to [0, timeLimit]
+		if remaining < 0 {
+			remaining = 0
+		}
+		if remaining > int64(tl) {
+			remaining = int64(tl)
+		}
+
+		tr := int(remaining)
+		timeRemaining = &tr
 	} else if game.Status() == daily_challenge.GameStatusCompleted {
 		// Build results for completed games
 		rank, _ := uc.dailyGameRepo.GetPlayerRankByDate(game.PlayerID(), game.Date())
@@ -421,12 +448,13 @@ func (uc *GetDailyGameStatusUseCase) Execute(input GetDailyGameStatusInput) (Get
 	hasPlayed := game.Status() == daily_challenge.GameStatusCompleted
 
 	return GetDailyGameStatusOutput{
-		HasPlayed:    hasPlayed,
-		Game:         &gameDTO,
-		Results:      results,
-		TimeLimit:    timeLimit,
-		TimeToExpire: timeToExpire,
-		TotalPlayers: totalPlayers,
+		HasPlayed:     hasPlayed,
+		Game:          &gameDTO,
+		Results:       results,
+		TimeLimit:     timeLimit,
+		TimeRemaining: timeRemaining,
+		TimeToExpire:  timeToExpire,
+		TotalPlayers:  totalPlayers,
 	}, nil
 }
 
@@ -727,6 +755,13 @@ func (uc *RetryChallengeUseCase) Execute(input RetryChallengeInput) (RetryChalle
 	if err != nil {
 		return RetryChallengeOutput{}, err
 	}
+
+	// Daily Challenge scoring overrides (same as start)
+	retryBasePoints, _ := quiz.NewPoints(100)
+	retryMaxTimeBonus, _ := quiz.NewPoints(75)
+	quizAggregate.SetBasePoints(retryBasePoints)
+	quizAggregate.SetTimeLimitPerQuestion(15)
+	quizAggregate.SetMaxTimeBonus(retryMaxTimeBonus)
 
 	for _, question := range questions {
 		if err := quizAggregate.AddQuestion(*question); err != nil {

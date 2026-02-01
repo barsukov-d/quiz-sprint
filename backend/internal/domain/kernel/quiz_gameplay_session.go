@@ -75,7 +75,8 @@ func NewQuizGameplaySession(id SessionID, quiz *quiz.Quiz, startedAt int64) (*Qu
 // AnswerQuestionResult contains the result of answering a question
 type AnswerQuestionResult struct {
 	IsCorrect  bool
-	BasePoints Points // Base points earned (without mode bonuses)
+	BasePoints Points // Base points earned (without time bonus)
+	TimeBonus  Points // Time bonus earned (faster answer = more points)
 	TimeTaken  int64  // milliseconds
 }
 
@@ -112,14 +113,28 @@ func (s *QuizGameplaySession) AnswerQuestion(
 	// 5. Check correctness
 	isCorrect := answer.IsCorrect()
 
-	// 6. Calculate base points (only if correct)
+	// 6. Calculate points (only if correct)
 	var basePoints Points
+	var timeBonus Points
 	if isCorrect {
+		// 6a. Base points
 		basePoints = question.Points()
 		if basePoints.IsZero() {
 			basePoints = s.quiz.BasePoints()
 		}
-		s.baseScore = s.baseScore.Add(basePoints)
+
+		// 6b. Time bonus: max(0, (timeLimit - timeTaken) * maxTimeBonus / timeLimit)
+		// timeTaken is in milliseconds, timeLimitPerQuestion is in seconds
+		timeLimitMs := int64(s.quiz.TimeLimitPerQuestion()) * 1000
+		if timeTaken > 0 && timeTaken < timeLimitMs && s.quiz.MaxTimeBonus().Value() > 0 {
+			remaining := timeLimitMs - timeTaken
+			bonusValue := int(float64(s.quiz.MaxTimeBonus().Value()) * float64(remaining) / float64(timeLimitMs))
+			if bonusValue > 0 {
+				timeBonus, _ = quiz.NewPoints(bonusValue)
+			}
+		}
+
+		s.baseScore = s.baseScore.Add(basePoints).Add(timeBonus)
 	}
 
 	// 7. Record answer
@@ -136,6 +151,7 @@ func (s *QuizGameplaySession) AnswerQuestion(
 	return &AnswerQuestionResult{
 		IsCorrect:  isCorrect,
 		BasePoints: basePoints,
+		TimeBonus:  timeBonus,
 		TimeTaken:  timeTaken,
 	}, nil
 }
@@ -183,7 +199,17 @@ func (s *QuizGameplaySession) GetScoreByQuestion() []int {
 			if basePoints.IsZero() {
 				basePoints = s.quiz.BasePoints()
 			}
-			cumulativeScore += basePoints.Value()
+			questionScore := basePoints.Value()
+
+			// Add time bonus
+			timeLimitMs := int64(s.quiz.TimeLimitPerQuestion()) * 1000
+			timeTaken := answerData.timeTaken
+			if timeTaken > 0 && timeTaken < timeLimitMs && s.quiz.MaxTimeBonus().Value() > 0 {
+				remaining := timeLimitMs - timeTaken
+				questionScore += int(float64(s.quiz.MaxTimeBonus().Value()) * float64(remaining) / float64(timeLimitMs))
+			}
+
+			cumulativeScore += questionScore
 		}
 		scores = append(scores, cumulativeScore)
 	}

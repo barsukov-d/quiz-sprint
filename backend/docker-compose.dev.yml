@@ -31,6 +31,7 @@ services:
       - REDIS_HOST=redis
       - REDIS_PORT=6379
       - CORS_ORIGINS=*
+      - ADMIN_API_KEY=dev-admin-key-2026
     volumes:
       - .:/app                    # Mount source code for hot reload
       - go-cache:/go/pkg/mod      # Cache Go modules

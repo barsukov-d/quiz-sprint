@@ -15,42 +15,21 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-  <UCard>
-    <!-- Header with question number -->
-    <template v-if="showBadge && questionNumber && totalQuestions" #header>
-      <div class="flex items-center justify-between">
-        <UBadge color="primary" variant="subtle">
-          Question {{ questionNumber }} / {{ totalQuestions }}
-        </UBadge>
-        <UBadge v-if="points" color="yellow" variant="subtle">
-          <UIcon name="i-heroicons-star" class="size-3" />
-          {{ points }} pts
-        </UBadge>
-      </div>
-    </template>
-
-    <!-- Question Text -->
-    <div class="question-content">
-      <p class="question-text text-lg font-semibold leading-relaxed">
-        {{ question.text }}
-      </p>
+  <div class="py-6">
+    <!-- Optional badge header -->
+    <div v-if="showBadge && questionNumber && totalQuestions" class="flex items-center justify-between mb-3">
+      <UBadge color="primary" variant="subtle">
+        Question {{ questionNumber }} / {{ totalQuestions }}
+      </UBadge>
+      <UBadge v-if="points" color="yellow" variant="subtle">
+        <UIcon name="i-heroicons-star" class="size-3" />
+        {{ points }} pts
+      </UBadge>
     </div>
-  </UCard>
+
+    <!-- Question text — primary focus -->
+    <p class="text-xl sm:text-2xl font-semibold leading-relaxed text-gray-900 dark:text-gray-100">
+      {{ question.text }}
+    </p>
+  </div>
 </template>
-
-<style scoped>
-.question-content {
-  padding: 1rem 0;
-}
-
-.question-text {
-  color: rgb(var(--color-gray-900));
-  min-height: 3rem;
-}
-
-@media (prefers-color-scheme: dark) {
-  .question-text {
-    color: rgb(var(--color-gray-100));
-  }
-}
-</style>

@@ -21,12 +21,14 @@ export default defineConfig({
       group: { type: 'tag' },
       enumType: 'asConst',
       dateType: 'string',
+      exclude: [{ type: 'tag', pattern: 'admin' }],
     }),
     pluginZod({
       output: { path: './schemas' },
       group: { type: 'tag' },
       typed: true,
       dateType: 'string',
+      exclude: [{ type: 'tag', pattern: 'admin' }],
     }),
     pluginVueQuery({
       output: { path: './hooks' },
@@ -34,6 +36,7 @@ export default defineConfig({
       client: { importPath: '@/api/client' },
       dataReturnType: 'data',
       pathParamsType: 'object',
+      exclude: [{ type: 'tag', pattern: 'admin' }],
     }),
   ],
 })

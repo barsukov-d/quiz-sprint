@@ -38,10 +38,10 @@ const scorePercentage = computed(() => {
 
 const performanceLevel = computed(() => {
   const pct = scorePercentage.value
-  if (pct >= 90) return { label: 'Excellent!', color: 'green', emoji: '🌟' }
-  if (pct >= 70) return { label: 'Great!', color: 'blue', emoji: '👏' }
-  if (pct >= 50) return { label: 'Good!', color: 'yellow', emoji: '👍' }
-  return { label: 'Keep trying!', color: 'gray', emoji: '💪' }
+  if (pct >= 90) return { label: 'Excellent!', color: 'success' as const, emoji: '🌟' }
+  if (pct >= 70) return { label: 'Great!', color: 'info' as const, emoji: '👏' }
+  if (pct >= 50) return { label: 'Good!', color: 'warning' as const, emoji: '👍' }
+  return { label: 'Keep trying!', color: 'neutral' as const, emoji: '💪' }
 })
 
 const hasNewStreakRecord = computed(() => {
@@ -97,10 +97,6 @@ const chestColor = computed(() => {
 // Methods
 // ===========================
 
-const handleReviewAnswers = () => {
-  router.push({ name: 'daily-challenge-review' })
-}
-
 const handleGoHome = () => {
   router.push({ name: 'home' })
 }
@@ -149,9 +145,9 @@ onMounted(async () => {
 </script>
 
 <template>
-  <div class="results-container">
+  <div class="min-h-screen mx-auto max-w-[800px] p-4 pt-24 pb-8 sm:p-3 sm:pt-20">
     <!-- Loading State -->
-    <div v-if="!results" class="loading-container">
+    <div v-if="!results" class="flex flex-col items-center justify-center min-h-[50vh]">
       <UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
       <p class="text-gray-500 dark:text-gray-400 mt-4">Loading results...</p>
     </div>
@@ -175,7 +171,7 @@ onMounted(async () => {
 
           <!-- Accuracy -->
           <div class="w-full flex flex-col gap-2">
-            <UProgress :value="scorePercentage" :color="performanceLevel.color" size="lg" />
+            <UProgress v-model="scorePercentage" :color="performanceLevel.color" size="lg" />
             <p class="text-center text-sm text-gray-700 dark:text-gray-300 font-semibold">
               {{ results.correctAnswers }} / {{ results.totalQuestions }} correct
               <span class="text-gray-500">({{ scorePercentage }}%)</span>
@@ -282,16 +278,6 @@ onMounted(async () => {
 
       <!-- Action Buttons -->
       <div class="flex flex-col gap-3">
-        <UButton
-          color="primary"
-          size="xl"
-          icon="i-heroicons-document-text"
-          block
-          @click="handleReviewAnswers"
-        >
-          Review Answers
-        </UButton>
-
         <!-- Retry Section -->
         <UCard class="bg-gray-50 dark:bg-gray-900">
           <div class="flex flex-col gap-3">
@@ -358,30 +344,3 @@ onMounted(async () => {
     </div>
   </div>
 </template>
-
-<style scoped>
-.results-container {
-  min-height: 100vh;
-  padding: 1rem;
-  padding-top: 6rem;
-  padding-bottom: 2rem;
-  max-width: 800px;
-  margin: 0 auto;
-}
-
-.loading-container {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  min-height: 50vh;
-}
-
-/* Mobile optimizations */
-@media (max-width: 640px) {
-  .results-container {
-    padding: 0.75rem;
-    padding-top: 5rem;
-  }
-}
-</style>

@@ -25,7 +25,6 @@ const {
   isLoading,
   hasPlayed,
   canPlay,
-  progress,
   timeToExpireFormatted,
   startGame,
   checkStatus,
@@ -43,7 +42,6 @@ const countdownInterval = ref<number | null>(null)
 const startCountdown = () => {
   if (countdownInterval.value) return
 
-  // Refresh status periodically to keep time accurate
   countdownInterval.value = window.setInterval(() => {
     checkStatus()
   }, 60000) // Refresh every minute
@@ -59,22 +57,6 @@ const stopCountdown = () => {
 // ===========================
 // Computed
 // ===========================
-
-const cardTitle = computed(() => {
-  if (hasPlayed.value) return 'Daily Challenge - Completed'
-  if (isPlaying.value) return 'Daily Challenge - In Progress'
-  return 'Daily Challenge'
-})
-
-const cardDescription = computed(() => {
-  if (hasPlayed.value) {
-    return 'Come back tomorrow for a new challenge!'
-  }
-  if (isPlaying.value) {
-    return `Question ${questionIndex.value + 1} of ${totalQuestions.value}`
-  }
-  return '10 questions, one chance per day'
-})
 
 const buttonText = computed(() => {
   if (isPlaying.value) return 'Continue'
@@ -93,27 +75,15 @@ const buttonColor = computed(() => {
   return 'primary'
 })
 
-const statusBadge = computed(() => {
-  if (hasPlayed.value) {
-    return {
-      label: 'Completed',
-      color: 'green' as const,
-      icon: 'i-heroicons-check-circle'
-    }
-  }
-  if (isPlaying.value) {
-    return {
-      label: 'In Progress',
-      color: 'blue' as const,
-      icon: 'i-heroicons-clock'
-    }
-  }
-  return {
-    label: 'Available',
-    color: 'yellow' as const,
-    icon: 'i-heroicons-sparkles'
-  }
+const statusIcon = computed(() => {
+  if (hasPlayed.value) return 'i-heroicons-check-circle'
+  if (isPlaying.value) return 'i-heroicons-clock'
+  return null
 })
+
+const questionProgress = computed(() =>
+  Math.round((questionIndex.value / totalQuestions.value) * 100)
+)
 
 // ===========================
 // Actions
@@ -123,26 +93,18 @@ const handleClick = async () => {
   if (isLoading.value) return
 
   if (hasPlayed.value) {
-    // Показать результаты
     router.push({ name: 'daily-challenge-results' })
   } else if (isPlaying.value) {
-    // Продолжить игру
     router.push({ name: 'daily-challenge-play' })
   } else if (canPlay.value) {
-    // Начать игру
     try {
       await startGame()
-      // После успешного старта, перейти на экран игры
       router.push({ name: 'daily-challenge-play' })
     } catch (error) {
       console.error('Failed to start game:', error)
     }
   }
 }
-
-const progressDaily = computed(
-  () =>{ return hasPlayed.value ? 100 : progress.value}
-)
 
 // ===========================
 // Lifecycle
@@ -154,7 +116,6 @@ onMounted(async () => {
     startCountdown()
   } catch (error) {
     console.error('Failed to initialize Daily Challenge:', error)
-    // Continue anyway - the UI will show appropriate states
   }
 })
 
@@ -168,89 +129,69 @@ onBeforeUnmount(() => {
     <!-- Header -->
     <template #header>
       <div class="flex items-center justify-between">
-        <div class="flex items-center gap-3">
-          <UIcon name="i-heroicons-calendar-days" class="size-6 text-primary" />
-          <div>
-            <h3 class="text-lg font-semibold">{{ cardTitle }}</h3>
-            <p class="text-sm text-gray-500 dark:text-gray-400">
-              {{ cardDescription }}
-            </p>
-          </div>
+        <div class="flex items-center gap-2.5">
+          <UIcon name="i-heroicons-calendar-days" class="size-5 text-primary" />
+          <h3 class="text-base font-semibold">Today's Challenge</h3>
         </div>
-        <UBadge
-          :color="statusBadge.color"
-          :icon="statusBadge.icon"
-          size="lg"
-        >
-          {{ statusBadge.label }}
-        </UBadge>
+        <UIcon
+          v-if="statusIcon"
+          :name="statusIcon"
+          :class="[
+            'size-5',
+            hasPlayed ? 'text-green-500' : 'text-blue-500'
+          ]"
+        />
       </div>
     </template>
 
     <!-- Body -->
     <div class="space-y-4">
-      <!-- Progress Bar (если игра в процессе или завершена) -->
-      <div v-if="isPlaying || hasPlayed" class="space-y-2">
+      <!-- Completed State: Score + Streak -->
+      <div v-if="hasPlayed && game" class="text-center space-y-2 py-2">
+        <p class="text-3xl font-bold text-green-600 dark:text-green-400">
+          {{ game.finalScore || 0 }} points
+        </p>
+        <p v-if="streak" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+          {{ streaks.formattedStreak.value }}
+        </p>
+      </div>
+
+      <!-- In Progress State: Question Progress -->
+      <div v-else-if="isPlaying" class="space-y-2">
         <div class="flex justify-between text-sm">
-          <span class="font-medium">Progress</span>
-          <span class="text-gray-500">{{ hasPlayed ? 100 : progress }}%</span>
+          <span class="font-medium">Question {{ questionIndex + 1 }}/{{ totalQuestions }}</span>
+          <span class="text-gray-500 dark:text-gray-400">{{ questionProgress }}%</span>
         </div>
-        <UProgress v-model="progressDaily"  />
+        <UProgress v-model="questionProgress" color="primary" size="sm" />
       </div>
 
-      <!-- Streak Info -->
-      <div v-if="streak" class="flex items-center gap-4">
-        <div class="flex items-center gap-2">
-          <span class="text-2xl">{{ streaks.getStreakEmoji.value }}</span>
-          <div>
-            <p class="text-sm font-medium">{{ streaks.formattedStreak.value }}</p>
-            <p class="text-xs text-gray-500 dark:text-gray-400">
-              Current Streak
-            </p>
-          </div>
-        </div>
-
-        <!-- Next Milestone -->
-        <div v-if="streaks.nextMilestone.value" class="flex-1">
-          <div class="flex justify-between text-xs mb-1">
-            <span class="text-gray-500">Next: {{ streaks.nextMilestoneInfo.value?.label }}</span>
-            <span class="text-gray-500">{{ streaks.daysToNextMilestone.value }} days</span>
-          </div>
-          <UProgress
-            :value="streaks.progressToNextMilestone.value"
-            :color="streaks.getProgressColor.value.replace('bg-', '')"
-            size="xs"
-          />
-        </div>
+      <!-- Not Played State: Info + Streak -->
+      <div v-else class="space-y-2 py-1">
+        <p class="text-sm text-gray-700 dark:text-gray-300">
+          10 questions • 15s each
+        </p>
+        <p v-if="streak" class="text-sm font-medium text-gray-700 dark:text-gray-300">
+          {{ streaks.formattedStreak.value }}
+        </p>
       </div>
 
-      <!-- Stats -->
-      <div class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200 dark:border-gray-700">
-        <!-- Countdown to Reset -->
+      <!-- Meta Info (always shown) -->
+      <div class="grid grid-cols-2 gap-4 pt-3 border-t border-gray-200 dark:border-gray-700">
         <div class="text-center">
           <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Resets in</p>
-          <p class="text-sm font-mono font-semibold">
-            <UIcon name="i-heroicons-clock" class="inline size-4" />
+          <p class="text-sm font-mono font-semibold tabular-nums">
+            <UIcon name="i-heroicons-clock" class="inline size-3.5" />
             {{ timeToExpireFormatted }}
           </p>
         </div>
 
-        <!-- Players Today -->
         <div class="text-center">
           <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Players Today</p>
           <p class="text-sm font-semibold">
-            <UIcon name="i-heroicons-user-group" class="inline size-4" />
+            <UIcon name="i-heroicons-user-group" class="inline size-3.5" />
             {{ totalPlayers }}
           </p>
         </div>
-      </div>
-
-      <!-- Score (если завершено) -->
-      <div v-if="hasPlayed && game" class="text-center p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-        <p class="text-sm text-gray-600 dark:text-gray-300 mb-1">Your Score</p>
-        <p class="text-2xl font-bold text-green-600 dark:text-green-400">
-          {{ game?.finalScore || 0 }} points
-        </p>
       </div>
     </div>
 

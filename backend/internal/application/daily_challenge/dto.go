@@ -15,21 +15,22 @@ type DailyQuizDTO struct {
 
 // DailyGameDTO represents a player's daily challenge attempt
 type DailyGameDTO struct {
-	ID               string           `json:"id"` // Game ID (deprecated, use GameID)
-	GameID           string           `json:"gameId"` // Game ID (matches Swagger spec)
-	PlayerID         string           `json:"playerId"`
-	DailyQuizID      string           `json:"dailyQuizId"`
-	Date             string           `json:"date"`
-	Status           string           `json:"status"` // "in_progress", "completed"
-	CurrentQuestion  *QuestionDTO     `json:"currentQuestion,omitempty"`
-	QuestionIndex    int              `json:"questionIndex"` // 0-9
-	TotalQuestions   int              `json:"totalQuestions"` // Always 10
-	BaseScore        int              `json:"baseScore"` // Score before streak bonus
-	FinalScore       int              `json:"finalScore"` // Score with streak bonus
-	CorrectAnswers   int              `json:"correctAnswers"`
-	Streak           StreakDTO        `json:"streak"`
-	Rank             *int             `json:"rank,omitempty"` // Player's rank in leaderboard
-	TimeRemaining    int64            `json:"timeRemaining"` // Seconds until quiz expires
+	ID                     string           `json:"id"` // Game ID (deprecated, use GameID)
+	GameID                 string           `json:"gameId"` // Game ID (matches Swagger spec)
+	PlayerID               string           `json:"playerId"`
+	DailyQuizID            string           `json:"dailyQuizId"`
+	Date                   string           `json:"date"`
+	Status                 string           `json:"status"` // "in_progress", "completed"
+	CurrentQuestion        *QuestionDTO     `json:"currentQuestion,omitempty"`
+	QuestionIndex          int              `json:"questionIndex"` // 0-9
+	TotalQuestions         int              `json:"totalQuestions"` // Always 10
+	BaseScore              int              `json:"baseScore"` // Score before streak bonus
+	FinalScore             int              `json:"finalScore"` // Score with streak bonus
+	CorrectAnswers         int              `json:"correctAnswers"`
+	Streak                 StreakDTO        `json:"streak"`
+	Rank                   *int             `json:"rank,omitempty"` // Player's rank in leaderboard
+	TimeRemaining          int64            `json:"timeRemaining"` // Seconds until quiz expires
+	QuestionTimeRemaining  *int             `json:"questionTimeRemaining,omitempty"` // Seconds remaining for current question (server-side timer)
 }
 
 // QuestionDTO represents a quiz question (reused from quiz domain)
@@ -137,6 +138,8 @@ type SubmitDailyAnswerOutput struct {
 	TotalQuestions     int               `json:"totalQuestions"` // Always 10
 	RemainingQuestions int               `json:"remainingQuestions"`
 	IsGameCompleted    bool              `json:"isGameCompleted"`
+	IsCorrect          bool              `json:"isCorrect"` // Instant feedback: was the answer correct?
+	CorrectAnswerID    string            `json:"correctAnswerId"` // Instant feedback: correct answer ID
 	NextQuestion       *QuestionDTO      `json:"nextQuestion,omitempty"` // If game continues
 	NextTimeLimit      *int              `json:"nextTimeLimit,omitempty"` // Always 15 if next question exists
 	GameResults        *GameResultsDTO   `json:"gameResults,omitempty"` // If game completed
@@ -172,6 +175,7 @@ type GetDailyGameStatusOutput struct {
 	Game            *DailyGameDTO     `json:"game,omitempty"`
 	Results         *GameResultsDTO   `json:"results,omitempty"` // Results if game completed
 	TimeLimit       *int              `json:"timeLimit,omitempty"` // 15 seconds if in progress
+	TimeRemaining   *int              `json:"timeRemaining,omitempty"` // Seconds remaining for current question (server-side timer)
 	TimeToExpire    int64             `json:"timeToExpire"` // Seconds until quiz resets
 	TotalPlayers    int               `json:"totalPlayers"` // Players who completed today
 }

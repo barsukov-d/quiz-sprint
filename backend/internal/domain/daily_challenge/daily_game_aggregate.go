@@ -7,15 +7,16 @@ import (
 
 // DailyGame is the aggregate root for a player's daily challenge attempt
 type DailyGame struct {
-	id            GameID
-	playerID      UserID
-	dailyQuizID   DailyQuizID
-	date          Date
-	status        GameStatus
-	session       *kernel.QuizGameplaySession // Composition: delegates pure gameplay logic
-	streak        StreakSystem                // Daily streak tracking
-	rank          *int                        // Player's rank in leaderboard (nil if not yet calculated)
-	chestReward   *ChestReward                // Chest earned (nil until game completed)
+	id                GameID
+	playerID          UserID
+	dailyQuizID       DailyQuizID
+	date              Date
+	status            GameStatus
+	session           *kernel.QuizGameplaySession // Composition: delegates pure gameplay logic
+	streak            StreakSystem                // Daily streak tracking
+	rank              *int                        // Player's rank in leaderboard (nil if not yet calculated)
+	chestReward       *ChestReward                // Chest earned (nil until game completed)
+	questionStartedAt int64                       // Unix timestamp when current question started (for timer persistence)
 
 	// Domain events collected during operations
 	events []Event
@@ -62,15 +63,16 @@ func NewDailyGame(
 
 	// 3. Create game
 	game := &DailyGame{
-		id:          gameID,
-		playerID:    playerID,
-		dailyQuizID: dailyQuizID,
-		date:        date,
-		status:      GameStatusInProgress,
-		session:     session,
-		streak:      currentStreak,
-		rank:        nil,
-		events:      make([]Event, 0),
+		id:                gameID,
+		playerID:          playerID,
+		dailyQuizID:       dailyQuizID,
+		date:              date,
+		status:            GameStatusInProgress,
+		session:           session,
+		streak:            currentStreak,
+		rank:              nil,
+		questionStartedAt: startedAt, // First question starts immediately
+		events:            make([]Event, 0),
 	}
 
 	// 4. Publish DailyGameStarted event
@@ -88,15 +90,17 @@ func NewDailyGame(
 
 // AnswerQuestionResult holds result of answering a question
 type AnswerQuestionResult struct {
-	QuestionIndex  int
-	TimeTaken      int64
+	QuestionIndex      int
+	TimeTaken          int64
 	RemainingQuestions int
-	IsGameCompleted bool
+	IsGameCompleted    bool
+	IsCorrect          bool
+	CorrectAnswerID    string
 }
 
 // AnswerQuestion processes a user's answer for daily challenge
 // Business Logic:
-// - No immediate feedback (correct/incorrect not shown until completion)
+// - Instant feedback (correct/incorrect shown immediately after each answer)
 // - Track answers and continue to next question
 // - Complete game after 10 questions
 func (dg *DailyGame) AnswerQuestion(
@@ -110,21 +114,39 @@ func (dg *DailyGame) AnswerQuestion(
 		return nil, ErrGameNotActive
 	}
 
-	// 2. Delegate to kernel session for pure gameplay logic
-	_, err := dg.session.AnswerQuestion(questionID, answerID, timeTaken, answeredAt)
+	// 2. Find correct answer ID before answering (question is accessible now)
+	correctAnswerID := ""
+	if question, err := dg.session.Quiz().GetQuestion(questionID); err == nil {
+		for _, answer := range question.Answers() {
+			if answer.IsCorrect() {
+				correctAnswerID = answer.ID().String()
+				break
+			}
+		}
+	}
+
+	// 3. Delegate to kernel session for pure gameplay logic
+	kernelResult, err := dg.session.AnswerQuestion(questionID, answerID, timeTaken, answeredAt)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Build result (NO correctness feedback until completion)
+	// 4. Build result with instant feedback
 	result := &AnswerQuestionResult{
 		QuestionIndex:      dg.session.CurrentQuestionIndex() - 1, // -1 because we already moved forward
 		TimeTaken:          timeTaken,
 		RemainingQuestions: dg.session.Quiz().QuestionsCount() - dg.session.CurrentQuestionIndex(),
 		IsGameCompleted:    dg.session.IsFinished(),
+		IsCorrect:          kernelResult.IsCorrect,
+		CorrectAnswerID:    correctAnswerID,
 	}
 
-	// 4. Publish DailyQuestionAnswered event
+	// 4. Update questionStartedAt for next question (if not finished)
+	if !dg.session.IsFinished() {
+		dg.questionStartedAt = answeredAt
+	}
+
+	// 5. Publish DailyQuestionAnswered event
 	dg.events = append(dg.events, NewDailyQuestionAnsweredEvent(
 		dg.id,
 		dg.playerID,
@@ -134,7 +156,7 @@ func (dg *DailyGame) AnswerQuestion(
 		answeredAt,
 	))
 
-	// 5. Auto-complete if all questions answered
+	// 6. Auto-complete if all questions answered
 	if dg.session.IsFinished() {
 		if err := dg.complete(answeredAt); err != nil {
 			return nil, err
@@ -281,6 +303,7 @@ func (dg *DailyGame) Session() *kernel.QuizGameplaySession { return dg.session }
 func (dg *DailyGame) Streak() StreakSystem                 { return dg.streak }
 func (dg *DailyGame) Rank() *int                           { return dg.rank }
 func (dg *DailyGame) ChestReward() *ChestReward            { return dg.chestReward }
+func (dg *DailyGame) QuestionStartedAt() int64             { return dg.questionStartedAt }
 func (dg *DailyGame) IsCompleted() bool                    { return dg.status.IsTerminal() }
 
 // Events returns collected domain events and clears them
@@ -302,17 +325,19 @@ func ReconstructDailyGame(
 	streak StreakSystem,
 	rank *int,
 	chestReward *ChestReward,
+	questionStartedAt int64,
 ) *DailyGame {
 	return &DailyGame{
-		id:          id,
-		playerID:    playerID,
-		dailyQuizID: dailyQuizID,
-		date:        date,
-		status:      status,
-		session:     session,
-		streak:      streak,
-		rank:        rank,
-		chestReward: chestReward,
+		id:                id,
+		playerID:          playerID,
+		dailyQuizID:       dailyQuizID,
+		date:              date,
+		status:            status,
+		session:           session,
+		streak:            streak,
+		rank:              rank,
+		chestReward:       chestReward,
+		questionStartedAt: questionStartedAt,
 		events:      make([]Event, 0), // Don't replay events from DB
 	}
 }

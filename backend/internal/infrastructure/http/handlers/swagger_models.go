@@ -733,20 +733,21 @@ type SubmitDailyAnswerRequest struct {
 
 // DailyGameDTO represents a daily challenge game
 type DailyGameDTO struct {
-	GameID          string       `json:"gameId" validate:"required"`
-	PlayerID        string       `json:"playerId" validate:"required"`
-	DailyQuizID     string       `json:"dailyQuizId" validate:"required"`
-	Date            string       `json:"date" validate:"required"` // YYYY-MM-DD
-	Status          string       `json:"status" validate:"required"` // "in_progress" | "completed"
-	CurrentQuestion *QuestionDTO `json:"currentQuestion,omitempty"`
-	QuestionIndex   int          `json:"questionIndex" validate:"required"`
-	TotalQuestions  int          `json:"totalQuestions" validate:"required"`
-	BaseScore       int          `json:"baseScore" validate:"required"`
-	FinalScore      int          `json:"finalScore" validate:"required"`
-	CorrectAnswers  int          `json:"correctAnswers" validate:"required"`
-	Streak          StreakDTO    `json:"streak" validate:"required"`
-	Rank            *int         `json:"rank,omitempty"`
-	TimeRemaining   int64        `json:"timeRemaining" validate:"required"`
+	GameID                string       `json:"gameId" validate:"required"`
+	PlayerID              string       `json:"playerId" validate:"required"`
+	DailyQuizID           string       `json:"dailyQuizId" validate:"required"`
+	Date                  string       `json:"date" validate:"required"` // YYYY-MM-DD
+	Status                string       `json:"status" validate:"required"` // "in_progress" | "completed"
+	CurrentQuestion       *QuestionDTO `json:"currentQuestion,omitempty"`
+	QuestionIndex         int          `json:"questionIndex" validate:"required"`
+	TotalQuestions        int          `json:"totalQuestions" validate:"required"`
+	BaseScore             int          `json:"baseScore" validate:"required"`
+	FinalScore            int          `json:"finalScore" validate:"required"`
+	CorrectAnswers        int          `json:"correctAnswers" validate:"required"`
+	Streak                StreakDTO    `json:"streak" validate:"required"`
+	Rank                  *int         `json:"rank,omitempty"`
+	TimeRemaining         int64        `json:"timeRemaining" validate:"required"` // Seconds until daily quiz expires
+	QuestionTimeRemaining *int         `json:"questionTimeRemaining,omitempty"` // Seconds remaining for current question
 }
 
 // @name DailyGameDTO
@@ -830,6 +831,8 @@ type SubmitDailyAnswerData struct {
 	TotalQuestions     int              `json:"totalQuestions" validate:"required"`
 	RemainingQuestions int              `json:"remainingQuestions" validate:"required"`
 	IsGameCompleted    bool             `json:"isGameCompleted" validate:"required"`
+	IsCorrect          bool             `json:"isCorrect" validate:"required"`
+	CorrectAnswerID    string           `json:"correctAnswerId" validate:"required"`
 	NextQuestion       *QuestionDTO     `json:"nextQuestion,omitempty"`
 	NextTimeLimit      *int             `json:"nextTimeLimit,omitempty"`
 	GameResults        *GameResultsDTO  `json:"gameResults,omitempty"`
@@ -846,12 +849,13 @@ type SubmitDailyAnswerResponse struct {
 
 // GetDailyStatusData contains status response data
 type GetDailyStatusData struct {
-	HasPlayed    bool             `json:"hasPlayed" validate:"required"`
-	Game         *DailyGameDTO    `json:"game,omitempty"`
-	Results      *GameResultsDTO  `json:"results,omitempty"`
-	TimeLimit    *int             `json:"timeLimit,omitempty"`
-	TimeToExpire int64            `json:"timeToExpire" validate:"required"`
-	TotalPlayers int              `json:"totalPlayers" validate:"required"`
+	HasPlayed     bool             `json:"hasPlayed" validate:"required"`
+	Game          *DailyGameDTO    `json:"game,omitempty"`
+	Results       *GameResultsDTO  `json:"results,omitempty"`
+	TimeLimit     *int             `json:"timeLimit,omitempty"` // Fixed 15 seconds per question
+	TimeRemaining *int             `json:"timeRemaining,omitempty"` // Seconds remaining for current question (server-side timer)
+	TimeToExpire  int64            `json:"timeToExpire" validate:"required"` // Seconds until daily quiz expires
+	TotalPlayers  int              `json:"totalPlayers" validate:"required"`
 }
 
 // @name GetDailyStatusData
@@ -956,3 +960,101 @@ type RetryChallengeResponse struct {
 }
 
 // @name RetryChallengeResponse
+
+// ========================================
+// Admin DTOs (for testing/debug endpoints)
+// ========================================
+
+// AdminUpdateStreakRequest is the request body for updating player streak
+type AdminUpdateStreakRequest struct {
+	PlayerID       string `json:"playerId" validate:"required"`
+	CurrentStreak  *int   `json:"currentStreak,omitempty"`
+	BestStreak     *int   `json:"bestStreak,omitempty"`
+	LastPlayedDate *string `json:"lastPlayedDate,omitempty"` // YYYY-MM-DD
+}
+
+// @name AdminUpdateStreakRequest
+
+// AdminUpdateStreakResponse wraps the update streak response
+type AdminUpdateStreakResponse struct {
+	Data struct {
+		Updated  int64  `json:"updated"`
+		PlayerID string `json:"playerId"`
+	} `json:"data"`
+}
+
+// @name AdminUpdateStreakResponse
+
+// AdminDeleteGamesResponse wraps the delete games response
+type AdminDeleteGamesResponse struct {
+	Data struct {
+		Deleted  int64  `json:"deleted"`
+		PlayerID string `json:"playerId"`
+		Date     string `json:"date"`
+	} `json:"data"`
+}
+
+// @name AdminDeleteGamesResponse
+
+// AdminGameInfo represents a single game in the list response
+type AdminGameInfo struct {
+	ID             string `json:"id"`
+	Date           string `json:"date"`
+	Status         string `json:"status"`
+	AttemptNumber  int    `json:"attemptNumber"`
+	CurrentStreak  int    `json:"currentStreak"`
+	BestStreak     int    `json:"bestStreak"`
+	LastPlayedDate string `json:"lastPlayedDate"`
+	BaseScore      int    `json:"baseScore"`
+	ChestType      string `json:"chestType,omitempty"`
+	ChestCoins     int64  `json:"chestCoins,omitempty"`
+	Rank           int64  `json:"rank,omitempty"`
+}
+
+// @name AdminGameInfo
+
+// AdminListGamesResponse wraps the list games response
+type AdminListGamesResponse struct {
+	Data struct {
+		PlayerID string          `json:"playerId"`
+		Games    []AdminGameInfo `json:"games"`
+		Count    int             `json:"count"`
+	} `json:"data"`
+}
+
+// @name AdminListGamesResponse
+
+// AdminSimulateStreakRequest is the request body for simulating a streak
+type AdminSimulateStreakRequest struct {
+	PlayerID  string `json:"playerId" validate:"required"`
+	Days      int    `json:"days" validate:"required"` // 1-365
+	BaseScore int    `json:"baseScore,omitempty"`       // default 40
+}
+
+// @name AdminSimulateStreakRequest
+
+// AdminSimulateStreakResponse wraps the simulate streak response
+type AdminSimulateStreakResponse struct {
+	Data struct {
+		PlayerID    string `json:"playerId"`
+		DaysCreated int    `json:"daysCreated"`
+		StreakBuilt int    `json:"streakBuilt"`
+		DateRange   struct {
+			From string `json:"from"`
+			To   string `json:"to"`
+		} `json:"dateRange"`
+	} `json:"data"`
+}
+
+// @name AdminSimulateStreakResponse
+
+// AdminResetPlayerResponse wraps the full player reset response
+type AdminResetPlayerResponse struct {
+	Data struct {
+		PlayerID     string         `json:"playerId"`
+		TotalDeleted int64          `json:"totalDeleted"`
+		Deleted      map[string]int64 `json:"deleted"`
+	} `json:"data"`
+}
+
+// @name AdminResetPlayerResponse

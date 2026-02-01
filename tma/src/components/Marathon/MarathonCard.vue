@@ -117,9 +117,9 @@ const livesDisplay = computed(() => {
 
 // Цвет прогресс-бара жизней
 const livesColor = computed(() => {
-  if (livesPercent.value <= 33) return 'red'
-  if (livesPercent.value <= 66) return 'orange'
-  return 'green'
+  if (livesPercent.value <= 33) return 'error'
+  if (livesPercent.value <= 66) return 'warning'
+  return 'success'
 })
 
 // ===========================
@@ -192,7 +192,7 @@ onBeforeUnmount(() => {
             />
           </div>
         </div>
-        <UProgress :value="livesPercent" :color="livesColor" />
+        <UProgress v-model="livesPercent" :color="livesColor" />
       </div>
 
       <!-- Life Restore Timer (если не все жизни) -->
@@ -221,8 +221,8 @@ onBeforeUnmount(() => {
             <span class="text-gray-500">{{ progressToRecord }}%</span>
           </div>
           <UProgress
-            :value="progressToRecord"
-            :color="progressToRecord >= 100 ? 'green' : 'blue'"
+            v-model="progressToRecord"
+            :color="progressToRecord >= 100 ? 'success' : 'info'"
             size="xs"
           />
           <p v-if="progressToRecord >= 100" class="text-xs text-green-600 dark:text-green-400 mt-1 text-center">

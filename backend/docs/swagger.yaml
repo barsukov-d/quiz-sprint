@@ -21,6 +21,128 @@ definitions:
     required:
     - userId
     type: object
+  internal_infrastructure_http_handlers.AdminDeleteGamesResponse:
+    properties:
+      data:
+        properties:
+          date:
+            type: string
+          deleted:
+            type: integer
+          playerId:
+            type: string
+        type: object
+    type: object
+  internal_infrastructure_http_handlers.AdminGameInfo:
+    properties:
+      attemptNumber:
+        type: integer
+      baseScore:
+        type: integer
+      bestStreak:
+        type: integer
+      chestCoins:
+        type: integer
+      chestType:
+        type: string
+      currentStreak:
+        type: integer
+      date:
+        type: string
+      id:
+        type: string
+      lastPlayedDate:
+        type: string
+      rank:
+        type: integer
+      status:
+        type: string
+    type: object
+  internal_infrastructure_http_handlers.AdminListGamesResponse:
+    properties:
+      data:
+        properties:
+          count:
+            type: integer
+          games:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.AdminGameInfo'
+            type: array
+          playerId:
+            type: string
+        type: object
+    type: object
+  internal_infrastructure_http_handlers.AdminResetPlayerResponse:
+    properties:
+      data:
+        properties:
+          deleted:
+            additionalProperties:
+              type: integer
+            type: object
+          playerId:
+            type: string
+          totalDeleted:
+            type: integer
+        type: object
+    type: object
+  internal_infrastructure_http_handlers.AdminSimulateStreakRequest:
+    properties:
+      baseScore:
+        description: default 40
+        type: integer
+      days:
+        description: 1-365
+        type: integer
+      playerId:
+        type: string
+    required:
+    - days
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.AdminSimulateStreakResponse:
+    properties:
+      data:
+        properties:
+          dateRange:
+            properties:
+              from:
+                type: string
+              to:
+                type: string
+            type: object
+          daysCreated:
+            type: integer
+          playerId:
+            type: string
+          streakBuilt:
+            type: integer
+        type: object
+    type: object
+  internal_infrastructure_http_handlers.AdminUpdateStreakRequest:
+    properties:
+      bestStreak:
+        type: integer
+      currentStreak:
+        type: integer
+      lastPlayedDate:
+        description: YYYY-MM-DD
+        type: string
+      playerId:
+        type: string
+    required:
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.AdminUpdateStreakResponse:
+    properties:
+      data:
+        properties:
+          playerId:
+            type: string
+          updated:
+            type: integer
+        type: object
+    type: object
   internal_infrastructure_http_handlers.AnswerDTO:
     properties:
       id:
@@ -135,6 +257,9 @@ definitions:
         type: string
       questionIndex:
         type: integer
+      questionTimeRemaining:
+        description: Seconds remaining for current question
+        type: integer
       rank:
         type: integer
       status:
@@ -143,6 +268,7 @@ definitions:
       streak:
         $ref: '#/definitions/internal_infrastructure_http_handlers.StreakDTO'
       timeRemaining:
+        description: Seconds until daily quiz expires
         type: integer
       totalQuestions:
         type: integer
@@ -345,8 +471,13 @@ definitions:
       results:
         $ref: '#/definitions/internal_infrastructure_http_handlers.GameResultsDTO'
       timeLimit:
+        description: Fixed 15 seconds per question
+        type: integer
+      timeRemaining:
+        description: Seconds remaining for current question (server-side timer)
         type: integer
       timeToExpire:
+        description: Seconds until daily quiz expires
         type: integer
       totalPlayers:
         type: integer
@@ -1164,8 +1295,12 @@ definitions:
     type: object
   internal_infrastructure_http_handlers.SubmitDailyAnswerData:
     properties:
+      correctAnswerId:
+        type: string
       gameResults:
         $ref: '#/definitions/internal_infrastructure_http_handlers.GameResultsDTO'
+      isCorrect:
+        type: boolean
       isGameCompleted:
         type: boolean
       nextQuestion:
@@ -1179,6 +1314,8 @@ definitions:
       totalQuestions:
         type: integer
     required:
+    - correctAnswerId
+    - isCorrect
     - isGameCompleted
     - questionIndex
     - remainingQuestions
@@ -1367,6 +1504,168 @@ info:
   title: Quiz Sprint API
   version: "1.0"
 paths:
+  /admin/daily-challenge/games:
+    delete:
+      consumes:
+      - application/json
+      description: Delete games for a player on a specific date (or all dates)
+      parameters:
+      - description: Admin API key
+        in: header
+        name: X-Admin-Key
+        required: true
+        type: string
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      - description: Date (YYYY-MM-DD). If empty, deletes ALL games
+        in: query
+        name: date
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deleted
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.AdminDeleteGamesResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Delete player games
+      tags:
+      - admin
+    get:
+      description: List all daily games for a player (debug view)
+      parameters:
+      - description: Admin API key
+        in: header
+        name: X-Admin-Key
+        required: true
+        type: string
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Games list
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.AdminListGamesResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: List player games
+      tags:
+      - admin
+  /admin/daily-challenge/simulate-streak:
+    post:
+      consumes:
+      - application/json
+      description: Create fake completed games for N consecutive days to build up
+        a streak
+      parameters:
+      - description: Admin API key
+        in: header
+        name: X-Admin-Key
+        required: true
+        type: string
+      - description: Simulate request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.AdminSimulateStreakRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Simulated
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.AdminSimulateStreakResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Simulate streak
+      tags:
+      - admin
+  /admin/daily-challenge/streak:
+    patch:
+      consumes:
+      - application/json
+      description: Set streak values for testing (updates the latest game for given
+        date)
+      parameters:
+      - description: Admin API key
+        in: header
+        name: X-Admin-Key
+        required: true
+        type: string
+      - description: Streak update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.AdminUpdateStreakRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.AdminUpdateStreakResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: No game found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Update player streak
+      tags:
+      - admin
+  /admin/player/reset:
+    delete:
+      description: 'Delete ALL player data: daily games, marathon games, personal
+        bests, quiz sessions, user stats. User profile is preserved.'
+      parameters:
+      - description: Admin API key
+        in: header
+        name: X-Admin-Key
+        required: true
+        type: string
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Reset complete
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.AdminResetPlayerResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Full player reset
+      tags:
+      - admin
   /categories:
     get:
       consumes:

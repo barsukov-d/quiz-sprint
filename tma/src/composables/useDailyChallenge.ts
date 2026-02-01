@@ -42,7 +42,9 @@ export function useDailyChallenge(playerId: string) {
       query: {
         enabled: computed(() => !!playerId),
         refetchOnWindowFocus: true, // Always fetch fresh data
-        staleTime: 0 // No caching, always fresh
+        staleTime: 0, // No caching, always fresh
+        retry: false, // Don't retry on errors (avoid "canceled" spam)
+        refetchOnMount: true
       }
     }
   )
@@ -67,6 +69,7 @@ export function useDailyChallenge(playerId: string) {
   const timeToExpire = computed(() => statusData.value?.data?.timeToExpire ?? 0)
   const totalPlayers = computed(() => statusData.value?.data?.totalPlayers ?? 0)
   const timeLimit = computed(() => statusData.value?.data?.timeLimit ?? 15)
+  const timeRemaining = computed(() => statusData.value?.data?.timeRemaining ?? null)
 
   // Game details
   const currentQuestion = computed(() => game.value?.currentQuestion ?? null)
@@ -180,31 +183,19 @@ export function useDailyChallenge(playerId: string) {
 
       const answerData = response.data
 
-      console.log('[useDailyChallenge] Checking game completion:', {
-        isGameCompleted: answerData.isGameCompleted,
-        hasGameResults: !!answerData.gameResults
+      console.log('[useDailyChallenge] Answer result:', {
+        isCorrect: answerData.isCorrect,
+        correctAnswerId: answerData.correctAnswerId,
+        isGameCompleted: answerData.isGameCompleted
       })
 
-      if (answerData.isGameCompleted) {
-        // Game completed - refresh status to get results
-        console.log('[useDailyChallenge] Game completed! Fetching results from server...')
-        await refetchStatus()
-        await refetchStreak()
-
-        // Navigate to results page
-        console.log('[useDailyChallenge] Navigating to results...')
-        router.push({ name: 'daily-challenge-results' })
-      } else {
-        // Game continues - refresh status to get next question
-        console.log('[useDailyChallenge] Game continues, fetching next question...')
-        await refetchStatus()
-      }
-
+      // IMPORTANT: Return answerData BEFORE refetchStatus()!
+      // View needs current question's answers to show green/red feedback.
+      // refetchStatus() would replace currentQuestion with the NEXT question,
+      // making correctAnswerId not match any visible answer button.
       return answerData
     } catch (error) {
       console.error('[useDailyChallenge] Failed to submit answer:', error)
-      // Refresh status on error to sync with server
-      await refetchStatus()
       throw error
     }
   }
@@ -299,6 +290,7 @@ export function useDailyChallenge(playerId: string) {
     timeToExpire,
     totalPlayers,
     timeLimit,
+    timeRemaining,
     currentQuestion,
     questionIndex,
     totalQuestions,

@@ -102,7 +102,7 @@ onMounted(async () => {
 		</div>
 
 		<!-- Основное приложение -->
-		<div v-else class="app-container">
+		<div v-else class="app-container p-4 pt-4 pb-20 sm:p-3 sm:pt-20">
 			<RouterView />
 			<BottomTabBar v-if="showBottomNav" />
 		</div>
