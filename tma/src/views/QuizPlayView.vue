@@ -366,8 +366,11 @@ const getAnswerButtonClass = (answerId: string) => {
 						<div
 							class="flex items-center gap-1"
 							:class="{
-								'text-yellow-500': timeRemaining <= timeLimitPerQuestion * 0.5 && timeRemaining > timeLimitPerQuestion * 0.25,
-								'text-red-500 font-bold': timeRemaining <= timeLimitPerQuestion * 0.25,
+								'text-yellow-500':
+									timeRemaining <= timeLimitPerQuestion * 0.5 &&
+									timeRemaining > timeLimitPerQuestion * 0.25,
+								'text-red-500 font-bold':
+									timeRemaining <= timeLimitPerQuestion * 0.25,
 							}"
 						>
 							<span>⏱</span>
@@ -456,14 +459,12 @@ const getAnswerButtonClass = (answerId: string) => {
 				</UAlert>
 
 				<!-- Streak achievement notification -->
-				<UAlert
-					v-if="answerResult.streakBonus > 0"
-					color="orange"
-					title="🔥 Streak Bonus!"
-				>
+				<UAlert v-if="answerResult.streakBonus > 0" color="orange" title="🔥 Streak Bonus!">
 					<template #description>
-						Amazing! {{ answerResult.currentStreak }} correct answers in a row!
-						+{{ answerResult.streakBonus }} bonus points
+						Amazing! {{ answerResult.currentStreak }} correct answers in a row! +{{
+							answerResult.streakBonus
+						}}
+						bonus points
 					</template>
 				</UAlert>
 			</div>

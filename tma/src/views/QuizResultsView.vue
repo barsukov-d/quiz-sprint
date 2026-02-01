@@ -12,19 +12,28 @@ const { saveLastQuizId } = useLastQuiz()
 const sessionId = route.params.sessionId as string
 
 // Fetch session results from API
-const { data: resultsResponse, isLoading, isError, error } = useGetQuizSessionSessionid({
-	sessionId
+const {
+	data: resultsResponse,
+	isLoading,
+	isError,
+	error,
+} = useGetQuizSessionSessionid({
+	sessionId,
 })
 
 // Extract data from response
 const results = computed(() => resultsResponse.value?.data)
 
 // Save quiz ID when results are loaded
-watch(results, (newResults) => {
-	if (newResults?.quiz?.id) {
-		saveLastQuizId(newResults.quiz.id)
-	}
-}, { immediate: true })
+watch(
+	results,
+	(newResults) => {
+		if (newResults?.quiz?.id) {
+			saveLastQuizId(newResults.quiz.id)
+		}
+	},
+	{ immediate: true },
+)
 
 // Computed properties
 const scorePercentage = computed(() => {
@@ -118,7 +127,9 @@ const goHome = () => {
 								<div>
 									<div class="text-5xl font-bold">{{ scorePercentage }}%</div>
 									<div class="text-sm text-gray-600">
-										{{ results.session.score }}/{{ results.quiz.passingScore * results.totalQuestions }}
+										{{ results.session.score }}/{{
+											results.quiz.passingScore * results.totalQuestions
+										}}
 									</div>
 								</div>
 							</div>
@@ -166,7 +177,9 @@ const goHome = () => {
 
 					<UCard>
 						<div class="text-center py-4">
-							<div class="text-3xl font-bold mb-2">{{ results.scorePercentage }}%</div>
+							<div class="text-3xl font-bold mb-2">
+								{{ results.scorePercentage }}%
+							</div>
 							<div class="text-sm text-gray-600">Accuracy</div>
 						</div>
 					</UCard>
@@ -191,7 +204,13 @@ const goHome = () => {
 				<!-- Actions -->
 				<div class="space-y-3">
 					<UButton size="xl" color="primary" block @click="tryAgain"> Try Again </UButton>
-					<UButton size="xl" color="gray" variant="outline" block @click="viewLeaderboard">
+					<UButton
+						size="xl"
+						color="gray"
+						variant="outline"
+						block
+						@click="viewLeaderboard"
+					>
 						View Leaderboard
 					</UButton>
 					<UButton size="xl" color="gray" variant="ghost" block @click="goHome">
