@@ -22,6 +22,245 @@
     "host": "localhost:3000",
     "basePath": "/api/v1",
     "paths": {
+        "/admin/daily-challenge/games": {
+            "get": {
+                "description": "List all daily games for a player (debug view)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List player games",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin API key",
+                        "name": "X-Admin-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Games list",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminListGamesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete games for a player on a specific date (or all dates)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Delete player games",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin API key",
+                        "name": "X-Admin-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Date (YYYY-MM-DD). If empty, deletes ALL games",
+                        "name": "date",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminDeleteGamesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/daily-challenge/simulate-streak": {
+            "post": {
+                "description": "Create fake completed games for N consecutive days to build up a streak",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Simulate streak",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin API key",
+                        "name": "X-Admin-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Simulate request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminSimulateStreakRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Simulated",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminSimulateStreakResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/daily-challenge/streak": {
+            "patch": {
+                "description": "Set streak values for testing (updates the latest game for given date)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Update player streak",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin API key",
+                        "name": "X-Admin-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Streak update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminUpdateStreakRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminUpdateStreakResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "No game found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/player/reset": {
+            "delete": {
+                "description": "Delete ALL player data: daily games, marathon games, personal bests, quiz sessions, user stats. User profile is preserved.",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Full player reset",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin API key",
+                        "name": "X-Admin-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reset complete",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminResetPlayerResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/categories": {
             "get": {
                 "description": "Get a list of all available quiz categories",
@@ -1757,6 +1996,194 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.AdminDeleteGamesResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "date": {
+                            "type": "string"
+                        },
+                        "deleted": {
+                            "type": "integer"
+                        },
+                        "playerId": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AdminGameInfo": {
+            "type": "object",
+            "properties": {
+                "attemptNumber": {
+                    "type": "integer"
+                },
+                "baseScore": {
+                    "type": "integer"
+                },
+                "bestStreak": {
+                    "type": "integer"
+                },
+                "chestCoins": {
+                    "type": "integer"
+                },
+                "chestType": {
+                    "type": "string"
+                },
+                "currentStreak": {
+                    "type": "integer"
+                },
+                "date": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "lastPlayedDate": {
+                    "type": "string"
+                },
+                "rank": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AdminListGamesResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "count": {
+                            "type": "integer"
+                        },
+                        "games": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminGameInfo"
+                            }
+                        },
+                        "playerId": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AdminResetPlayerResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "deleted": {
+                            "type": "object",
+                            "additionalProperties": {
+                                "type": "integer"
+                            }
+                        },
+                        "playerId": {
+                            "type": "string"
+                        },
+                        "totalDeleted": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AdminSimulateStreakRequest": {
+            "type": "object",
+            "required": [
+                "days",
+                "playerId"
+            ],
+            "properties": {
+                "baseScore": {
+                    "description": "default 40",
+                    "type": "integer"
+                },
+                "days": {
+                    "description": "1-365",
+                    "type": "integer"
+                },
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AdminSimulateStreakResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "dateRange": {
+                            "type": "object",
+                            "properties": {
+                                "from": {
+                                    "type": "string"
+                                },
+                                "to": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "daysCreated": {
+                            "type": "integer"
+                        },
+                        "playerId": {
+                            "type": "string"
+                        },
+                        "streakBuilt": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AdminUpdateStreakRequest": {
+            "type": "object",
+            "required": [
+                "playerId"
+            ],
+            "properties": {
+                "bestStreak": {
+                    "type": "integer"
+                },
+                "currentStreak": {
+                    "type": "integer"
+                },
+                "lastPlayedDate": {
+                    "description": "YYYY-MM-DD",
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AdminUpdateStreakResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "playerId": {
+                            "type": "string"
+                        },
+                        "updated": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.AnswerDTO": {
             "type": "object",
             "required": [
@@ -3419,14 +3846,22 @@
         "internal_infrastructure_http_handlers.SubmitDailyAnswerData": {
             "type": "object",
             "required": [
+                "correctAnswerId",
+                "isCorrect",
                 "isGameCompleted",
                 "questionIndex",
                 "remainingQuestions",
                 "totalQuestions"
             ],
             "properties": {
+                "correctAnswerId": {
+                    "type": "string"
+                },
                 "gameResults": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.GameResultsDTO"
+                },
+                "isCorrect": {
+                    "type": "boolean"
                 },
                 "isGameCompleted": {
                     "type": "boolean"

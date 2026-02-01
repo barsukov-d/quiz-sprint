@@ -137,6 +137,8 @@ type SubmitDailyAnswerOutput struct {
 	TotalQuestions     int               `json:"totalQuestions"` // Always 10
 	RemainingQuestions int               `json:"remainingQuestions"`
 	IsGameCompleted    bool              `json:"isGameCompleted"`
+	IsCorrect          bool              `json:"isCorrect"` // Instant feedback: was the answer correct?
+	CorrectAnswerID    string            `json:"correctAnswerId"` // Instant feedback: correct answer ID
 	NextQuestion       *QuestionDTO      `json:"nextQuestion,omitempty"` // If game continues
 	NextTimeLimit      *int              `json:"nextTimeLimit,omitempty"` // Always 15 if next question exists
 	GameResults        *GameResultsDTO   `json:"gameResults,omitempty"` // If game completed

@@ -101,10 +101,10 @@ const isCurrentUser = (userId: string) => {
 </script>
 
 <template>
-	<div class="container mx-auto p-4 pt-20 pb-24">
+	<div class="container mx-auto ">
 		<div class="max-w-4xl mx-auto">
 			<!-- Header -->
-			<div class="mb-6">
+			<div class="mb-6 mx-auto text-center">
 				<h1 class="text-3xl font-bold mb-2">Leaderboard</h1>
 				<p class="text-gray-600">Top players by score</p>
 			</div>

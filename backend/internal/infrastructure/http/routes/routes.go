@@ -438,6 +438,20 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		daily.Get("/streak", dailyChallengeHandler.GetPlayerStreak)
 	}
 
+	// Admin routes (debug/testing, protected by API key)
+	if db != nil {
+		adminHandler := handlers.NewAdminHandler(db)
+		admin := v1.Group("/admin", handlers.AdminKeyMiddleware())
+		adminDaily := admin.Group("/daily-challenge")
+		adminDaily.Patch("/streak", adminHandler.UpdateStreak)
+		adminDaily.Delete("/games", adminHandler.DeleteGames)
+		adminDaily.Get("/games", adminHandler.ListGames)
+		adminDaily.Post("/simulate-streak", adminHandler.SimulateStreak)
+
+		// Player-wide admin
+		admin.Delete("/player/reset", adminHandler.ResetPlayer)
+	}
+
 	// Swagger documentation
 	app.Get("/swagger/*", swaggo.New(swaggo.Config{
 		URL: "/swagger/doc.json",

@@ -260,6 +260,11 @@ func (q *Quiz) MaxTimeBonus() Points          { return q.maxTimeBonus }
 func (q *Quiz) StreakThreshold() int          { return q.streakThreshold }
 func (q *Quiz) StreakBonus() Points           { return q.streakBonus }
 
+// Scoring system setters (used by game modes to override defaults)
+func (q *Quiz) SetBasePoints(p Points)           { q.basePoints = p }
+func (q *Quiz) SetTimeLimitPerQuestion(seconds int) { q.timeLimitPerQuestion = seconds }
+func (q *Quiz) SetMaxTimeBonus(p Points)         { q.maxTimeBonus = p }
+
 // Questions returns a copy of questions (protect internal state)
 func (q *Quiz) Questions() []Question {
 	copies := make([]Question, len(q.questions))

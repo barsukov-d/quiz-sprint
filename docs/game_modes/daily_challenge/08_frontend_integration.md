@@ -1,5 +1,17 @@
 # Daily Challenge - Frontend Integration
 
+## Changes
+
+| Date | Change | Reason |
+|------|--------|--------|
+| 2026-01-31 | `QuestionCard.vue` → `DailyChallengePlayView.vue` with instant feedback | Feedback shown during gameplay, not after |
+| 2026-01-31 | Removed Review screen references | Review Mistakes removed — feedback is inline |
+| 2026-01-31 | Added feedback display rules table | Clarify green/red highlight logic |
+| 2026-02-01 | Compact header layout (counter + progress + timer in 1 row) | Question text is primary focus |
+| 2026-02-01 | Feedback: 4 button states (green correct, red wrong, muted others) | Non-relevant answers dimmed for clarity |
+| 2026-02-01 | QuestionCard: no UCard wrapper, just text | Reduce visual noise |
+| 2026-02-01 | AnswerButton + GameTimer: Tailwind-only, no `<style scoped>` | Project consistency |
+
 ## Thin Client Architecture
 
 **Critical:** Frontend has ZERO game logic. All state and calculations on backend.
@@ -22,52 +34,69 @@
 
 ---
 
-### QuestionCard.vue
+### DailyChallengePlayView.vue
 
 **Only does:**
-- Display question text from server
-- Render 4 answer buttons
-- Track timer (visual only)
+- Display current question from server (`GET /status`)
+- Render 4 answer buttons (AnswerButton component)
+- Track timer (visual only, GameTimer component)
 - Send answer: `POST /api/v1/daily/:gameId/answer`
+- Show instant feedback (correct/incorrect) from backend response
+- Navigate to results when game completes
 
 **Does NOT:**
-- Validate if answer is correct
+- Validate if answer is correct (backend returns `isCorrect`)
 - Calculate score
 - Enforce time limit (server does this)
-- Prevent answer changes (server rejects)
+- Store game state locally
 
-**Timer behavior:**
-```typescript
-// ✅ Visual countdown only
-const timeLeft = ref(15)
-const interval = setInterval(() => {
-  if (timeLeft.value > 0) timeLeft.value--
-}, 1000)
-
-// When reaches 0, still send to server
-// Server validates actual time taken
+**Instant feedback flow:**
+```
+User taps answer → submit to backend → pause timer →
+show feedback (1.5s) → next question / results
 ```
 
-**Answer submission:**
+**Answer submission with feedback:**
 ```typescript
 const submitAnswer = async (answerId: string) => {
-  const timeTaken = 15 - timeLeft.value
+  const timeTaken = timeLimit - timerRef.remainingTime
 
-  const { data } = await api.post(`/daily/${gameId}/answer`, {
-    questionId: currentQuestion.id,
-    answerId,
-    timeTaken  // Server validates this
-  })
+  // Backend returns feedback: { isCorrect, correctAnswerId, isGameCompleted }
+  const answerData = await dailyChallenge.submitAnswer(answerId, timeTaken)
 
-  // Backend tells us what to do next
-  if (data.isGameCompleted) {
-    router.push(`/daily/results/${gameId}`)
-  } else {
-    // Move to next question
-    currentQuestionIndex.value++
-  }
+  // Pause timer during feedback
+  timerRef.pause()
+
+  // Show instant feedback from backend
+  feedbackIsCorrect.value = answerData.isCorrect
+  feedbackCorrectAnswerId.value = answerData.correctAnswerId
+  showFeedback.value = true
+
+  // Wait 1.5s then move to next question or results
+  setTimeout(() => handleNextStep(), 1500)
 }
 ```
+
+**Feedback display rules (per answer, 4 states):**
+
+| Condition | Background | Border | Opacity | Icon |
+|-----------|-----------|--------|---------|------|
+| Correct answer | `bg-green-500/20` | `border-green-500` | 100% | `✓` check |
+| Selected + wrong | `bg-red-500/20` | `border-red-500` | 100% | `✗` cross |
+| Not selected + not correct | unchanged | unchanged | 40% | none |
+| Selected + correct | `bg-green-500/20` | `border-green-500` | 100% | `✓` check |
+
+**Layout:**
+- Header: single row — `3/10` (left) + `UProgress` (center, flex-1) + `00:12` (right, mono)
+- Question: `text-xl sm:text-2xl`, no card wrapper, vertical padding
+- Answers: full-width buttons with label badge + text + optional icon
+- No permanent "Select your answer" alert — only show feedback alerts (correct/incorrect)
+
+**Timer behavior:**
+- Inline in header row, compact display (digits only, color-coded)
+- Pauses during feedback display
+- Resets for each new question
+- On timeout: auto-submits if answer selected, shows "wrong" feedback if not
 
 ---
 

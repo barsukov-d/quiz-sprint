@@ -11,18 +11,15 @@ const playerId = currentUser.value?.id || 'guest'
 </script>
 
 <template>
-  <div class="home-container">
+  <div class="mx-auto max-w-[800px] ">
     <!-- User Info (optional) -->
-    <div v-if="isAuthenticated && currentUser" class="mb-6">
-      <div class="flex items-center gap-4 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
-        <UAvatar :src="currentUser.avatarUrl" :alt="currentUser.username" size="lg" />
-        <div>
-          <h3 class="text-lg font-semibold">{{ currentUser.username }}</h3>
-          <p v-if="currentUser.telegramUsername" class="text-sm text-gray-500 dark:text-gray-400">
-            @{{ currentUser.telegramUsername }}
-          </p>
-        </div>
-      </div>
+    <div v-if="isAuthenticated && currentUser" class="mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg">
+      <UUser
+        :name="currentUser.username"
+        :description="currentUser.telegramUsername"
+        :avatar="{ src: currentUser.avatarUrl, alt: currentUser.username }"
+        size="lg"
+      />
     </div>
 
     <!-- ========================================
@@ -82,13 +79,3 @@ const playerId = currentUser.value?.id || 'guest'
     </section>
   </div>
 </template>
-
-<style scoped>
-.home-container {
-  max-width: 800px;
-  margin: 0 auto;
-  padding: 1rem;
-  padding-top: 6rem;
-  padding-bottom: 2rem;
-}
-</style>

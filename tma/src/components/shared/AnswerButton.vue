@@ -22,49 +22,60 @@ const emit = defineEmits<{
   click: [answerId: string]
 }>()
 
-// ===========================
-// Computed
-// ===========================
+/**
+ * 4 feedback states per docs/game_modes/daily_challenge/02_gameplay.md:
+ * 1. Correct answer → green bg + border, full opacity, checkmark
+ * 2. Selected + wrong → red bg + border, full opacity, cross
+ * 3. Not selected + not correct → muted (opacity-40)
+ * 4. Selected + correct → green bg + border (same as #1)
+ */
+const buttonClasses = computed(() => {
+  const base = 'w-full p-4 rounded-xl border-2 text-left transition-all duration-200'
 
-const buttonColor = computed(() => {
-  // Feedback mode (для Marathon)
-  if (props.showFeedback && props.isCorrect !== null) {
-    return props.isCorrect ? 'green' : 'red'
+  // Feedback mode
+  if (props.showFeedback) {
+    if (props.isCorrect === true) {
+      // Correct answer → green
+      return `${base} border-green-500 bg-green-500/20 dark:bg-green-500/15`
+    }
+    if (props.isCorrect === false) {
+      // Selected wrong → red
+      return `${base} border-red-500 bg-red-500/20 dark:bg-red-500/15`
+    }
+    // Not selected + not correct → muted
+    return `${base} border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 opacity-40`
   }
 
-  // Selected state
+  // Selected state (before submit)
   if (props.selected) {
-    return 'primary'
+    return `${base} border-primary-500 bg-primary-500/10 dark:bg-primary-500/15`
   }
 
-  // Default
+  // Default — interactive
+  if (props.disabled) {
+    return `${base} border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 opacity-50 cursor-not-allowed`
+  }
+
+  return `${base} border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary-500 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 cursor-pointer`
+})
+
+const badgeColor = computed(() => {
+  if (props.showFeedback && props.isCorrect === true) return 'green'
+  if (props.showFeedback && props.isCorrect === false) return 'red'
+  if (props.selected) return 'primary'
   return 'gray'
 })
 
-const buttonIcon = computed(() => {
-  if (props.showFeedback && props.isCorrect !== null) {
-    return props.isCorrect ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'
-  }
-  return undefined
+const feedbackIcon = computed(() => {
+  if (!props.showFeedback || props.isCorrect === null) return null
+  return props.isCorrect ? 'i-heroicons-check-circle' : 'i-heroicons-x-circle'
 })
 
-const buttonClass = computed(() => {
-  const classes = ['answer-button']
-
-  if (props.selected) {
-    classes.push('answer-selected')
-  }
-
-  if (props.showFeedback) {
-    classes.push('answer-feedback')
-  }
-
-  return classes.join(' ')
+const feedbackIconColor = computed(() => {
+  if (props.isCorrect === true) return 'text-green-500'
+  if (props.isCorrect === false) return 'text-red-500'
+  return ''
 })
-
-// ===========================
-// Methods
-// ===========================
 
 const handleClick = () => {
   if (!props.disabled) {
@@ -76,125 +87,27 @@ const handleClick = () => {
 <template>
   <button
     type="button"
-    :class="buttonClass"
-    :disabled="disabled"
+    :class="buttonClasses"
+    :disabled="disabled || showFeedback"
     @click="handleClick"
   >
-    <div class="answer-content">
-      <!-- Label (A, B, C, D) -->
-      <div v-if="label" class="answer-label">
-        <UBadge :color="buttonColor" size="lg">
-          {{ label }}
-        </UBadge>
-      </div>
+    <div class="flex items-center gap-3">
+      <!-- Label badge (A, B, C, D) -->
+      <UBadge v-if="label" :color="badgeColor" size="lg" class="shrink-0">
+        {{ label }}
+      </UBadge>
 
-      <!-- Answer Text -->
-      <div class="answer-text">
+      <!-- Answer text -->
+      <span class="flex-1 text-base font-medium leading-snug text-gray-900 dark:text-gray-100">
         {{ answer.text }}
-      </div>
+      </span>
 
-      <!-- Feedback Icon -->
-      <div v-if="showFeedback && buttonIcon" class="answer-icon">
-        <UIcon :name="buttonIcon" class="size-6" />
-      </div>
+      <!-- Feedback icon -->
+      <UIcon
+        v-if="feedbackIcon"
+        :name="feedbackIcon"
+        :class="['size-6 shrink-0', feedbackIconColor]"
+      />
     </div>
   </button>
 </template>
-
-<style scoped>
-.answer-button {
-  width: 100%;
-  padding: 1rem;
-  border-radius: 0.75rem;
-  border: 2px solid rgb(var(--color-gray-300));
-  background: white;
-  cursor: pointer;
-  transition: all 0.2s;
-  text-align: left;
-}
-
-.answer-button:hover:not(:disabled) {
-  border-color: rgb(var(--color-primary-500));
-  transform: translateY(-2px);
-  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
-}
-
-.answer-button:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
-}
-
-.answer-button.answer-selected {
-  border-color: rgb(var(--color-primary-500));
-  background: rgb(var(--color-primary-50));
-}
-
-.answer-button.answer-feedback {
-  pointer-events: none;
-}
-
-.answer-content {
-  display: flex;
-  align-items: center;
-  gap: 1rem;
-}
-
-.answer-label {
-  flex-shrink: 0;
-}
-
-.answer-text {
-  flex: 1;
-  font-size: 1rem;
-  font-weight: 500;
-  color: rgb(var(--color-gray-900));
-  line-height: 1.5;
-}
-
-.answer-icon {
-  flex-shrink: 0;
-}
-
-/* Feedback states */
-.answer-button.answer-feedback[data-correct="true"] {
-  border-color: rgb(var(--color-green-500));
-  background: rgb(var(--color-green-50));
-}
-
-.answer-button.answer-feedback[data-correct="false"] {
-  border-color: rgb(var(--color-red-500));
-  background: rgb(var(--color-red-50));
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-  .answer-button {
-    background: rgb(var(--color-gray-800));
-    border-color: rgb(var(--color-gray-600));
-  }
-
-  .answer-button:hover:not(:disabled) {
-    border-color: rgb(var(--color-primary-400));
-    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
-  }
-
-  .answer-button.answer-selected {
-    background: rgb(var(--color-primary-900) / 0.3);
-    border-color: rgb(var(--color-primary-400));
-  }
-
-  .answer-text {
-    color: rgb(var(--color-gray-100));
-  }
-
-  .answer-button.answer-feedback[data-correct="true"] {
-    background: rgb(var(--color-green-900) / 0.3);
-    border-color: rgb(var(--color-green-400));
-  }
-
-  .answer-button.answer-feedback[data-correct="false"] {
-    background: rgb(var(--color-red-900) / 0.3);
-    border-color: rgb(var(--color-red-400));
-  }
-}
-</style>

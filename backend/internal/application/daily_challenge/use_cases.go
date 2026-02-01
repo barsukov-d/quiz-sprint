@@ -114,6 +114,14 @@ func (uc *StartDailyChallengeUseCase) Execute(input StartDailyChallengeInput) (S
 		return StartDailyChallengeOutput{}, err
 	}
 
+	// Daily Challenge scoring: basePoints=100, timeBonus=max(0, (15-timeTaken)*5) → max 75
+	// Per docs/game_modes/daily_challenge/03_rules.md
+	dailyBasePoints, _ := quiz.NewPoints(100)
+	dailyMaxTimeBonus, _ := quiz.NewPoints(75)
+	quizAggregate.SetBasePoints(dailyBasePoints)
+	quizAggregate.SetTimeLimitPerQuestion(15)
+	quizAggregate.SetMaxTimeBonus(dailyMaxTimeBonus)
+
 	println("✅ [StartDailyChallenge] Created quiz aggregate, adding questions...")
 
 	// Add questions to quiz
@@ -265,12 +273,14 @@ func (uc *SubmitDailyAnswerUseCase) Execute(input SubmitDailyAnswerInput) (Submi
 		uc.eventBus.Publish(event)
 	}
 
-	// 6. Build output
+	// 6. Build output (with instant feedback)
 	output := SubmitDailyAnswerOutput{
 		QuestionIndex:      result.QuestionIndex,
 		TotalQuestions:     10,
 		RemainingQuestions: result.RemainingQuestions,
 		IsGameCompleted:    result.IsGameCompleted,
+		IsCorrect:          result.IsCorrect,
+		CorrectAnswerID:    result.CorrectAnswerID,
 	}
 
 	// 7. If game continues, return next question
@@ -727,6 +737,13 @@ func (uc *RetryChallengeUseCase) Execute(input RetryChallengeInput) (RetryChalle
 	if err != nil {
 		return RetryChallengeOutput{}, err
 	}
+
+	// Daily Challenge scoring overrides (same as start)
+	retryBasePoints, _ := quiz.NewPoints(100)
+	retryMaxTimeBonus, _ := quiz.NewPoints(75)
+	quizAggregate.SetBasePoints(retryBasePoints)
+	quizAggregate.SetTimeLimitPerQuestion(15)
+	quizAggregate.SetMaxTimeBonus(retryMaxTimeBonus)
 
 	for _, question := range questions {
 		if err := quizAggregate.AddQuestion(*question); err != nil {

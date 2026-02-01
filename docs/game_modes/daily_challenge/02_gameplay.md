@@ -1,5 +1,18 @@
 # Daily Challenge - Gameplay Flow
 
+## Changes
+
+| Date | Change | Reason |
+|------|--------|--------|
+| 2026-01-31 | Question screen: `NO feedback` → `instant feedback after each answer` | Player must see correct/incorrect right away |
+| 2026-01-31 | Added section `2b. Feedback State` with wireframe | New UI state for answer feedback |
+| 2026-01-31 | Removed section `6. Review Mistakes` | Redundant — feedback is now shown inline during gameplay |
+| 2026-01-31 | Pre-game screen text: `Результаты покажутся в конце` → `Мгновенная обратная связь` | Reflects new feedback behavior |
+| 2026-02-01 | Question screen: compact header (1 line), question text is primary focus | Question was buried below progress/timer |
+| 2026-02-01 | Feedback: all non-selected wrong answers → muted/dimmed | Only selected + correct should stand out |
+| 2026-02-01 | Removed permanent "Select your answer" alert | Redundant hint, wastes space |
+| 2026-02-01 | Answer buttons: Tailwind-only, no custom CSS | Consistency with project style |
+
 ## Entry Point
 Home screen → "Daily Challenge" button → Shows:
 - Today's date
@@ -18,7 +31,7 @@ Home screen → "Daily Challenge" button → Shows:
 │  Бонус: +25% к наградам             │
 │                                     │
 │  10 вопросов • 15 сек на вопрос     │
-│  Результаты покажутся в конце       │
+│  Мгновенная обратная связь           │
 │                                     │
 │  [      НАЧАТЬ ЧЕЛЛЕНДЖ      ]      │
 │                                     │
@@ -27,32 +40,72 @@ Home screen → "Daily Challenge" button → Shows:
 ```
 
 ### 2. Question Screen
+
+**Layout priority (top → bottom):** compact header → question text (primary) → answers
+
 ```
 ┌─────────────────────────────────────┐
-│  Вопрос 3/10              ⏱️ 00:12  │
+│  3/10   ━━━━━━━━━━━━━━━━━━   00:12  │  ← single line: counter + progress + timer
 │                                     │
-│  В каком году основали Москву?      │
 │                                     │
-│  [ A. 1147 год            ]         │
-│  [ B. 1240 год            ]         │
-│  [ C. 988 год             ]         │
-│  [ D. 1380 год            ]         │
+│  В каком году основали Москву?      │  ← large text, primary focus
 │                                     │
-│  ━━━━━━━━━━━━━━━━━━━━━━━━ 30%      │
+│                                     │
+│  ┌─ A ── 1147 год ────────────────┐ │
+│  ├─ B ── 1240 год ────────────────┤ │  ← full-width answer buttons
+│  ├─ C ── 988 год ─────────────────┤ │
+│  └─ D ── 1380 год ────────────────┘ │
 └─────────────────────────────────────┘
 ```
+
+**Header:** single row, 3 elements inline:
+- Left: `3/10` (question counter, text only)
+- Center: thin `UProgress` bar
+- Right: `00:12` timer (mono font, color changes: green → orange → red)
+
+**Question:** `text-xl` / `text-2xl`, no card wrapper, just text with vertical padding.
 
 **Behavior:**
 - Timer counts down from 15
 - Answer locks after selection (no change)
 - Auto-submit at 0:00 (counts as wrong)
-- NO feedback (correct/incorrect)
-- Next question appears immediately
+- **Instant feedback** after each answer (see 2b)
+
+### 2b. Feedback State (after answer selected)
+
+Example: user selected C (wrong), correct is A:
+```
+┌─────────────────────────────────────┐
+│  3/10   ━━━━━━━━━━━━━━━━━━   00:08  │
+│                                     │
+│  В каком году основали Москву?      │
+│                                     │
+│  ┌─ A ── 1147 год ─── ✓ ─────────┐ │ ← green bg + border
+│  ├─ B ── 1240 год ───────────────┤ │ ← muted (opacity-40)
+│  ├─ C ── 988 год ──── ✗ ─────────┤ │ ← red bg + border (user's pick)
+│  └─ D ── 1380 год ───────────────┘ │ ← muted (opacity-40)
+└─────────────────────────────────────┘
+```
+
+**Feedback rules (4 states per button):**
+
+| Condition | Style | Icon |
+|-----------|-------|------|
+| Correct answer | `bg-green`, `border-green`, full opacity | `✓` checkmark |
+| Selected + wrong | `bg-red`, `border-red`, full opacity | `✗` cross |
+| Not selected + not correct | `opacity-40`, no border change | none |
+| Selected + correct | `bg-green`, `border-green`, full opacity | `✓` checkmark |
+
+**Timing:**
+- All answer buttons **disabled** during feedback
+- Timer **stops** during feedback
+- Auto-transition to next question after **1.5s**
+- Backend `submitAnswer` returns `{ isCorrect, correctAnswerId }` — frontend renders feedback from this
 
 ### 3. Progress Indicator
-- `3/10` shown top-left
-- Progress bar bottom (fills 10% per question)
-- Timer always visible
+- `3/10` shown inline left in header
+- Thin progress bar between counter and timer
+- Timer always visible, color-coded (green > 5s, orange <= 5s, red = 0)
 
 ### 4. Completion Screen
 ```
@@ -94,23 +147,6 @@ Animation → Shows rewards:
 │  Бонус серии: +25%                  │
 │                                     │
 │  [        ЗАБРАТЬ        ]          │
-└─────────────────────────────────────┘
-```
-
-### 6. Review Mistakes (Optional)
-```
-┌─────────────────────────────────────┐
-│  РАЗБОР ОШИБОК (2)                  │
-│                                     │
-│  Вопрос 4: Какая планета...         │
-│  ✗ Твой ответ: Марс                 │
-│  ✓ Правильно: Венера                │
-│                                     │
-│  Вопрос 7: В каком году...          │
-│  ✗ Твой ответ: 1917                 │
-│  ✓ Правильно: 1918                  │
-│                                     │
-│  [ Понятно ]                        │
 └─────────────────────────────────────┘
 ```
 

@@ -180,9 +180,10 @@ export function useDailyChallenge(playerId: string) {
 
       const answerData = response.data
 
-      console.log('[useDailyChallenge] Checking game completion:', {
-        isGameCompleted: answerData.isGameCompleted,
-        hasGameResults: !!answerData.gameResults
+      console.log('[useDailyChallenge] Answer result:', {
+        isCorrect: answerData.isCorrect,
+        correctAnswerId: answerData.correctAnswerId,
+        isGameCompleted: answerData.isGameCompleted
       })
 
       if (answerData.isGameCompleted) {
@@ -190,16 +191,14 @@ export function useDailyChallenge(playerId: string) {
         console.log('[useDailyChallenge] Game completed! Fetching results from server...')
         await refetchStatus()
         await refetchStreak()
-
-        // Navigate to results page
-        console.log('[useDailyChallenge] Navigating to results...')
-        router.push({ name: 'daily-challenge-results' })
       } else {
         // Game continues - refresh status to get next question
         console.log('[useDailyChallenge] Game continues, fetching next question...')
         await refetchStatus()
       }
 
+      // Return answer data with feedback (isCorrect, correctAnswerId)
+      // View handles navigation after showing feedback
       return answerData
     } catch (error) {
       console.error('[useDailyChallenge] Failed to submit answer:', error)

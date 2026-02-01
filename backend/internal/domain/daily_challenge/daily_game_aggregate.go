@@ -88,15 +88,17 @@ func NewDailyGame(
 
 // AnswerQuestionResult holds result of answering a question
 type AnswerQuestionResult struct {
-	QuestionIndex  int
-	TimeTaken      int64
+	QuestionIndex      int
+	TimeTaken          int64
 	RemainingQuestions int
-	IsGameCompleted bool
+	IsGameCompleted    bool
+	IsCorrect          bool
+	CorrectAnswerID    string
 }
 
 // AnswerQuestion processes a user's answer for daily challenge
 // Business Logic:
-// - No immediate feedback (correct/incorrect not shown until completion)
+// - Instant feedback (correct/incorrect shown immediately after each answer)
 // - Track answers and continue to next question
 // - Complete game after 10 questions
 func (dg *DailyGame) AnswerQuestion(
@@ -110,18 +112,31 @@ func (dg *DailyGame) AnswerQuestion(
 		return nil, ErrGameNotActive
 	}
 
-	// 2. Delegate to kernel session for pure gameplay logic
-	_, err := dg.session.AnswerQuestion(questionID, answerID, timeTaken, answeredAt)
+	// 2. Find correct answer ID before answering (question is accessible now)
+	correctAnswerID := ""
+	if question, err := dg.session.Quiz().GetQuestion(questionID); err == nil {
+		for _, answer := range question.Answers() {
+			if answer.IsCorrect() {
+				correctAnswerID = answer.ID().String()
+				break
+			}
+		}
+	}
+
+	// 3. Delegate to kernel session for pure gameplay logic
+	kernelResult, err := dg.session.AnswerQuestion(questionID, answerID, timeTaken, answeredAt)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Build result (NO correctness feedback until completion)
+	// 4. Build result with instant feedback
 	result := &AnswerQuestionResult{
 		QuestionIndex:      dg.session.CurrentQuestionIndex() - 1, // -1 because we already moved forward
 		TimeTaken:          timeTaken,
 		RemainingQuestions: dg.session.Quiz().QuestionsCount() - dg.session.CurrentQuestionIndex(),
 		IsGameCompleted:    dg.session.IsFinished(),
+		IsCorrect:          kernelResult.IsCorrect,
+		CorrectAnswerID:    correctAnswerID,
 	}
 
 	// 4. Publish DailyQuestionAnswered event

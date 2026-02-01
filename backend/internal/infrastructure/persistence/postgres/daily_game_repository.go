@@ -488,6 +488,13 @@ func (r *DailyGameRepository) deserializeDailyChallengeSession(
 		return nil, fmt.Errorf("failed to create quiz: %w", err)
 	}
 
+	// Daily Challenge scoring overrides
+	dailyBasePoints, _ := quiz.NewPoints(100)
+	dailyMaxTimeBonus, _ := quiz.NewPoints(75)
+	quizAggregate.SetBasePoints(dailyBasePoints)
+	quizAggregate.SetTimeLimitPerQuestion(15)
+	quizAggregate.SetMaxTimeBonus(dailyMaxTimeBonus)
+
 	// Add questions in order
 	for _, question := range questions {
 		if err := quizAggregate.AddQuestion(*question); err != nil {
