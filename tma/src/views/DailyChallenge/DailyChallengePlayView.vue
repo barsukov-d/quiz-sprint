@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDailyChallenge } from '@/composables/useDailyChallenge'
 import { useAuth } from '@/composables/useAuth'
@@ -24,10 +24,12 @@ const {
   questionIndex,
   totalQuestions,
   timeLimit,
+  timeRemaining,
   isPlaying,
-  isCompleted,
   submitAnswer,
-  initialize
+  initialize,
+  refetchStatus,
+  refetchStreak
 } = useDailyChallenge(playerId)
 
 // ===========================
@@ -42,6 +44,7 @@ const timerRef = ref<InstanceType<typeof GameTimer> | null>(null)
 const showFeedback = ref(false)
 const feedbackIsCorrect = ref<boolean | null>(null)
 const feedbackCorrectAnswerId = ref<string | null>(null)
+const feedbackGameCompleted = ref(false)
 
 // ===========================
 // Computed
@@ -88,6 +91,7 @@ const handleSubmit = async () => {
     // Show instant feedback from backend
     feedbackIsCorrect.value = answerData.isCorrect
     feedbackCorrectAnswerId.value = answerData.correctAnswerId
+    feedbackGameCompleted.value = answerData.isGameCompleted ?? false
     showFeedback.value = true
     isSubmitting.value = false
 
@@ -102,33 +106,61 @@ const handleSubmit = async () => {
 }
 
 const handleTimeout = async () => {
-  // Auto-submit when timer expires
-  if (selectedAnswerId.value && !showFeedback.value) {
-    await handleSubmit()
-  } else if (!showFeedback.value) {
-    // No answer selected - counts as wrong, show feedback briefly
-    showFeedback.value = true
-    feedbackIsCorrect.value = false
-    feedbackCorrectAnswerId.value = null
+  // Prevent multiple timeout calls
+  if (showFeedback.value || isSubmitting.value) return
 
-    setTimeout(() => {
-      handleNextStep()
-    }, 1000)
+  // Auto-submit when timer expires
+  if (selectedAnswerId.value) {
+    // User selected answer — submit it
+    await handleSubmit()
+  } else {
+    // No answer selected — submit first answer as wrong (backend needs an answer to progress)
+    if (!currentQuestion.value?.answers?.[0]) return
+
+    selectedAnswerId.value = currentQuestion.value.answers[0].id
+    isSubmitting.value = true
+
+    try {
+      // Submit with full time taken (timeout)
+      const answerData = await submitAnswer(selectedAnswerId.value, timeLimit.value)
+
+      // Show brief feedback (will be wrong)
+      feedbackIsCorrect.value = answerData.isCorrect
+      feedbackCorrectAnswerId.value = answerData.correctAnswerId
+      feedbackGameCompleted.value = answerData.isGameCompleted ?? false
+      showFeedback.value = true
+      isSubmitting.value = false
+
+      // Move to next question after 1s
+      setTimeout(() => {
+        handleNextStep()
+      }, 1000)
+    } catch (error) {
+      console.error('Failed to submit timeout answer:', error)
+      isSubmitting.value = false
+    }
   }
 }
 
-const handleNextStep = () => {
+const handleNextStep = async () => {
+  const gameCompleted = feedbackGameCompleted.value
+
+  // Reset feedback state
   showFeedback.value = false
   selectedAnswerId.value = null
   isSubmitting.value = false
   feedbackIsCorrect.value = null
   feedbackCorrectAnswerId.value = null
+  feedbackGameCompleted.value = false
 
-  // Check if game is completed
-  if (isCompleted.value) {
+  if (gameCompleted) {
+    // Game completed — fetch results from server, then navigate
+    await refetchStatus()
+    await refetchStreak()
     router.push({ name: 'daily-challenge-results' })
   } else {
-    // Reset timer for next question
+    // Game continues — fetch next question from server, then reset timer
+    await refetchStatus()
     timerRef.value?.reset(timeLimit.value)
     timerRef.value?.start()
   }
@@ -162,26 +194,46 @@ const getAnswerFeedback = (answerId: string) => {
 }
 
 // ===========================
+// Timer initialization helper
+// ===========================
+
+const startTimer = () => {
+  if (!timerRef.value) return
+
+  // Use server-provided timeRemaining, fallback to full timeLimit
+  const initialTime = timeRemaining.value !== null && timeRemaining.value !== undefined
+    ? timeRemaining.value
+    : timeLimit.value
+
+  timerRef.value.reset(initialTime)
+  timerRef.value.start()
+}
+
+// ===========================
 // Lifecycle
 // ===========================
 
 onMounted(async () => {
-  await initialize()
+  try {
+    await initialize()
+  } catch (error: unknown) {
+    // Ignore canceled requests (component unmounting during navigation)
+    if (error instanceof Error && error.message === 'canceled') return
+    console.error('[DailyChallengePlayView] Failed to initialize:', error)
+  }
 
   if (!isPlaying.value) {
     router.push({ name: 'home' })
     return
   }
 
-  if (timerRef.value) {
-    timerRef.value.start()
-  }
+  // Wait for DOM update so timerRef is available, then start timer
+  await nextTick()
+  startTimer()
 })
 
 onUnmounted(() => {
-  if (timerRef.value) {
-    timerRef.value.stop()
-  }
+  timerRef.value?.stop()
 })
 </script>
 

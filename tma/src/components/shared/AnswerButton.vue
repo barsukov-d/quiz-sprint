@@ -30,7 +30,7 @@ const emit = defineEmits<{
  * 4. Selected + correct → green bg + border (same as #1)
  */
 const buttonClasses = computed(() => {
-  const base = 'w-full p-4 rounded-xl border-2 text-left transition-all duration-200'
+  const base = 'w-full p-4 rounded-xl border-2 text-left transition-all duration-300'
 
   // Feedback mode
   if (props.showFeedback) {
@@ -46,9 +46,9 @@ const buttonClasses = computed(() => {
     return `${base} border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 opacity-40`
   }
 
-  // Selected state (before submit)
+  // Selected state (before submit) — более яркий синий для заметности
   if (props.selected) {
-    return `${base} border-primary-500 bg-primary-500/10 dark:bg-primary-500/15`
+    return `${base} border-primary-500 bg-primary-500/20 dark:bg-primary-500/25 ring-2 ring-primary-500/30`
   }
 
   // Default — interactive

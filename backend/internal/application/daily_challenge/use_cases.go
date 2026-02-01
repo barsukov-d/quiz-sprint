@@ -405,11 +405,28 @@ func (uc *GetDailyGameStatusUseCase) Execute(input GetDailyGameStatusInput) (Get
 
 	gameDTO := ToDailyGameDTO(game, now)
 	var timeLimit *int
+	var timeRemaining *int
 	var results *GameResultsDTO
 
 	if game.Status() == daily_challenge.GameStatusInProgress {
 		tl := 15
 		timeLimit = &tl
+
+		// Calculate time remaining for current question
+		// timeRemaining = timeLimit - (now - questionStartedAt)
+		elapsed := now - game.QuestionStartedAt()
+		remaining := int64(tl) - elapsed
+
+		// Clamp to [0, timeLimit]
+		if remaining < 0 {
+			remaining = 0
+		}
+		if remaining > int64(tl) {
+			remaining = int64(tl)
+		}
+
+		tr := int(remaining)
+		timeRemaining = &tr
 	} else if game.Status() == daily_challenge.GameStatusCompleted {
 		// Build results for completed games
 		rank, _ := uc.dailyGameRepo.GetPlayerRankByDate(game.PlayerID(), game.Date())
@@ -431,12 +448,13 @@ func (uc *GetDailyGameStatusUseCase) Execute(input GetDailyGameStatusInput) (Get
 	hasPlayed := game.Status() == daily_challenge.GameStatusCompleted
 
 	return GetDailyGameStatusOutput{
-		HasPlayed:    hasPlayed,
-		Game:         &gameDTO,
-		Results:      results,
-		TimeLimit:    timeLimit,
-		TimeToExpire: timeToExpire,
-		TotalPlayers: totalPlayers,
+		HasPlayed:     hasPlayed,
+		Game:          &gameDTO,
+		Results:       results,
+		TimeLimit:     timeLimit,
+		TimeRemaining: timeRemaining,
+		TimeToExpire:  timeToExpire,
+		TotalPlayers:  totalPlayers,
 	}, nil
 }
 

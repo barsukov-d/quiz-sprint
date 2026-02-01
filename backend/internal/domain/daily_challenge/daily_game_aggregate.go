@@ -7,15 +7,16 @@ import (
 
 // DailyGame is the aggregate root for a player's daily challenge attempt
 type DailyGame struct {
-	id            GameID
-	playerID      UserID
-	dailyQuizID   DailyQuizID
-	date          Date
-	status        GameStatus
-	session       *kernel.QuizGameplaySession // Composition: delegates pure gameplay logic
-	streak        StreakSystem                // Daily streak tracking
-	rank          *int                        // Player's rank in leaderboard (nil if not yet calculated)
-	chestReward   *ChestReward                // Chest earned (nil until game completed)
+	id                GameID
+	playerID          UserID
+	dailyQuizID       DailyQuizID
+	date              Date
+	status            GameStatus
+	session           *kernel.QuizGameplaySession // Composition: delegates pure gameplay logic
+	streak            StreakSystem                // Daily streak tracking
+	rank              *int                        // Player's rank in leaderboard (nil if not yet calculated)
+	chestReward       *ChestReward                // Chest earned (nil until game completed)
+	questionStartedAt int64                       // Unix timestamp when current question started (for timer persistence)
 
 	// Domain events collected during operations
 	events []Event
@@ -62,15 +63,16 @@ func NewDailyGame(
 
 	// 3. Create game
 	game := &DailyGame{
-		id:          gameID,
-		playerID:    playerID,
-		dailyQuizID: dailyQuizID,
-		date:        date,
-		status:      GameStatusInProgress,
-		session:     session,
-		streak:      currentStreak,
-		rank:        nil,
-		events:      make([]Event, 0),
+		id:                gameID,
+		playerID:          playerID,
+		dailyQuizID:       dailyQuizID,
+		date:              date,
+		status:            GameStatusInProgress,
+		session:           session,
+		streak:            currentStreak,
+		rank:              nil,
+		questionStartedAt: startedAt, // First question starts immediately
+		events:            make([]Event, 0),
 	}
 
 	// 4. Publish DailyGameStarted event
@@ -139,7 +141,12 @@ func (dg *DailyGame) AnswerQuestion(
 		CorrectAnswerID:    correctAnswerID,
 	}
 
-	// 4. Publish DailyQuestionAnswered event
+	// 4. Update questionStartedAt for next question (if not finished)
+	if !dg.session.IsFinished() {
+		dg.questionStartedAt = answeredAt
+	}
+
+	// 5. Publish DailyQuestionAnswered event
 	dg.events = append(dg.events, NewDailyQuestionAnsweredEvent(
 		dg.id,
 		dg.playerID,
@@ -149,7 +156,7 @@ func (dg *DailyGame) AnswerQuestion(
 		answeredAt,
 	))
 
-	// 5. Auto-complete if all questions answered
+	// 6. Auto-complete if all questions answered
 	if dg.session.IsFinished() {
 		if err := dg.complete(answeredAt); err != nil {
 			return nil, err
@@ -296,6 +303,7 @@ func (dg *DailyGame) Session() *kernel.QuizGameplaySession { return dg.session }
 func (dg *DailyGame) Streak() StreakSystem                 { return dg.streak }
 func (dg *DailyGame) Rank() *int                           { return dg.rank }
 func (dg *DailyGame) ChestReward() *ChestReward            { return dg.chestReward }
+func (dg *DailyGame) QuestionStartedAt() int64             { return dg.questionStartedAt }
 func (dg *DailyGame) IsCompleted() bool                    { return dg.status.IsTerminal() }
 
 // Events returns collected domain events and clears them
@@ -317,17 +325,19 @@ func ReconstructDailyGame(
 	streak StreakSystem,
 	rank *int,
 	chestReward *ChestReward,
+	questionStartedAt int64,
 ) *DailyGame {
 	return &DailyGame{
-		id:          id,
-		playerID:    playerID,
-		dailyQuizID: dailyQuizID,
-		date:        date,
-		status:      status,
-		session:     session,
-		streak:      streak,
-		rank:        rank,
-		chestReward: chestReward,
+		id:                id,
+		playerID:          playerID,
+		dailyQuizID:       dailyQuizID,
+		date:              date,
+		status:            status,
+		session:           session,
+		streak:            streak,
+		rank:              rank,
+		chestReward:       chestReward,
+		questionStartedAt: questionStartedAt,
 		events:      make([]Event, 0), // Don't replay events from DB
 	}
 }

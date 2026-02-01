@@ -12,6 +12,9 @@
 | 2026-02-01 | Feedback: all non-selected wrong answers → muted/dimmed | Only selected + correct should stand out |
 | 2026-02-01 | Removed permanent "Select your answer" alert | Redundant hint, wastes space |
 | 2026-02-01 | Answer buttons: Tailwind-only, no custom CSS | Consistency with project style |
+| 2026-02-01 | Card (Completed): score first, no progress bar, compact streak | Score is what user wants to see |
+| 2026-02-01 | Card (Completed): removed "Next: milestone" progress | Secondary info, moved to results page |
+| 2026-02-01 | Card (Not Played): simpler layout, no redundant badges | Reduced visual noise |
 
 ## Entry Point
 Home screen → "Daily Challenge" button → Shows:
@@ -21,23 +24,72 @@ Home screen → "Daily Challenge" button → Shows:
 
 ## Flow Steps
 
-### 1. Pre-game Screen
+### 1a. Card — Not Played (Home Screen)
+
 ```
 ┌─────────────────────────────────────┐
-│  📅 DAILY CHALLENGE                 │
-│  24 января 2026                     │
+│  📅 Today's Challenge               │
 │                                     │
-│  🔥 Текущая серия: 5 дней          │
-│  Бонус: +25% к наградам             │
+│  10 questions • 15s each            │
+│  🔥 1 day streak                    │
 │                                     │
-│  10 вопросов • 15 сек на вопрос     │
-│  Мгновенная обратная связь           │
+│  [     Start Challenge     ]        │
 │                                     │
-│  [      НАЧАТЬ ЧЕЛЛЕНДЖ      ]      │
-│                                     │
-│  [ Лидерборд ]  [ Правила ]         │
+│  ⏱ 14:43:47        👥 1 player     │  ← small, gray
 └─────────────────────────────────────┘
 ```
+
+**Layout:**
+- Title: "Today's Challenge" (no redundant "Daily Challenge - Available" + badge)
+- Challenge info: bullets, one line
+- Streak: inline, emoji + count
+- Action: primary button
+- Meta: reset timer + players (small, bottom)
+
+### 1b. Card — Completed (Home Screen)
+
+```
+┌─────────────────────────────────────┐
+│  📅 Today's Challenge          ✓    │
+│                                     │
+│         178 points                  │  ← primary focus
+│         🔥 1 day streak             │
+│                                     │
+│  [     View Results     ]           │
+│                                     │
+│  ⏱ 14:43:47        👥 1 player     │
+└─────────────────────────────────────┘
+```
+
+**Layout:**
+- Title: "Today's Challenge" + checkmark icon (no "Completed" badge duplication)
+- **Score first** — large, center-aligned (what user wants to see)
+- Streak: below score, one line
+- Action: gray button "View Results"
+- Meta: same as not-played
+- **No progress bar** (game done, 100% is obvious)
+- **No "Next: milestone"** (moved to results page)
+
+### 1c. Card — In Progress (Home Screen)
+
+```
+┌─────────────────────────────────────┐
+│  📅 Today's Challenge        🕐     │
+│                                     │
+│  Question 5/10                      │
+│  ━━━━━━━━━━━━━━━━━━━━━━ 50%        │
+│                                     │
+│  [      Continue      ]             │
+│                                     │
+│  ⏱ 14:43:47        👥 1 player     │
+└─────────────────────────────────────┘
+```
+
+**Layout:**
+- Title + clock icon (not "In Progress" text badge)
+- Progress: question count + thin bar
+- Action: primary button "Continue"
+- Meta: same
 
 ### 2. Question Screen
 

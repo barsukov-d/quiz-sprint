@@ -733,20 +733,21 @@ type SubmitDailyAnswerRequest struct {
 
 // DailyGameDTO represents a daily challenge game
 type DailyGameDTO struct {
-	GameID          string       `json:"gameId" validate:"required"`
-	PlayerID        string       `json:"playerId" validate:"required"`
-	DailyQuizID     string       `json:"dailyQuizId" validate:"required"`
-	Date            string       `json:"date" validate:"required"` // YYYY-MM-DD
-	Status          string       `json:"status" validate:"required"` // "in_progress" | "completed"
-	CurrentQuestion *QuestionDTO `json:"currentQuestion,omitempty"`
-	QuestionIndex   int          `json:"questionIndex" validate:"required"`
-	TotalQuestions  int          `json:"totalQuestions" validate:"required"`
-	BaseScore       int          `json:"baseScore" validate:"required"`
-	FinalScore      int          `json:"finalScore" validate:"required"`
-	CorrectAnswers  int          `json:"correctAnswers" validate:"required"`
-	Streak          StreakDTO    `json:"streak" validate:"required"`
-	Rank            *int         `json:"rank,omitempty"`
-	TimeRemaining   int64        `json:"timeRemaining" validate:"required"`
+	GameID                string       `json:"gameId" validate:"required"`
+	PlayerID              string       `json:"playerId" validate:"required"`
+	DailyQuizID           string       `json:"dailyQuizId" validate:"required"`
+	Date                  string       `json:"date" validate:"required"` // YYYY-MM-DD
+	Status                string       `json:"status" validate:"required"` // "in_progress" | "completed"
+	CurrentQuestion       *QuestionDTO `json:"currentQuestion,omitempty"`
+	QuestionIndex         int          `json:"questionIndex" validate:"required"`
+	TotalQuestions        int          `json:"totalQuestions" validate:"required"`
+	BaseScore             int          `json:"baseScore" validate:"required"`
+	FinalScore            int          `json:"finalScore" validate:"required"`
+	CorrectAnswers        int          `json:"correctAnswers" validate:"required"`
+	Streak                StreakDTO    `json:"streak" validate:"required"`
+	Rank                  *int         `json:"rank,omitempty"`
+	TimeRemaining         int64        `json:"timeRemaining" validate:"required"` // Seconds until daily quiz expires
+	QuestionTimeRemaining *int         `json:"questionTimeRemaining,omitempty"` // Seconds remaining for current question
 }
 
 // @name DailyGameDTO
@@ -848,12 +849,13 @@ type SubmitDailyAnswerResponse struct {
 
 // GetDailyStatusData contains status response data
 type GetDailyStatusData struct {
-	HasPlayed    bool             `json:"hasPlayed" validate:"required"`
-	Game         *DailyGameDTO    `json:"game,omitempty"`
-	Results      *GameResultsDTO  `json:"results,omitempty"`
-	TimeLimit    *int             `json:"timeLimit,omitempty"`
-	TimeToExpire int64            `json:"timeToExpire" validate:"required"`
-	TotalPlayers int              `json:"totalPlayers" validate:"required"`
+	HasPlayed     bool             `json:"hasPlayed" validate:"required"`
+	Game          *DailyGameDTO    `json:"game,omitempty"`
+	Results       *GameResultsDTO  `json:"results,omitempty"`
+	TimeLimit     *int             `json:"timeLimit,omitempty"` // Fixed 15 seconds per question
+	TimeRemaining *int             `json:"timeRemaining,omitempty"` // Seconds remaining for current question (server-side timer)
+	TimeToExpire  int64            `json:"timeToExpire" validate:"required"` // Seconds until daily quiz expires
+	TotalPlayers  int              `json:"totalPlayers" validate:"required"`
 }
 
 // @name GetDailyStatusData

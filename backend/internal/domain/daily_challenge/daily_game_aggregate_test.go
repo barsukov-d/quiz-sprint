@@ -469,6 +469,7 @@ func TestDailyGame_ReconstructDailyGame(t *testing.T) {
 		streak,
 		&rank,
 		nil, // ChestReward would be reconstructed if present
+		int64(0), // questionStartedAt
 	)
 
 	if game == nil {

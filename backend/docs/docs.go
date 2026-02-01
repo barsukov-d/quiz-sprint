@@ -2368,6 +2368,10 @@ const docTemplate = `{
                 "questionIndex": {
                     "type": "integer"
                 },
+                "questionTimeRemaining": {
+                    "description": "Seconds remaining for current question",
+                    "type": "integer"
+                },
                 "rank": {
                     "type": "integer"
                 },
@@ -2379,6 +2383,7 @@ const docTemplate = `{
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.StreakDTO"
                 },
                 "timeRemaining": {
+                    "description": "Seconds until daily quiz expires",
                     "type": "integer"
                 },
                 "totalQuestions": {
@@ -2660,9 +2665,15 @@ const docTemplate = `{
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.GameResultsDTO"
                 },
                 "timeLimit": {
+                    "description": "Fixed 15 seconds per question",
+                    "type": "integer"
+                },
+                "timeRemaining": {
+                    "description": "Seconds remaining for current question (server-side timer)",
                     "type": "integer"
                 },
                 "timeToExpire": {
+                    "description": "Seconds until daily quiz expires",
                     "type": "integer"
                 },
                 "totalPlayers": {
