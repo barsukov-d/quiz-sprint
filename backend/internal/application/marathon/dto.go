@@ -6,18 +6,21 @@ package marathon
 
 // MarathonGameDTO represents a marathon game state
 type MarathonGameDTO struct {
-	ID                 string              `json:"id"`
-	PlayerID           string              `json:"playerId"`
-	Category           CategoryDTO         `json:"category"`
-	Status             string              `json:"status"` // "in_progress", "finished", "abandoned"
-	CurrentStreak      int                 `json:"currentStreak"`
-	MaxStreak          int                 `json:"maxStreak"`
-	Lives              LivesDTO            `json:"lives"`
-	Hints              HintsDTO            `json:"hints"`
-	DifficultyLevel    string              `json:"difficultyLevel"` // "beginner", "medium", "hard", "expert", "master"
-	PersonalBestStreak *int                `json:"personalBestStreak,omitempty"`
-	CurrentQuestion    *QuestionDTO        `json:"currentQuestion,omitempty"`
-	BaseScore          int                 `json:"baseScore"` // Total base score from QuizGameplaySession
+	ID              string            `json:"id"`
+	PlayerID        string            `json:"playerId"`
+	Category        CategoryDTO       `json:"category"`
+	Status          string            `json:"status"` // "in_progress", "game_over", "completed", "abandoned"
+	Score           int               `json:"score"`  // Total correct answers
+	TotalQuestions  int               `json:"totalQuestions"`
+	Lives           LivesDTO          `json:"lives"`
+	BonusInventory  BonusInventoryDTO `json:"bonusInventory"`
+	ShieldActive    bool              `json:"shieldActive"`
+	DifficultyLevel string            `json:"difficultyLevel"` // "beginner", "medium", "hard", "master"
+	ContinueCount   int               `json:"continueCount"`
+	PersonalBest    *int              `json:"personalBest,omitempty"` // Player's best score for comparison
+	CurrentQuestion *QuestionDTO      `json:"currentQuestion,omitempty"`
+	QuestionNumber  int               `json:"questionNumber"` // 1-based index of next question
+	TimeLimit       int               `json:"timeLimit"`      // Seconds for current question
 }
 
 // CategoryDTO represents a marathon category
@@ -29,16 +32,18 @@ type CategoryDTO struct {
 
 // LivesDTO represents the lives system state
 type LivesDTO struct {
-	CurrentLives   int   `json:"currentLives"`
-	MaxLives       int   `json:"maxLives"`
-	TimeToNextLife int64 `json:"timeToNextLife"` // seconds until next life regenerates
+	CurrentLives   int    `json:"currentLives"`
+	MaxLives       int    `json:"maxLives"`
+	TimeToNextLife int64  `json:"timeToNextLife"` // seconds until next life regenerates
+	Label          string `json:"label"`          // "❤️❤️🖤" — UI-ready display
 }
 
-// HintsDTO represents available hints
-type HintsDTO struct {
+// BonusInventoryDTO represents available bonuses
+type BonusInventoryDTO struct {
+	Shield     int `json:"shield"`     // Protect from one wrong answer
 	FiftyFifty int `json:"fiftyFifty"` // Remove 2 incorrect answers
-	ExtraTime  int `json:"extraTime"`  // Add 10 seconds
 	Skip       int `json:"skip"`       // Skip question without losing life
+	Freeze     int `json:"freeze"`     // Add 10 seconds to timer
 }
 
 // QuestionDTO represents a quiz question (from quiz aggregate)
@@ -76,6 +81,21 @@ type LeaderboardEntryDTO struct {
 	AchievedAt int64  `json:"achievedAt"`
 }
 
+// ContinueOfferDTO represents continue options after game over
+type ContinueOfferDTO struct {
+	Available     bool   `json:"available"`
+	CostCoins     int    `json:"costCoins"`
+	HasAd         bool   `json:"hasAd"`
+	ContinueCount int    `json:"continueCount"`
+}
+
+// MilestoneDTO represents the next milestone target
+type MilestoneDTO struct {
+	Next      int `json:"next"`      // Next milestone target (25, 50, 100, 200, 500)
+	Current   int `json:"current"`   // Current score
+	Remaining int `json:"remaining"` // Questions remaining to reach milestone
+}
+
 // ========================================
 // StartMarathon Use Case
 // ========================================
@@ -89,8 +109,6 @@ type StartMarathonInput struct {
 // StartMarathonOutput is the output for starting a marathon game
 type StartMarathonOutput struct {
 	Game            MarathonGameDTO `json:"game"`
-	FirstQuestion   QuestionDTO     `json:"firstQuestion"`
-	TimeLimit       int             `json:"timeLimit"`       // Time limit in seconds (adaptive)
 	HasPersonalBest bool            `json:"hasPersonalBest"` // Whether player has previous record
 }
 
@@ -109,60 +127,85 @@ type SubmitMarathonAnswerInput struct {
 
 // SubmitMarathonAnswerOutput is the output for submitting an answer
 type SubmitMarathonAnswerOutput struct {
-	IsCorrect       bool         `json:"isCorrect"`
-	CorrectAnswerID string       `json:"correctAnswerId"`
-	BasePoints      int          `json:"basePoints"`
-	TimeTaken       int64        `json:"timeTaken"`
-	CurrentStreak   int          `json:"currentStreak"`
-	MaxStreak       int          `json:"maxStreak"`
-	DifficultyLevel string       `json:"difficultyLevel"`
-	LifeLost        bool         `json:"lifeLost"`
-	RemainingLives  int          `json:"remainingLives"`
-	IsGameOver      bool         `json:"isGameOver"`
-	NextQuestion    *QuestionDTO `json:"nextQuestion,omitempty"`
-	NextTimeLimit   *int         `json:"nextTimeLimit,omitempty"` // Time limit for next question (adaptive)
+	IsCorrect       bool              `json:"isCorrect"`
+	CorrectAnswerID string            `json:"correctAnswerId"`
+	TimeTaken       int64             `json:"timeTaken"`
+	Score           int               `json:"score"`           // Total correct answers
+	TotalQuestions  int               `json:"totalQuestions"`
+	DifficultyLevel string            `json:"difficultyLevel"`
+	LifeLost        bool              `json:"lifeLost"`
+	ShieldConsumed  bool              `json:"shieldConsumed"`
+	Lives           LivesDTO          `json:"lives"`           // Full lives state after answer
+	BonusInventory  BonusInventoryDTO `json:"bonusInventory"`  // Updated bonuses
+	IsGameOver      bool              `json:"isGameOver"`
+	NextQuestion    *QuestionDTO      `json:"nextQuestion,omitempty"`
+	NextTimeLimit   *int              `json:"nextTimeLimit,omitempty"` // Time limit for next question
 	GameOverResult  *GameOverResultDTO `json:"gameOverResult,omitempty"`
+	Milestone       *MilestoneDTO     `json:"milestone,omitempty"` // Next milestone progress
 }
 
 // GameOverResultDTO contains game over statistics
 type GameOverResultDTO struct {
-	FinalStreak        int  `json:"finalStreak"`
-	IsNewPersonalBest  bool `json:"isNewPersonalBest"`
-	PreviousRecord     *int `json:"previousRecord,omitempty"`
-	TotalBaseScore     int  `json:"totalBaseScore"`
-	GlobalRank         *int `json:"globalRank,omitempty"` // Player's rank in leaderboard
+	FinalScore        int              `json:"finalScore"`       // Total correct answers
+	TotalQuestions    int              `json:"totalQuestions"`
+	IsNewPersonalBest bool             `json:"isNewPersonalBest"`
+	PreviousRecord    *int             `json:"previousRecord,omitempty"`
+	ContinueOffer     *ContinueOfferDTO `json:"continueOffer,omitempty"`
 }
 
 // ========================================
-// UseMarathonHint Use Case
+// UseMarathonBonus Use Case
 // ========================================
 
-// UseMarathonHintInput is the input for using a hint
-type UseMarathonHintInput struct {
+// UseMarathonBonusInput is the input for using a bonus
+type UseMarathonBonusInput struct {
 	GameID     string `json:"gameId"`
 	QuestionID string `json:"questionId"`
-	HintType   string `json:"hintType"` // "fifty_fifty", "extra_time", "skip"
-	PlayerID   string `json:"playerId"` // For authorization
+	BonusType  string `json:"bonusType"` // "shield", "fifty_fifty", "skip", "freeze"
+	PlayerID   string `json:"playerId"`  // For authorization
 }
 
-// UseMarathonHintOutput is the output for using a hint
-type UseMarathonHintOutput struct {
-	HintType       string   `json:"hintType"`
-	RemainingHints int      `json:"remainingHints"` // Remaining hints of this type
-	HintResult     HintResultDTO `json:"hintResult"`
+// UseMarathonBonusOutput is the output for using a bonus
+type UseMarathonBonusOutput struct {
+	BonusType      string            `json:"bonusType"`
+	RemainingCount int               `json:"remainingCount"` // Remaining bonuses of this type
+	BonusInventory BonusInventoryDTO `json:"bonusInventory"` // Full updated inventory
+	BonusResult    BonusResultDTO    `json:"bonusResult"`
 }
 
-// HintResultDTO contains the result of using a hint
-type HintResultDTO struct {
+// BonusResultDTO contains the result of using a bonus
+type BonusResultDTO struct {
 	// For fifty_fifty: IDs of answers to hide
 	HiddenAnswerIDs []string `json:"hiddenAnswerIds,omitempty"`
 
-	// For extra_time: new time limit
+	// For freeze: new time limit after adding 10s
 	NewTimeLimit *int `json:"newTimeLimit,omitempty"`
 
-	// For skip: next question
-	NextQuestion *QuestionDTO `json:"nextQuestion,omitempty"`
-	NextTimeLimit *int `json:"nextTimeLimit,omitempty"`
+	// For skip: next question to display
+	NextQuestion  *QuestionDTO `json:"nextQuestion,omitempty"`
+	NextTimeLimit *int         `json:"nextTimeLimit,omitempty"`
+
+	// For shield: whether shield is now active
+	ShieldActive *bool `json:"shieldActive,omitempty"`
+}
+
+// ========================================
+// ContinueMarathon Use Case
+// ========================================
+
+// ContinueMarathonInput is the input for continuing after game over
+type ContinueMarathonInput struct {
+	GameID        string `json:"gameId"`
+	PlayerID      string `json:"playerId"` // For authorization
+	PaymentMethod string `json:"paymentMethod"` // "coins" or "ad"
+}
+
+// ContinueMarathonOutput is the output for continuing after game over
+type ContinueMarathonOutput struct {
+	Game            MarathonGameDTO `json:"game"`       // Updated game state with 1 life
+	ContinueCount   int             `json:"continueCount"`
+	CoinsDeducted    int             `json:"coinsDeducted"`
+	NextContinueCost int            `json:"nextContinueCost"` // Cost for next continue
 }
 
 // ========================================
@@ -193,7 +236,6 @@ type GetMarathonStatusInput struct {
 type GetMarathonStatusOutput struct {
 	HasActiveGame bool             `json:"hasActiveGame"`
 	Game          *MarathonGameDTO `json:"game,omitempty"`
-	TimeLimit     *int             `json:"timeLimit,omitempty"` // Current question time limit
 }
 
 // ========================================
@@ -209,10 +251,10 @@ type GetMarathonLeaderboardInput struct {
 
 // GetMarathonLeaderboardOutput is the output for getting leaderboard
 type GetMarathonLeaderboardOutput struct {
-	Category CategoryDTO           `json:"category"`
-	TimeFrame string               `json:"timeFrame"`
-	Entries  []LeaderboardEntryDTO `json:"entries"`
-	PlayerRank *int                `json:"playerRank,omitempty"` // Player's rank (if provided)
+	Category   CategoryDTO           `json:"category"`
+	TimeFrame  string                `json:"timeFrame"`
+	Entries    []LeaderboardEntryDTO `json:"entries"`
+	PlayerRank *int                  `json:"playerRank,omitempty"` // Player's rank (if provided)
 }
 
 // ========================================

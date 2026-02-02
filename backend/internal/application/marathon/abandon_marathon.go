@@ -59,37 +59,7 @@ func (uc *AbandonMarathonUseCase) Execute(input AbandonMarathonInput) (AbandonMa
 	}
 
 	// 5. Update PersonalBest if new record
-	if game.IsNewPersonalBest() {
-		personalBest, err := uc.personalBestRepo.FindByPlayerAndCategory(game.PlayerID(), game.Category())
-		if err != nil && err != solo_marathon.ErrPersonalBestNotFound {
-			// Log error but don't fail the request
-			// TODO: Add logging
-		}
-
-		if personalBest == nil {
-			// First time playing this category - create new record
-			personalBest, err = solo_marathon.NewPersonalBest(
-				game.PlayerID(),
-				game.Category(),
-				game.MaxStreak(),
-				game.BaseScore(),
-				now,
-			)
-			if err == nil {
-				_ = uc.personalBestRepo.Save(personalBest)
-			}
-		} else {
-			// Update existing record
-			updated := personalBest.UpdateIfBetter(
-				game.MaxStreak(),
-				game.BaseScore(),
-				now,
-			)
-			if updated {
-				_ = uc.personalBestRepo.Save(personalBest)
-			}
-		}
-	}
+	uc.updatePersonalBestIfNeeded(game, now)
 
 	// 6. Persist game
 	if err := uc.marathonRepo.Save(game); err != nil {
@@ -105,10 +75,43 @@ func (uc *AbandonMarathonUseCase) Execute(input AbandonMarathonInput) (AbandonMa
 	}
 
 	// 8. Build output
-	// TODO: Get global rank from leaderboard repository
-	var globalRank *int = nil
-
 	return AbandonMarathonOutput{
-		GameOverResult: BuildGameOverResultV2(game, globalRank),
+		GameOverResult: BuildGameOverResultV2(game),
 	}, nil
+}
+
+// updatePersonalBestIfNeeded updates the personal best record if the game score is better
+func (uc *AbandonMarathonUseCase) updatePersonalBestIfNeeded(game *solo_marathon.MarathonGameV2, now int64) {
+	if !game.IsNewPersonalBest() {
+		return
+	}
+
+	personalBest, err := uc.personalBestRepo.FindByPlayerAndCategory(game.PlayerID(), game.Category())
+	if err != nil && err != solo_marathon.ErrPersonalBestNotFound {
+		return
+	}
+
+	if personalBest == nil {
+		// First time playing this category - create new record
+		personalBest, err = solo_marathon.NewPersonalBest(
+			game.PlayerID(),
+			game.Category(),
+			game.Score(),
+			game.Score(),
+			now,
+		)
+		if err == nil {
+			_ = uc.personalBestRepo.Save(personalBest)
+		}
+	} else {
+		// Update existing record
+		updated := personalBest.UpdateIfBetter(
+			game.Score(),
+			game.Score(),
+			now,
+		)
+		if updated {
+			_ = uc.personalBestRepo.Save(personalBest)
+		}
+	}
 }

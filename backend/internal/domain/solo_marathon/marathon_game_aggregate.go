@@ -5,28 +5,26 @@ import (
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
 )
 
-// MarathonGame is the aggregate root for Solo Marathon mode
-// Represents a single marathon session with lives, hints, and adaptive difficulty
+// MarathonGame is the V1 aggregate root for Solo Marathon mode (uses kernel session)
+// DEPRECATED: Use MarathonGameV2 for new features (V2 uses dynamic question loading)
 type MarathonGame struct {
 	id               GameID
 	playerID         UserID
 	category         MarathonCategory
 	status           GameStatus
-	session          *kernel.QuizGameplaySession // Composition: delegates pure gameplay logic
-	currentStreak    int                         // Current streak of correct answers
-	maxStreak        int                         // Maximum streak achieved during this game
-	lives            LivesSystem                 // Lives management
-	hints            HintsSystem                 // Hints management
-	difficulty       DifficultyProgression       // Adaptive difficulty
-	personalBestStreak *int                      // Player's PersonalBest streak (nil if no previous record)
-	usedHints        map[QuestionID][]HintType   // Track which hints were used on which questions
+	session          *kernel.QuizGameplaySession
+	currentStreak    int
+	maxStreak        int
+	lives            LivesSystem
+	bonusInventory   BonusInventory
+	difficulty       DifficultyProgression
+	personalBestStreak *int
+	usedBonuses      map[QuestionID][]BonusType
 
-	// Domain events collected during operations
 	events []Event
 }
 
-// NewMarathonGame creates a new marathon game session
-// PersonalBest can be nil if the player has no previous record for this category
+// NewMarathonGame creates a new marathon game session (V1 — uses kernel session)
 func NewMarathonGame(
 	playerID UserID,
 	category MarathonCategory,
@@ -34,7 +32,6 @@ func NewMarathonGame(
 	personalBest *PersonalBest,
 	startedAt int64,
 ) (*MarathonGame, error) {
-	// 1. Validate inputs
 	if playerID.IsZero() {
 		return nil, ErrInvalidGameID
 	}
@@ -47,7 +44,6 @@ func NewMarathonGame(
 		return nil, err
 	}
 
-	// 2. Create kernel gameplay session
 	gameID := NewGameID()
 	sessionID := kernel.NewSessionID()
 
@@ -56,7 +52,6 @@ func NewMarathonGame(
 		return nil, err
 	}
 
-	// 3. Extract PersonalBest streak if exists
 	var personalBestStreak *int
 	hasPersonalBest := false
 	if personalBest != nil {
@@ -65,12 +60,10 @@ func NewMarathonGame(
 		hasPersonalBest = true
 	}
 
-	// 4. Initialize lives and hints
 	lives := NewLivesSystem(startedAt)
-	hints := NewHintsSystem()
+	bonuses := NewBonusInventory()
 	difficulty := NewDifficultyProgression()
 
-	// 5. Create game
 	game := &MarathonGame{
 		id:                 gameID,
 		playerID:           playerID,
@@ -80,14 +73,13 @@ func NewMarathonGame(
 		currentStreak:      0,
 		maxStreak:          0,
 		lives:              lives,
-		hints:              hints,
+		bonusInventory:     bonuses,
 		difficulty:         difficulty,
 		personalBestStreak: personalBestStreak,
-		usedHints:          make(map[QuestionID][]HintType),
+		usedBonuses:        make(map[QuestionID][]BonusType),
 		events:             make([]Event, 0),
 	}
 
-	// 6. Publish MarathonGameStarted event
 	game.events = append(game.events, NewMarathonGameStartedEvent(
 		gameID,
 		playerID,
@@ -100,7 +92,7 @@ func NewMarathonGame(
 	return game, nil
 }
 
-// AnswerQuestionResult holds detailed information about a submitted answer
+// AnswerQuestionResult holds detailed information about a submitted answer (V1)
 type AnswerQuestionResult struct {
 	IsCorrect       bool
 	BasePoints      int
@@ -113,17 +105,13 @@ type AnswerQuestionResult struct {
 	IsGameOver      bool
 }
 
-// AnswerQuestion processes a user's answer in marathon mode
-// Business Logic:
-// - Correct answer: increment streak, update difficulty
-// - Incorrect answer: lose life, reset streak, check game over
+// AnswerQuestion processes a user's answer in marathon mode (V1)
 func (mg *MarathonGame) AnswerQuestion(
 	questionID QuestionID,
 	answerID AnswerID,
 	timeTaken int64,
 	answeredAt int64,
 ) (*AnswerQuestionResult, error) {
-	// 1. Validate game state
 	if mg.status != GameStatusInProgress {
 		return nil, ErrGameNotActive
 	}
@@ -132,13 +120,11 @@ func (mg *MarathonGame) AnswerQuestion(
 		return nil, ErrNoLivesRemaining
 	}
 
-	// 2. Delegate to kernel session for pure gameplay logic
 	kernelResult, err := mg.session.AnswerQuestion(questionID, answerID, timeTaken, answeredAt)
 	if err != nil {
 		return nil, err
 	}
 
-	// 3. Initialize result
 	result := &AnswerQuestionResult{
 		IsCorrect:       kernelResult.IsCorrect,
 		BasePoints:      kernelResult.BasePoints.Value(),
@@ -151,25 +137,18 @@ func (mg *MarathonGame) AnswerQuestion(
 		IsGameOver:      false,
 	}
 
-	// 4. Process answer based on correctness
 	if kernelResult.IsCorrect {
-		// === CORRECT ANSWER ===
-
-		// a. Increment streak
 		mg.currentStreak++
 		result.CurrentStreak = mg.currentStreak
 
-		// b. Update max streak
 		if mg.currentStreak > mg.maxStreak {
 			mg.maxStreak = mg.currentStreak
 		}
 		result.MaxStreak = mg.maxStreak
 
-		// c. Update difficulty based on new streak
 		previousLevel := mg.difficulty.Level()
-		mg.difficulty = mg.difficulty.UpdateFromStreak(mg.currentStreak)
+		mg.difficulty = mg.difficulty.UpdateFromQuestionIndex(mg.currentStreak)
 
-		// d. Fire DifficultyIncreased event if level changed
 		if mg.difficulty.Level() != previousLevel {
 			mg.events = append(mg.events, NewDifficultyIncreasedEvent(
 				mg.id,
@@ -183,14 +162,10 @@ func (mg *MarathonGame) AnswerQuestion(
 		result.DifficultyLevel = mg.difficulty.Level()
 
 	} else {
-		// === INCORRECT ANSWER ===
-
-		// a. Lose life
 		mg.lives = mg.lives.LoseLife(answeredAt)
 		result.LifeLost = true
 		result.RemainingLives = mg.lives.CurrentLives()
 
-		// b. Publish LifeLost event
 		mg.events = append(mg.events, NewLifeLostEvent(
 			mg.id,
 			mg.playerID,
@@ -199,43 +174,38 @@ func (mg *MarathonGame) AnswerQuestion(
 			answeredAt,
 		))
 
-		// c. Reset streak
 		mg.currentStreak = 0
 		result.CurrentStreak = 0
 
-		// d. Reset difficulty
 		mg.difficulty = NewDifficultyProgression()
 		result.DifficultyLevel = mg.difficulty.Level()
 
-		// e. Check if game over (no lives remaining)
 		if !mg.lives.HasLives() {
-			// Validate state transition
-			if !mg.status.CanTransitionTo(GameStatusFinished) {
+			if !mg.status.CanTransitionTo(GameStatusGameOver) {
 				return nil, ErrInvalidGameStatus
 			}
 
-			mg.status = GameStatusFinished
+			mg.status = GameStatusGameOver
 			result.IsGameOver = true
 
-			// Determine if new record
 			isNewRecord := false
 			if mg.personalBestStreak == nil || mg.maxStreak > *mg.personalBestStreak {
 				isNewRecord = true
 			}
 
-			// Publish MarathonGameOver event
 			mg.events = append(mg.events, NewMarathonGameOverEvent(
 				mg.id,
 				mg.playerID,
 				mg.maxStreak,
+				0, // totalQuestions not tracked in V1
 				isNewRecord,
 				mg.personalBestStreak,
+				0, // continueCount not supported in V1
 				answeredAt,
 			))
 		}
 	}
 
-	// 5. Publish MarathonQuestionAnswered event
 	mg.events = append(mg.events, NewMarathonQuestionAnsweredEvent(
 		mg.id,
 		mg.playerID,
@@ -243,7 +213,10 @@ func (mg *MarathonGame) AnswerQuestion(
 		answerID,
 		kernelResult.IsCorrect,
 		timeTaken,
-		mg.currentStreak,
+		false, // shieldActive not supported in V1
+		false, // shieldConsumed not supported in V1
+		mg.maxStreak,
+		mg.lives.CurrentLives(),
 		mg.difficulty.Level(),
 		answeredAt,
 	))
@@ -251,51 +224,36 @@ func (mg *MarathonGame) AnswerQuestion(
 	return result, nil
 }
 
-// UseHint allows player to use a hint for the current question
-func (mg *MarathonGame) UseHint(questionID QuestionID, hintType HintType, usedAt int64) error {
-	// 1. Validate game state
+// UseBonus allows player to use a bonus for the current question (V1)
+func (mg *MarathonGame) UseBonus(questionID QuestionID, bonusType BonusType, usedAt int64) error {
 	if mg.status != GameStatusInProgress {
 		return ErrGameNotActive
 	}
 
-	// 2. Check if hint already used for this question
-	if usedHints, exists := mg.usedHints[questionID]; exists {
-		for _, usedHint := range usedHints {
-			if usedHint == hintType {
-				return ErrHintAlreadyUsed
+	if usedBonuses, exists := mg.usedBonuses[questionID]; exists {
+		for _, usedBonus := range usedBonuses {
+			if usedBonus == bonusType {
+				return ErrBonusAlreadyUsed
 			}
 		}
 	}
 
-	// 3. Use hint (immutable operation)
-	newHints, err := mg.hints.UseHint(hintType)
+	newInventory, err := mg.bonusInventory.UseBonus(bonusType)
 	if err != nil {
 		return err
 	}
 
-	mg.hints = newHints
+	mg.bonusInventory = newInventory
+	mg.usedBonuses[questionID] = append(mg.usedBonuses[questionID], bonusType)
 
-	// 4. Record hint usage
-	mg.usedHints[questionID] = append(mg.usedHints[questionID], hintType)
+	remainingCount := mg.bonusInventory.Count(bonusType)
 
-	// 5. Get remaining hints of this type
-	var remainingHints int
-	switch hintType {
-	case HintFiftyFifty:
-		remainingHints = mg.hints.FiftyFifty()
-	case HintExtraTime:
-		remainingHints = mg.hints.ExtraTime()
-	case HintSkip:
-		remainingHints = mg.hints.Skip()
-	}
-
-	// 6. Publish HintUsed event
-	mg.events = append(mg.events, NewHintUsedEvent(
+	mg.events = append(mg.events, NewBonusUsedEvent(
 		mg.id,
 		mg.playerID,
 		questionID,
-		hintType,
-		remainingHints,
+		bonusType,
+		remainingCount,
 		usedAt,
 	))
 
@@ -308,26 +266,25 @@ func (mg *MarathonGame) Abandon(abandonedAt int64) error {
 		return ErrGameNotActive
 	}
 
-	// Validate state transition
 	if !mg.status.CanTransitionTo(GameStatusAbandoned) {
 		return ErrInvalidGameStatus
 	}
 
 	mg.status = GameStatusAbandoned
 
-	// Determine if new record
 	isNewRecord := false
 	if mg.personalBestStreak == nil || mg.maxStreak > *mg.personalBestStreak {
 		isNewRecord = true
 	}
 
-	// Publish MarathonGameOver event
 	mg.events = append(mg.events, NewMarathonGameOverEvent(
 		mg.id,
 		mg.playerID,
 		mg.maxStreak,
+		0, // totalQuestions not tracked in V1
 		isNewRecord,
 		mg.personalBestStreak,
+		0, // continueCount not supported in V1
 		abandonedAt,
 	))
 
@@ -353,17 +310,17 @@ func (mg *MarathonGame) IsNewPersonalBest() bool {
 }
 
 // Getters
-func (mg *MarathonGame) ID() GameID                     { return mg.id }
-func (mg *MarathonGame) PlayerID() UserID               { return mg.playerID }
-func (mg *MarathonGame) Category() MarathonCategory     { return mg.category }
-func (mg *MarathonGame) Status() GameStatus             { return mg.status }
-func (mg *MarathonGame) Session() *kernel.QuizGameplaySession { return mg.session }
-func (mg *MarathonGame) CurrentStreak() int             { return mg.currentStreak }
-func (mg *MarathonGame) MaxStreak() int                 { return mg.maxStreak }
-func (mg *MarathonGame) Lives() LivesSystem             { return mg.lives }
-func (mg *MarathonGame) Hints() HintsSystem             { return mg.hints }
-func (mg *MarathonGame) Difficulty() DifficultyProgression { return mg.difficulty }
-func (mg *MarathonGame) PersonalBestStreak() *int       { return mg.personalBestStreak }
+func (mg *MarathonGame) ID() GameID                            { return mg.id }
+func (mg *MarathonGame) PlayerID() UserID                      { return mg.playerID }
+func (mg *MarathonGame) Category() MarathonCategory            { return mg.category }
+func (mg *MarathonGame) Status() GameStatus                    { return mg.status }
+func (mg *MarathonGame) Session() *kernel.QuizGameplaySession  { return mg.session }
+func (mg *MarathonGame) CurrentStreak() int                    { return mg.currentStreak }
+func (mg *MarathonGame) MaxStreak() int                        { return mg.maxStreak }
+func (mg *MarathonGame) Lives() LivesSystem                    { return mg.lives }
+func (mg *MarathonGame) Hints() BonusInventory                 { return mg.bonusInventory }
+func (mg *MarathonGame) Difficulty() DifficultyProgression     { return mg.difficulty }
+func (mg *MarathonGame) PersonalBestStreak() *int              { return mg.personalBestStreak }
 
 // Events returns collected domain events and clears them
 func (mg *MarathonGame) Events() []Event {
@@ -373,7 +330,6 @@ func (mg *MarathonGame) Events() []Event {
 }
 
 // ReconstructMarathonGame reconstructs a MarathonGame from persistence
-// Used by repository when loading from database
 func ReconstructMarathonGame(
 	id GameID,
 	playerID UserID,
@@ -383,10 +339,10 @@ func ReconstructMarathonGame(
 	currentStreak int,
 	maxStreak int,
 	lives LivesSystem,
-	hints HintsSystem,
+	bonuses BonusInventory,
 	difficulty DifficultyProgression,
 	personalBestStreak *int,
-	usedHints map[QuestionID][]HintType,
+	usedBonuses map[QuestionID][]BonusType,
 ) *MarathonGame {
 	return &MarathonGame{
 		id:                 id,
@@ -397,10 +353,10 @@ func ReconstructMarathonGame(
 		currentStreak:      currentStreak,
 		maxStreak:          maxStreak,
 		lives:              lives,
-		hints:              hints,
+		bonusInventory:     bonuses,
 		difficulty:         difficulty,
 		personalBestStreak: personalBestStreak,
-		usedHints:          usedHints,
-		events:             make([]Event, 0), // Don't replay events from DB
+		usedBonuses:        usedBonuses,
+		events:             make([]Event, 0),
 	}
 }

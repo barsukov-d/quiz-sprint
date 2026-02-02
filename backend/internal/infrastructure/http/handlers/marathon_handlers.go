@@ -13,7 +13,8 @@ import (
 type MarathonHandler struct {
 	startMarathonUC           *appMarathon.StartMarathonUseCase
 	submitAnswerUC            *appMarathon.SubmitMarathonAnswerUseCase
-	useHintUC                 *appMarathon.UseMarathonHintUseCase
+	useBonusUC                *appMarathon.UseMarathonBonusUseCase
+	continueMarathonUC        *appMarathon.ContinueMarathonUseCase
 	abandonMarathonUC         *appMarathon.AbandonMarathonUseCase
 	getStatusUC               *appMarathon.GetMarathonStatusUseCase
 	getPersonalBestsUC        *appMarathon.GetPersonalBestsUseCase
@@ -24,7 +25,8 @@ type MarathonHandler struct {
 func NewMarathonHandler(
 	startMarathonUC *appMarathon.StartMarathonUseCase,
 	submitAnswerUC *appMarathon.SubmitMarathonAnswerUseCase,
-	useHintUC *appMarathon.UseMarathonHintUseCase,
+	useBonusUC *appMarathon.UseMarathonBonusUseCase,
+	continueMarathonUC *appMarathon.ContinueMarathonUseCase,
 	abandonMarathonUC *appMarathon.AbandonMarathonUseCase,
 	getStatusUC *appMarathon.GetMarathonStatusUseCase,
 	getPersonalBestsUC *appMarathon.GetPersonalBestsUseCase,
@@ -33,7 +35,8 @@ func NewMarathonHandler(
 	return &MarathonHandler{
 		startMarathonUC:    startMarathonUC,
 		submitAnswerUC:     submitAnswerUC,
-		useHintUC:          useHintUC,
+		useBonusUC:         useBonusUC,
+		continueMarathonUC: continueMarathonUC,
 		abandonMarathonUC:  abandonMarathonUC,
 		getStatusUC:        getStatusUC,
 		getPersonalBestsUC: getPersonalBestsUC,
@@ -44,7 +47,6 @@ func NewMarathonHandler(
 // ========================================
 // Handlers (Thin Adapters)
 // ========================================
-// Note: Request/Response DTOs are in swagger_models.go
 
 // StartMarathon handles POST /api/v1/marathon/start
 // @Summary Start a marathon game
@@ -59,18 +61,15 @@ func NewMarathonHandler(
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /marathon/start [post]
 func (h *MarathonHandler) StartMarathon(c fiber.Ctx) error {
-	// 1. Parse request body
 	var req StartMarathonRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	// 2. Validate required fields
 	if req.PlayerID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
 	}
 
-	// 3. Execute use case
 	output, err := h.startMarathonUC.Execute(appMarathon.StartMarathonInput{
 		PlayerID:   req.PlayerID,
 		CategoryID: req.CategoryID,
@@ -79,7 +78,6 @@ func (h *MarathonHandler) StartMarathon(c fiber.Ctx) error {
 		return mapMarathonError(err)
 	}
 
-	// 4. Return response
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{
 		"data": output,
 	})
@@ -87,7 +85,7 @@ func (h *MarathonHandler) StartMarathon(c fiber.Ctx) error {
 
 // SubmitMarathonAnswer handles POST /api/v1/marathon/:gameId/answer
 // @Summary Submit an answer in marathon mode
-// @Description Submit an answer for the current question in a marathon game. Game continues if correct, loses life if incorrect.
+// @Description Submit an answer for the current question. Returns next question or game over with continue offer.
 // @Tags marathon
 // @Accept json
 // @Produce json
@@ -100,13 +98,11 @@ func (h *MarathonHandler) StartMarathon(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /marathon/{gameId}/answer [post]
 func (h *MarathonHandler) SubmitMarathonAnswer(c fiber.Ctx) error {
-	// 1. Parse request body
 	var req SubmitMarathonAnswerRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	// 2. Validate required fields
 	if req.QuestionID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "questionId is required")
 	}
@@ -120,7 +116,6 @@ func (h *MarathonHandler) SubmitMarathonAnswer(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "timeTaken must be non-negative")
 	}
 
-	// 3. Execute use case
 	output, err := h.submitAnswerUC.Execute(appMarathon.SubmitMarathonAnswerInput{
 		GameID:     c.Params("gameId"),
 		QuestionID: req.QuestionID,
@@ -132,66 +127,108 @@ func (h *MarathonHandler) SubmitMarathonAnswer(c fiber.Ctx) error {
 		return mapMarathonError(err)
 	}
 
-	// 4. Return response
 	return c.JSON(fiber.Map{
 		"data": output,
 	})
 }
 
-// UseMarathonHint handles POST /api/v1/marathon/:gameId/hint
-// @Summary Use a hint in marathon mode
-// @Description Use a hint to help with the current question. Available hints: fifty_fifty (remove 2 wrong answers), extra_time (+10 seconds), skip (skip question without losing life)
+// UseMarathonBonus handles POST /api/v1/marathon/:gameId/bonus
+// @Summary Use a bonus in marathon mode
+// @Description Use a bonus for the current question. Available bonuses: shield (protect from wrong answer), fifty_fifty (remove 2 wrong answers), skip (skip question), freeze (+10 seconds)
 // @Tags marathon
 // @Accept json
 // @Produce json
 // @Param gameId path string true "Game ID"
-// @Param request body UseMarathonHintRequest true "Use hint request"
-// @Success 200 {object} UseMarathonHintResponse "Hint result with remaining hints"
-// @Failure 400 {object} ErrorResponse "Invalid request, hint not available, or wrong question"
+// @Param request body UseMarathonBonusRequest true "Use bonus request"
+// @Success 200 {object} UseMarathonBonusResponse "Bonus result with remaining inventory"
+// @Failure 400 {object} ErrorResponse "Invalid request, bonus not available, or wrong question"
 // @Failure 401 {object} ErrorResponse "Unauthorized - game belongs to another player"
 // @Failure 404 {object} ErrorResponse "Game or question not found"
 // @Failure 500 {object} ErrorResponse "Internal server error"
-// @Router /marathon/{gameId}/hint [post]
-func (h *MarathonHandler) UseMarathonHint(c fiber.Ctx) error {
-	// 1. Parse request body
-	var req UseMarathonHintRequest
+// @Router /marathon/{gameId}/bonus [post]
+func (h *MarathonHandler) UseMarathonBonus(c fiber.Ctx) error {
+	var req UseMarathonBonusRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	// 2. Validate required fields
 	if req.QuestionID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "questionId is required")
 	}
-	if req.HintType == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "hintType is required")
+	if req.BonusType == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "bonusType is required")
 	}
 	if req.PlayerID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
 	}
 
-	// Validate hint type
-	validHints := map[string]bool{
+	// Validate bonus type
+	validBonuses := map[string]bool{
+		"shield":      true,
 		"fifty_fifty": true,
-		"extra_time":  true,
 		"skip":        true,
+		"freeze":      true,
 	}
-	if !validHints[req.HintType] {
-		return fiber.NewError(fiber.StatusBadRequest, "hintType must be one of: fifty_fifty, extra_time, skip")
+	if !validBonuses[req.BonusType] {
+		return fiber.NewError(fiber.StatusBadRequest, "bonusType must be one of: shield, fifty_fifty, skip, freeze")
 	}
 
-	// 3. Execute use case
-	output, err := h.useHintUC.Execute(appMarathon.UseMarathonHintInput{
+	output, err := h.useBonusUC.Execute(appMarathon.UseMarathonBonusInput{
 		GameID:     c.Params("gameId"),
 		QuestionID: req.QuestionID,
-		HintType:   req.HintType,
+		BonusType:  req.BonusType,
 		PlayerID:   req.PlayerID,
 	})
 	if err != nil {
 		return mapMarathonError(err)
 	}
 
-	// 4. Return response
+	return c.JSON(fiber.Map{
+		"data": output,
+	})
+}
+
+// ContinueMarathon handles POST /api/v1/marathon/:gameId/continue
+// @Summary Continue a marathon game after game over
+// @Description Pay coins or watch ad to continue playing after losing all lives. Resets lives to 1.
+// @Tags marathon
+// @Accept json
+// @Produce json
+// @Param gameId path string true "Game ID"
+// @Param request body ContinueMarathonRequest true "Continue request"
+// @Success 200 {object} ContinueMarathonResponse "Game resumed with 1 life"
+// @Failure 400 {object} ErrorResponse "Invalid request or game not in game_over state"
+// @Failure 401 {object} ErrorResponse "Unauthorized - game belongs to another player"
+// @Failure 404 {object} ErrorResponse "Game not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /marathon/{gameId}/continue [post]
+func (h *MarathonHandler) ContinueMarathon(c fiber.Ctx) error {
+	var req ContinueMarathonRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if req.PlayerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+	if req.PaymentMethod == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "paymentMethod is required")
+	}
+
+	// Validate payment method
+	if req.PaymentMethod != "coins" && req.PaymentMethod != "ad" {
+		return fiber.NewError(fiber.StatusBadRequest, "paymentMethod must be 'coins' or 'ad'")
+	}
+
+	output, err := h.continueMarathonUC.Execute(appMarathon.ContinueMarathonInput{
+		GameID:        c.Params("gameId"),
+		PlayerID:      req.PlayerID,
+		PaymentMethod: req.PaymentMethod,
+	})
+	if err != nil {
+		return mapMarathonError(err)
+	}
+
 	return c.JSON(fiber.Map{
 		"data": output,
 	})
@@ -212,18 +249,15 @@ func (h *MarathonHandler) UseMarathonHint(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /marathon/{gameId} [delete]
 func (h *MarathonHandler) AbandonMarathon(c fiber.Ctx) error {
-	// 1. Parse request body
 	var req AbandonMarathonRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	// 2. Validate required fields
 	if req.PlayerID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
 	}
 
-	// 3. Execute use case
 	output, err := h.abandonMarathonUC.Execute(appMarathon.AbandonMarathonInput{
 		GameID:   c.Params("gameId"),
 		PlayerID: req.PlayerID,
@@ -232,7 +266,6 @@ func (h *MarathonHandler) AbandonMarathon(c fiber.Ctx) error {
 		return mapMarathonError(err)
 	}
 
-	// 4. Return response
 	return c.JSON(fiber.Map{
 		"data": output.GameOverResult,
 	})
@@ -250,13 +283,11 @@ func (h *MarathonHandler) AbandonMarathon(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /marathon/status [get]
 func (h *MarathonHandler) GetMarathonStatus(c fiber.Ctx) error {
-	// 1. Parse query parameter
 	playerID := c.Query("playerId")
 	if playerID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "playerId query parameter is required")
 	}
 
-	// 2. Execute use case
 	output, err := h.getStatusUC.Execute(appMarathon.GetMarathonStatusInput{
 		PlayerID: playerID,
 	})
@@ -264,7 +295,6 @@ func (h *MarathonHandler) GetMarathonStatus(c fiber.Ctx) error {
 		return mapMarathonError(err)
 	}
 
-	// 3. Return response
 	return c.JSON(fiber.Map{
 		"data": output,
 	})
@@ -283,13 +313,11 @@ func (h *MarathonHandler) GetMarathonStatus(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /marathon/personal-bests [get]
 func (h *MarathonHandler) GetPersonalBests(c fiber.Ctx) error {
-	// 1. Parse query parameter
 	playerID := c.Query("playerId")
 	if playerID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "playerId query parameter is required")
 	}
 
-	// 2. Execute use case
 	output, err := h.getPersonalBestsUC.Execute(appMarathon.GetPersonalBestsInput{
 		PlayerID: playerID,
 	})
@@ -297,7 +325,6 @@ func (h *MarathonHandler) GetPersonalBests(c fiber.Ctx) error {
 		return mapMarathonError(err)
 	}
 
-	// 3. Return response
 	return c.JSON(fiber.Map{
 		"data": output,
 	})
@@ -305,7 +332,7 @@ func (h *MarathonHandler) GetPersonalBests(c fiber.Ctx) error {
 
 // GetMarathonLeaderboard handles GET /api/v1/marathon/leaderboard
 // @Summary Get marathon leaderboard
-// @Description Get the leaderboard for a specific category or all categories, with optional time frame filter
+// @Description Get the leaderboard for a specific category or all categories
 // @Tags marathon
 // @Accept json
 // @Produce json
@@ -317,12 +344,10 @@ func (h *MarathonHandler) GetPersonalBests(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal server error"
 // @Router /marathon/leaderboard [get]
 func (h *MarathonHandler) GetMarathonLeaderboard(c fiber.Ctx) error {
-	// 1. Extract query parameters
 	categoryID := c.Query("categoryId")
 	timeFrame := c.Query("timeFrame", "all_time")
 	limit := fiber.Query[int](c, "limit", 10)
 
-	// Validate limit
 	if limit < 1 {
 		limit = 10
 	}
@@ -330,7 +355,6 @@ func (h *MarathonHandler) GetMarathonLeaderboard(c fiber.Ctx) error {
 		limit = 100
 	}
 
-	// Validate timeFrame
 	validTimeFrames := map[string]bool{
 		"all_time": true,
 		"weekly":   true,
@@ -340,7 +364,6 @@ func (h *MarathonHandler) GetMarathonLeaderboard(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "timeFrame must be one of: all_time, weekly, daily")
 	}
 
-	// 2. Execute use case
 	output, err := h.getLeaderboardUC.Execute(appMarathon.GetMarathonLeaderboardInput{
 		CategoryID: categoryID,
 		TimeFrame:  timeFrame,
@@ -350,7 +373,6 @@ func (h *MarathonHandler) GetMarathonLeaderboard(c fiber.Ctx) error {
 		return mapMarathonError(err)
 	}
 
-	// 3. Return response
 	return c.JSON(fiber.Map{
 		"data": output,
 	})
@@ -395,18 +417,24 @@ func mapMarathonError(err error) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Game is not active")
 	case domainMarathon.ErrInvalidQuestion:
 		return fiber.NewError(fiber.StatusBadRequest, "Question does not match current question or is invalid")
-	case domainMarathon.ErrNoHintsAvailable:
-		return fiber.NewError(fiber.StatusBadRequest, "Hint not available")
-	case domainMarathon.ErrInvalidHintType:
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid hint type")
-	case domainMarathon.ErrHintAlreadyUsed:
-		return fiber.NewError(fiber.StatusBadRequest, "Hint already used for this question")
+	case domainMarathon.ErrNoBonusesAvailable:
+		return fiber.NewError(fiber.StatusBadRequest, "Bonus not available")
+	case domainMarathon.ErrInvalidBonusType:
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid bonus type")
+	case domainMarathon.ErrBonusAlreadyUsed:
+		return fiber.NewError(fiber.StatusBadRequest, "Bonus already used for this question")
+	case domainMarathon.ErrShieldAlreadyActive:
+		return fiber.NewError(fiber.StatusBadRequest, "Shield is already active")
 	case domainMarathon.ErrNoLivesRemaining:
 		return fiber.NewError(fiber.StatusBadRequest, "No lives remaining")
 	case domainMarathon.ErrNoQuestionsAvailable:
 		return fiber.NewError(fiber.StatusBadRequest, "Insufficient questions available for marathon mode")
 	case domainMarathon.ErrInvalidGameStatus:
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid game status transition")
+	case domainMarathon.ErrContinueNotAvailable:
+		return fiber.NewError(fiber.StatusBadRequest, "Continue not available in current game state")
+	case domainMarathon.ErrInsufficientCoins:
+		return fiber.NewError(fiber.StatusBadRequest, "Insufficient coins for continue")
 
 	// Default: Internal Server Error
 	default:

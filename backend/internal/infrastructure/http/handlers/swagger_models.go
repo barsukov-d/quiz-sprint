@@ -476,39 +476,63 @@ type MarathonCategoryDTO struct {
 
 // MarathonLivesDTO represents the lives system state
 type MarathonLivesDTO struct {
-	CurrentLives   int   `json:"currentLives" validate:"required"`
-	MaxLives       int   `json:"maxLives" validate:"required"`
-	TimeToNextLife int64 `json:"timeToNextLife" validate:"required"`
+	CurrentLives   int    `json:"currentLives" validate:"required"`
+	MaxLives       int    `json:"maxLives" validate:"required"`
+	TimeToNextLife int64  `json:"timeToNextLife" validate:"required"`
+	Label          string `json:"label" validate:"required"` // "❤️❤️🖤"
 }
 
 // @name MarathonLivesDTO
 
-// MarathonHintsDTO represents available hints
-type MarathonHintsDTO struct {
+// MarathonBonusInventoryDTO represents available bonuses
+type MarathonBonusInventoryDTO struct {
+	Shield     int `json:"shield" validate:"required"`
 	FiftyFifty int `json:"fiftyFifty" validate:"required"`
-	ExtraTime  int `json:"extraTime" validate:"required"`
 	Skip       int `json:"skip" validate:"required"`
+	Freeze     int `json:"freeze" validate:"required"`
 }
 
-// @name MarathonHintsDTO
+// @name MarathonBonusInventoryDTO
 
 // MarathonGameDTO represents a marathon game state
 type MarathonGameDTO struct {
-	ID                 string               `json:"id" validate:"required"`
-	PlayerID           string               `json:"playerId" validate:"required"`
-	Category           MarathonCategoryDTO  `json:"category" validate:"required"`
-	Status             string               `json:"status" validate:"required"`
-	CurrentStreak      int                  `json:"currentStreak" validate:"required"`
-	MaxStreak          int                  `json:"maxStreak" validate:"required"`
-	Lives              MarathonLivesDTO     `json:"lives" validate:"required"`
-	Hints              MarathonHintsDTO     `json:"hints" validate:"required"`
-	DifficultyLevel    string               `json:"difficultyLevel" validate:"required"`
-	PersonalBestStreak *int                 `json:"personalBestStreak,omitempty"`
-	CurrentQuestion    *QuestionDTO         `json:"currentQuestion,omitempty"`
-	BaseScore          int                  `json:"baseScore" validate:"required"`
+	ID              string                     `json:"id" validate:"required"`
+	PlayerID        string                     `json:"playerId" validate:"required"`
+	Category        MarathonCategoryDTO        `json:"category" validate:"required"`
+	Status          string                     `json:"status" validate:"required"` // "in_progress", "game_over", "completed", "abandoned"
+	Score           int                        `json:"score" validate:"required"`  // Total correct answers
+	TotalQuestions  int                        `json:"totalQuestions" validate:"required"`
+	Lives           MarathonLivesDTO           `json:"lives" validate:"required"`
+	BonusInventory  MarathonBonusInventoryDTO  `json:"bonusInventory" validate:"required"`
+	ShieldActive    bool                       `json:"shieldActive" validate:"required"`
+	DifficultyLevel string                     `json:"difficultyLevel" validate:"required"`
+	ContinueCount   int                        `json:"continueCount" validate:"required"`
+	PersonalBest    *int                       `json:"personalBest,omitempty"`
+	CurrentQuestion *QuestionDTO               `json:"currentQuestion,omitempty"`
+	QuestionNumber  int                        `json:"questionNumber" validate:"required"`
+	TimeLimit       int                        `json:"timeLimit" validate:"required"`
 }
 
 // @name MarathonGameDTO
+
+// MarathonContinueOfferDTO represents continue options after game over
+type MarathonContinueOfferDTO struct {
+	Available     bool `json:"available" validate:"required"`
+	CostCoins     int  `json:"costCoins" validate:"required"`
+	HasAd         bool `json:"hasAd" validate:"required"`
+	ContinueCount int  `json:"continueCount" validate:"required"`
+}
+
+// @name MarathonContinueOfferDTO
+
+// MarathonMilestoneDTO represents the next milestone target
+type MarathonMilestoneDTO struct {
+	Next      int `json:"next" validate:"required"`
+	Current   int `json:"current" validate:"required"`
+	Remaining int `json:"remaining" validate:"required"`
+}
+
+// @name MarathonMilestoneDTO
 
 // MarathonPersonalBestDTO represents a personal best record
 type MarathonPersonalBestDTO struct {
@@ -534,24 +558,25 @@ type MarathonLeaderboardEntryDTO struct {
 
 // MarathonGameOverResultDTO contains game over statistics
 type MarathonGameOverResultDTO struct {
-	FinalStreak       int  `json:"finalStreak" validate:"required"`
-	IsNewPersonalBest bool `json:"isNewPersonalBest" validate:"required"`
-	PreviousRecord    *int `json:"previousRecord,omitempty"`
-	TotalBaseScore    int  `json:"totalBaseScore" validate:"required"`
-	GlobalRank        *int `json:"globalRank,omitempty"`
+	FinalScore        int                        `json:"finalScore" validate:"required"`
+	TotalQuestions    int                        `json:"totalQuestions" validate:"required"`
+	IsNewPersonalBest bool                       `json:"isNewPersonalBest" validate:"required"`
+	PreviousRecord    *int                       `json:"previousRecord,omitempty"`
+	ContinueOffer     *MarathonContinueOfferDTO  `json:"continueOffer,omitempty"`
 }
 
 // @name MarathonGameOverResultDTO
 
-// MarathonHintResultDTO contains the result of using a hint
-type MarathonHintResultDTO struct {
+// MarathonBonusResultDTO contains the result of using a bonus
+type MarathonBonusResultDTO struct {
 	HiddenAnswerIDs []string     `json:"hiddenAnswerIds,omitempty"`
 	NewTimeLimit    *int         `json:"newTimeLimit,omitempty"`
 	NextQuestion    *QuestionDTO `json:"nextQuestion,omitempty"`
 	NextTimeLimit   *int         `json:"nextTimeLimit,omitempty"`
+	ShieldActive    *bool        `json:"shieldActive,omitempty"`
 }
 
-// @name MarathonHintResultDTO
+// @name MarathonBonusResultDTO
 
 // ========================================
 // Marathon Request Models
@@ -575,14 +600,22 @@ type SubmitMarathonAnswerRequest struct {
 
 // @name SubmitMarathonAnswerRequest
 
-// UseMarathonHintRequest is the HTTP request body for using a hint
-type UseMarathonHintRequest struct {
+// UseMarathonBonusRequest is the HTTP request body for using a bonus
+type UseMarathonBonusRequest struct {
 	QuestionID string `json:"questionId" validate:"required"`
-	HintType   string `json:"hintType" validate:"required"`
+	BonusType  string `json:"bonusType" validate:"required"` // "shield", "fifty_fifty", "skip", "freeze"
 	PlayerID   string `json:"playerId" validate:"required"`
 }
 
-// @name UseMarathonHintRequest
+// @name UseMarathonBonusRequest
+
+// ContinueMarathonRequest is the HTTP request body for continuing after game over
+type ContinueMarathonRequest struct {
+	PlayerID      string `json:"playerId" validate:"required"`
+	PaymentMethod string `json:"paymentMethod" validate:"required"` // "coins" or "ad"
+}
+
+// @name ContinueMarathonRequest
 
 // AbandonMarathonRequest is the HTTP request body for abandoning a marathon
 type AbandonMarathonRequest struct {
@@ -598,8 +631,6 @@ type AbandonMarathonRequest struct {
 // StartMarathonData contains data for a started marathon
 type StartMarathonData struct {
 	Game            MarathonGameDTO `json:"game" validate:"required"`
-	FirstQuestion   QuestionDTO     `json:"firstQuestion" validate:"required"`
-	TimeLimit       int             `json:"timeLimit" validate:"required"`
 	HasPersonalBest bool            `json:"hasPersonalBest" validate:"required"`
 }
 
@@ -614,19 +645,21 @@ type StartMarathonResponse struct {
 
 // SubmitMarathonAnswerData contains answer submission result
 type SubmitMarathonAnswerData struct {
-	IsCorrect       bool                       `json:"isCorrect" validate:"required"`
-	CorrectAnswerID string                     `json:"correctAnswerId" validate:"required"`
-	BasePoints      int                        `json:"basePoints" validate:"required"`
-	TimeTaken       int64                      `json:"timeTaken" validate:"required"`
-	CurrentStreak   int                        `json:"currentStreak" validate:"required"`
-	MaxStreak       int                        `json:"maxStreak" validate:"required"`
-	DifficultyLevel string                     `json:"difficultyLevel" validate:"required"`
-	LifeLost        bool                       `json:"lifeLost" validate:"required"`
-	RemainingLives  int                        `json:"remainingLives" validate:"required"`
-	IsGameOver      bool                       `json:"isGameOver" validate:"required"`
-	NextQuestion    *QuestionDTO               `json:"nextQuestion,omitempty"`
-	NextTimeLimit   *int                       `json:"nextTimeLimit,omitempty"`
-	GameOverResult  *MarathonGameOverResultDTO `json:"gameOverResult,omitempty"`
+	IsCorrect       bool                         `json:"isCorrect" validate:"required"`
+	CorrectAnswerID string                       `json:"correctAnswerId" validate:"required"`
+	TimeTaken       int64                        `json:"timeTaken" validate:"required"`
+	Score           int                          `json:"score" validate:"required"`
+	TotalQuestions  int                          `json:"totalQuestions" validate:"required"`
+	DifficultyLevel string                       `json:"difficultyLevel" validate:"required"`
+	LifeLost        bool                         `json:"lifeLost" validate:"required"`
+	ShieldConsumed  bool                         `json:"shieldConsumed" validate:"required"`
+	Lives           MarathonLivesDTO             `json:"lives" validate:"required"`
+	BonusInventory  MarathonBonusInventoryDTO    `json:"bonusInventory" validate:"required"`
+	IsGameOver      bool                         `json:"isGameOver" validate:"required"`
+	NextQuestion    *QuestionDTO                 `json:"nextQuestion,omitempty"`
+	NextTimeLimit   *int                         `json:"nextTimeLimit,omitempty"`
+	GameOverResult  *MarathonGameOverResultDTO   `json:"gameOverResult,omitempty"`
+	Milestone       *MarathonMilestoneDTO        `json:"milestone,omitempty"`
 }
 
 // @name SubmitMarathonAnswerData
@@ -638,21 +671,39 @@ type SubmitMarathonAnswerResponse struct {
 
 // @name SubmitMarathonAnswerResponse
 
-// UseMarathonHintData contains hint usage result
-type UseMarathonHintData struct {
-	HintType       string                `json:"hintType" validate:"required"`
-	RemainingHints int                   `json:"remainingHints" validate:"required"`
-	HintResult     MarathonHintResultDTO `json:"hintResult" validate:"required"`
+// UseMarathonBonusData contains bonus usage result
+type UseMarathonBonusData struct {
+	BonusType      string                     `json:"bonusType" validate:"required"`
+	RemainingCount int                        `json:"remainingCount" validate:"required"`
+	BonusInventory MarathonBonusInventoryDTO  `json:"bonusInventory" validate:"required"`
+	BonusResult    MarathonBonusResultDTO     `json:"bonusResult" validate:"required"`
 }
 
-// @name UseMarathonHintData
+// @name UseMarathonBonusData
 
-// UseMarathonHintResponse wraps the use hint response
-type UseMarathonHintResponse struct {
-	Data UseMarathonHintData `json:"data" validate:"required"`
+// UseMarathonBonusResponse wraps the use bonus response
+type UseMarathonBonusResponse struct {
+	Data UseMarathonBonusData `json:"data" validate:"required"`
 }
 
-// @name UseMarathonHintResponse
+// @name UseMarathonBonusResponse
+
+// ContinueMarathonData contains continue response data
+type ContinueMarathonData struct {
+	Game             MarathonGameDTO `json:"game" validate:"required"`
+	ContinueCount    int             `json:"continueCount" validate:"required"`
+	CoinsDeducted    int             `json:"coinsDeducted" validate:"required"`
+	NextContinueCost int             `json:"nextContinueCost" validate:"required"`
+}
+
+// @name ContinueMarathonData
+
+// ContinueMarathonResponse wraps the continue response
+type ContinueMarathonResponse struct {
+	Data ContinueMarathonData `json:"data" validate:"required"`
+}
+
+// @name ContinueMarathonResponse
 
 // AbandonMarathonResponse wraps the abandon marathon response
 type AbandonMarathonResponse struct {
@@ -665,7 +716,6 @@ type AbandonMarathonResponse struct {
 type GetMarathonStatusData struct {
 	HasActiveGame bool             `json:"hasActiveGame" validate:"required"`
 	Game          *MarathonGameDTO `json:"game,omitempty"`
-	TimeLimit     *int             `json:"timeLimit,omitempty"`
 }
 
 // @name GetMarathonStatusData
