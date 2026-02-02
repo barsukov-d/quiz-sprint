@@ -80,12 +80,17 @@ New record → +500 coins (one-time)
 ## Continue Economics
 
 ### Cost Progression
+
+**Formula:** `cost = 200 + (continueCount * 200)` where `continueCount` = number of continues already used.
+
 ```
 Continue #1: 200 coins OR Rewarded Ad
 Continue #2: 400 coins OR Rewarded Ad
 Continue #3: 600 coins OR Rewarded Ad
-Continue #4+: 800 coins (no ad option)
+Continue #4+: 800+ coins (no ad option, cost keeps escalating)
 ```
+
+**Ad option:** Available for first 3 continues only (`continueCount < 3`).
 
 ### Expected Value Analysis
 

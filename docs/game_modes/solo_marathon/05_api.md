@@ -47,7 +47,7 @@ POST /api/v1/marathon/start
     "lives": 3,
     "livesLabel": "❤️❤️❤️",
     "score": 0,
-    "scoreLabel": "0/0",
+    "scoreLabel": "✅ 0",
     "personalBest": 87,
     "currentQuestion": {
       "questionNumber": 1,
@@ -60,8 +60,17 @@ POST /api/v1/marathon/start
         {"id": "a_004", "text": "1380 год", "position": 3}
       ],
       "timeLimit": 15,
-      "difficulty": "easy"
+      "difficulty": "easy",
+      "difficultyChanged": false,
+      "difficultyMessage": null
     },
+    "milestone": {
+      "next": 25,
+      "current": 0,
+      "remaining": 25,
+      "label": "Следующая цель: 25 ✅ (ещё 25)"
+    },
+    "onboarding": null,
     "bonusInventory": {
       "shield": 2,
       "fiftyFifty": 1,
@@ -179,7 +188,7 @@ POST /api/v1/marathon/:gameId/answer
     "lives": 3,
     "livesLabel": "❤️❤️❤️",
     "score": 1,
-    "scoreLabel": "1/1 ✓",
+    "scoreLabel": "✅ 1",
     "isGameOver": false,
     "nextQuestion": { /* next question data */ }
   }
@@ -199,7 +208,7 @@ POST /api/v1/marathon/:gameId/answer
     "livesLabel": "❤️❤️🖤",
     "livesLost": 1,
     "score": 1,
-    "scoreLabel": "1/2",
+    "scoreLabel": "✅ 1",
     "isGameOver": false,
     "nextQuestion": { /* next question */ }
   }
@@ -216,7 +225,7 @@ POST /api/v1/marathon/:gameId/answer
     "lives": 0,
     "livesLabel": "🖤🖤🖤",
     "score": 23,
-    "scoreLabel": "23/24",
+    "scoreLabel": "✅ 23",
     "isGameOver": true,
     "gameOverData": {
       "finalScore": 23,
@@ -406,7 +415,22 @@ POST /api/v1/marathon/:gameId/complete
       "freeze": 3
     },
     "continueCount": 1,
-    "summary": "Правильных: 23 из 24 вопросов"
+    "summary": "Правильных: 23 из 24 вопросов",
+    "personalBestProgress": {
+      "current": 23,
+      "best": 87,
+      "percent": 26,
+      "label": "23/87 рекорда"
+    },
+    "topRankGap": {
+      "targetRank": 100,
+      "gap": 12,
+      "label": "До топ-100 не хватает 12 ответов!"
+    },
+    "share": {
+      "text": "🏃 Мой марафон в Quiz Sprint!\n✅ 23 правильных ответа\n🏆 #342 на этой неделе\nПопробуй побить мой рекорд!",
+      "url": "https://quiz-sprint-tma.online/marathon"
+    }
   }
 }
 ```

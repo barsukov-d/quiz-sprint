@@ -116,7 +116,9 @@ func SelectDifficulty(questionIndex int) string {
 Activation: Before answering (toggle on)
 Effect: Next wrong answer doesn't cost life
 Consumption: Only if answer is wrong
-Cooldown: None (can activate again immediately)
+Deactivation: After question ends (correct or wrong), shield deactivates
+Carry-over: NO — shield does NOT carry to next question
+Cooldown: None (can activate again immediately on next question)
 ```
 
 **Logic:**

@@ -6,6 +6,7 @@ Home → "Марафон" → Shows:
 - Current lives: ❤️❤️❤️
 - Available bonuses: 🛡️×2 🔀×1 ❄️×3
 - Weekly rank (if played this week)
+- Coin balance (for continue budget planning)
 
 ---
 
@@ -14,7 +15,7 @@ Home → "Марафон" → Shows:
 ### 1. Pre-Start Screen
 ```
 ┌─────────────────────────────────────┐
-│  🏃 МАРАФОН                         │
+│  🏃 МАРАФОН                  💰 1,250│
 │                                     │
 │  Твой рекорд: 87 правильных         │
 │  Эта неделя: #342                   │
@@ -26,6 +27,7 @@ Home → "Марафон" → Shows:
 │  • 3 жизни, ошибка = -1 жизнь       │
 │  • Сложность растёт со временем     │
 │  • Используй бонусы стратегически   │
+│  💡 Continue: от 200💰               │
 │                                     │
 │  [      НАЧАТЬ МАРАФОН      ]       │
 │                                     │
@@ -38,8 +40,8 @@ Home → "Марафон" → Shows:
 ### 2. Question Screen (In-Game)
 ```
 ┌─────────────────────────────────────┐
-│  🏃 Марафон          Счёт: 23/23 ✓  │
-│  ❤️❤️❤️                    ⏱️ 00:11  │
+│  🏃 Марафон                         │
+│  ❤️❤️❤️    ✅ 23    Вопрос 24  ⏱️ 11 │
 │─────────────────────────────────────│
 │                                     │
 │  В каком году был основан Рим?      │
@@ -50,6 +52,8 @@ Home → "Марафон" → Shows:
 │  [ C. 27 г. до н.э.       ]         │
 │  [ D. 476 г. н.э.         ]         │
 │                                     │
+│  ── Следующая цель: 25 ✅ (ещё 2) ──│
+│                                     │
 │─────────────────────────────────────│
 │  Бонусы:                            │
 │  [ 🛡️×2 ] [ 🔀×1 ] [ ⏭️×0 ] [ ❄️×3 ] │
@@ -57,16 +61,25 @@ Home → "Марафон" → Shows:
 ```
 
 **UI Elements:**
-- **Top:** Score = "Correct/Total ✓" (e.g., 23/23 means no mistakes yet)
+- **Score:** `✅ 23` — count of correct answers (primary metric)
+- **Question number:** `Вопрос 24` — current question index
 - **Lives:** Visual hearts (❤️ = active, 🖤 = lost)
 - **Timer:** Countdown (color changes: green → yellow → red)
-- **Bonuses:** Active buttons (grayed if 0 quantity)
+- **Milestone:** Progress toward next milestone (25, 50, 100, 200, 500)
+- **Bonuses:** Active buttons (grayed if 0 quantity, long-press for tooltip)
 
 **Timer behavior:**
 - Questions 1-10: 15 seconds
 - Questions 11-25: 12 seconds
 - Questions 26-50: 10 seconds
 - Questions 51+: 8 seconds
+
+**Difficulty transition notification:**
+When timer limit changes (e.g., question 11, 26, 51), show brief toast:
+```
+⚡ Сложность растёт! Время: 12 сек
+```
+Duration: 2 seconds, non-blocking.
 
 **Difficulty indicators:**
 - Question number visible (e.g., "Вопрос 47")
@@ -81,7 +94,8 @@ Home → "Марафон" → Shows:
 Player taps Shield BEFORE answering
 → Visual indicator: "🛡️ Активен" above question
 → If answer wrong: Shield consumed, NO life lost
-→ If answer correct: Shield NOT consumed (saved)
+→ If answer correct: Shield NOT consumed, deactivates after question
+→ Shield does NOT carry to next question (must re-activate manually)
 ```
 
 #### Using 50/50 🔀
@@ -118,7 +132,7 @@ Player taps Freeze
 ┌─────────────────────────────────────┐
 │          ✅ ПРАВИЛЬНО!              │
 │                                     │
-│  Твой счёт: 24/24 ✓                 │
+│  Счёт: ✅ 24                        │
 │                                     │
 │  [ Далее ]                          │
 └─────────────────────────────────────┘
@@ -132,7 +146,7 @@ Duration: 1.5 seconds → Auto-advance
 │                                     │
 │  Правильный ответ: A. 753 г. до н.э│
 │  -1 жизнь: ❤️❤️🖤                   │
-│  Счёт: 23/24                        │
+│  Счёт: ✅ 23                        │
 │                                     │
 │  [ Продолжить ]                     │
 └─────────────────────────────────────┘
@@ -149,13 +163,14 @@ Duration: 3 seconds (read answer) → Continue
 │          💀 ИГРА ОКОНЧЕНА            │
 │                                     │
 │  Твой результат: 47 правильных      │
-│  Личный рекорд: 87                  │
+│  [████████░░░░░░] 47/87 рекорда     │
 │                                     │
 │  ┌─────────────────────────────┐    │
 │  │  Хочешь продолжить?         │    │
 │  │  Получи ещё одну жизнь!     │    │
 │  │                             │    │
 │  │  [ 200 💰 ] или [ 📺 ]      │    │
+│  │  💰 Баланс: 1,250           │    │
 │  └─────────────────────────────┘    │
 │                                     │
 │  [ Закончить забег ]                │
@@ -163,14 +178,16 @@ Duration: 3 seconds (read answer) → Continue
 ```
 
 **Continue options:**
-1. Pay 200 coins
+1. Pay coins (show current balance)
 2. Watch rewarded ad
 3. Decline → Go to results
 
+**Progress bar:** Visual comparison to personal best — motivates continue.
+
 If continued:
-- +1 life (❤️)
+- Lives reset to 1 (❤️) — NOT "+1", always exactly 1
 - Resume from same question
-- Next continue costs more (400, 600, ...)
+- Next continue costs more (400, 600, 800, ...)
 
 ---
 
@@ -185,10 +202,10 @@ If continued:
 │    • ❄️ Заморозка: 3                │
 │                                     │
 │  Твой рекорд: 87                    │
-│  (на 40 больше текущего!)           │
+│  [████████░░░░░░] 47/87 (54%)       │
 │                                     │
 │  Позиция на этой неделе: #127       │
-│  (Топ-100 получает награды!)        │
+│  До топ-100 не хватает 12 ответов!  │
 │                                     │
 │  [  ИГРАТЬ ЕЩЁ РАЗ  ]               │
 │                                     │
@@ -202,16 +219,33 @@ If continued:
 +500 монет за достижение
 ```
 
+**Share card format** (for "Поделиться" button):
+```
+🏃 Мой марафон в Quiz Sprint!
+✅ 47 правильных ответов
+🏆 #127 на этой неделе
+Попробуй побить мой рекорд!
+[link to app]
+```
+
 ---
 
 ## State Management (Backend)
 
 **Game states:**
 ```
-NOT_STARTED → IN_PROGRESS → GAME_OVER → COMPLETED
-                    ↓
-                CONTINUED (back to IN_PROGRESS)
+IN_PROGRESS → GAME_OVER → COMPLETED (declined continue / final game over)
+     │             │
+     │             └─→ IN_PROGRESS (continue used)
+     │
+     └─→ ABANDONED (player quit mid-game or timeout 30min)
 ```
+
+**Statuses:**
+- `in_progress` — actively playing
+- `game_over` — 0 lives, continue offer shown
+- `completed` — game ended normally (after game over, no more continues)
+- `abandoned` — player quit mid-game or inactivity timeout
 
 **State stored on backend:**
 - Current question index
@@ -252,6 +286,22 @@ Backend selects questions:
 
 ---
 
+## Bonus Tooltips (Long-Press)
+
+Each bonus button shows tooltip on long-press:
+
+| Bonus | Tooltip text |
+|-------|-------------|
+| 🛡️ Shield | "Защита от ошибки. Не тратится при правильном ответе" |
+| 🔀 50/50 | "Убирает 2 неправильных ответа" |
+| ⏭️ Skip | "Пропустить вопрос без потери жизни" |
+| ❄️ Freeze | "+10 секунд к таймеру" |
+
+**First 3 games:** Show labels under icons by default (no long-press needed).
+After 3 games → icons only + long-press tooltips.
+
+---
+
 ## Bonus Strategy Tips (In-Game Hints)
 
 **Shown on loading screen / first-time tutorial:**
@@ -265,6 +315,23 @@ Backend selects questions:
 
 💡 Совет: Пропуск ⏭️ не портит твою серию правильных ответов.
 ```
+
+---
+
+## First-Time Onboarding
+
+**Trigger:** Player's first Marathon game ever (`gamesPlayed == 0`).
+
+**Flow:**
+1. Question 1 — normal question, no hints
+2. Question 2 — highlight Shield button: "Нажми 🛡️ чтобы защититься от ошибки"
+3. Question 3 — highlight 50/50 button: "Нажми 🔀 чтобы убрать 2 неправильных ответа"
+4. Question 4+ — normal gameplay, no more hints
+
+**Implementation:**
+- Backend returns `isOnboarding: true` + `onboardingStep: 2` in question response
+- Frontend shows animated highlight on specified bonus button
+- Hints are non-blocking (player can ignore and play normally)
 
 ---
 
@@ -285,6 +352,19 @@ Backend selects questions:
 - State saved after each answer
 - Can resume on reconnect (same question)
 - Timer paused (server-side tracking)
+
+**Disconnect UI overlay:**
+```
+┌─────────────────────────────────────┐
+│                                     │
+│        🔄 Переподключение...         │
+│                                     │
+│    Твой прогресс сохранён.          │
+│    Таймер на паузе.                 │
+│                                     │
+└─────────────────────────────────────┘
+```
+Overlay blocks interaction until reconnect. On reconnect → resume seamlessly.
 
 **Timeout:**
 - If no answer for 30+ seconds: Auto-submit empty → Wrong answer
