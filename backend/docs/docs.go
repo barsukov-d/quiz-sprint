@@ -2877,6 +2877,9 @@ const docTemplate = `{
                 "hasActiveGame"
             ],
             "properties": {
+                "bonusInventory": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonBonusInventoryDTO"
+                },
                 "game": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonGameDTO"
                 },

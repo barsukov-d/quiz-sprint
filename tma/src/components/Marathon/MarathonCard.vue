@@ -24,6 +24,17 @@ const {
 } = useMarathon(props.playerId)
 
 // ===========================
+// Bonus Display Config
+// ===========================
+
+const bonusList = [
+	{ key: 'shield' as const, label: 'Shield', icon: 'i-heroicons-shield-check', color: 'text-blue-500', description: 'Absorbs 1 wrong answer' },
+	{ key: 'fiftyFifty' as const, label: '50/50', icon: 'i-heroicons-scissors', color: 'text-yellow-500', description: 'Removes 2 wrong answers' },
+	{ key: 'skip' as const, label: 'Skip', icon: 'i-heroicons-forward', color: 'text-green-500', description: 'Skip without penalty' },
+	{ key: 'freeze' as const, label: 'Freeze', icon: 'i-heroicons-clock', color: 'text-cyan-500', description: '+5 seconds to timer' },
+]
+
+// ===========================
 // Life Restore Timer
 // ===========================
 
@@ -172,31 +183,21 @@ onBeforeUnmount(() => {
 			</div>
 
 			<!-- Bonuses -->
-			<div class="flex gap-3 justify-center text-sm">
-				<span
-					:class="state.bonusInventory.shield > 0 ? '' : 'opacity-40'"
-					title="Shield"
+			<div class="flex gap-2 justify-center">
+				<div
+					v-for="b in bonusList"
+					:key="b.key"
+					class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs"
+					:class="state.bonusInventory[b.key] > 0
+						? 'bg-gray-50 dark:bg-gray-800'
+						: 'bg-gray-50/50 dark:bg-gray-800/50 opacity-40'"
+					:title="b.label"
 				>
-					🛡️ {{ state.bonusInventory.shield }}
-				</span>
-				<span
-					:class="state.bonusInventory.fiftyFifty > 0 ? '' : 'opacity-40'"
-					title="50/50"
-				>
-					🔀 {{ state.bonusInventory.fiftyFifty }}
-				</span>
-				<span
-					:class="state.bonusInventory.skip > 0 ? '' : 'opacity-40'"
-					title="Skip"
-				>
-					⏭️ {{ state.bonusInventory.skip }}
-				</span>
-				<span
-					:class="state.bonusInventory.freeze > 0 ? '' : 'opacity-40'"
-					title="Freeze"
-				>
-					❄️ {{ state.bonusInventory.freeze }}
-				</span>
+					<UIcon :name="b.icon" :class="b.color" class="w-4 h-4" />
+					<span class="font-semibold text-gray-900 dark:text-gray-100">
+						{{ state.bonusInventory[b.key] }}
+					</span>
+				</div>
 			</div>
 		</div>
 
@@ -231,11 +232,21 @@ onBeforeUnmount(() => {
 			<!-- Bonuses available -->
 			<div>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Bonuses</p>
-				<div class="flex gap-3 text-sm">
-					<span title="Shield">🛡️ {{ state.bonusInventory.shield }}</span>
-					<span title="50/50">🔀 {{ state.bonusInventory.fiftyFifty }}</span>
-					<span title="Skip">⏭️ {{ state.bonusInventory.skip }}</span>
-					<span title="Freeze">❄️ {{ state.bonusInventory.freeze }}</span>
+				<div class="flex gap-2">
+					<div
+						v-for="b in bonusList"
+						:key="b.key"
+						class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
+						:class="state.bonusInventory[b.key] > 0
+							? 'bg-gray-50 dark:bg-gray-800'
+							: 'bg-gray-50/50 dark:bg-gray-800/50 opacity-40'"
+						:title="b.description"
+					>
+						<UIcon :name="b.icon" :class="b.color" class="w-4 h-4" />
+						<span class="font-semibold text-gray-900 dark:text-gray-100">
+							{{ state.bonusInventory[b.key] }}
+						</span>
+					</div>
 				</div>
 			</div>
 

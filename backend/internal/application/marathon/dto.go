@@ -234,8 +234,9 @@ type GetMarathonStatusInput struct {
 
 // GetMarathonStatusOutput is the output for getting marathon status
 type GetMarathonStatusOutput struct {
-	HasActiveGame bool             `json:"hasActiveGame"`
-	Game          *MarathonGameDTO `json:"game,omitempty"`
+	HasActiveGame  bool              `json:"hasActiveGame"`
+	Game           *MarathonGameDTO  `json:"game,omitempty"`
+	BonusInventory *BonusInventoryDTO `json:"bonusInventory,omitempty"` // Available bonuses (shown when idle too)
 }
 
 // ========================================

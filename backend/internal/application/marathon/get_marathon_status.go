@@ -29,24 +29,36 @@ func (uc *GetMarathonStatusUseCase) Execute(input GetMarathonStatusInput) (GetMa
 		return GetMarathonStatusOutput{}, err
 	}
 
-	// 2. Find active game for player
+	// 2. Default bonus inventory (what player starts with in a new game)
+	defaultBonuses := solo_marathon.NewBonusInventory()
+	defaultBonusDTO := BonusInventoryDTO{
+		Shield:     defaultBonuses.Shield(),
+		FiftyFifty: defaultBonuses.FiftyFifty(),
+		Skip:       defaultBonuses.Skip(),
+		Freeze:     defaultBonuses.Freeze(),
+	}
+
+	// 3. Find active game for player
 	game, err := uc.marathonRepo.FindActiveByPlayer(playerID)
 	if err != nil {
 		if err == solo_marathon.ErrGameNotFound {
-			// No active game - return empty result
+			// No active game - return default bonuses so UI can display them
 			return GetMarathonStatusOutput{
-				HasActiveGame: false,
+				HasActiveGame:  false,
+				BonusInventory: &defaultBonusDTO,
 			}, nil
 		}
 		return GetMarathonStatusOutput{}, err
 	}
 
-	// 3. Game found - build output
+	// 4. Game found - build output
 	now := time.Now().Unix()
 	gameDTO := ToMarathonGameDTOV2(game, now)
+	gameBonusDTO := gameDTO.BonusInventory
 
 	return GetMarathonStatusOutput{
-		HasActiveGame: true,
-		Game:          &gameDTO,
+		HasActiveGame:  true,
+		Game:           &gameDTO,
+		BonusInventory: &gameBonusDTO,
 	}, nil
 }

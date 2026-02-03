@@ -378,6 +378,12 @@ export function useMarathon(playerId: string) {
 
 			if (statusData.value?.data) {
 				const data = statusData.value.data
+
+				// Always sync bonus inventory from server (available even when idle)
+				if (data.bonusInventory) {
+					state.value.bonusInventory = data.bonusInventory
+				}
+
 				if (data.hasActiveGame && data.game) {
 					syncFromGame(data.game)
 

@@ -42,6 +42,7 @@ const selectedAnswerId = ref<string | null>(null)
 const isSubmitting = ref(false)
 const timerRef = ref<InstanceType<typeof GameTimer> | null>(null)
 const questionStartTime = ref(Date.now())
+const activatedBonus = ref<string | null>(null)
 
 const showFeedback = ref(false)
 const feedbackIsCorrect = ref<boolean | null>(null)
@@ -55,6 +56,13 @@ const feedbackShieldConsumed = ref(false)
 // ===========================
 
 const answerLabels = ['A', 'B', 'C', 'D']
+
+const bonusButtons = [
+	{ type: 'shield' as BonusType, key: 'shield' as const, label: 'Shield', icon: 'i-heroicons-shield-check', color: 'blue' as const, activeColor: 'text-blue-500', canUse: canUseShield },
+	{ type: 'fifty_fifty' as BonusType, key: 'fiftyFifty' as const, label: '50/50', icon: 'i-heroicons-scissors', color: 'yellow' as const, activeColor: 'text-yellow-500', canUse: canUseFiftyFifty },
+	{ type: 'skip' as BonusType, key: 'skip' as const, label: 'Skip', icon: 'i-heroicons-forward', color: 'green' as const, activeColor: 'text-green-500', canUse: canUseSkip },
+	{ type: 'freeze' as BonusType, key: 'freeze' as const, label: 'Freeze', icon: 'i-heroicons-clock', color: 'cyan' as const, activeColor: 'text-cyan-500', canUse: canUseFreeze },
+]
 
 const currentQuestion = computed(() => state.value.currentQuestion)
 
@@ -183,6 +191,10 @@ const handleUseBonus = async (bonusType: BonusType) => {
 	if (isSubmitting.value || showFeedback.value) return
 
 	try {
+		// Trigger activation animation
+		activatedBonus.value = bonusType
+		setTimeout(() => { activatedBonus.value = null }, 600)
+
 		await useBonus(bonusType)
 
 		// If skip, reset timer for new question
@@ -199,6 +211,7 @@ const handleUseBonus = async (bonusType: BonusType) => {
 		}
 	} catch (error) {
 		console.error('Failed to use bonus:', error)
+		activatedBonus.value = null
 	}
 }
 
@@ -334,46 +347,41 @@ onUnmounted(() => {
 
 			<!-- Bonus Bar -->
 			<div class="flex gap-2 justify-center pt-2">
-				<UButton
-					size="sm"
-					:color="canUseShield ? 'blue' : 'gray'"
-					variant="soft"
-					:disabled="!canUseShield || isSubmitting || showFeedback"
-					icon="i-heroicons-shield-check"
-					@click="handleUseBonus('shield')"
+				<button
+					v-for="b in bonusButtons"
+					:key="b.type"
+					class="bonus-btn flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all duration-200"
+					:class="[
+						b.canUse.value
+							? 'bg-gray-100 dark:bg-gray-800 hover:scale-105 active:scale-95 cursor-pointer'
+							: 'bg-gray-100/50 dark:bg-gray-800/30 opacity-35 cursor-not-allowed',
+						activatedBonus === b.type ? 'bonus-activated ring-2 ring-offset-1 ring-offset-transparent' : '',
+						activatedBonus === b.type && b.color === 'blue' ? 'ring-blue-500' : '',
+						activatedBonus === b.type && b.color === 'yellow' ? 'ring-yellow-500' : '',
+						activatedBonus === b.type && b.color === 'green' ? 'ring-green-500' : '',
+						activatedBonus === b.type && b.color === 'cyan' ? 'ring-cyan-500' : '',
+					]"
+					:disabled="!b.canUse.value || isSubmitting || showFeedback"
+					@click="handleUseBonus(b.type)"
 				>
-					{{ state.bonusInventory.shield }}
-				</UButton>
-				<UButton
-					size="sm"
-					:color="canUseFiftyFifty ? 'yellow' : 'gray'"
-					variant="soft"
-					:disabled="!canUseFiftyFifty || isSubmitting || showFeedback"
-					icon="i-heroicons-scissors"
-					@click="handleUseBonus('fifty_fifty')"
-				>
-					{{ state.bonusInventory.fiftyFifty }}
-				</UButton>
-				<UButton
-					size="sm"
-					:color="canUseSkip ? 'green' : 'gray'"
-					variant="soft"
-					:disabled="!canUseSkip || isSubmitting || showFeedback"
-					icon="i-heroicons-forward"
-					@click="handleUseBonus('skip')"
-				>
-					{{ state.bonusInventory.skip }}
-				</UButton>
-				<UButton
-					size="sm"
-					:color="canUseFreeze ? 'cyan' : 'gray'"
-					variant="soft"
-					:disabled="!canUseFreeze || isSubmitting || showFeedback"
-					icon="i-heroicons-clock"
-					@click="handleUseBonus('freeze')"
-				>
-					{{ state.bonusInventory.freeze }}
-				</UButton>
+					<UIcon
+						:name="b.icon"
+						:class="b.canUse.value ? b.activeColor : 'text-gray-400 dark:text-gray-600'"
+						class="w-5 h-5"
+					/>
+					<span
+						class="text-[10px] font-bold tabular-nums"
+						:class="b.canUse.value ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-600'"
+					>
+						{{ state.bonusInventory[b.key] }}
+					</span>
+					<span
+						class="text-[9px] leading-tight"
+						:class="b.canUse.value ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400/60 dark:text-gray-600'"
+					>
+						{{ b.label }}
+					</span>
+				</button>
 			</div>
 
 			<!-- Feedback alerts -->
@@ -424,3 +432,16 @@ onUnmounted(() => {
 		</div>
 	</div>
 </template>
+
+<style scoped>
+.bonus-activated {
+	animation: bonus-pulse 0.5s ease-out;
+}
+
+@keyframes bonus-pulse {
+	0% { transform: scale(1); }
+	25% { transform: scale(1.2); }
+	50% { transform: scale(0.95); }
+	100% { transform: scale(1); }
+}
+</style>

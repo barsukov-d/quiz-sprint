@@ -93,6 +93,46 @@ const chestColor = computed(() => {
 	}
 })
 
+// Bonus display mapping
+const bonusInfo: Record<string, { label: string; icon: string; color: string; description: string }> = {
+	shield: {
+		label: 'Shield',
+		icon: 'i-heroicons-shield-check',
+		color: 'text-blue-500',
+		description: 'Absorbs 1 wrong answer',
+	},
+	fifty_fifty: {
+		label: '50/50',
+		icon: 'i-heroicons-scissors',
+		color: 'text-yellow-500',
+		description: 'Removes 2 wrong answers',
+	},
+	skip: {
+		label: 'Skip',
+		icon: 'i-heroicons-forward',
+		color: 'text-green-500',
+		description: 'Skip without penalty',
+	},
+	freeze: {
+		label: 'Freeze',
+		icon: 'i-heroicons-clock',
+		color: 'text-cyan-500',
+		description: '+5 seconds to timer',
+	},
+}
+
+const getBonusInfo = (bonus: string) => bonusInfo[bonus] ?? { label: bonus, icon: 'i-heroicons-gift', color: 'text-gray-500', description: '' }
+
+// Score breakdown
+const streakMultiplier = computed(() => {
+	if (!results.value || results.value.baseScore === 0) return 1
+	return results.value.streakBonus > 0
+		? Number((results.value.finalScore / results.value.baseScore).toFixed(2))
+		: 1
+})
+
+const hasStreakBonus = computed(() => results.value && results.value.streakBonus > 0)
+
 // ===========================
 // Methods
 // ===========================
@@ -179,6 +219,16 @@ onMounted(async () => {
 						>
 							points
 						</div>
+						<!-- Score breakdown -->
+						<div
+							v-if="results && results.baseScore > 0"
+							class="flex items-center justify-center gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400"
+						>
+							<span>Base: {{ results.baseScore }}</span>
+							<span v-if="hasStreakBonus" class="text-yellow-500 font-semibold">
+								+ {{ results.streakBonus }} streak (×{{ streakMultiplier }})
+							</span>
+						</div>
 					</div>
 
 					<!-- Accuracy -->
@@ -230,7 +280,7 @@ onMounted(async () => {
 						</div>
 					</div>
 
-					<div class="grid grid-cols-2 gap-6">
+					<div class="grid grid-cols-2 gap-4">
 						<div
 							class="flex items-center gap-3 p-4 bg-gray-50 dark:bg-gray-900 rounded-xl"
 						>
@@ -263,23 +313,52 @@ onMounted(async () => {
 						</div>
 					</div>
 
+					<!-- Streak multiplier applied -->
+					<div
+						v-if="hasStreakBonus"
+						class="flex items-center gap-2 px-3 py-2 bg-yellow-50 dark:bg-yellow-950/30 rounded-lg text-xs"
+					>
+						<UIcon name="i-heroicons-fire" class="w-4 h-4 text-yellow-500" />
+						<span class="text-yellow-700 dark:text-yellow-400">
+							Streak ×{{ streakMultiplier }} applied to coins
+						</span>
+					</div>
+
 					<div
 						v-if="chestReward.marathonBonuses && chestReward.marathonBonuses.length > 0"
 						class="pt-4 border-t border-gray-200 dark:border-gray-700"
 					>
-						<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300 mb-2">
-							Bonus Items
-						</h4>
-						<div class="flex flex-wrap gap-2">
-							<UBadge
+						<div class="flex items-center gap-2 mb-3">
+							<UIcon name="i-heroicons-bolt" class="w-4 h-4 text-primary" />
+							<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
+								Marathon Bonuses
+							</h4>
+						</div>
+						<div class="flex flex-col gap-2">
+							<div
 								v-for="bonus in chestReward.marathonBonuses"
 								:key="bonus"
-								color="primary"
-								variant="soft"
+								class="flex items-center gap-3 p-3 bg-gray-50 dark:bg-gray-900 rounded-xl"
 							>
-								{{ bonus }}
-							</UBadge>
+								<UIcon
+									:name="getBonusInfo(bonus).icon"
+									:class="getBonusInfo(bonus).color"
+									class="w-5 h-5 shrink-0"
+								/>
+								<div class="flex-1 min-w-0">
+									<div class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+										{{ getBonusInfo(bonus).label }}
+									</div>
+									<div class="text-xs text-gray-500 dark:text-gray-400">
+										{{ getBonusInfo(bonus).description }}
+									</div>
+								</div>
+								<UBadge color="primary" variant="soft" size="xs">+1</UBadge>
+							</div>
 						</div>
+						<p class="text-xs text-gray-400 dark:text-gray-500 mt-2">
+							Use in Solo Marathon mode
+						</p>
 					</div>
 				</div>
 			</UCard>

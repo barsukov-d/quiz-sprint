@@ -714,8 +714,9 @@ type AbandonMarathonResponse struct {
 
 // GetMarathonStatusData contains marathon status information
 type GetMarathonStatusData struct {
-	HasActiveGame bool             `json:"hasActiveGame" validate:"required"`
-	Game          *MarathonGameDTO `json:"game,omitempty"`
+	HasActiveGame  bool                       `json:"hasActiveGame" validate:"required"`
+	Game           *MarathonGameDTO           `json:"game,omitempty"`
+	BonusInventory *MarathonBonusInventoryDTO `json:"bonusInventory,omitempty"`
 }
 
 // @name GetMarathonStatusData
