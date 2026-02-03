@@ -29,6 +29,7 @@ const {
 	canUseSkip,
 	canUseFreeze,
 	submitAnswer,
+	applyAnswerResult,
 	useBonus,
 	initialize,
 } = useMarathon(playerId)
@@ -151,6 +152,7 @@ const handleTimeout = async () => {
 const handleNextStep = async () => {
 	const isGameOver = feedbackIsGameOver.value
 
+	// Reset feedback state
 	showFeedback.value = false
 	selectedAnswerId.value = null
 	isSubmitting.value = false
@@ -160,8 +162,11 @@ const handleNextStep = async () => {
 	feedbackLifeLost.value = false
 	feedbackShieldConsumed.value = false
 
+	// Apply deferred state transition (next question or game over navigation)
+	await applyAnswerResult()
+
 	if (isGameOver) {
-		// Navigation handled by composable (routes to marathon-gameover)
+		// Navigation handled by applyAnswerResult (routes to marathon-gameover)
 		return
 	}
 

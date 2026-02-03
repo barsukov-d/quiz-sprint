@@ -218,7 +218,7 @@ export function useMarathon(playerId: string) {
 			const answerData = response.data
 			state.value.lastAnswerResult = answerData
 
-			// Update state from server response
+			// Update non-question state from server response
 			state.value.score = answerData.score
 			state.value.totalQuestions = answerData.totalQuestions
 			state.value.bonusInventory = answerData.bonusInventory
@@ -226,31 +226,44 @@ export function useMarathon(playerId: string) {
 			state.value.milestone = answerData.milestone ?? null
 			state.value.hiddenAnswerIds = []
 
-			if (answerData.isGameOver) {
-				state.value.status = 'game-over'
-				state.value.currentQuestion = null
-				state.value.gameOverResult = answerData.gameOverResult ?? null
-
-				await refetchPersonalBests()
-
-				router.push({ name: 'marathon-gameover' })
-			} else if (answerData.nextQuestion) {
-				state.value.currentQuestion = answerData.nextQuestion
-				state.value.timeLimit = answerData.nextTimeLimit ?? state.value.timeLimit
-
-				// Update lives from server
-				if (state.value.game) {
-					state.value.game = {
-						...state.value.game,
-						lives: answerData.lives,
-					}
+			// Update lives from server
+			if (state.value.game) {
+				state.value.game = {
+					...state.value.game,
+					lives: answerData.lives,
 				}
 			}
+
+			// IMPORTANT: Do NOT update currentQuestion or navigate here!
+			// View needs current question's answers visible to show green/red feedback.
+			// The view's handleNextStep() will call applyAnswerResult() after feedback delay.
 
 			return answerData
 		} catch (error) {
 			console.error('Failed to submit answer:', error)
 			throw error
+		}
+	}
+
+	/**
+	 * Apply answer result after feedback delay.
+	 * Called by the view's handleNextStep() to transition to next question or game over.
+	 */
+	const applyAnswerResult = async () => {
+		const answerData = state.value.lastAnswerResult
+		if (!answerData) return
+
+		if (answerData.isGameOver) {
+			state.value.status = 'game-over'
+			state.value.currentQuestion = null
+			state.value.gameOverResult = answerData.gameOverResult ?? null
+
+			await refetchPersonalBests()
+
+			router.push({ name: 'marathon-gameover' })
+		} else if (answerData.nextQuestion) {
+			state.value.currentQuestion = answerData.nextQuestion
+			state.value.timeLimit = answerData.nextTimeLimit ?? state.value.timeLimit
 		}
 	}
 
@@ -460,6 +473,7 @@ export function useMarathon(playerId: string) {
 		// Actions
 		startGame,
 		submitAnswer,
+		applyAnswerResult,
 		useBonus,
 		continueGame,
 		abandonGame,
