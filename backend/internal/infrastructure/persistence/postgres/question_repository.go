@@ -184,6 +184,49 @@ func (r *QuestionRepository) FindQuestionsBySeed(filter quiz.QuestionFilter, lim
 	return r.scanQuestions(rows)
 }
 
+// FindQuestionsByQuizSeed selects a whole quiz deterministically by seed
+// Picks one quiz with exactly questionsPerQuiz questions, returns all its questions
+func (r *QuestionRepository) FindQuestionsByQuizSeed(questionsPerQuiz int, seed int64) ([]*quiz.Question, error) {
+	// 1. Set deterministic seed
+	normalizedSeed := float64(seed%1000000) / 1000000.0
+	_, err := r.db.Exec("SELECT setseed($1)", normalizedSeed)
+	if err != nil {
+		return nil, fmt.Errorf("failed to set seed: %w", err)
+	}
+
+	// 2. Pick one quiz that has exactly questionsPerQuiz questions
+	var quizID string
+	err = r.db.QueryRow(`
+		SELECT q.id
+		FROM quizzes q
+		JOIN (
+			SELECT quiz_id, COUNT(*) as cnt
+			FROM questions
+			GROUP BY quiz_id
+			HAVING COUNT(*) = $1
+		) qc ON qc.quiz_id = q.id
+		ORDER BY RANDOM()
+		LIMIT 1
+	`, questionsPerQuiz).Scan(&quizID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to find quiz with %d questions: %w", questionsPerQuiz, err)
+	}
+
+	// 3. Load all questions from that quiz, ordered by position
+	rows, err := r.db.Query(`
+		SELECT q.id, q.text, q.points, q.position
+		FROM questions q
+		WHERE q.quiz_id = $1
+		ORDER BY q.position ASC
+	`, quizID)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query questions for quiz %s: %w", quizID, err)
+	}
+	defer rows.Close()
+
+	return r.scanQuestions(rows)
+}
+
 // CountByFilter returns count of questions matching filter
 func (r *QuestionRepository) CountByFilter(filter quiz.QuestionFilter) (int, error) {
 	baseQuery, args := r.buildFilterQueryBase(filter)

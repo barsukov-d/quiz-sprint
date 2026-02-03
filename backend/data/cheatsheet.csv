@@ -1,0 +1,154 @@
+question,correct_answer
+Can Go functions return multiple values?,Yes
+Can a function return a pointer to a local variable?,"Yes, moved to heap"
+Can a package have multiple files?,"Yes, same directory"
+Can a type implement multiple interfaces?,Yes
+Can interfaces be nil?,Yes
+Can you define methods on any type?,"Yes, on any type defined in the same package"
+Can you do pointer arithmetic in Go?,"No, not supported"
+Can you import a package by its relative path?,"No, use module path"
+Can you read from a nil channel?,"Yes, but blocks forever"
+Can you use a switch without an expression in Go?,Yes
+Does Go have manual memory management?,"No, has garbage collector"
+How are exported identifiers named?,Uppercase
+How do you add a dependency?,go get
+How do you check if a key exists in a map?,"value, exists := map[key]"
+How do you check if a value implements an interface?,Type assertion
+How do you close a channel?,close(channel)
+How do you create a buffered channel with capacity 5?,"make(chan int, 5)"
+How do you create a simple error?,errors.New()
+How do you create an infinite loop in Go?,for {}
+How do you declare a short variable in Go?,x := 10
+How do you get the length of a slice?,len(s)
+How do you mark a test as failed?,t.Fail()
+How do you run benchmarks?,go test -bench
+How do you skip a test conditionally?,t.Skip()
+How do you write a single-line comment in Go?,// comment
+How many methods does the empty interface have?,0
+In what year did World War II end?,1945
+In which city is the Sistine Chapel located?,Vatican City
+In which year was the first 'Harry Potter' film released?,2001
+What ancient civilization built the pyramids?,Ancient Egyptians
+What are variadic functions?,Functions accepting variable arguments
+What command initializes a new module?,go mod init
+What command runs tests with coverage?,go test -cover
+What does HTML stand for?,Hyper Text Markup Language
+What does HTML stand for?,Hyper Text Markup Language
+What does HTML stand for?,Hyper Text Markup Language
+What does HTML stand for?,Hyper Text Markup Language
+What does `async/await` do in JavaScript?,Makes asynchronous code look and behave like synchronous code
+What does array.map() return?,A new array with transformed elements
+What does b.N represent in benchmarks?,Number of iterations
+What does go mod tidy do?,Removes unused dependencies
+What does go mod vendor do?,Copies dependencies to vendor/
+What does new() function do?,Allocates memory and returns pointer
+What does recover() do?,Catches panic
+"What does the ""self"" keyword represent in Python classes?",The instance of the class
+"What does the ""with"" statement do?",Ensures proper resource cleanup using context managers
+What does the 'defer' keyword do?,Delays execution until function returns
+What does the <- operator do with channels?,Sends or receives values
+What does the blank identifier '_' do in Go?,Ignores a value
+What does the comma-ok idiom return in type assertion?,Value and boolean
+What does the spread operator (...) do in JavaScript?,Expands an iterable into individual elements
+What does the spread operator (...) do?,Expands an iterable into individual elements
+What file defines a Go module?,go.mod
+What happens when you dereference a nil pointer?,Panics
+What happens when you send to a closed channel?,Panics
+What is Newton's First Law of Motion?,An object at rest stays at rest unless acted upon by a force
+What is a channel in Go?,A type for goroutine communication
+What is a closure in JavaScript?,A function that has access to variables in its outer scope
+What is a closure in JavaScript?,A function with access to its outer scope even after the outer function returns
+What is a common pattern to signal goroutine completion?,Channel or WaitGroup
+What is a decorator in Python?,A function that modifies another function
+What is a goroutine?,A lightweight thread
+What is a list comprehension in Python?,A concise way to create lists
+What is a map in Go?,A hash table
+What is a method receiver in Go?,A special first argument
+What is an interface in Go?,A set of method signatures
+What is event bubbling?,When events travel from child to parent elements
+What is gravity?,A force that attracts objects with mass toward each other
+What is interface embedding?,Including one interface in another
+What is kinetic energy?,Energy of motion
+What is the blank identifier for unused return values?,_
+What is the capacity of an array?,Fixed at declaration
+What is the capital of Australia?,Canberra
+What is the capital of Australia?,Canberra
+What is the capital of France?,Paris
+What is the capital of Japan?,Tokyo
+What is the difference between `let` and `const`?,"const variables cannot be reassigned, let variables can"
+What is the difference between a tuple and a list?,"Tuples are immutable, lists are mutable"
+What is the difference between let and const?,"const cannot be reassigned, let can be reassigned"
+What is the difference between new() and make()?,"new for value types, make for reference types"
+What is the difference between pointer and value receivers?,"Pointer can modify, value cannot"
+What is the difference between t.Error() and t.Fatal()?,Fatal stops test immediately
+What is the empty interface written as?,interface{}
+What is the entry point of a Go program?,main()
+What is the formula for force?,F = ma (Force equals mass times acceleration)
+What is the highest-grossing film of all time (not adjusted for inflation)?,Avatar
+What is the idiomatic way to handle errors in Go?,Check if err != nil
+What is the largest museum in the world?,The Louvre
+What is the purpose of `Object.freeze()`?,To prevent modifications to an object
+What is the purpose of async/await?,To handle asynchronous operations in a synchronous-looking way
+What is the purpose of go.sum?,Dependency checksums
+What is the purpose of version control systems like Git?,To track changes in code over time
+What is the purpose of version control systems like Git?,To track changes in code over time
+What is the purpose of version control systems like Git?,To track changes in code over time
+What is the purpose of version control systems like Git?,To track changes in code over time
+What is the select statement used for?,Multiplexing channel operations
+What is the signature of a benchmark function?,func BenchmarkXxx(b *testing.B)
+What is the signature of a test function?,func TestXxx(t *testing.T)
+What is the smallest country in the world by area?,Vatican City
+What is the smallest country in the world?,Vatican City
+What is the special package name for executables?,main
+What is the speed of light in vacuum?,"299,792,458 meters per second"
+What is the time complexity of binary search?,O(log n)
+What is the time complexity of binary search?,O(log n)
+What is the time complexity of binary search?,O(log n)
+What is the time complexity of binary search?,O(log n)
+What is the world's largest desert?,Antarctic Desert
+What is the zero value for an integer in Go?,0
+What is the zero value of a pointer?,nil
+What is the zero value of a slice?,nil
+What is type assertion syntax?,value.(Type)
+What keyword is used to create a goroutine?,go
+What keyword is used to exit a loop early?,break
+What operator dereferences a pointer?,*
+What operator gets the address of a variable?,&
+What package is used for testing in Go?,testing
+What package provides synchronization primitives?,sync
+What suffix must test files have?,_test.go
+What symbol is used for short variable declaration?,:=
+What type is used for errors in Go?,error interface
+What will `console.log(typeof null)` output?,object
+When did the Berlin Wall fall?,1989
+When should you use panic()?,For unrecoverable errors
+Which country has the largest population?,India
+Which country has the most time zones?,France
+Which is the longest river in the world?,Nile River
+Which keyword is used for error handling?,defer
+Which keyword is used to declare a variable in Go?,var
+Which keyword is used to define a constant in Go?,const
+Which loop keyword exists in Go?,for
+Which method is used to execute code after a Promise resolves?,.then()
+Which mountain range separates Europe from Asia?,Ural Mountains
+Which movie won the Academy Award for Best Picture in 2020?,Parasite
+Which of the following is NOT a basic type in Go?,char
+Which of the following is NOT a programming paradigm?,Sequential
+Which of the following is NOT a programming paradigm?,Sequential
+Which of the following is NOT a programming paradigm?,Sequential
+Which of the following is NOT a programming paradigm?,Sequential
+Which package allows unsafe pointer operations?,unsafe
+Which package must be imported to use fmt.Println?,fmt
+Which programming language is known as the 'language of the web'?,JavaScript
+Which programming language is known as the 'language of the web'?,JavaScript
+Which programming language is known as the 'language of the web'?,JavaScript
+Which programming language is known as the 'language of the web'?,JavaScript
+"Who composed the ""Four Seasons""?",Antonio Vivaldi
+Who directed the movie 'Inception'?,Christopher Nolan
+Who painted the Mona Lisa?,Leonardo da Vinci
+Who played the character of Tony Stark/Iron Man in the Marvel Cinematic Universe?,Robert Downey Jr.
+Who was the first president of the United States?,George Washington
+"Who wrote ""Romeo and Juliet""?",William Shakespeare
+Who wrote the Communist Manifesto?,Karl Marx and Friedrich Engels
+Your first question?,Second answer option (correct)
+Your second question?,Answer B (correct)

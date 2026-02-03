@@ -10,19 +10,15 @@ interface Props {
 const props = defineProps<Props>()
 const router = useRouter()
 
-// ===========================
-// Composables
-// ===========================
-
 const {
 	state,
 	isPlaying,
+	isGameOver,
 	isLoading,
+	lives,
 	hasLives,
 	canPlay,
 	progressToRecord,
-	livesPercent,
-	timeToLifeRestoreFormatted,
 	checkStatus,
 	initialize,
 } = useMarathon(props.playerId)
@@ -32,15 +28,28 @@ const {
 // ===========================
 
 const timerInterval = ref<number | null>(null)
+const timeToLifeRestore = ref(0)
+
+const timeToLifeRestoreFormatted = computed(() => {
+	const seconds = timeToLifeRestore.value
+	const hours = Math.floor(seconds / 3600)
+	const minutes = Math.floor((seconds % 3600) / 60)
+	const secs = seconds % 60
+
+	if (hours > 0) {
+		return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
+	}
+	return `${minutes}:${secs.toString().padStart(2, '0')}`
+})
 
 const startTimer = () => {
 	if (timerInterval.value) return
+	timeToLifeRestore.value = lives.value.timeToNextLife
 
 	timerInterval.value = window.setInterval(() => {
-		if (state.value.timeToLifeRestore > 0) {
-			state.value.timeToLifeRestore--
+		if (timeToLifeRestore.value > 0) {
+			timeToLifeRestore.value--
 		} else {
-			// Жизнь восстановилась - обновляем статус
 			checkStatus()
 			if (timerInterval.value) {
 				clearInterval(timerInterval.value)
@@ -61,81 +70,36 @@ const stopTimer = () => {
 // Computed
 // ===========================
 
-const cardTitle = computed(() => {
-	if (isPlaying.value) return 'Solo Marathon - In Progress'
-	return 'Solo Marathon'
-})
-
-const cardDescription = computed(() => {
-	if (isPlaying.value) {
-		return `Score: ${state.value.score} | Streak: ${state.value.currentStreak}`
+const livesLabel = computed(() => {
+	// Active or game over: show actual lives from server
+	if (isPlaying.value || isGameOver.value) {
+		return lives.value.label || '❤️'.repeat(lives.value.maxLives)
 	}
-	return 'Answer until first mistake'
+	// Idle: show full lives (new game always starts with 3)
+	return '❤️'.repeat(lives.value.maxLives)
 })
 
-const buttonText = computed(() => {
-	if (isPlaying.value) return 'Continue Marathon'
-	if (!hasLives.value) return 'No Lives'
-	return 'Start Marathon'
-})
-
-const buttonIcon = computed(() => {
-	if (isPlaying.value) return 'i-heroicons-play'
-	return 'i-heroicons-bolt'
-})
-
-const statusBadge = computed(() => {
-	if (isPlaying.value) {
-		return {
-			label: 'In Progress',
-			color: 'blue' as const,
-			icon: 'i-heroicons-bolt',
-		}
-	}
-	if (!hasLives.value) {
-		return {
-			label: 'No Lives',
-			color: 'red' as const,
-			icon: 'i-heroicons-heart',
-		}
-	}
-	return {
-		label: 'Ready',
-		color: 'green' as const,
-		icon: 'i-heroicons-check-circle',
-	}
-})
-
-// Визуализация жизней
-const livesDisplay = computed(() => {
-	const hearts = []
-	for (let i = 0; i < state.value.maxLives; i++) {
-		hearts.push(i < state.value.lives)
-	}
-	return hearts
-})
-
-// Цвет прогресс-бара жизней
-const livesColor = computed(() => {
-	if (livesPercent.value <= 33) return 'error'
-	if (livesPercent.value <= 66) return 'warning'
-	return 'success'
-})
+const showLifeTimer = computed(
+	() => lives.value.currentLives < lives.value.maxLives && timeToLifeRestore.value > 0,
+)
 
 // ===========================
 // Actions
 // ===========================
 
-const handleClick = () => {
+const handleStart = () => {
 	if (isLoading.value) return
+	router.push({ name: 'marathon-category' })
+}
 
-	if (isPlaying.value) {
-		// Продолжить игру
-		router.push({ name: 'marathon-play' })
-	} else if (canPlay.value) {
-		// Выбор категории
-		router.push({ name: 'marathon-category' })
-	}
+const handleResume = () => {
+	if (isLoading.value) return
+	router.push({ name: 'marathon-play' })
+}
+
+const handleViewGameOver = () => {
+	if (isLoading.value) return
+	router.push({ name: 'marathon-gameover' })
 }
 
 // ===========================
@@ -157,131 +121,183 @@ onBeforeUnmount(() => {
 		<!-- Header -->
 		<template #header>
 			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-3">
-					<UIcon name="i-heroicons-bolt" class="size-6 text-yellow-500" />
-					<div>
-						<h3 class="text-lg font-semibold">{{ cardTitle }}</h3>
-						<p class="text-sm text-gray-500 dark:text-gray-400">
-							{{ cardDescription }}
-						</p>
-					</div>
+				<div class="flex items-center gap-2.5">
+					<span class="text-2xl">🏃</span>
+					<h3 class="text-lg font-bold">Marathon</h3>
 				</div>
-				<UBadge :color="statusBadge.color" :icon="statusBadge.icon" size="lg">
-					{{ statusBadge.label }}
-				</UBadge>
+				<span class="text-lg" :title="`${lives.currentLives}/${lives.maxLives} lives`">
+					{{ livesLabel }}
+				</span>
 			</div>
 		</template>
 
-		<!-- Body -->
-		<div class="space-y-4">
-			<!-- Lives Display -->
-			<div class="space-y-2">
-				<div class="flex items-center justify-between">
-					<span class="text-sm font-medium">Lives</span>
-					<div class="flex gap-1">
-						<UIcon
-							v-for="(filled, index) in livesDisplay"
-							:key="index"
-							:name="filled ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'"
-							:class="filled ? 'text-red-500' : 'text-gray-300 dark:text-gray-600'"
-							class="size-5"
-						/>
-					</div>
+		<!-- ==================== -->
+		<!-- IN PROGRESS STATE    -->
+		<!-- ==================== -->
+		<div v-if="isPlaying" class="space-y-4">
+			<!-- Current game stats -->
+			<div class="flex items-center justify-between">
+				<div class="text-center flex-1">
+					<p class="text-xs text-gray-500 dark:text-gray-400">Score</p>
+					<p class="text-2xl font-bold text-primary">{{ state.score }}</p>
 				</div>
-				<UProgress v-model="livesPercent" :color="livesColor" />
+				<div class="w-px h-10 bg-gray-200 dark:bg-gray-700" />
+				<div class="text-center flex-1">
+					<p class="text-xs text-gray-500 dark:text-gray-400">Question</p>
+					<p class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+						{{ state.totalQuestions }}
+					</p>
+				</div>
 			</div>
 
-			<!-- Life Restore Timer (если не все жизни) -->
-			<div
-				v-if="state.lives < state.maxLives && state.timeToLifeRestore > 0"
-				class="text-center py-2 bg-blue-50 dark:bg-blue-900/20 rounded-lg"
-			>
-				<p class="text-xs text-gray-600 dark:text-gray-300 mb-1">Next life in</p>
-				<p class="text-sm font-mono font-semibold text-blue-600 dark:text-blue-400">
-					<UIcon name="i-heroicons-clock" class="inline size-4" />
-					{{ timeToLifeRestoreFormatted }}
+			<!-- Progress to record (if has personal best) -->
+			<div v-if="state.personalBest && state.personalBest > 0">
+				<div class="flex justify-between text-xs mb-1">
+					<span class="text-gray-500 dark:text-gray-400">
+						{{ state.score }}/{{ state.personalBest }} record
+					</span>
+					<span
+						:class="progressToRecord >= 100
+							? 'text-green-500 font-semibold'
+							: 'text-gray-500 dark:text-gray-400'"
+					>
+						{{ progressToRecord }}%
+					</span>
+				</div>
+				<UProgress
+					v-model="progressToRecord"
+					:color="progressToRecord >= 100 ? 'success' : 'primary'"
+					size="xs"
+				/>
+			</div>
+
+			<!-- Bonuses -->
+			<div class="flex gap-3 justify-center text-sm">
+				<span
+					:class="state.bonusInventory.shield > 0 ? '' : 'opacity-40'"
+					title="Shield"
+				>
+					🛡️ {{ state.bonusInventory.shield }}
+				</span>
+				<span
+					:class="state.bonusInventory.fiftyFifty > 0 ? '' : 'opacity-40'"
+					title="50/50"
+				>
+					🔀 {{ state.bonusInventory.fiftyFifty }}
+				</span>
+				<span
+					:class="state.bonusInventory.skip > 0 ? '' : 'opacity-40'"
+					title="Skip"
+				>
+					⏭️ {{ state.bonusInventory.skip }}
+				</span>
+				<span
+					:class="state.bonusInventory.freeze > 0 ? '' : 'opacity-40'"
+					title="Freeze"
+				>
+					❄️ {{ state.bonusInventory.freeze }}
+				</span>
+			</div>
+		</div>
+
+		<!-- ==================== -->
+		<!-- GAME OVER STATE      -->
+		<!-- ==================== -->
+		<div v-else-if="isGameOver" class="space-y-4">
+			<div class="text-center">
+				<p class="text-sm text-gray-500 dark:text-gray-400">Game Over</p>
+				<p class="text-3xl font-bold text-primary mt-1">{{ state.score }}</p>
+				<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+					{{ state.totalQuestions }} questions answered
 				</p>
 			</div>
+		</div>
 
+		<!-- ==================== -->
+		<!-- IDLE / READY STATE   -->
+		<!-- ==================== -->
+		<div v-else class="space-y-4">
 			<!-- Personal Best -->
-			<div v-if="state.personalBest !== null" class="space-y-2">
-				<div class="flex items-center justify-between text-sm">
-					<span class="font-medium">Personal Best</span>
-					<UBadge color="yellow" variant="subtle">
-						<UIcon name="i-heroicons-trophy" class="size-3" />
-						{{ state.personalBest }}
-					</UBadge>
-				</div>
+			<div
+				v-if="state.personalBest !== null && state.personalBest > 0"
+				class="flex items-center justify-between"
+			>
+				<span class="text-sm text-gray-500 dark:text-gray-400">Record</span>
+				<span class="font-bold text-yellow-500">
+					🏆 {{ state.personalBest }}
+				</span>
+			</div>
 
-				<!-- Progress to Record (если играем) -->
-				<div v-if="isPlaying && state.score > 0">
-					<div class="flex justify-between text-xs mb-1">
-						<span class="text-gray-500">Current: {{ state.score }}</span>
-						<span class="text-gray-500">{{ progressToRecord }}%</span>
-					</div>
-					<UProgress
-						v-model="progressToRecord"
-						:color="progressToRecord >= 100 ? 'success' : 'info'"
-						size="xs"
-					/>
-					<p
-						v-if="progressToRecord >= 100"
-						class="text-xs text-green-600 dark:text-green-400 mt-1 text-center"
-					>
-						🎉 New Record!
-					</p>
+			<!-- Bonuses available -->
+			<div>
+				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Bonuses</p>
+				<div class="flex gap-3 text-sm">
+					<span title="Shield">🛡️ {{ state.bonusInventory.shield }}</span>
+					<span title="50/50">🔀 {{ state.bonusInventory.fiftyFifty }}</span>
+					<span title="Skip">⏭️ {{ state.bonusInventory.skip }}</span>
+					<span title="Freeze">❄️ {{ state.bonusInventory.freeze }}</span>
 				</div>
 			</div>
 
-			<!-- Current Game Stats (если играем) -->
+			<!-- Life restore timer -->
 			<div
-				v-if="isPlaying"
-				class="grid grid-cols-2 gap-4 pt-2 border-t border-gray-200 dark:border-gray-700"
+				v-if="showLifeTimer"
+				class="flex items-center gap-2 text-sm text-blue-500 dark:text-blue-400"
 			>
-				<div class="text-center">
-					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Score</p>
-					<p class="text-lg font-bold text-primary">
-						{{ state.score }}
-					</p>
-				</div>
-				<div class="text-center">
-					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Streak</p>
-					<p class="text-lg font-bold text-yellow-500">🎯 {{ state.currentStreak }}</p>
-				</div>
+				<UIcon name="i-heroicons-clock" class="size-4" />
+				<span>Next life in <strong class="font-mono">{{ timeToLifeRestoreFormatted }}</strong></span>
 			</div>
 
-			<!-- Hints Available (если играем) -->
+			<!-- Rules hint (only when no personal best = likely new player) -->
 			<div
-				v-if="isPlaying"
-				class="flex gap-2 justify-center pt-2 border-t border-gray-200 dark:border-gray-700"
+				v-if="state.personalBest === null || state.personalBest === 0"
+				class="text-xs text-gray-500 dark:text-gray-400 space-y-1"
 			>
-				<UChip :text="String(state.hints.fiftyFifty)" size="md">
-					<UIcon name="i-heroicons-scissors" class="size-4" />
-				</UChip>
-				<UChip :text="String(state.hints.extraTime)" size="md">
-					<UIcon name="i-heroicons-clock" class="size-4" />
-				</UChip>
-				<UChip :text="String(state.hints.skip)" size="md">
-					<UIcon name="i-heroicons-forward" class="size-4" />
-				</UChip>
-				<UChip :text="String(state.hints.hint)" size="md">
-					<UIcon name="i-heroicons-light-bulb" class="size-4" />
-				</UChip>
+				<p>3 lives, wrong answer = -1 life</p>
+				<p>Difficulty increases over time</p>
+				<p>Use bonuses strategically</p>
 			</div>
 		</div>
 
 		<!-- Footer -->
 		<template #footer>
+			<!-- In progress: resume button -->
 			<UButton
-				:icon="buttonIcon"
-				:color="hasLives ? 'primary' : 'gray'"
+				v-if="isPlaying"
+				icon="i-heroicons-play"
+				color="primary"
 				:loading="isLoading"
-				:disabled="!canPlay && !isPlaying"
 				block
 				size="lg"
-				@click="handleClick"
+				@click="handleResume"
 			>
-				{{ buttonText }}
+				Continue Marathon
+			</UButton>
+
+			<!-- Game over: view results -->
+			<UButton
+				v-else-if="isGameOver"
+				icon="i-heroicons-flag"
+				color="red"
+				:loading="isLoading"
+				block
+				size="lg"
+				@click="handleViewGameOver"
+			>
+				View Results
+			</UButton>
+
+			<!-- Ready: start button (new game always starts with 3 lives) -->
+			<UButton
+				v-else
+				icon="i-heroicons-bolt"
+				color="primary"
+				:loading="isLoading"
+				block
+				size="lg"
+				@click="handleStart"
+			>
+				Start Marathon
 			</UButton>
 		</template>
 	</UCard>
