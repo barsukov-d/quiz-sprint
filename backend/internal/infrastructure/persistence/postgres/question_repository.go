@@ -186,7 +186,8 @@ func (r *QuestionRepository) FindQuestionsBySeed(filter quiz.QuestionFilter, lim
 
 // FindQuestionsByQuizSeed selects a whole quiz deterministically by seed
 // Picks one quiz with exactly questionsPerQuiz questions, returns all its questions
-func (r *QuestionRepository) FindQuestionsByQuizSeed(questionsPerQuiz int, seed int64) ([]*quiz.Question, error) {
+// categoryID filters by category (nil = all categories)
+func (r *QuestionRepository) FindQuestionsByQuizSeed(questionsPerQuiz int, seed int64, categoryID *quiz.CategoryID) ([]*quiz.Question, error) {
 	// 1. Set deterministic seed
 	normalizedSeed := float64(seed%1000000) / 1000000.0
 	_, err := r.db.Exec("SELECT setseed($1)", normalizedSeed)
@@ -196,18 +197,41 @@ func (r *QuestionRepository) FindQuestionsByQuizSeed(questionsPerQuiz int, seed 
 
 	// 2. Pick one quiz that has exactly questionsPerQuiz questions
 	var quizID string
-	err = r.db.QueryRow(`
-		SELECT q.id
-		FROM quizzes q
-		JOIN (
-			SELECT quiz_id, COUNT(*) as cnt
-			FROM questions
-			GROUP BY quiz_id
-			HAVING COUNT(*) = $1
-		) qc ON qc.quiz_id = q.id
-		ORDER BY RANDOM()
-		LIMIT 1
-	`, questionsPerQuiz).Scan(&quizID)
+	var selectQuery string
+	var args []interface{}
+
+	if categoryID != nil {
+		selectQuery = `
+			SELECT q.id
+			FROM quizzes q
+			JOIN (
+				SELECT quiz_id, COUNT(*) as cnt
+				FROM questions
+				GROUP BY quiz_id
+				HAVING COUNT(*) = $1
+			) qc ON qc.quiz_id = q.id
+			WHERE q.category_id = $2
+			ORDER BY RANDOM()
+			LIMIT 1
+		`
+		args = []interface{}{questionsPerQuiz, categoryID.String()}
+	} else {
+		selectQuery = `
+			SELECT q.id
+			FROM quizzes q
+			JOIN (
+				SELECT quiz_id, COUNT(*) as cnt
+				FROM questions
+				GROUP BY quiz_id
+				HAVING COUNT(*) = $1
+			) qc ON qc.quiz_id = q.id
+			ORDER BY RANDOM()
+			LIMIT 1
+		`
+		args = []interface{}{questionsPerQuiz}
+	}
+
+	err = r.db.QueryRow(selectQuery, args...).Scan(&quizID)
 	if err != nil {
 		return nil, fmt.Errorf("failed to find quiz with %d questions: %w", questionsPerQuiz, err)
 	}

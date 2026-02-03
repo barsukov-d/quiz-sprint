@@ -122,9 +122,11 @@ func ToQuestionDTO(question *quiz.Question) QuestionDTO {
 }
 
 // ToAnsweredQuestionDTO converts session answer history to DTO (WITH correctness feedback)
+// quizAggregate is needed to calculate time bonus (same logic as kernel.AnswerQuestion)
 func ToAnsweredQuestionDTO(
 	question *quiz.Question,
 	answerData kernel.AnswerData,
+	quizAggregate *quiz.Quiz,
 ) AnsweredQuestionDTO {
 	// Find correct answer and player answer text
 	var correctAnswerID, correctAnswerText, playerAnswerText string
@@ -138,10 +140,25 @@ func ToAnsweredQuestionDTO(
 		}
 	}
 
-	// Calculate points earned
+	// Calculate points earned (base + time bonus, same logic as quiz_gameplay_session.go)
 	pointsEarned := 0
 	if answerData.IsCorrect() {
-		pointsEarned = question.Points().Value()
+		// Base points: use question-level, fallback to quiz-level
+		basePoints := question.Points().Value()
+		if basePoints == 0 {
+			basePoints = quizAggregate.BasePoints().Value()
+		}
+
+		// Time bonus: max(0, (timeLimit - timeTaken) * maxTimeBonus / timeLimit)
+		timeBonus := 0
+		timeTaken := answerData.TimeTaken()
+		timeLimitMs := int64(quizAggregate.TimeLimitPerQuestion()) * 1000
+		if timeTaken > 0 && timeTaken < timeLimitMs && quizAggregate.MaxTimeBonus().Value() > 0 {
+			remaining := timeLimitMs - timeTaken
+			timeBonus = int(float64(quizAggregate.MaxTimeBonus().Value()) * float64(remaining) / float64(timeLimitMs))
+		}
+
+		pointsEarned = basePoints + timeBonus
 	}
 
 	return AnsweredQuestionDTO{
@@ -200,7 +217,7 @@ func BuildGameResultsDTO(
 	for i := 0; i < session.Quiz().QuestionsCount(); i++ {
 		if question, err := session.Quiz().GetQuestionByIndex(i); err == nil {
 			if answerData, exists := session.GetAnswer(question.ID()); exists {
-				answeredQuestions = append(answeredQuestions, ToAnsweredQuestionDTO(question, answerData))
+				answeredQuestions = append(answeredQuestions, ToAnsweredQuestionDTO(question, answerData, session.Quiz()))
 			}
 		}
 	}

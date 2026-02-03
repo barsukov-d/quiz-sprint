@@ -41,6 +41,7 @@ const {
 const selectedAnswerId = ref<string | null>(null)
 const isSubmitting = ref(false)
 const timerRef = ref<InstanceType<typeof GameTimer> | null>(null)
+const questionStartTime = ref(Date.now())
 
 const showFeedback = ref(false)
 const feedbackIsCorrect = ref<boolean | null>(null)
@@ -94,7 +95,8 @@ const handleSubmit = async () => {
 	isSubmitting.value = true
 
 	try {
-		const timeTaken = state.value.timeLimit - (timerRef.value?.remainingTime || 0)
+		// Calculate time taken in milliseconds using precise Date.now()
+		const timeTaken = Date.now() - questionStartTime.value
 		const answerData = await submitAnswer(selectedAnswerId.value, timeTaken)
 
 		timerRef.value?.pause()
@@ -129,7 +131,7 @@ const handleTimeout = async () => {
 		isSubmitting.value = true
 
 		try {
-			const answerData = await submitAnswer(selectedAnswerId.value, state.value.timeLimit)
+			const answerData = await submitAnswer(selectedAnswerId.value, state.value.timeLimit * 1000)
 
 			feedbackIsCorrect.value = answerData.isCorrect
 			feedbackCorrectAnswerId.value = answerData.correctAnswerId
@@ -172,6 +174,7 @@ const handleNextStep = async () => {
 
 	// Next question - reset timer with server-provided time limit
 	await nextTick()
+	questionStartTime.value = Date.now()
 	timerRef.value?.reset(state.value.timeLimit)
 	timerRef.value?.start()
 }
@@ -185,6 +188,7 @@ const handleUseBonus = async (bonusType: BonusType) => {
 		// If skip, reset timer for new question
 		if (bonusType === 'skip') {
 			await nextTick()
+			questionStartTime.value = Date.now()
 			timerRef.value?.reset(state.value.timeLimit)
 			timerRef.value?.start()
 		}
@@ -216,6 +220,7 @@ const getAnswerFeedback = (answerId: string) => {
 
 const startTimer = () => {
 	if (!timerRef.value) return
+	questionStartTime.value = Date.now()
 	timerRef.value.reset(state.value.timeLimit)
 	timerRef.value.start()
 }

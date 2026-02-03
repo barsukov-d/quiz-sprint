@@ -39,6 +39,7 @@ const {
 const selectedAnswerId = ref<string | null>(null)
 const isSubmitting = ref(false)
 const timerRef = ref<InstanceType<typeof GameTimer> | null>(null)
+const questionStartTime = ref(Date.now())
 
 // Feedback state (from backend response)
 const showFeedback = ref(false)
@@ -79,8 +80,8 @@ const handleSubmit = async () => {
 	isSubmitting.value = true
 
 	try {
-		// Calculate time taken
-		const timeTaken = timeLimit.value - (timerRef.value?.remainingTime || 0)
+		// Calculate time taken in milliseconds using precise Date.now()
+		const timeTaken = Date.now() - questionStartTime.value
 
 		// Submit answer - backend returns isCorrect + correctAnswerId
 		const answerData = await submitAnswer(selectedAnswerId.value, timeTaken)
@@ -121,8 +122,8 @@ const handleTimeout = async () => {
 		isSubmitting.value = true
 
 		try {
-			// Submit with full time taken (timeout)
-			const answerData = await submitAnswer(selectedAnswerId.value, timeLimit.value)
+			// Submit with full time taken (timeout) in milliseconds
+			const answerData = await submitAnswer(selectedAnswerId.value, timeLimit.value * 1000)
 
 			// Show brief feedback (will be wrong)
 			feedbackIsCorrect.value = answerData.isCorrect
@@ -161,6 +162,7 @@ const handleNextStep = async () => {
 	} else {
 		// Game continues — fetch next question from server, then reset timer
 		await refetchStatus()
+		questionStartTime.value = Date.now()
 		timerRef.value?.reset(timeLimit.value)
 		timerRef.value?.start()
 	}
@@ -230,6 +232,7 @@ onMounted(async () => {
 
 	// Wait for DOM update so timerRef is available, then start timer
 	await nextTick()
+	questionStartTime.value = Date.now()
 	startTimer()
 })
 

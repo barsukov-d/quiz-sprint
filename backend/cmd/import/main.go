@@ -180,8 +180,8 @@ func convertCompactToVerbose(compact CompactQuiz, batchTags []string) QuizImport
 	// Convert questions
 	questions := make([]QuestionImport, len(compact.Q))
 	for i, cq := range compact.Q {
-		// Default points
-		points := 10
+		// Default points (0 means "use quiz-level basePoints" in gameplay session)
+		points := 0
 		if cq.P != nil {
 			points = *cq.P
 		}
@@ -433,8 +433,8 @@ func validateQuizData(data *QuizImportData) error {
 			return fmt.Errorf("question %d: text is required", i+1)
 		}
 
-		if q.Points <= 0 {
-			return fmt.Errorf("question %d: points must be positive", i+1)
+		if q.Points < 0 {
+			return fmt.Errorf("question %d: points must be non-negative", i+1)
 		}
 
 		if len(q.Answers) < 2 {

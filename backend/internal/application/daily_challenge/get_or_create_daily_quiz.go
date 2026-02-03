@@ -103,12 +103,15 @@ func (uc *GetOrCreateDailyQuizUseCase) generateDailyQuiz(
 	seed := date.ToSeed()
 	println("🎲 [generateDailyQuiz] Using seed:", seed, "for date:", date.String())
 
-	// Select a whole quiz with exactly 10 questions (all questions share a common theme)
-	questions, err := uc.questionRepo.FindQuestionsByQuizSeed(daily_challenge.QuestionsPerDay, seed)
+	// Filter by "Daily Challenge" category (dc000000-0000-0000-0000-000000000001)
+	dailyChallengeCategory, _ := quiz.NewCategoryIDFromString("dc000000-0000-0000-0000-000000000001")
+
+	// Select a whole quiz with exactly 10 questions from daily-challenge category
+	questions, err := uc.questionRepo.FindQuestionsByQuizSeed(daily_challenge.QuestionsPerDay, seed, &dailyChallengeCategory)
 	if err != nil {
-		println("⚠️  [generateDailyQuiz] No quiz with exactly", daily_challenge.QuestionsPerDay, "questions, falling back to random selection")
-		// Fallback: random questions from global pool
-		filter := quiz.NewQuestionFilter()
+		println("⚠️  [generateDailyQuiz] No quiz with exactly", daily_challenge.QuestionsPerDay, "questions in daily-challenge category, falling back to random selection")
+		// Fallback: random questions from daily-challenge category
+		filter := quiz.NewQuestionFilter().WithCategory(dailyChallengeCategory)
 		questions, err = uc.questionRepo.FindQuestionsBySeed(filter, daily_challenge.QuestionsPerDay, seed)
 		if err != nil {
 			println("❌ [generateDailyQuiz] Failed to find questions:", err.Error())

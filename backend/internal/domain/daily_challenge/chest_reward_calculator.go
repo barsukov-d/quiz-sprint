@@ -36,7 +36,7 @@ func (c *ChestRewardCalculator) CalculateRewards(
 	case ChestWooden:
 		baseCoins = c.randomRange(50, 100)
 		pvpTickets = 1
-		marathonBonuses = []MarathonBonus{} // No bonuses
+		marathonBonuses = c.selectWoodenBonuses()
 
 	case ChestSilver:
 		baseCoins = c.randomRange(150, 250)
@@ -66,28 +66,39 @@ func (c *ChestRewardCalculator) CalculateRewards(
 	}
 }
 
-// selectSilverBonuses selects bonuses for silver chest
-// 30% chance: 1 random bonus
-// 70% chance: No bonus
-func (c *ChestRewardCalculator) selectSilverBonuses() []MarathonBonus {
-	if c.randomFloat() < 0.3 {
+// selectWoodenBonuses selects bonuses for wooden chest
+// 50% chance: 1 random bonus
+// 50% chance: No bonus
+func (c *ChestRewardCalculator) selectWoodenBonuses() []MarathonBonus {
+	if c.randomFloat() < 0.5 {
 		return []MarathonBonus{c.randomBonus()}
 	}
 	return []MarathonBonus{}
 }
 
-// selectGoldenBonuses selects bonuses for golden chest
-// 70% chance: 1 random bonus
-// 30% chance: 2 different random bonuses
-func (c *ChestRewardCalculator) selectGoldenBonuses() []MarathonBonus {
+// selectSilverBonuses selects bonuses for silver chest
+// 100% chance: 1 random bonus (guaranteed)
+// 30% chance: +1 extra bonus (2 total)
+func (c *ChestRewardCalculator) selectSilverBonuses() []MarathonBonus {
+	bonus1 := c.randomBonus()
 	if c.randomFloat() < 0.3 {
-		// 30% chance: 2 different bonuses
-		bonus1 := c.randomBonus()
 		bonus2 := c.randomDifferentBonus(bonus1)
 		return []MarathonBonus{bonus1, bonus2}
 	}
-	// 70% chance: 1 bonus
-	return []MarathonBonus{c.randomBonus()}
+	return []MarathonBonus{bonus1}
+}
+
+// selectGoldenBonuses selects bonuses for golden chest
+// 100% chance: 2 random bonuses (guaranteed)
+// 40% chance: +1 extra bonus (3 total)
+func (c *ChestRewardCalculator) selectGoldenBonuses() []MarathonBonus {
+	bonus1 := c.randomBonus()
+	bonus2 := c.randomDifferentBonus(bonus1)
+	if c.randomFloat() < 0.4 {
+		bonus3 := c.randomDifferentBonus2(bonus1, bonus2)
+		return []MarathonBonus{bonus1, bonus2, bonus3}
+	}
+	return []MarathonBonus{bonus1, bonus2}
 }
 
 // randomBonus returns a random bonus type with equal probability (25% each)
@@ -114,6 +125,25 @@ func (c *ChestRewardCalculator) randomDifferentBonus(excluded MarathonBonus) Mar
 	available := make([]MarathonBonus, 0, 3)
 	for _, b := range allBonuses {
 		if b != excluded {
+			available = append(available, b)
+		}
+	}
+
+	return available[c.rng.Intn(len(available))]
+}
+
+// randomDifferentBonus2 returns a random bonus different from two excluded bonuses
+func (c *ChestRewardCalculator) randomDifferentBonus2(excluded1, excluded2 MarathonBonus) MarathonBonus {
+	allBonuses := []MarathonBonus{
+		BonusShield,
+		BonusFiftyFifty,
+		BonusSkip,
+		BonusFreeze,
+	}
+
+	available := make([]MarathonBonus, 0, 2)
+	for _, b := range allBonuses {
+		if b != excluded1 && b != excluded2 {
 			available = append(available, b)
 		}
 	}
