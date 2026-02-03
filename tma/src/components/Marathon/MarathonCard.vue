@@ -16,8 +16,6 @@ const {
 	isGameOver,
 	isLoading,
 	lives,
-	hasLives,
-	canPlay,
 	progressToRecord,
 	checkStatus,
 	initialize,
