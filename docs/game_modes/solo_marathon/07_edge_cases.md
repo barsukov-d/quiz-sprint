@@ -5,18 +5,20 @@
 ### Shield activated but answer correct
 **Behavior:**
 - Shield NOT consumed
-- Remains active for next question
-- Or player can deactivate manually
+- Shield deactivates after question (does NOT carry to next question)
+- Player must activate again manually for next question
 
 **Implementation:**
 ```go
 if isCorrect {
-    // Don't consume shield
+    // Don't consume shield, just deactivate
+    shieldActive = false
     return result
 }
 
 if shieldActive {
     consumeBonus(BonusShield)
+    shieldActive = false
     // Lives unchanged
 }
 ```
@@ -68,9 +70,10 @@ if shieldActive {
 **Scenario:** Shield active, player skips question.
 
 **Behavior:**
-- Shield remains active (not consumed)
+- Shield NOT consumed (no wrong answer)
+- Shield deactivates (does NOT carry to next question)
 - Skip consumed
-- Shield carries to next question
+- Player must re-activate Shield on next question if needed
 
 ---
 
@@ -181,15 +184,17 @@ Player C: 87 correct, 90 total, completed earlier
 
 **Ranking:**
 ```
-#1: Player A (more efficient)
-#2: Player B
-#3: Player C (completed later)
+#1: Player A (more efficient: 87/87)
+#2: Player C (87/90, completed earlier)
+#3: Player B (87/90, completed later)
 ```
 
-**Formula:**
+**Redis score formula (no timestamp component):**
 ```
-score = correctAnswers * 1000000 - totalQuestions + (maxTimestamp - completedAt)
+redisScore = correctAnswers * 1000000 - totalQuestions
 ```
+
+**When Redis scores are equal** (same correct + same total), tiebreak by `completedAt ASC` (earlier = better) — resolved at application level when querying.
 
 ### Player plays multiple times same week
 **Only best score counts.**
@@ -300,8 +305,8 @@ Game 4: Score 120 → Milestones 100 ✓ (+500 coins)
 ```
 
 **If confirmed:**
-- Status: `COMPLETED` (intentional quit)
-- Score saved to history (but not personal best)
+- Status: `ABANDONED` (intentional quit, NOT `COMPLETED`)
+- Score saved to history (but NOT personal best)
 - NOT in leaderboard (incomplete run)
 
 ### Abandon due to timeout

@@ -335,11 +335,9 @@ func TestMarathonGame_AnswerQuestion_GameOver(t *testing.T) {
 	if !result.IsGameOver {
 		t.Error("Game should be over with 0 lives")
 	}
-	if game.Status() != GameStatusFinished {
-		t.Errorf("Game status should be finished, got %v", game.Status())
-	}
-	if !game.IsGameOver() {
-		t.Error("IsGameOver() should return true")
+	// V1 goes to game_over (intermediate state)
+	if game.Status() != GameStatusGameOver {
+		t.Errorf("Game status should be game_over, got %v", game.Status())
 	}
 
 	// Check events (QuestionAnswered + LifeLost + GameOver)
@@ -403,17 +401,17 @@ func TestMarathonGame_DifficultyProgression(t *testing.T) {
 		t.Errorf("Should start at Beginner, got %v", game.Difficulty().Level())
 	}
 
-	// Manually set streak to 6 (triggers Medium)
-	game.currentStreak = 6
-	game.difficulty = game.difficulty.UpdateFromStreak(6)
+	// Manually set streak to 11 (triggers Medium via UpdateFromQuestionIndex)
+	game.currentStreak = 11
+	game.difficulty = game.difficulty.UpdateFromQuestionIndex(11)
 
 	if game.Difficulty().Level() != DifficultyMedium {
-		t.Errorf("At streak 6, should be Medium, got %v", game.Difficulty().Level())
+		t.Errorf("At question index 11, should be Medium, got %v", game.Difficulty().Level())
 	}
 }
 
-// TestMarathonGame_UseHint tests using hints
-func TestMarathonGame_UseHint(t *testing.T) {
+// TestMarathonGame_UseBonus tests using bonuses
+func TestMarathonGame_UseBonus(t *testing.T) {
 	playerID, _ := shared.NewUserID("user123")
 	category := NewMarathonCategoryAll()
 	quizAggregate := createTestQuiz(t)
@@ -424,33 +422,33 @@ func TestMarathonGame_UseHint(t *testing.T) {
 
 	currentQuestion, _ := game.GetCurrentQuestion()
 
-	// Use 50/50 hint
-	err := game.UseHint(currentQuestion.ID(), HintFiftyFifty, now+1000)
+	// Use 50/50 bonus
+	err := game.UseBonus(currentQuestion.ID(), BonusFiftyFifty, now+1000)
 
 	if err != nil {
 		t.Fatalf("Expected no error, got %v", err)
 	}
 
-	// Check hint was decremented
-	if game.Hints().FiftyFifty() != 2 {
-		t.Errorf("Expected 2 50/50 hints remaining, got %d", game.Hints().FiftyFifty())
+	// Check bonus was decremented
+	if game.Hints().FiftyFifty() != 0 {
+		t.Errorf("Expected 0 50/50 bonuses remaining, got %d", game.Hints().FiftyFifty())
 	}
 
 	// Check event
 	events := game.Events()
 	if len(events) != 1 {
-		t.Errorf("Expected 1 HintUsed event, got %d", len(events))
+		t.Errorf("Expected 1 BonusUsed event, got %d", len(events))
 	}
 
-	// Try to use same hint twice on same question
-	err = game.UseHint(currentQuestion.ID(), HintFiftyFifty, now+2000)
-	if err != ErrHintAlreadyUsed {
-		t.Errorf("Expected ErrHintAlreadyUsed, got %v", err)
+	// Try to use same bonus twice on same question
+	err = game.UseBonus(currentQuestion.ID(), BonusFiftyFifty, now+2000)
+	if err != ErrBonusAlreadyUsed {
+		t.Errorf("Expected ErrBonusAlreadyUsed, got %v", err)
 	}
 }
 
-// TestMarathonGame_UseHint_NoHintsAvailable tests using hint when none available
-func TestMarathonGame_UseHint_NoHintsAvailable(t *testing.T) {
+// TestMarathonGame_UseBonus_NoBonusesAvailable tests using bonus when none available
+func TestMarathonGame_UseBonus_NoBonusesAvailable(t *testing.T) {
 	playerID, _ := shared.NewUserID("user123")
 	category := NewMarathonCategoryAll()
 	quizAggregate := createTestQuiz(t)
@@ -458,15 +456,15 @@ func TestMarathonGame_UseHint_NoHintsAvailable(t *testing.T) {
 
 	game, _ := NewMarathonGame(playerID, category, quizAggregate, nil, now)
 
-	// Manually set hints to 0
-	game.hints = ReconstructHintsSystem(0, 0, 0)
+	// Manually set bonuses to 0
+	game.bonusInventory = ReconstructBonusInventory(0, 0, 0, 0)
 
 	currentQuestion, _ := game.GetCurrentQuestion()
 
-	err := game.UseHint(currentQuestion.ID(), HintFiftyFifty, now+1000)
+	err := game.UseBonus(currentQuestion.ID(), BonusFiftyFifty, now+1000)
 
-	if err != ErrNoHintsAvailable {
-		t.Errorf("Expected ErrNoHintsAvailable, got %v", err)
+	if err != ErrNoBonusesAvailable {
+		t.Errorf("Expected ErrNoBonusesAvailable, got %v", err)
 	}
 }
 
@@ -503,8 +501,8 @@ func TestMarathonGame_Abandon(t *testing.T) {
 	}
 }
 
-// TestMarathonGame_Abandon_AlreadyFinished tests abandoning finished game
-func TestMarathonGame_Abandon_AlreadyFinished(t *testing.T) {
+// TestMarathonGame_Abandon_AlreadyCompleted tests abandoning completed game
+func TestMarathonGame_Abandon_AlreadyCompleted(t *testing.T) {
 	playerID, _ := shared.NewUserID("user123")
 	category := NewMarathonCategoryAll()
 	quizAggregate := createTestQuiz(t)
@@ -512,8 +510,8 @@ func TestMarathonGame_Abandon_AlreadyFinished(t *testing.T) {
 
 	game, _ := NewMarathonGame(playerID, category, quizAggregate, nil, now)
 
-	// Manually finish game
-	game.status = GameStatusFinished
+	// Manually set status to completed (terminal)
+	game.status = GameStatusCompleted
 
 	err := game.Abandon(now + 10000)
 

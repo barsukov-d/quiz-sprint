@@ -9,6 +9,7 @@ Composables для управления игровой логикой Daily Chal
 Управление Daily Challenge игрой.
 
 **Возможности:**
+
 - Старт игры (один раз в день)
 - Отправка ответов (без показа правильности до конца)
 - Получение статуса (сыграл ли сегодня)
@@ -24,41 +25,33 @@ import { useDailyChallenge } from '@/composables/useDailyChallenge'
 import { useGameTimer } from '@/composables/useGameTimer'
 
 const playerId = 'user123'
-const {
-  state,
-  isPlaying,
-  isCompleted,
-  canPlay,
-  progress,
-  startGame,
-  submitAnswer,
-  initialize
-} = useDailyChallenge(playerId)
+const { state, isPlaying, isCompleted, canPlay, progress, startGame, submitAnswer, initialize } =
+	useDailyChallenge(playerId)
 
 // Инициализация при монтировании
 onMounted(async () => {
-  await initialize()
+	await initialize()
 })
 
 // Старт игры
 const handleStart = async () => {
-  await startGame()
+	await startGame()
 }
 
 // Отправка ответа
 const handleAnswer = async (answerId: string) => {
-  const timeTaken = timer.elapsedTime.value
-  await submitAnswer(answerId, timeTaken)
+	const timeTaken = timer.elapsedTime.value
+	await submitAnswer(answerId, timeTaken)
 }
 
 // Таймер для вопроса
 const timer = useGameTimer({
-  initialTime: state.value.timeLimit,
-  autoStart: true,
-  onTimeout: () => {
-    // Время вышло - автоматически отправить пустой ответ
-    handleAnswer('')
-  }
+	initialTime: state.value.timeLimit,
+	autoStart: true,
+	onTimeout: () => {
+		// Время вышло - автоматически отправить пустой ответ
+		handleAnswer('')
+	},
 })
 </script>
 ```
@@ -70,6 +63,7 @@ const timer = useGameTimer({
 Управление Marathon игрой.
 
 **Возможности:**
+
 - Старт игры с выбором категории
 - Отправка ответов с немедленным feedback (правильно/неправильно)
 - Система жизней с восстановлением
@@ -86,50 +80,50 @@ import { useMarathon } from '@/composables/useMarathon'
 
 const playerId = 'user123'
 const {
-  state,
-  isPlaying,
-  hasLives,
-  canUseFiftyFifty,
-  progressToRecord,
-  startGame,
-  submitAnswer,
-  useHint,
-  abandonGame,
-  initialize
+	state,
+	isPlaying,
+	hasLives,
+	canUseFiftyFifty,
+	progressToRecord,
+	startGame,
+	submitAnswer,
+	useHint,
+	abandonGame,
+	initialize,
 } = useMarathon(playerId)
 
 // Инициализация
 onMounted(async () => {
-  await initialize()
+	await initialize()
 })
 
 // Старт с категорией
 const handleStart = async (categoryId: string) => {
-  await startGame(categoryId)
+	await startGame(categoryId)
 }
 
 // Отправка ответа
 const handleAnswer = async (answerId: string) => {
-  const result = await submitAnswer(answerId, timer.elapsedTime.value)
+	const result = await submitAnswer(answerId, timer.elapsedTime.value)
 
-  if (result.isCorrect) {
-    toast.success('Верно! 🎉')
-  } else {
-    toast.error('Неверно! ❌')
-  }
+	if (result.isCorrect) {
+		toast.success('Верно! 🎉')
+	} else {
+		toast.error('Неверно! ❌')
+	}
 }
 
 // Использование подсказки 50/50
 const handleFiftyFifty = async () => {
-  if (canUseFiftyFifty.value) {
-    const result = await useHint('fifty_fifty')
-    // UI должен отфильтровать result.eliminatedAnswers
-  }
+	if (canUseFiftyFifty.value) {
+		const result = await useHint('fifty_fifty')
+		// UI должен отфильтровать result.eliminatedAnswers
+	}
 }
 
 // Досрочное завершение
 const handleAbandon = async () => {
-  await abandonGame()
+	await abandonGame()
 }
 </script>
 ```
@@ -141,6 +135,7 @@ const handleAbandon = async () => {
 Универсальный таймер для вопросов.
 
 **Опции:**
+
 - `initialTime` - начальное время в секундах
 - `onTimeout` - callback при окончании времени
 - `onTick` - callback каждую секунду
@@ -155,18 +150,18 @@ const handleAbandon = async () => {
 import { useGameTimer } from '@/composables/useGameTimer'
 
 const timer = useGameTimer({
-  initialTime: 15,
-  autoStart: false,
-  warningThreshold: 5,
-  onTimeout: () => {
-    console.log('Время вышло!')
-    // Автоматически отправить ответ
-  },
-  onTick: (remaining) => {
-    if (remaining === 10) {
-      toast.info('Осталось 10 секунд!')
-    }
-  }
+	initialTime: 15,
+	autoStart: false,
+	warningThreshold: 5,
+	onTimeout: () => {
+		console.log('Время вышло!')
+		// Автоматически отправить ответ
+	},
+	onTick: (remaining) => {
+		if (remaining === 10) {
+			toast.info('Осталось 10 секунд!')
+		}
+	},
 })
 
 // Управление
@@ -180,18 +175,16 @@ const addExtraTime = () => timer.addTime(10)
 </script>
 
 <template>
-  <div>
-    <!-- Форматированное время -->
-    <div>{{ timer.formattedTime }}</div>
+	<div>
+		<!-- Форматированное время -->
+		<div>{{ timer.formattedTime }}</div>
 
-    <!-- Прогресс-бар -->
-    <UProgress :value="timer.progress" :color="timer.isWarning ? 'red' : 'green'" />
+		<!-- Прогресс-бар -->
+		<UProgress :value="timer.progress" :color="timer.isWarning ? 'red' : 'green'" />
 
-    <!-- Индикатор критического времени -->
-    <div v-if="timer.isWarning" class="warning">
-      ⚠️ Осталось мало времени!
-    </div>
-  </div>
+		<!-- Индикатор критического времени -->
+		<div v-if="timer.isWarning" class="warning">⚠️ Осталось мало времени!</div>
+	</div>
 </template>
 ```
 
@@ -202,12 +195,14 @@ const addExtraTime = () => timer.addTime(10)
 Система серий (streaks) для Daily Challenge.
 
 **Возможности:**
+
 - Определение текущего и следующего milestone
 - Прогресс до следующего milestone
 - Milestone анимации (3, 7, 14, 30, 100 дней)
 - Форматирование отображения серии
 
 **Milestones:**
+
 - 🔥 **3 дня** - Начинающий
 - ⚡ **7 дней** - Недельник
 - ✨ **14 дней** - Двухнедельник
@@ -226,43 +221,44 @@ const { state } = useDailyChallenge('user123')
 const streaks = useStreaks(state.value.streak)
 
 // Показать уведомление при достижении milestone
-watch(() => streaks.justReachedMilestone.value, (reached) => {
-  if (reached) {
-    const info = streaks.currentMilestoneInfo.value
-    toast.success(`🎉 Достигнут ${info.label}! ${info.emoji}`)
-  }
-})
+watch(
+	() => streaks.justReachedMilestone.value,
+	(reached) => {
+		if (reached) {
+			const info = streaks.currentMilestoneInfo.value
+			toast.success(`🎉 Достигнут ${info.label}! ${info.emoji}`)
+		}
+	},
+)
 </script>
 
 <template>
-  <div>
-    <!-- Текущая серия -->
-    <div class="streak-display">
-      {{ streaks.formattedStreak }}
-    </div>
+	<div>
+		<!-- Текущая серия -->
+		<div class="streak-display">
+			{{ streaks.formattedStreak }}
+		</div>
 
-    <!-- Прогресс до следующего milestone -->
-    <div v-if="streaks.nextMilestone">
-      <UProgress :value="streaks.progressToNextMilestone" />
-      <p>{{ streaks.progressBarText }}</p>
-    </div>
+		<!-- Прогресс до следующего milestone -->
+		<div v-if="streaks.nextMilestone">
+			<UProgress :value="streaks.progressToNextMilestone" />
+			<p>{{ streaks.progressBarText }}</p>
+		</div>
 
-    <!-- Все достигнутые milestones -->
-    <div class="achievements">
-      <UBadge
-        v-for="milestone in streaks.achievedMilestones"
-        :key="milestone.value"
-        :color="milestone.color"
-      >
-        {{ milestone.emoji }} {{ milestone.label }}
-      </UBadge>
-    </div>
+		<!-- Все достигнутые milestones -->
+		<div class="achievements">
+			<UBadge
+				v-for="milestone in streaks.achievedMilestones"
+				:key="milestone.value"
+				:color="milestone.color"
+			>
+				{{ milestone.emoji }} {{ milestone.label }}
+			</UBadge>
+		</div>
 
-    <!-- Новый рекорд -->
-    <div v-if="streaks.isNewRecord">
-      🏆 Новый рекорд!
-    </div>
-  </div>
+		<!-- Новый рекорд -->
+		<div v-if="streaks.isNewRecord">🏆 Новый рекорд!</div>
+	</div>
 </template>
 ```
 
@@ -273,12 +269,14 @@ watch(() => streaks.justReachedMilestone.value, (reached) => {
 Все composables используют сгенерированные Vue Query hooks из `@/api/generated`:
 
 **Daily Challenge:**
+
 - `usePostDailyChallengeStart` - старт игры
 - `usePostDailyChallengeGameidAnswer` - отправка ответа
 - `useGetDailyChallengeStatus` - статус игры
 - `useGetDailyChallengeStreak` - серия игрока
 
 **Marathon:**
+
 - `usePostMarathonStart` - старт игры
 - `usePostMarathonGameidAnswer` - отправка ответа
 - `usePostMarathonGameidHint` - использование подсказки
@@ -293,12 +291,14 @@ watch(() => streaks.justReachedMilestone.value, (reached) => {
 Оба игровых composables сохраняют прогресс в `localStorage`:
 
 **Daily Challenge (`daily-challenge-state`):**
+
 - Текущая игра
 - Текущий вопрос
 - Индекс вопроса
 - TTL: 24 часа
 
 **Marathon (`marathon-state`):**
+
 - Текущая игра
 - Текущий вопрос
 - Жизни, подсказки
@@ -338,12 +338,7 @@ watch(() => streaks.justReachedMilestone.value, (reached) => {
 Все composables полностью типизированы:
 
 ```typescript
-import type {
-  DailyChallengeStatus,
-  MarathonStatus,
-  HintType,
-  StreakMilestone
-} from '@/composables'
+import type { DailyChallengeStatus, MarathonStatus, HintType, StreakMilestone } from '@/composables'
 ```
 
 ---

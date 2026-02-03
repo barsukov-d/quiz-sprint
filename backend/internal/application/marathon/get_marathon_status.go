@@ -45,12 +45,8 @@ func (uc *GetMarathonStatusUseCase) Execute(input GetMarathonStatusInput) (GetMa
 	now := time.Now().Unix()
 	gameDTO := ToMarathonGameDTOV2(game, now)
 
-	// Calculate time limit for current question
-	timeLimit := GetTimeLimit(game.Difficulty(), game.CurrentStreak())
-
 	return GetMarathonStatusOutput{
 		HasActiveGame: true,
 		Game:          &gameDTO,
-		TimeLimit:     &timeLimit,
 	}, nil
 }

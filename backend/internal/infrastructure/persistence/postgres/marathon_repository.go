@@ -49,17 +49,19 @@ func (r *MarathonRepository) Save(game *solo_marathon.MarathonGameV2) error {
 		INSERT INTO marathon_games (
 			id, player_id, category_id, status, started_at, finished_at,
 			current_question_id, answered_question_ids, recent_question_ids,
-			current_streak, max_streak, base_score,
+			score, total_questions,
 			current_lives, lives_last_update,
-			hints_fifty_fifty, hints_extra_time, hints_skip,
-			difficulty_level, personal_best_streak
+			bonus_shield, bonus_fifty_fifty, bonus_skip, bonus_freeze,
+			shield_active, continue_count,
+			difficulty_level, personal_best_score
 		) VALUES (
 			$1, $2, $3, $4, $5, $6,
 			$7, $8, $9,
-			$10, $11, $12,
-			$13, $14,
-			$15, $16, $17,
-			$18, $19
+			$10, $11,
+			$12, $13,
+			$14, $15, $16, $17,
+			$18, $19,
+			$20, $21
 		)
 		ON CONFLICT (id) DO UPDATE SET
 			status = EXCLUDED.status,
@@ -67,14 +69,16 @@ func (r *MarathonRepository) Save(game *solo_marathon.MarathonGameV2) error {
 			current_question_id = EXCLUDED.current_question_id,
 			answered_question_ids = EXCLUDED.answered_question_ids,
 			recent_question_ids = EXCLUDED.recent_question_ids,
-			current_streak = EXCLUDED.current_streak,
-			max_streak = EXCLUDED.max_streak,
-			base_score = EXCLUDED.base_score,
+			score = EXCLUDED.score,
+			total_questions = EXCLUDED.total_questions,
 			current_lives = EXCLUDED.current_lives,
 			lives_last_update = EXCLUDED.lives_last_update,
-			hints_fifty_fifty = EXCLUDED.hints_fifty_fifty,
-			hints_extra_time = EXCLUDED.hints_extra_time,
-			hints_skip = EXCLUDED.hints_skip,
+			bonus_shield = EXCLUDED.bonus_shield,
+			bonus_fifty_fifty = EXCLUDED.bonus_fifty_fifty,
+			bonus_skip = EXCLUDED.bonus_skip,
+			bonus_freeze = EXCLUDED.bonus_freeze,
+			shield_active = EXCLUDED.shield_active,
+			continue_count = EXCLUDED.continue_count,
 			difficulty_level = EXCLUDED.difficulty_level
 	`
 
@@ -95,16 +99,18 @@ func (r *MarathonRepository) Save(game *solo_marathon.MarathonGameV2) error {
 		currentQuestionID,
 		answeredIDsJSON,
 		recentIDsJSON,
-		game.CurrentStreak(),
-		game.MaxStreak(),
-		game.BaseScore(),
+		game.Score(),
+		game.TotalQuestions(),
 		game.Lives().CurrentLives(),
 		game.Lives().LastUpdate(),
-		game.Hints().FiftyFifty(),
-		game.Hints().ExtraTime(),
-		game.Hints().Skip(),
+		game.BonusInventory().Shield(),
+		game.BonusInventory().FiftyFifty(),
+		game.BonusInventory().Skip(),
+		game.BonusInventory().Freeze(),
+		game.ShieldActive(),
+		game.ContinueCount(),
 		string(game.Difficulty().Level()),
-		r.nullInt(game.PersonalBestStreak()),
+		r.nullInt(game.PersonalBestScore()),
 	)
 
 	if err != nil {
@@ -120,60 +126,16 @@ func (r *MarathonRepository) FindByID(id solo_marathon.GameID) (*solo_marathon.M
 		SELECT
 			id, player_id, category_id, status, started_at, finished_at,
 			current_question_id, answered_question_ids, recent_question_ids,
-			current_streak, max_streak, base_score,
+			score, total_questions,
 			current_lives, lives_last_update,
-			hints_fifty_fifty, hints_extra_time, hints_skip,
-			difficulty_level, personal_best_streak
+			bonus_shield, bonus_fifty_fifty, bonus_skip, bonus_freeze,
+			shield_active, continue_count,
+			difficulty_level, personal_best_score
 		FROM marathon_games
 		WHERE id = $1
 	`
 
-	var (
-		gameID                string
-		playerID              string
-		categoryID            sql.NullString
-		status                string
-		startedAt             int64
-		finishedAt            sql.NullInt64
-		currentQuestionID     sql.NullString
-		answeredQuestionIDs   []byte
-		recentQuestionIDs     []byte
-		currentStreak         int
-		maxStreak             int
-		baseScore             int
-		currentLives          int
-		livesLastUpdate       int64
-		hintsFiftyFifty       int
-		hintsExtraTime        int
-		hintsSkip             int
-		difficultyLevel       string
-		personalBestStreak    sql.NullInt32
-	)
-
-	err := r.db.QueryRow(query, id.String()).Scan(
-		&gameID, &playerID, &categoryID, &status, &startedAt, &finishedAt,
-		&currentQuestionID, &answeredQuestionIDs, &recentQuestionIDs,
-		&currentStreak, &maxStreak, &baseScore,
-		&currentLives, &livesLastUpdate,
-		&hintsFiftyFifty, &hintsExtraTime, &hintsSkip,
-		&difficultyLevel, &personalBestStreak,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, solo_marathon.ErrGameNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to query marathon game: %w", err)
-	}
-
-	return r.reconstructGame(
-		gameID, playerID, categoryID, status, startedAt, finishedAt,
-		currentQuestionID, answeredQuestionIDs, recentQuestionIDs,
-		currentStreak, maxStreak, baseScore,
-		currentLives, livesLastUpdate,
-		hintsFiftyFifty, hintsExtraTime, hintsSkip,
-		difficultyLevel, personalBestStreak,
-	)
+	return r.scanGame(r.db.QueryRow(query, id.String()))
 }
 
 // FindActiveByPlayer retrieves the active marathon game for a player
@@ -182,62 +144,18 @@ func (r *MarathonRepository) FindActiveByPlayer(playerID solo_marathon.UserID) (
 		SELECT
 			id, player_id, category_id, status, started_at, finished_at,
 			current_question_id, answered_question_ids, recent_question_ids,
-			current_streak, max_streak, base_score,
+			score, total_questions,
 			current_lives, lives_last_update,
-			hints_fifty_fifty, hints_extra_time, hints_skip,
-			difficulty_level, personal_best_streak
+			bonus_shield, bonus_fifty_fifty, bonus_skip, bonus_freeze,
+			shield_active, continue_count,
+			difficulty_level, personal_best_score
 		FROM marathon_games
-		WHERE player_id = $1 AND status = 'in_progress'
+		WHERE player_id = $1 AND status IN ('in_progress', 'game_over')
 		ORDER BY started_at DESC
 		LIMIT 1
 	`
 
-	var (
-		gameID                string
-		dbPlayerID            string
-		categoryID            sql.NullString
-		status                string
-		startedAt             int64
-		finishedAt            sql.NullInt64
-		currentQuestionID     sql.NullString
-		answeredQuestionIDs   []byte
-		recentQuestionIDs     []byte
-		currentStreak         int
-		maxStreak             int
-		baseScore             int
-		currentLives          int
-		livesLastUpdate       int64
-		hintsFiftyFifty       int
-		hintsExtraTime        int
-		hintsSkip             int
-		difficultyLevel       string
-		personalBestStreak    sql.NullInt32
-	)
-
-	err := r.db.QueryRow(query, playerID.String()).Scan(
-		&gameID, &dbPlayerID, &categoryID, &status, &startedAt, &finishedAt,
-		&currentQuestionID, &answeredQuestionIDs, &recentQuestionIDs,
-		&currentStreak, &maxStreak, &baseScore,
-		&currentLives, &livesLastUpdate,
-		&hintsFiftyFifty, &hintsExtraTime, &hintsSkip,
-		&difficultyLevel, &personalBestStreak,
-	)
-
-	if err == sql.ErrNoRows {
-		return nil, solo_marathon.ErrGameNotFound
-	}
-	if err != nil {
-		return nil, fmt.Errorf("failed to query active marathon game: %w", err)
-	}
-
-	return r.reconstructGame(
-		gameID, dbPlayerID, categoryID, status, startedAt, finishedAt,
-		currentQuestionID, answeredQuestionIDs, recentQuestionIDs,
-		currentStreak, maxStreak, baseScore,
-		currentLives, livesLastUpdate,
-		hintsFiftyFifty, hintsExtraTime, hintsSkip,
-		difficultyLevel, personalBestStreak,
-	)
+	return r.scanGame(r.db.QueryRow(query, playerID.String()))
 }
 
 // Delete removes a marathon game
@@ -265,7 +183,61 @@ func (r *MarathonRepository) Delete(id solo_marathon.GameID) error {
 // Helper Methods
 // ========================================
 
-// reconstructGame reconstructs a MarathonGameV2 from database row
+// scanGame scans a database row into a MarathonGameV2
+func (r *MarathonRepository) scanGame(row *sql.Row) (*solo_marathon.MarathonGameV2, error) {
+	var (
+		gameID              string
+		playerID            string
+		categoryID          sql.NullString
+		status              string
+		startedAt           int64
+		finishedAt          sql.NullInt64
+		currentQuestionID   sql.NullString
+		answeredQuestionIDs []byte
+		recentQuestionIDs   []byte
+		score               int
+		totalQuestions      int
+		currentLives        int
+		livesLastUpdate     int64
+		bonusShield         int
+		bonusFiftyFifty     int
+		bonusSkip           int
+		bonusFreeze         int
+		shieldActive        bool
+		continueCount       int
+		difficultyLevel     string
+		personalBestScore   sql.NullInt32
+	)
+
+	err := row.Scan(
+		&gameID, &playerID, &categoryID, &status, &startedAt, &finishedAt,
+		&currentQuestionID, &answeredQuestionIDs, &recentQuestionIDs,
+		&score, &totalQuestions,
+		&currentLives, &livesLastUpdate,
+		&bonusShield, &bonusFiftyFifty, &bonusSkip, &bonusFreeze,
+		&shieldActive, &continueCount,
+		&difficultyLevel, &personalBestScore,
+	)
+
+	if err == sql.ErrNoRows {
+		return nil, solo_marathon.ErrGameNotFound
+	}
+	if err != nil {
+		return nil, fmt.Errorf("failed to query marathon game: %w", err)
+	}
+
+	return r.reconstructGame(
+		gameID, playerID, categoryID, status, startedAt, finishedAt,
+		currentQuestionID, answeredQuestionIDs, recentQuestionIDs,
+		score, totalQuestions,
+		currentLives, livesLastUpdate,
+		bonusShield, bonusFiftyFifty, bonusSkip, bonusFreeze,
+		shieldActive, continueCount,
+		difficultyLevel, personalBestScore,
+	)
+}
+
+// reconstructGame reconstructs a MarathonGameV2 from database values
 func (r *MarathonRepository) reconstructGame(
 	gameID string,
 	playerID string,
@@ -276,16 +248,18 @@ func (r *MarathonRepository) reconstructGame(
 	currentQuestionID sql.NullString,
 	answeredQuestionIDsJSON []byte,
 	recentQuestionIDsJSON []byte,
-	currentStreak int,
-	maxStreak int,
-	baseScore int,
+	score int,
+	totalQuestions int,
 	currentLives int,
 	livesLastUpdate int64,
-	hintsFiftyFifty int,
-	hintsExtraTime int,
-	hintsSkip int,
+	bonusShield int,
+	bonusFiftyFifty int,
+	bonusSkip int,
+	bonusFreeze int,
+	shieldActive bool,
+	continueCount int,
 	difficultyLevel string,
-	personalBestStreak sql.NullInt32,
+	personalBestScore sql.NullInt32,
 ) (*solo_marathon.MarathonGameV2, error) {
 	// Parse IDs
 	id := solo_marathon.NewGameIDFromString(gameID)
@@ -301,7 +275,6 @@ func (r *MarathonRepository) reconstructGame(
 		if err != nil {
 			return nil, fmt.Errorf("invalid category_id: %w", err)
 		}
-		// TODO: Load category name from categories table
 		category = solo_marathon.NewMarathonCategory(catID, "")
 	} else {
 		category = solo_marathon.NewMarathonCategoryAll()
@@ -316,8 +289,6 @@ func (r *MarathonRepository) reconstructGame(
 		}
 		currentQuestion, err = r.questionRepo.FindByID(qid)
 		if err != nil {
-			// Log warning but don't fail - question might have been deleted
-			// Game can continue by loading a new question
 			currentQuestion = nil
 		}
 	}
@@ -335,23 +306,16 @@ func (r *MarathonRepository) reconstructGame(
 
 	// Reconstruct value objects
 	lives := solo_marathon.ReconstructLivesSystem(currentLives, livesLastUpdate)
-	hints := solo_marathon.ReconstructHintsSystem(hintsFiftyFifty, hintsExtraTime, hintsSkip)
+	bonuses := solo_marathon.ReconstructBonusInventory(bonusShield, bonusFiftyFifty, bonusSkip, bonusFreeze)
 
-	// Reconstruct difficulty
-	var difficulty solo_marathon.DifficultyProgression
-	switch solo_marathon.DifficultyLevel(difficultyLevel) {
-	case solo_marathon.DifficultyBeginner:
-		difficulty = solo_marathon.NewDifficultyProgression()
-	default:
-		// Reconstruct from currentStreak
-		difficulty = solo_marathon.NewDifficultyProgression().UpdateFromStreak(currentStreak)
-	}
+	// Reconstruct difficulty from question index (score = correct answers = approximate question index)
+	difficulty := solo_marathon.NewDifficultyProgression().UpdateFromQuestionIndex(score)
 
-	// Extract personal best streak
-	var pbStreak *int
-	if personalBestStreak.Valid {
-		val := int(personalBestStreak.Int32)
-		pbStreak = &val
+	// Extract personal best score
+	var pbScore *int
+	if personalBestScore.Valid {
+		val := int(personalBestScore.Int32)
+		pbScore = &val
 	}
 
 	// Reconstruct game
@@ -365,14 +329,15 @@ func (r *MarathonRepository) reconstructGame(
 		currentQuestion,
 		answeredIDs,
 		recentIDs,
-		currentStreak,
-		maxStreak,
-		baseScore,
+		score,
+		totalQuestions,
 		lives,
-		hints,
+		bonuses,
 		difficulty,
-		pbStreak,
-		make(map[solo_marathon.QuestionID][]solo_marathon.HintType), // TODO: Store in DB
+		shieldActive,
+		continueCount,
+		pbScore,
+		make(map[solo_marathon.QuestionID][]solo_marathon.BonusType),
 	)
 
 	return game, nil

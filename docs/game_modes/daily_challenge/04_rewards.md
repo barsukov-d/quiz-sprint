@@ -8,7 +8,12 @@
 |----------|--------|-------|
 | Coins | 50-100 | Random in range |
 | PvP Tickets | 1 | Fixed |
-| Marathon Bonuses | 0 | None |
+| Marathon Bonuses | 50% chance 1 bonus | Random type |
+
+**Bonus Selection:**
+- 50% chance: 1 random bonus (avg 0.5 per chest)
+- 50% chance: No bonus
+- Equal probability per type (25% each)
 
 **With Streak Bonus:**
 ```
@@ -23,12 +28,12 @@
 |----------|--------|-------|
 | Coins | 150-250 | Random |
 | PvP Tickets | 2-3 | Random |
-| Marathon Bonuses | 30% chance 1 bonus | Random type |
+| Marathon Bonuses | 1-2 bonuses | 1 guaranteed |
 
 **Bonus Selection:**
-- 30% chance: 1 random bonus
-- 70% chance: No bonus
-- If granted: Equal probability (25% each type)
+- 100%: 1 random bonus (guaranteed)
+- 30% chance: +1 extra bonus (2 total, different types)
+- Avg 1.3 bonuses per chest
 
 **With Streak:**
 ```
@@ -43,11 +48,12 @@
 |----------|--------|-------|
 | Coins | 300-500 | Random |
 | PvP Tickets | 4-5 | Random |
-| Marathon Bonuses | 100% 1-2 bonuses | Guaranteed |
+| Marathon Bonuses | 2-3 bonuses | 2 guaranteed |
 
 **Bonus Selection:**
-- 70% chance: 1 random bonus
-- 30% chance: 2 random bonuses (different types)
+- 100%: 2 random bonuses (guaranteed, different types)
+- 40% chance: +1 extra bonus (3 total, all different types)
+- Avg 2.4 bonuses per chest
 
 **With Streak:**
 ```
@@ -137,17 +143,26 @@ func getBaseRewards(chestType ChestType) BaseRewards {
 func selectBonuses(chestType ChestType) []BonusType {
     switch chestType {
     case Wooden:
-        return []  // No bonuses
-    case Silver:
-        if random() < 0.3 {
+        // 50% chance for 1 bonus
+        if random() < 0.5 {
             return [randomBonus()]
         }
         return []
-    case Golden:
+    case Silver:
+        // 100% × 1 bonus + 30% chance for 2nd
+        b1 := randomBonus()
         if random() < 0.3 {
-            return [randomBonus(), randomDifferentBonus()]
+            return [b1, randomDifferentBonus(b1)]
         }
-        return [randomBonus()]
+        return [b1]
+    case Golden:
+        // 100% × 2 bonuses + 40% chance for 3rd
+        b1 := randomBonus()
+        b2 := randomDifferentBonus(b1)
+        if random() < 0.4 {
+            return [b1, b2, randomDifferentBonus(b1, b2)]
+        }
+        return [b1, b2]
     }
 }
 ```

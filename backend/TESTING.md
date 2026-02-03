@@ -1,4 +1,4 @@
-# Testing Guide: Daily Challenge
+# Testing Guide
 
 > Admin API key для dev: `dev-admin-key-2026`
 > Base URL: `http://localhost:3000` (Docker) или `https://dev.quiz-sprint-tma.online`
@@ -195,4 +195,159 @@ curl -s -X DELETE "$BASE/admin/daily-challenge/games?playerId=$PLAYER&date=$(dat
 # 2. Сыграть, завершить, открыть сундук
 # 3. Проверить тип сундука в debug view:
 curl -s "$BASE/admin/daily-challenge/games?playerId=$PLAYER&limit=1" -H "$KEY" | jq '.data.games[0] | {chestType, chestCoins, baseScore}'
+```
+
+---
+---
+
+# Marathon (Solo)
+
+## 1. Полный игровой цикл
+
+```bash
+# Начать марафон (categoryId = null → все категории)
+curl -s -X POST "$BASE/marathon/start" \
+  -H "Content-Type: application/json" \
+  -d "{\"playerId\": \"$PLAYER\", \"categoryId\": null}" | jq
+
+# Сохранить GAME_ID из ответа
+GAME_ID="id-from-response"
+
+# Ответить на вопрос (повторять с разными questionId/answerId)
+curl -s -X POST "$BASE/marathon/$GAME_ID/answer" \
+  -H "Content-Type: application/json" \
+  -d "{\"playerId\": \"$PLAYER\", \"questionId\": \"Q_ID\", \"answerId\": \"A_ID\", \"timeTaken\": 5}" | jq
+
+# Использовать бонус (shield / fifty_fifty / skip / freeze)
+curl -s -X POST "$BASE/marathon/$GAME_ID/bonus" \
+  -H "Content-Type: application/json" \
+  -d "{\"playerId\": \"$PLAYER\", \"questionId\": \"Q_ID\", \"bonusType\": \"shield\"}" | jq
+
+# Продолжить после game over (за монеты или рекламу)
+curl -s -X POST "$BASE/marathon/$GAME_ID/continue" \
+  -H "Content-Type: application/json" \
+  -d "{\"playerId\": \"$PLAYER\", \"paymentMethod\": \"ad\"}" | jq
+
+# Сдаться (abandon)
+curl -s -X DELETE "$BASE/marathon/$GAME_ID" \
+  -H "Content-Type: application/json" \
+  -d "{\"playerId\": \"$PLAYER\"}" | jq
+```
+
+## 2. Проверка статуса
+
+```bash
+# Статус активной игры (есть ли незавершённая)
+curl -s "$BASE/marathon/status?playerId=$PLAYER" | jq
+
+# Персональные рекорды по категориям
+curl -s "$BASE/marathon/personal-bests?playerId=$PLAYER" | jq
+
+# Leaderboard (all_time | weekly | daily)
+curl -s "$BASE/marathon/leaderboard?categoryId=all&timeFrame=all_time&limit=10" | jq
+```
+
+## 3. Сброс данных марафона
+
+```bash
+# Полный сброс игрока (удаляет ВСЁ: daily, marathon, quiz sessions, stats)
+curl -s -X DELETE "$BASE/admin/player/reset?playerId=$PLAYER" \
+  -H "$KEY" | jq
+```
+
+> Admin-эндпоинтов специфичных для марафона пока нет. Используй полный сброс.
+
+---
+
+## Типичные тест-сценарии (Marathon)
+
+### A. Старт → ответы → game over
+```bash
+# 1. Сброс
+curl -s -X DELETE "$BASE/admin/player/reset?playerId=$PLAYER" -H "$KEY"
+
+# 2. Старт
+curl -s -X POST "$BASE/marathon/start" \
+  -H "Content-Type: application/json" \
+  -d "{\"playerId\": \"$PLAYER\", \"categoryId\": null}" | jq
+# → Сохранить game.id, game.currentQuestion.id, game.currentQuestion.answers[0].id
+
+# 3. Отвечать неправильно 3 раза подряд (потеря всех жизней)
+# → isGameOver: true, gameOverResult с continueOffer
+```
+
+### B. Тест бонусов
+```bash
+# 1. Начать игру
+# 2. Ответить правильно на 5+ вопросов (набрать бонусы на milestones)
+# 3. Проверить bonusInventory в ответе
+# 4. Использовать fifty_fifty:
+curl -s -X POST "$BASE/marathon/$GAME_ID/bonus" \
+  -H "Content-Type: application/json" \
+  -d "{\"playerId\": \"$PLAYER\", \"questionId\": \"Q_ID\", \"bonusType\": \"fifty_fifty\"}" | jq
+# → bonusResult.hiddenAnswerIds — 2 неправильных ответа скрыты
+
+# 5. Использовать skip:
+curl -s -X POST "$BASE/marathon/$GAME_ID/bonus" \
+  -H "Content-Type: application/json" \
+  -d "{\"playerId\": \"$PLAYER\", \"questionId\": \"Q_ID\", \"bonusType\": \"skip\"}" | jq
+# → bonusResult.nextQuestion — новый вопрос
+
+# 6. Использовать freeze:
+curl -s -X POST "$BASE/marathon/$GAME_ID/bonus" \
+  -H "Content-Type: application/json" \
+  -d "{\"playerId\": \"$PLAYER\", \"questionId\": \"Q_ID\", \"bonusType\": \"freeze\"}" | jq
+# → bonusResult.newTimeLimit — увеличенный таймер
+```
+
+### C. Тест continue после game over
+```bash
+# 1. Довести игру до game over (3 неправильных ответа)
+# 2. Проверить gameOverResult.continueOffer:
+#    - available: true
+#    - costCoins, hasAd, continueCount
+# 3. Продолжить:
+curl -s -X POST "$BASE/marathon/$GAME_ID/continue" \
+  -H "Content-Type: application/json" \
+  -d "{\"playerId\": \"$PLAYER\", \"paymentMethod\": \"ad\"}" | jq
+# → game с восстановленной жизнью, continueCount + 1
+
+# 4. Довести до game over снова → continue повторно
+# → costCoins увеличивается с каждым continue
+```
+
+### D. Тест resume (продолжение активной игры)
+```bash
+# 1. Начать марафон, ответить на пару вопросов
+# 2. Проверить статус:
+curl -s "$BASE/marathon/status?playerId=$PLAYER" | jq
+# → hasActiveGame: true, game.currentQuestion не null
+
+# 3. Нажать "Continue Marathon" в UI — должен загрузить текущий вопрос
+# → Если бесконечная загрузка: проверить что currentQuestion есть в ответе status
+```
+
+### E. Тест shield
+```bash
+# 1. Набрать shield бонус (milestone)
+# 2. Активировать shield:
+curl -s -X POST "$BASE/marathon/$GAME_ID/bonus" \
+  -H "Content-Type: application/json" \
+  -d "{\"playerId\": \"$PLAYER\", \"questionId\": \"Q_ID\", \"bonusType\": \"shield\"}" | jq
+# → shieldActive: true
+
+# 3. Ответить неправильно:
+# → shieldConsumed: true, lifeLost: false (щит поглотил удар)
+```
+
+### F. Тест personal best
+```bash
+# 1. Сброс
+curl -s -X DELETE "$BASE/admin/player/reset?playerId=$PLAYER" -H "$KEY"
+
+# 2. Сыграть первую игру → завершить → проверить personal-bests
+curl -s "$BASE/marathon/personal-bests?playerId=$PLAYER" | jq
+
+# 3. Сыграть вторую игру с лучшим результатом
+# → isNewPersonalBest: true в gameOverResult
 ```

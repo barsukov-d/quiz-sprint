@@ -76,12 +76,14 @@ func (uc *StartMarathonUseCase) Execute(input StartMarathonInput) (StartMarathon
 	}
 	// personalBest can be nil - that's okay for first-time players
 
-	// 5. Create MarathonGame aggregate (V2 - without Quiz)
+	// 5. Create MarathonGame aggregate (V2 with default bonuses)
 	now := time.Now().Unix()
+	bonuses := solo_marathon.NewBonusInventory()
 	game, err := solo_marathon.NewMarathonGameV2(
 		playerID,
 		category,
 		personalBest,
+		bonuses,
 		now,
 	)
 	if err != nil {
@@ -107,20 +109,9 @@ func (uc *StartMarathonUseCase) Execute(input StartMarathonInput) (StartMarathon
 		}
 	}
 
-	// 9. Get first question
-	firstQuestion, err := game.GetCurrentQuestion()
-	if err != nil {
-		return StartMarathonOutput{}, err
-	}
-
-	// 10. Calculate time limit for first question
-	timeLimit := GetTimeLimit(game.Difficulty(), game.CurrentStreak())
-
-	// 11. Build output DTO
+	// 9. Build output DTO
 	return StartMarathonOutput{
 		Game:            ToMarathonGameDTOV2(game, now),
-		FirstQuestion:   ToQuestionDTO(firstQuestion),
-		TimeLimit:       timeLimit,
 		HasPersonalBest: personalBest != nil,
 	}, nil
 }

@@ -192,6 +192,7 @@ const (
     GameStatusInProgress GameStatus = "in_progress"
     GameStatusGameOver   GameStatus = "game_over"
     GameStatusCompleted  GameStatus = "completed"
+    GameStatusAbandoned  GameStatus = "abandoned"
 )
 ```
 

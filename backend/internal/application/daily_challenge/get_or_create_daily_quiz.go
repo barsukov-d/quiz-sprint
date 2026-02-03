@@ -99,20 +99,24 @@ func (uc *GetOrCreateDailyQuizUseCase) generateDailyQuiz(
 	println("📊 [generateDailyQuiz] Selecting questions...")
 
 	// Generate deterministic seed from date
-	// This ensures ALL players worldwide get the SAME questions for a given date
+	// This ensures ALL players worldwide get the SAME quiz for a given date
 	seed := date.ToSeed()
 	println("🎲 [generateDailyQuiz] Using seed:", seed, "for date:", date.String())
 
-	// Select 10 questions using deterministic seed
-	// TODO: Implement smart selection with:
-	// - Balanced difficulty (from easy to hard)
-	// - Category variety
-	// - Exclude questions from last 30 days
-	filter := quiz.NewQuestionFilter()
-	questions, err := uc.questionRepo.FindQuestionsBySeed(filter, daily_challenge.QuestionsPerDay, seed)
+	// Filter by "Daily Challenge" category (dc000000-0000-0000-0000-000000000001)
+	dailyChallengeCategory, _ := quiz.NewCategoryIDFromString("dc000000-0000-0000-0000-000000000001")
+
+	// Select a whole quiz with exactly 10 questions from daily-challenge category
+	questions, err := uc.questionRepo.FindQuestionsByQuizSeed(daily_challenge.QuestionsPerDay, seed, &dailyChallengeCategory)
 	if err != nil {
-		println("❌ [generateDailyQuiz] Failed to find questions:", err.Error())
-		return nil, err
+		println("⚠️  [generateDailyQuiz] No quiz with exactly", daily_challenge.QuestionsPerDay, "questions in daily-challenge category, falling back to random selection")
+		// Fallback: random questions from daily-challenge category
+		filter := quiz.NewQuestionFilter().WithCategory(dailyChallengeCategory)
+		questions, err = uc.questionRepo.FindQuestionsBySeed(filter, daily_challenge.QuestionsPerDay, seed)
+		if err != nil {
+			println("❌ [generateDailyQuiz] Failed to find questions:", err.Error())
+			return nil, err
+		}
 	}
 
 	println("📊 [generateDailyQuiz] Found", len(questions), "questions (need", daily_challenge.QuestionsPerDay, ")")

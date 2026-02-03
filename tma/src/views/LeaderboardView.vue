@@ -101,7 +101,7 @@ const isCurrentUser = (userId: string) => {
 </script>
 
 <template>
-	<div class="container mx-auto ">
+	<div class="container mx-auto">
 		<div class="max-w-4xl mx-auto">
 			<!-- Header -->
 			<div class="mb-6 mx-auto text-center">

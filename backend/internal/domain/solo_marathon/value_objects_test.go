@@ -182,146 +182,261 @@ func TestLivesSystem_TimeToNextLife(t *testing.T) {
 	}
 }
 
-// TestHintsSystem_NewHintsSystem tests creation of hints system
-func TestHintsSystem_NewHintsSystem(t *testing.T) {
-	hints := NewHintsSystem()
+// TestLivesSystem_ResetForContinue tests resetting lives for continue
+func TestLivesSystem_ResetForContinue(t *testing.T) {
+	now := int64(1000000)
+	lives := ReconstructLivesSystem(0, now)
 
-	if hints.FiftyFifty() != DefaultFiftyFifty {
-		t.Errorf("Expected %d 50/50 hints, got %d", DefaultFiftyFifty, hints.FiftyFifty())
+	newLives := lives.ResetForContinue(now + 100)
+
+	if newLives.CurrentLives() != 1 {
+		t.Errorf("Expected 1 life after continue, got %d", newLives.CurrentLives())
 	}
-	if hints.ExtraTime() != DefaultExtraTime {
-		t.Errorf("Expected %d extra time hints, got %d", DefaultExtraTime, hints.ExtraTime())
+	if newLives.LastUpdate() != now+100 {
+		t.Errorf("Expected last update %d, got %d", now+100, newLives.LastUpdate())
 	}
-	if hints.Skip() != DefaultSkip {
-		t.Errorf("Expected %d skip hints, got %d", DefaultSkip, hints.Skip())
+
+	// Original should be unchanged (immutable)
+	if lives.CurrentLives() != 0 {
+		t.Errorf("Original lives should be unchanged, got %d", lives.CurrentLives())
 	}
 }
 
-// TestHintsSystem_UseHint tests using hints
-func TestHintsSystem_UseHint(t *testing.T) {
+// TestLivesSystem_Label tests visual representation of lives
+func TestLivesSystem_Label(t *testing.T) {
 	tests := []struct {
-		name        string
-		hintType    HintType
-		initialFF   int
-		initialET   int
-		initialSkip int
-		expectError bool
-		expectedFF  int
-		expectedET  int
-		expectedSkip int
+		name     string
+		lives    int
+		expected string
+	}{
+		{"3 lives", 3, "❤️❤️❤️"},
+		{"2 lives", 2, "❤️❤️🖤"},
+		{"1 life", 1, "❤️🖤🖤"},
+		{"0 lives", 0, "🖤🖤🖤"},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			lives := ReconstructLivesSystem(tt.lives, 1000000)
+			if lives.Label() != tt.expected {
+				t.Errorf("Label() = %q, want %q", lives.Label(), tt.expected)
+			}
+		})
+	}
+}
+
+// TestBonusInventory_NewBonusInventory tests creation of bonus inventory
+func TestBonusInventory_NewBonusInventory(t *testing.T) {
+	bonuses := NewBonusInventory()
+
+	if bonuses.Shield() != DefaultShield {
+		t.Errorf("Expected %d shields, got %d", DefaultShield, bonuses.Shield())
+	}
+	if bonuses.FiftyFifty() != DefaultFiftyFifty {
+		t.Errorf("Expected %d 50/50 bonuses, got %d", DefaultFiftyFifty, bonuses.FiftyFifty())
+	}
+	if bonuses.Skip() != DefaultSkip {
+		t.Errorf("Expected %d skip bonuses, got %d", DefaultSkip, bonuses.Skip())
+	}
+	if bonuses.Freeze() != DefaultFreeze {
+		t.Errorf("Expected %d freeze bonuses, got %d", DefaultFreeze, bonuses.Freeze())
+	}
+}
+
+// TestBonusInventory_UseBonus tests using bonuses
+func TestBonusInventory_UseBonus(t *testing.T) {
+	tests := []struct {
+		name            string
+		bonusType       BonusType
+		initialShield   int
+		initialFF       int
+		initialSkip     int
+		initialFreeze   int
+		expectError     bool
+		expectedShield  int
+		expectedFF      int
+		expectedSkip    int
+		expectedFreeze  int
 	}{
 		{
-			name:        "Use 50/50",
-			hintType:    HintFiftyFifty,
-			initialFF:   3,
-			initialET:   2,
-			initialSkip: 1,
-			expectError: false,
-			expectedFF:  2,
-			expectedET:  2,
-			expectedSkip: 1,
+			name:           "Use shield",
+			bonusType:      BonusShield,
+			initialShield:  2,
+			initialFF:      1,
+			initialSkip:    1,
+			initialFreeze:  3,
+			expectError:    false,
+			expectedShield: 1,
+			expectedFF:     1,
+			expectedSkip:   1,
+			expectedFreeze: 3,
 		},
 		{
-			name:        "Use extra time",
-			hintType:    HintExtraTime,
-			initialFF:   3,
-			initialET:   2,
-			initialSkip: 1,
-			expectError: false,
-			expectedFF:  3,
-			expectedET:  1,
-			expectedSkip: 1,
+			name:           "Use 50/50",
+			bonusType:      BonusFiftyFifty,
+			initialShield:  2,
+			initialFF:      1,
+			initialSkip:    1,
+			initialFreeze:  3,
+			expectError:    false,
+			expectedShield: 2,
+			expectedFF:     0,
+			expectedSkip:   1,
+			expectedFreeze: 3,
 		},
 		{
-			name:        "Use skip",
-			hintType:    HintSkip,
-			initialFF:   3,
-			initialET:   2,
-			initialSkip: 1,
-			expectError: false,
-			expectedFF:  3,
-			expectedET:  2,
-			expectedSkip: 0,
+			name:           "Use freeze",
+			bonusType:      BonusFreeze,
+			initialShield:  2,
+			initialFF:      1,
+			initialSkip:    1,
+			initialFreeze:  3,
+			expectError:    false,
+			expectedShield: 2,
+			expectedFF:     1,
+			expectedSkip:   1,
+			expectedFreeze: 2,
 		},
 		{
-			name:        "No 50/50 available",
-			hintType:    HintFiftyFifty,
-			initialFF:   0,
-			initialET:   2,
-			initialSkip: 1,
-			expectError: true,
-			expectedFF:  0,
-			expectedET:  2,
-			expectedSkip: 1,
+			name:           "Use skip",
+			bonusType:      BonusSkip,
+			initialShield:  2,
+			initialFF:      1,
+			initialSkip:    1,
+			initialFreeze:  3,
+			expectError:    false,
+			expectedShield: 2,
+			expectedFF:     1,
+			expectedSkip:   0,
+			expectedFreeze: 3,
+		},
+		{
+			name:           "No 50/50 available",
+			bonusType:      BonusFiftyFifty,
+			initialShield:  2,
+			initialFF:      0,
+			initialSkip:    1,
+			initialFreeze:  3,
+			expectError:    true,
+			expectedShield: 2,
+			expectedFF:     0,
+			expectedSkip:   1,
+			expectedFreeze: 3,
+		},
+		{
+			name:           "No shield available",
+			bonusType:      BonusShield,
+			initialShield:  0,
+			initialFF:      1,
+			initialSkip:    1,
+			initialFreeze:  3,
+			expectError:    true,
+			expectedShield: 0,
+			expectedFF:     1,
+			expectedSkip:   1,
+			expectedFreeze: 3,
 		},
 	}
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			hints := ReconstructHintsSystem(tt.initialFF, tt.initialET, tt.initialSkip)
+			bonuses := ReconstructBonusInventory(tt.initialShield, tt.initialFF, tt.initialSkip, tt.initialFreeze)
 
-			newHints, err := hints.UseHint(tt.hintType)
+			newBonuses, err := bonuses.UseBonus(tt.bonusType)
 
 			if tt.expectError {
 				if err == nil {
 					t.Errorf("Expected error, got nil")
 				}
-				if err != ErrNoHintsAvailable {
-					t.Errorf("Expected ErrNoHintsAvailable, got %v", err)
+				if err != ErrNoBonusesAvailable {
+					t.Errorf("Expected ErrNoBonusesAvailable, got %v", err)
 				}
 			} else {
 				if err != nil {
 					t.Errorf("Unexpected error: %v", err)
 				}
-				if newHints.FiftyFifty() != tt.expectedFF {
-					t.Errorf("Expected %d 50/50 hints, got %d", tt.expectedFF, newHints.FiftyFifty())
+				if newBonuses.Shield() != tt.expectedShield {
+					t.Errorf("Expected %d shields, got %d", tt.expectedShield, newBonuses.Shield())
 				}
-				if newHints.ExtraTime() != tt.expectedET {
-					t.Errorf("Expected %d extra time hints, got %d", tt.expectedET, newHints.ExtraTime())
+				if newBonuses.FiftyFifty() != tt.expectedFF {
+					t.Errorf("Expected %d 50/50, got %d", tt.expectedFF, newBonuses.FiftyFifty())
 				}
-				if newHints.Skip() != tt.expectedSkip {
-					t.Errorf("Expected %d skip hints, got %d", tt.expectedSkip, newHints.Skip())
+				if newBonuses.Skip() != tt.expectedSkip {
+					t.Errorf("Expected %d skip, got %d", tt.expectedSkip, newBonuses.Skip())
+				}
+				if newBonuses.Freeze() != tt.expectedFreeze {
+					t.Errorf("Expected %d freeze, got %d", tt.expectedFreeze, newBonuses.Freeze())
 				}
 
 				// Test immutability
-				if hints.FiftyFifty() != tt.initialFF {
-					t.Errorf("Original hints should be unchanged")
+				if bonuses.Shield() != tt.initialShield {
+					t.Errorf("Original bonuses should be unchanged")
 				}
 			}
 		})
 	}
 }
 
-// TestHintsSystem_HasHint tests checking hint availability
-func TestHintsSystem_HasHint(t *testing.T) {
-	hints := ReconstructHintsSystem(1, 0, 1)
+// TestBonusInventory_HasBonus tests checking bonus availability
+func TestBonusInventory_HasBonus(t *testing.T) {
+	bonuses := ReconstructBonusInventory(1, 0, 1, 2)
 
-	if !hints.HasHint(HintFiftyFifty) {
-		t.Errorf("Should have 50/50 hint")
+	if !bonuses.HasBonus(BonusShield) {
+		t.Errorf("Should have shield bonus")
 	}
-	if hints.HasHint(HintExtraTime) {
-		t.Errorf("Should not have extra time hint")
+	if bonuses.HasBonus(BonusFiftyFifty) {
+		t.Errorf("Should not have 50/50 bonus")
 	}
-	if !hints.HasHint(HintSkip) {
-		t.Errorf("Should have skip hint")
+	if !bonuses.HasBonus(BonusSkip) {
+		t.Errorf("Should have skip bonus")
+	}
+	if !bonuses.HasBonus(BonusFreeze) {
+		t.Errorf("Should have freeze bonus")
 	}
 }
 
-// TestDifficultyProgression_UpdateFromStreak tests difficulty calculation
-func TestDifficultyProgression_UpdateFromStreak(t *testing.T) {
+// TestBonusInventory_Count tests counting specific bonus type
+func TestBonusInventory_Count(t *testing.T) {
+	bonuses := ReconstructBonusInventory(2, 1, 0, 3)
+
+	if bonuses.Count(BonusShield) != 2 {
+		t.Errorf("Expected 2 shields, got %d", bonuses.Count(BonusShield))
+	}
+	if bonuses.Count(BonusFiftyFifty) != 1 {
+		t.Errorf("Expected 1 fifty-fifty, got %d", bonuses.Count(BonusFiftyFifty))
+	}
+	if bonuses.Count(BonusSkip) != 0 {
+		t.Errorf("Expected 0 skip, got %d", bonuses.Count(BonusSkip))
+	}
+	if bonuses.Count(BonusFreeze) != 3 {
+		t.Errorf("Expected 3 freeze, got %d", bonuses.Count(BonusFreeze))
+	}
+}
+
+// TestBonusInventory_InvalidType tests using invalid bonus type
+func TestBonusInventory_InvalidType(t *testing.T) {
+	bonuses := NewBonusInventory()
+
+	_, err := bonuses.UseBonus(BonusType("invalid"))
+	if err != ErrInvalidBonusType {
+		t.Errorf("Expected ErrInvalidBonusType, got %v", err)
+	}
+}
+
+// TestDifficultyProgression_UpdateFromQuestionIndex tests difficulty calculation
+func TestDifficultyProgression_UpdateFromQuestionIndex(t *testing.T) {
 	tests := []struct {
 		name              string
-		streak            int
+		questionIndex     int
 		expectedLevel     DifficultyLevel
 	}{
 		{"Beginner (1)", 1, DifficultyBeginner},
 		{"Beginner (5)", 5, DifficultyBeginner},
-		{"Medium (6)", 6, DifficultyMedium},
-		{"Medium (15)", 15, DifficultyMedium},
-		{"Hard (16)", 16, DifficultyHard},
-		{"Hard (30)", 30, DifficultyHard},
-		{"Expert (31)", 31, DifficultyExpert},
-		{"Expert (50)", 50, DifficultyExpert},
+		{"Beginner (10)", 10, DifficultyBeginner},
+		{"Medium (11)", 11, DifficultyMedium},
+		{"Medium (30)", 30, DifficultyMedium},
+		{"Hard (31)", 31, DifficultyHard},
+		{"Hard (50)", 50, DifficultyHard},
 		{"Master (51)", 51, DifficultyMaster},
 		{"Master (100)", 100, DifficultyMaster},
 	}
@@ -329,11 +444,11 @@ func TestDifficultyProgression_UpdateFromStreak(t *testing.T) {
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
 			dp := NewDifficultyProgression()
-			newDP := dp.UpdateFromStreak(tt.streak)
+			newDP := dp.UpdateFromQuestionIndex(tt.questionIndex)
 
 			if newDP.Level() != tt.expectedLevel {
-				t.Errorf("Expected level %s for streak %d, got %s",
-					tt.expectedLevel, tt.streak, newDP.Level())
+				t.Errorf("Expected level %s for question index %d, got %s",
+					tt.expectedLevel, tt.questionIndex, newDP.Level())
 			}
 		})
 	}
@@ -352,9 +467,19 @@ func TestDifficultyProgression_GetDistribution(t *testing.T) {
 			expected: map[string]float64{"easy": 0.8, "medium": 0.2, "hard": 0.0},
 		},
 		{
+			name:  "Medium",
+			level: DifficultyMedium,
+			expected: map[string]float64{"easy": 0.0, "medium": 1.0, "hard": 0.0},
+		},
+		{
+			name:  "Hard",
+			level: DifficultyHard,
+			expected: map[string]float64{"easy": 0.0, "medium": 0.7, "hard": 0.3},
+		},
+		{
 			name:  "Master",
 			level: DifficultyMaster,
-			expected: map[string]float64{"easy": 0.0, "medium": 0.3, "hard": 0.7},
+			expected: map[string]float64{"easy": 0.0, "medium": 0.0, "hard": 1.0},
 		},
 	}
 
@@ -372,6 +497,35 @@ func TestDifficultyProgression_GetDistribution(t *testing.T) {
 	}
 }
 
+// TestDifficultyProgression_GetTimeLimit tests time limit by question index
+func TestDifficultyProgression_GetTimeLimit(t *testing.T) {
+	dp := NewDifficultyProgression()
+
+	tests := []struct {
+		name          string
+		questionIndex int
+		expectedTime  int
+	}{
+		{"Question 1", 1, 15},
+		{"Question 10", 10, 15},
+		{"Question 11", 11, 12},
+		{"Question 25", 25, 12},
+		{"Question 26", 26, 10},
+		{"Question 50", 50, 10},
+		{"Question 51", 51, 8},
+		{"Question 100", 100, 8},
+	}
+
+	for _, tt := range tests {
+		t.Run(tt.name, func(t *testing.T) {
+			timeLimit := dp.GetTimeLimit(tt.questionIndex)
+			if timeLimit != tt.expectedTime {
+				t.Errorf("GetTimeLimit(%d) = %d, want %d", tt.questionIndex, timeLimit, tt.expectedTime)
+			}
+		})
+	}
+}
+
 // TestGameStatus_CanTransitionTo tests state transitions
 func TestGameStatus_CanTransitionTo(t *testing.T) {
 	tests := []struct {
@@ -380,10 +534,14 @@ func TestGameStatus_CanTransitionTo(t *testing.T) {
 		to       GameStatus
 		expected bool
 	}{
-		{"in_progress -> finished", GameStatusInProgress, GameStatusFinished, true},
+		{"in_progress -> game_over", GameStatusInProgress, GameStatusGameOver, true},
 		{"in_progress -> abandoned", GameStatusInProgress, GameStatusAbandoned, true},
-		{"finished -> in_progress", GameStatusFinished, GameStatusInProgress, false},
-		{"finished -> abandoned", GameStatusFinished, GameStatusAbandoned, false},
+		{"in_progress -> completed", GameStatusInProgress, GameStatusCompleted, false},
+		{"game_over -> in_progress (continue)", GameStatusGameOver, GameStatusInProgress, true},
+		{"game_over -> completed", GameStatusGameOver, GameStatusCompleted, true},
+		{"game_over -> abandoned", GameStatusGameOver, GameStatusAbandoned, false},
+		{"completed -> in_progress", GameStatusCompleted, GameStatusInProgress, false},
+		{"completed -> abandoned", GameStatusCompleted, GameStatusAbandoned, false},
 		{"abandoned -> in_progress", GameStatusAbandoned, GameStatusInProgress, false},
 	}
 
@@ -405,7 +563,8 @@ func TestGameStatus_IsTerminal(t *testing.T) {
 		expected bool
 	}{
 		{GameStatusInProgress, false},
-		{GameStatusFinished, true},
+		{GameStatusGameOver, false},  // Intermediate, not terminal
+		{GameStatusCompleted, true},
 		{GameStatusAbandoned, true},
 	}
 
@@ -416,5 +575,78 @@ func TestGameStatus_IsTerminal(t *testing.T) {
 					tt.status, tt.status.IsTerminal(), tt.expected)
 			}
 		})
+	}
+}
+
+// TestContinueCostCalculator tests continue cost calculation
+func TestContinueCostCalculator_GetCost(t *testing.T) {
+	calc := ContinueCostCalculator{}
+
+	tests := []struct {
+		continueCount int
+		expectedCost  int
+	}{
+		{0, 200},
+		{1, 400},
+		{2, 600},
+		{3, 800},
+		{4, 1000},
+	}
+
+	for _, tt := range tests {
+		cost := calc.GetCost(tt.continueCount)
+		if cost != tt.expectedCost {
+			t.Errorf("GetCost(%d) = %d, want %d", tt.continueCount, cost, tt.expectedCost)
+		}
+	}
+}
+
+// TestContinueCostCalculator_HasAdOption tests ad availability
+func TestContinueCostCalculator_HasAdOption(t *testing.T) {
+	calc := ContinueCostCalculator{}
+
+	tests := []struct {
+		continueCount int
+		expectedHasAd bool
+	}{
+		{0, true},
+		{1, true},
+		{2, true},
+		{3, false},
+		{4, false},
+	}
+
+	for _, tt := range tests {
+		hasAd := calc.HasAdOption(tt.continueCount)
+		if hasAd != tt.expectedHasAd {
+			t.Errorf("HasAdOption(%d) = %v, want %v", tt.continueCount, hasAd, tt.expectedHasAd)
+		}
+	}
+}
+
+// TestGetNextMilestone tests milestone calculation
+func TestGetNextMilestone(t *testing.T) {
+	tests := []struct {
+		score             int
+		expectedNext      int
+		expectedRemaining int
+	}{
+		{0, 25, 25},
+		{10, 25, 15},
+		{25, 50, 25},
+		{49, 50, 1},
+		{50, 100, 50},
+		{100, 200, 100},
+		{200, 500, 300},
+		{500, 0, 0},  // Past all milestones
+		{999, 0, 0},
+	}
+
+	for _, tt := range tests {
+		next, remaining := GetNextMilestone(tt.score)
+		if next != tt.expectedNext || remaining != tt.expectedRemaining {
+			t.Errorf("GetNextMilestone(%d) = (%d, %d), want (%d, %d)",
+				tt.score, next, remaining, tt.expectedNext, tt.expectedRemaining)
+		}
 	}
 }

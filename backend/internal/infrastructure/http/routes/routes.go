@@ -176,7 +176,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	var (
 		startMarathonUC           *appMarathon.StartMarathonUseCase
 		submitMarathonAnswerUC    *appMarathon.SubmitMarathonAnswerUseCase
-		useMarathonHintUC         *appMarathon.UseMarathonHintUseCase
+		useMarathonBonusUC        *appMarathon.UseMarathonBonusUseCase
+		continueMarathonUC        *appMarathon.ContinueMarathonUseCase
 		abandonMarathonUC         *appMarathon.AbandonMarathonUseCase
 		getMarathonStatusUC       *appMarathon.GetMarathonStatusUseCase
 		getPersonalBestsUC        *appMarathon.GetPersonalBestsUseCase
@@ -197,8 +198,14 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			questionRepo,
 			marathonEventBus,
 		)
-		useMarathonHintUC = appMarathon.NewUseMarathonHintUseCase(
+		useMarathonBonusUC = appMarathon.NewUseMarathonBonusUseCase(
 			marathonRepo,
+			questionRepo,
+			marathonEventBus,
+		)
+		continueMarathonUC = appMarathon.NewContinueMarathonUseCase(
+			marathonRepo,
+			questionRepo,
 			marathonEventBus,
 		)
 		abandonMarathonUC = appMarathon.NewAbandonMarathonUseCase(
@@ -324,7 +331,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		marathonHandler = handlers.NewMarathonHandler(
 			startMarathonUC,
 			submitMarathonAnswerUC,
-			useMarathonHintUC,
+			useMarathonBonusUC,
+			continueMarathonUC,
 			abandonMarathonUC,
 			getMarathonStatusUC,
 			getPersonalBestsUC,
@@ -419,7 +427,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		marathon := v1.Group("/marathon")
 		marathon.Post("/start", marathonHandler.StartMarathon)
 		marathon.Post("/:gameId/answer", marathonHandler.SubmitMarathonAnswer)
-		marathon.Post("/:gameId/hint", marathonHandler.UseMarathonHint)
+		marathon.Post("/:gameId/bonus", marathonHandler.UseMarathonBonus)
+		marathon.Post("/:gameId/continue", marathonHandler.ContinueMarathon)
 		marathon.Delete("/:gameId", marathonHandler.AbandonMarathon)
 		marathon.Get("/status", marathonHandler.GetMarathonStatus)
 		marathon.Get("/personal-bests", marathonHandler.GetPersonalBests)

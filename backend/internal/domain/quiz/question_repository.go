@@ -23,6 +23,12 @@ type QuestionRepository interface {
 	// seed should be derived from date (e.g., hash("2026-01-25") -> int64)
 	FindQuestionsBySeed(filter QuestionFilter, limit int, seed int64) ([]*Question, error)
 
+	// FindQuestionsByQuizSeed selects a whole quiz deterministically by seed
+	// Picks one quiz with exactly questionsPerQuiz questions, returns all its questions
+	// Used by: Daily Challenge (all questions share a common theme)
+	// categoryID filters by category (nil = all categories)
+	FindQuestionsByQuizSeed(questionsPerQuiz int, seed int64, categoryID *CategoryID) ([]*Question, error)
+
 	// CountByFilter returns count of questions matching filter
 	// Used for: validation, statistics
 	CountByFilter(filter QuestionFilter) (int, error)

@@ -73,25 +73,18 @@ func (uc *SubmitMarathonAnswerUseCase) Execute(input SubmitMarathonAnswerInput) 
 		return SubmitMarathonAnswerOutput{}, quiz.ErrUnauthorized
 	}
 
-	// 4. Get the current question for finding correct answer later
-	currentQuestion, err := game.GetCurrentQuestion()
-	if err != nil {
-		return SubmitMarathonAnswerOutput{}, err
-	}
-
-	// 5. Submit answer (domain business logic)
+	// 4. Submit answer (domain business logic)
 	now := time.Now().Unix()
 	result, err := game.AnswerQuestion(questionID, answerID, input.TimeTaken, now)
 	if err != nil {
 		return SubmitMarathonAnswerOutput{}, err
 	}
 
-	// 5b. If game continues, load next question
+	// 5. If game continues (not game_over), load next question
 	if !result.IsGameOver {
 		questionSelector := solo_marathon.NewQuestionSelector(uc.questionRepo)
 		if err := game.LoadNextQuestion(questionSelector); err != nil {
 			// Log error but don't fail - game can continue
-			// TODO: Add proper logging
 			_ = err
 		}
 	}
@@ -99,63 +92,29 @@ func (uc *SubmitMarathonAnswerUseCase) Execute(input SubmitMarathonAnswerInput) 
 	// 6. Build output
 	output := SubmitMarathonAnswerOutput{
 		IsCorrect:       result.IsCorrect,
-		CorrectAnswerID: FindCorrectAnswerID(currentQuestion),
-		BasePoints:      result.BasePoints,
+		CorrectAnswerID: result.CorrectAnswerID.String(),
 		TimeTaken:       result.TimeTaken,
-		CurrentStreak:   result.CurrentStreak,
-		MaxStreak:       result.MaxStreak,
+		Score:           result.Score,
+		TotalQuestions:  result.TotalQuestions,
 		DifficultyLevel: string(result.DifficultyLevel),
 		LifeLost:        result.LifeLost,
-		RemainingLives:  result.RemainingLives,
+		ShieldConsumed:  result.ShieldConsumed,
+		Lives:           ToLivesDTO(game.Lives(), now),
+		BonusInventory:  ToBonusInventoryDTO(game.BonusInventory()),
 		IsGameOver:      result.IsGameOver,
+		Milestone:       ToMilestoneDTO(result.Score),
 	}
 
-	// 7. Handle game over scenario
-	if result.IsGameOver {
-		// Update PersonalBest if new record
-		if game.IsNewPersonalBest() {
-			personalBest, err := uc.personalBestRepo.FindByPlayerAndCategory(game.PlayerID(), game.Category())
-			if err != nil && err != solo_marathon.ErrPersonalBestNotFound {
-				// Log error but don't fail the request
-				// TODO: Add logging
-			}
-
-			if personalBest == nil {
-				// First time playing this category - create new record
-				personalBest, err = solo_marathon.NewPersonalBest(
-					game.PlayerID(),
-					game.Category(),
-					game.MaxStreak(),
-					game.BaseScore(),
-					now,
-				)
-				if err == nil {
-					_ = uc.personalBestRepo.Save(personalBest)
-				}
-			} else {
-				// Update existing record
-				updated := personalBest.UpdateIfBetter(
-					game.MaxStreak(),
-					game.BaseScore(),
-					now,
-				)
-				if updated {
-					_ = uc.personalBestRepo.Save(personalBest)
-				}
-			}
-		}
-
-		// TODO: Get global rank from leaderboard repository
-		var globalRank *int = nil
-
+	// 7. Handle game over scenario (intermediate — continue offered)
+	if result.IsGameOver && result.GameOverData != nil {
 		output.GameOverResult = &GameOverResultDTO{
-			FinalStreak:       game.MaxStreak(),
-			IsNewPersonalBest: game.IsNewPersonalBest(),
-			PreviousRecord:    game.PersonalBestStreak(),
-			TotalBaseScore:    game.BaseScore(),
-			GlobalRank:        globalRank,
+			FinalScore:        result.GameOverData.FinalScore,
+			TotalQuestions:    result.GameOverData.TotalQuestions,
+			IsNewPersonalBest: result.GameOverData.IsNewRecord,
+			PreviousRecord:    game.PersonalBestScore(),
+			ContinueOffer:     ToContinueOfferDTO(result.GameOverData.ContinueOffer),
 		}
-	} else {
+	} else if !result.IsGameOver {
 		// Game continues - get next question
 		nextQuestion, err := game.GetCurrentQuestion()
 		if err == nil {
@@ -163,7 +122,7 @@ func (uc *SubmitMarathonAnswerUseCase) Execute(input SubmitMarathonAnswerInput) 
 			output.NextQuestion = &nextQuestionDTO
 
 			// Calculate time limit for next question
-			nextTimeLimit := GetTimeLimit(game.Difficulty(), game.CurrentStreak())
+			nextTimeLimit := GetTimeLimit(game.Difficulty(), game.QuestionNumber())
 			output.NextTimeLimit = &nextTimeLimit
 		}
 	}
@@ -173,7 +132,11 @@ func (uc *SubmitMarathonAnswerUseCase) Execute(input SubmitMarathonAnswerInput) 
 		return SubmitMarathonAnswerOutput{}, err
 	}
 
-	// 9. Publish domain events
+	// 9. Update PersonalBest if game is over and it's a new record
+	// Note: PersonalBest is updated when game transitions to completed (not game_over)
+	// This happens in CompleteGame or Abandon use case
+
+	// 10. Publish domain events
 	if uc.eventBus != nil {
 		events := game.Events()
 		for _, event := range events {

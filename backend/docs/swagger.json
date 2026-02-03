@@ -751,7 +751,7 @@
         },
         "/marathon/leaderboard": {
             "get": {
-                "description": "Get the leaderboard for a specific category or all categories, with optional time frame filter",
+                "description": "Get the leaderboard for a specific category or all categories",
                 "consumes": [
                     "application/json"
                 ],
@@ -1017,7 +1017,7 @@
         },
         "/marathon/{gameId}/answer": {
             "post": {
-                "description": "Submit an answer for the current question in a marathon game. Game continues if correct, loses life if incorrect.",
+                "description": "Submit an answer for the current question. Returns next question or game over with continue offer.",
                 "consumes": [
                     "application/json"
                 ],
@@ -1080,9 +1080,9 @@
                 }
             }
         },
-        "/marathon/{gameId}/hint": {
+        "/marathon/{gameId}/bonus": {
             "post": {
-                "description": "Use a hint to help with the current question. Available hints: fifty_fifty (remove 2 wrong answers), extra_time (+10 seconds), skip (skip question without losing life)",
+                "description": "Use a bonus for the current question. Available bonuses: shield (protect from wrong answer), fifty_fifty (remove 2 wrong answers), skip (skip question), freeze (+10 seconds)",
                 "consumes": [
                     "application/json"
                 ],
@@ -1092,7 +1092,7 @@
                 "tags": [
                     "marathon"
                 ],
-                "summary": "Use a hint in marathon mode",
+                "summary": "Use a bonus in marathon mode",
                 "parameters": [
                     {
                         "type": "string",
@@ -1102,24 +1102,24 @@
                         "required": true
                     },
                     {
-                        "description": "Use hint request",
+                        "description": "Use bonus request",
                         "name": "request",
                         "in": "body",
                         "required": true,
                         "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.UseMarathonHintRequest"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.UseMarathonBonusRequest"
                         }
                     }
                 ],
                 "responses": {
                     "200": {
-                        "description": "Hint result with remaining hints",
+                        "description": "Bonus result with remaining inventory",
                         "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.UseMarathonHintResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.UseMarathonBonusResponse"
                         }
                     },
                     "400": {
-                        "description": "Invalid request, hint not available, or wrong question",
+                        "description": "Invalid request, bonus not available, or wrong question",
                         "schema": {
                             "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
@@ -1132,6 +1132,71 @@
                     },
                     "404": {
                         "description": "Game or question not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/marathon/{gameId}/continue": {
+            "post": {
+                "description": "Pay coins or watch ad to continue playing after losing all lives. Resets lives to 1.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "marathon"
+                ],
+                "summary": "Continue a marathon game after game over",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID",
+                        "name": "gameId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Continue request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ContinueMarathonRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Game resumed with 1 life",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ContinueMarathonResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or game not in game_over state",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - game belongs to another player",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
                         "schema": {
                             "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
@@ -2287,6 +2352,56 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.ContinueMarathonData": {
+            "type": "object",
+            "required": [
+                "coinsDeducted",
+                "continueCount",
+                "game",
+                "nextContinueCost"
+            ],
+            "properties": {
+                "coinsDeducted": {
+                    "type": "integer"
+                },
+                "continueCount": {
+                    "type": "integer"
+                },
+                "game": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonGameDTO"
+                },
+                "nextContinueCost": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.ContinueMarathonRequest": {
+            "type": "object",
+            "required": [
+                "paymentMethod",
+                "playerId"
+            ],
+            "properties": {
+                "paymentMethod": {
+                    "description": "\"coins\" or \"ad\"",
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.ContinueMarathonResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.ContinueMarathonData"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.CreateCategoryData": {
             "type": "object",
             "required": [
@@ -2764,9 +2879,6 @@
                 },
                 "hasActiveGame": {
                     "type": "boolean"
-                },
-                "timeLimit": {
-                    "type": "integer"
                 }
             }
         },
@@ -3032,6 +3144,52 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.MarathonBonusInventoryDTO": {
+            "type": "object",
+            "required": [
+                "fiftyFifty",
+                "freeze",
+                "shield",
+                "skip"
+            ],
+            "properties": {
+                "fiftyFifty": {
+                    "type": "integer"
+                },
+                "freeze": {
+                    "type": "integer"
+                },
+                "shield": {
+                    "type": "integer"
+                },
+                "skip": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.MarathonBonusResultDTO": {
+            "type": "object",
+            "properties": {
+                "hiddenAnswerIds": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "newTimeLimit": {
+                    "type": "integer"
+                },
+                "nextQuestion": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
+                },
+                "nextTimeLimit": {
+                    "type": "integer"
+                },
+                "shieldActive": {
+                    "type": "boolean"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.MarathonCategoryDTO": {
             "type": "object",
             "required": [
@@ -3051,38 +3209,61 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.MarathonContinueOfferDTO": {
+            "type": "object",
+            "required": [
+                "available",
+                "continueCount",
+                "costCoins",
+                "hasAd"
+            ],
+            "properties": {
+                "available": {
+                    "type": "boolean"
+                },
+                "continueCount": {
+                    "type": "integer"
+                },
+                "costCoins": {
+                    "type": "integer"
+                },
+                "hasAd": {
+                    "type": "boolean"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.MarathonGameDTO": {
             "type": "object",
             "required": [
-                "baseScore",
+                "bonusInventory",
                 "category",
-                "currentStreak",
+                "continueCount",
                 "difficultyLevel",
-                "hints",
                 "id",
                 "lives",
-                "maxStreak",
                 "playerId",
-                "status"
+                "questionNumber",
+                "score",
+                "shieldActive",
+                "status",
+                "timeLimit",
+                "totalQuestions"
             ],
             "properties": {
-                "baseScore": {
-                    "type": "integer"
+                "bonusInventory": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonBonusInventoryDTO"
                 },
                 "category": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonCategoryDTO"
                 },
+                "continueCount": {
+                    "type": "integer"
+                },
                 "currentQuestion": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
                 },
-                "currentStreak": {
-                    "type": "integer"
-                },
                 "difficultyLevel": {
                     "type": "string"
-                },
-                "hints": {
-                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonHintsDTO"
                 },
                 "id": {
                     "type": "string"
@@ -3090,32 +3271,46 @@
                 "lives": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonLivesDTO"
                 },
-                "maxStreak": {
-                    "type": "integer"
-                },
-                "personalBestStreak": {
+                "personalBest": {
                     "type": "integer"
                 },
                 "playerId": {
                     "type": "string"
                 },
+                "questionNumber": {
+                    "type": "integer"
+                },
+                "score": {
+                    "description": "Total correct answers",
+                    "type": "integer"
+                },
+                "shieldActive": {
+                    "type": "boolean"
+                },
                 "status": {
+                    "description": "\"in_progress\", \"game_over\", \"completed\", \"abandoned\"",
                     "type": "string"
+                },
+                "timeLimit": {
+                    "type": "integer"
+                },
+                "totalQuestions": {
+                    "type": "integer"
                 }
             }
         },
         "internal_infrastructure_http_handlers.MarathonGameOverResultDTO": {
             "type": "object",
             "required": [
-                "finalStreak",
+                "finalScore",
                 "isNewPersonalBest",
-                "totalBaseScore"
+                "totalQuestions"
             ],
             "properties": {
-                "finalStreak": {
-                    "type": "integer"
+                "continueOffer": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonContinueOfferDTO"
                 },
-                "globalRank": {
+                "finalScore": {
                     "type": "integer"
                 },
                 "isNewPersonalBest": {
@@ -3124,46 +3319,7 @@
                 "previousRecord": {
                     "type": "integer"
                 },
-                "totalBaseScore": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_infrastructure_http_handlers.MarathonHintResultDTO": {
-            "type": "object",
-            "properties": {
-                "hiddenAnswerIds": {
-                    "type": "array",
-                    "items": {
-                        "type": "string"
-                    }
-                },
-                "newTimeLimit": {
-                    "type": "integer"
-                },
-                "nextQuestion": {
-                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
-                },
-                "nextTimeLimit": {
-                    "type": "integer"
-                }
-            }
-        },
-        "internal_infrastructure_http_handlers.MarathonHintsDTO": {
-            "type": "object",
-            "required": [
-                "extraTime",
-                "fiftyFifty",
-                "skip"
-            ],
-            "properties": {
-                "extraTime": {
-                    "type": "integer"
-                },
-                "fiftyFifty": {
-                    "type": "integer"
-                },
-                "skip": {
+                "totalQuestions": {
                     "type": "integer"
                 }
             }
@@ -3203,6 +3359,7 @@
             "type": "object",
             "required": [
                 "currentLives",
+                "label",
                 "maxLives",
                 "timeToNextLife"
             ],
@@ -3210,10 +3367,33 @@
                 "currentLives": {
                     "type": "integer"
                 },
+                "label": {
+                    "description": "\"❤️❤️🖤\"",
+                    "type": "string"
+                },
                 "maxLives": {
                     "type": "integer"
                 },
                 "timeToNextLife": {
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.MarathonMilestoneDTO": {
+            "type": "object",
+            "required": [
+                "current",
+                "next",
+                "remaining"
+            ],
+            "properties": {
+                "current": {
+                    "type": "integer"
+                },
+                "next": {
+                    "type": "integer"
+                },
+                "remaining": {
                     "type": "integer"
                 }
             }
@@ -3648,23 +3828,15 @@
         "internal_infrastructure_http_handlers.StartMarathonData": {
             "type": "object",
             "required": [
-                "firstQuestion",
                 "game",
-                "hasPersonalBest",
-                "timeLimit"
+                "hasPersonalBest"
             ],
             "properties": {
-                "firstQuestion": {
-                    "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
-                },
                 "game": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonGameDTO"
                 },
                 "hasPersonalBest": {
                     "type": "boolean"
-                },
-                "timeLimit": {
-                    "type": "integer"
                 }
             }
         },
@@ -3932,26 +4104,24 @@
         "internal_infrastructure_http_handlers.SubmitMarathonAnswerData": {
             "type": "object",
             "required": [
-                "basePoints",
+                "bonusInventory",
                 "correctAnswerId",
-                "currentStreak",
                 "difficultyLevel",
                 "isCorrect",
                 "isGameOver",
                 "lifeLost",
-                "maxStreak",
-                "remainingLives",
-                "timeTaken"
+                "lives",
+                "score",
+                "shieldConsumed",
+                "timeTaken",
+                "totalQuestions"
             ],
             "properties": {
-                "basePoints": {
-                    "type": "integer"
+                "bonusInventory": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonBonusInventoryDTO"
                 },
                 "correctAnswerId": {
                     "type": "string"
-                },
-                "currentStreak": {
-                    "type": "integer"
                 },
                 "difficultyLevel": {
                     "type": "string"
@@ -3968,8 +4138,11 @@
                 "lifeLost": {
                     "type": "boolean"
                 },
-                "maxStreak": {
-                    "type": "integer"
+                "lives": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonLivesDTO"
+                },
+                "milestone": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonMilestoneDTO"
                 },
                 "nextQuestion": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.QuestionDTO"
@@ -3977,10 +4150,16 @@
                 "nextTimeLimit": {
                     "type": "integer"
                 },
-                "remainingLives": {
+                "score": {
                     "type": "integer"
                 },
+                "shieldConsumed": {
+                    "type": "boolean"
+                },
                 "timeTaken": {
+                    "type": "integer"
+                },
+                "totalQuestions": {
                     "type": "integer"
                 }
             }
@@ -4051,34 +4230,39 @@
                 }
             }
         },
-        "internal_infrastructure_http_handlers.UseMarathonHintData": {
+        "internal_infrastructure_http_handlers.UseMarathonBonusData": {
             "type": "object",
             "required": [
-                "hintResult",
-                "hintType",
-                "remainingHints"
+                "bonusInventory",
+                "bonusResult",
+                "bonusType",
+                "remainingCount"
             ],
             "properties": {
-                "hintResult": {
-                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonHintResultDTO"
+                "bonusInventory": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonBonusInventoryDTO"
                 },
-                "hintType": {
+                "bonusResult": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonBonusResultDTO"
+                },
+                "bonusType": {
                     "type": "string"
                 },
-                "remainingHints": {
+                "remainingCount": {
                     "type": "integer"
                 }
             }
         },
-        "internal_infrastructure_http_handlers.UseMarathonHintRequest": {
+        "internal_infrastructure_http_handlers.UseMarathonBonusRequest": {
             "type": "object",
             "required": [
-                "hintType",
+                "bonusType",
                 "playerId",
                 "questionId"
             ],
             "properties": {
-                "hintType": {
+                "bonusType": {
+                    "description": "\"shield\", \"fifty_fifty\", \"skip\", \"freeze\"",
                     "type": "string"
                 },
                 "playerId": {
@@ -4089,14 +4273,14 @@
                 }
             }
         },
-        "internal_infrastructure_http_handlers.UseMarathonHintResponse": {
+        "internal_infrastructure_http_handlers.UseMarathonBonusResponse": {
             "type": "object",
             "required": [
                 "data"
             ],
             "properties": {
                 "data": {
-                    "$ref": "#/definitions/internal_infrastructure_http_handlers.UseMarathonHintData"
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.UseMarathonBonusData"
                 }
             }
         },

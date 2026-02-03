@@ -55,7 +55,7 @@ Questions get harder over time:
 
 ### 4. Continue Mechanic (Monetization)
 At game over:
-- **1 continue:** 200 coins OR Rewarded Ad → +1 life
+- **1 continue:** 200 coins OR Rewarded Ad → lives reset to 1
 - Multiple continues possible (escalating cost)
 
 ## Leaderboards
@@ -72,9 +72,10 @@ Weekly resets → Fresh competition every week.
 
 | Feature | Cost | Effect |
 |---------|------|--------|
-| Continue (1st) | 200 coins / Ad | +1 life |
-| Continue (2nd) | 400 coins / Ad | +1 life |
-| Continue (3rd+) | 600 coins / Ad | +1 life |
+| Continue (1st) | 200 coins / Ad | Lives reset to 1 |
+| Continue (2nd) | 400 coins / Ad | Lives reset to 1 |
+| Continue (3rd) | 600 coins / Ad | Lives reset to 1 |
+| Continue (4th+) | 800+ coins (no Ad) | Lives reset to 1 |
 | Bonus pack | 500 coins | 3 Shields, 5 Freezes |
 
 ## Success Metrics

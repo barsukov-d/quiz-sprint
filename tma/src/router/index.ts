@@ -11,6 +11,11 @@ import HomeView from '../views/HomeView.vue'
 // Daily Challenge Views
 import DailyChallengePlayView from '../views/DailyChallenge/DailyChallengePlayView.vue'
 import DailyChallengeResultsView from '../views/DailyChallenge/DailyChallengeResultsView.vue'
+
+// Marathon Views
+import MarathonCategoryView from '../views/Marathon/MarathonCategoryView.vue'
+import MarathonPlayView from '../views/Marathon/MarathonPlayView.vue'
+import MarathonGameOverView from '../views/Marathon/MarathonGameOverView.vue'
 // DailyChallengeReviewView removed — feedback is now shown inline during gameplay
 // TODO: Import DailyChallengeIntroView when created
 // import DailyChallengeIntroView from '../views/DailyChallenge/DailyChallengeIntroView.vue'
@@ -72,6 +77,27 @@ const router = createRouter({
 					path: 'results',
 					name: 'daily-challenge-results',
 					component: DailyChallengeResultsView,
+				},
+			],
+		},
+		// Marathon Routes
+		{
+			path: '/marathon',
+			children: [
+				{
+					path: 'category',
+					name: 'marathon-category',
+					component: MarathonCategoryView,
+				},
+				{
+					path: 'play',
+					name: 'marathon-play',
+					component: MarathonPlayView,
+				},
+				{
+					path: 'gameover',
+					name: 'marathon-gameover',
+					component: MarathonGameOverView,
 				},
 			],
 		},

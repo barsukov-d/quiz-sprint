@@ -42,7 +42,9 @@ export function useAuth() {
 			console.log('🔍 initData from SDK:', launchParams.initData)
 
 			let rawData: string | undefined = launchParams.initDataRaw as string | undefined
-			let parsedData: ParsedInitData | undefined = launchParams.initData as ParsedInitData | undefined
+			let parsedData: ParsedInitData | undefined = launchParams.initData as
+				| ParsedInitData
+				| undefined
 
 			// 🔧 WORKAROUND: Если SDK не вернул initDataRaw, парсим из hash вручную
 			// Telegram Desktop передает данные в hash параметрах

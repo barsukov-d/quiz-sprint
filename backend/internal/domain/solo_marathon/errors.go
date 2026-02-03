@@ -15,10 +15,15 @@ var (
 	// Lives errors
 	ErrNoLivesRemaining = errors.New("no lives remaining")
 
-	// Hints errors
-	ErrNoHintsAvailable = errors.New("no hints available")
-	ErrInvalidHintType  = errors.New("invalid hint type")
-	ErrHintAlreadyUsed  = errors.New("hint already used for this question")
+	// Bonus errors
+	ErrNoBonusesAvailable = errors.New("no bonuses available")
+	ErrInvalidBonusType   = errors.New("invalid bonus type")
+	ErrBonusAlreadyUsed   = errors.New("bonus already used for this question")
+	ErrShieldAlreadyActive = errors.New("shield is already active")
+
+	// Continue errors
+	ErrContinueNotAvailable = errors.New("continue not available in current game state")
+	ErrInsufficientCoins    = errors.New("insufficient coins for continue")
 
 	// Question errors
 	ErrInvalidQuestion = errors.New("invalid question")

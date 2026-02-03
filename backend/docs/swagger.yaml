@@ -215,6 +215,40 @@ definitions:
     - marathonBonuses
     - pvpTickets
     type: object
+  internal_infrastructure_http_handlers.ContinueMarathonData:
+    properties:
+      coinsDeducted:
+        type: integer
+      continueCount:
+        type: integer
+      game:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonGameDTO'
+      nextContinueCost:
+        type: integer
+    required:
+    - coinsDeducted
+    - continueCount
+    - game
+    - nextContinueCost
+    type: object
+  internal_infrastructure_http_handlers.ContinueMarathonRequest:
+    properties:
+      paymentMethod:
+        description: '"coins" or "ad"'
+        type: string
+      playerId:
+        type: string
+    required:
+    - paymentMethod
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.ContinueMarathonResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.ContinueMarathonData'
+    required:
+    - data
+    type: object
   internal_infrastructure_http_handlers.CreateCategoryData:
     properties:
       category:
@@ -541,8 +575,6 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonGameDTO'
       hasActiveGame:
         type: boolean
-      timeLimit:
-        type: integer
     required:
     - hasActiveGame
     type: object
@@ -723,6 +755,37 @@ definitions:
     - data
     - total
     type: object
+  internal_infrastructure_http_handlers.MarathonBonusInventoryDTO:
+    properties:
+      fiftyFifty:
+        type: integer
+      freeze:
+        type: integer
+      shield:
+        type: integer
+      skip:
+        type: integer
+    required:
+    - fiftyFifty
+    - freeze
+    - shield
+    - skip
+    type: object
+  internal_infrastructure_http_handlers.MarathonBonusResultDTO:
+    properties:
+      hiddenAnswerIds:
+        items:
+          type: string
+        type: array
+      newTimeLimit:
+        type: integer
+      nextQuestion:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
+      nextTimeLimit:
+        type: integer
+      shieldActive:
+        type: boolean
+    type: object
   internal_infrastructure_http_handlers.MarathonCategoryDTO:
     properties:
       id:
@@ -736,86 +799,87 @@ definitions:
     - isAllCategories
     - name
     type: object
+  internal_infrastructure_http_handlers.MarathonContinueOfferDTO:
+    properties:
+      available:
+        type: boolean
+      continueCount:
+        type: integer
+      costCoins:
+        type: integer
+      hasAd:
+        type: boolean
+    required:
+    - available
+    - continueCount
+    - costCoins
+    - hasAd
+    type: object
   internal_infrastructure_http_handlers.MarathonGameDTO:
     properties:
-      baseScore:
-        type: integer
+      bonusInventory:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonBonusInventoryDTO'
       category:
         $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonCategoryDTO'
+      continueCount:
+        type: integer
       currentQuestion:
         $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
-      currentStreak:
-        type: integer
       difficultyLevel:
         type: string
-      hints:
-        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonHintsDTO'
       id:
         type: string
       lives:
         $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonLivesDTO'
-      maxStreak:
-        type: integer
-      personalBestStreak:
+      personalBest:
         type: integer
       playerId:
         type: string
+      questionNumber:
+        type: integer
+      score:
+        description: Total correct answers
+        type: integer
+      shieldActive:
+        type: boolean
       status:
+        description: '"in_progress", "game_over", "completed", "abandoned"'
         type: string
+      timeLimit:
+        type: integer
+      totalQuestions:
+        type: integer
     required:
-    - baseScore
+    - bonusInventory
     - category
-    - currentStreak
+    - continueCount
     - difficultyLevel
-    - hints
     - id
     - lives
-    - maxStreak
     - playerId
+    - questionNumber
+    - score
+    - shieldActive
     - status
+    - timeLimit
+    - totalQuestions
     type: object
   internal_infrastructure_http_handlers.MarathonGameOverResultDTO:
     properties:
-      finalStreak:
-        type: integer
-      globalRank:
+      continueOffer:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonContinueOfferDTO'
+      finalScore:
         type: integer
       isNewPersonalBest:
         type: boolean
       previousRecord:
         type: integer
-      totalBaseScore:
+      totalQuestions:
         type: integer
     required:
-    - finalStreak
+    - finalScore
     - isNewPersonalBest
-    - totalBaseScore
-    type: object
-  internal_infrastructure_http_handlers.MarathonHintResultDTO:
-    properties:
-      hiddenAnswerIds:
-        items:
-          type: string
-        type: array
-      newTimeLimit:
-        type: integer
-      nextQuestion:
-        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
-      nextTimeLimit:
-        type: integer
-    type: object
-  internal_infrastructure_http_handlers.MarathonHintsDTO:
-    properties:
-      extraTime:
-        type: integer
-      fiftyFifty:
-        type: integer
-      skip:
-        type: integer
-    required:
-    - extraTime
-    - fiftyFifty
-    - skip
+    - totalQuestions
     type: object
   internal_infrastructure_http_handlers.MarathonLeaderboardEntryDTO:
     properties:
@@ -843,14 +907,31 @@ definitions:
     properties:
       currentLives:
         type: integer
+      label:
+        description: "\"❤️❤️\U0001F5A4\""
+        type: string
       maxLives:
         type: integer
       timeToNextLife:
         type: integer
     required:
     - currentLives
+    - label
     - maxLives
     - timeToNextLife
+    type: object
+  internal_infrastructure_http_handlers.MarathonMilestoneDTO:
+    properties:
+      current:
+        type: integer
+      next:
+        type: integer
+      remaining:
+        type: integer
+    required:
+    - current
+    - next
+    - remaining
     type: object
   internal_infrastructure_http_handlers.MarathonPersonalBestDTO:
     properties:
@@ -1151,19 +1232,13 @@ definitions:
     type: object
   internal_infrastructure_http_handlers.StartMarathonData:
     properties:
-      firstQuestion:
-        $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
       game:
         $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonGameDTO'
       hasPersonalBest:
         type: boolean
-      timeLimit:
-        type: integer
     required:
-    - firstQuestion
     - game
     - hasPersonalBest
-    - timeLimit
     type: object
   internal_infrastructure_http_handlers.StartMarathonRequest:
     properties:
@@ -1347,12 +1422,10 @@ definitions:
     type: object
   internal_infrastructure_http_handlers.SubmitMarathonAnswerData:
     properties:
-      basePoints:
-        type: integer
+      bonusInventory:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonBonusInventoryDTO'
       correctAnswerId:
         type: string
-      currentStreak:
-        type: integer
       difficultyLevel:
         type: string
       gameOverResult:
@@ -1363,27 +1436,34 @@ definitions:
         type: boolean
       lifeLost:
         type: boolean
-      maxStreak:
-        type: integer
+      lives:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonLivesDTO'
+      milestone:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonMilestoneDTO'
       nextQuestion:
         $ref: '#/definitions/internal_infrastructure_http_handlers.QuestionDTO'
       nextTimeLimit:
         type: integer
-      remainingLives:
+      score:
         type: integer
+      shieldConsumed:
+        type: boolean
       timeTaken:
         type: integer
+      totalQuestions:
+        type: integer
     required:
-    - basePoints
+    - bonusInventory
     - correctAnswerId
-    - currentStreak
     - difficultyLevel
     - isCorrect
     - isGameOver
     - lifeLost
-    - maxStreak
-    - remainingLives
+    - lives
+    - score
+    - shieldConsumed
     - timeTaken
+    - totalQuestions
     type: object
   internal_infrastructure_http_handlers.SubmitMarathonAnswerRequest:
     properties:
@@ -1429,36 +1509,40 @@ definitions:
     required:
     - data
     type: object
-  internal_infrastructure_http_handlers.UseMarathonHintData:
+  internal_infrastructure_http_handlers.UseMarathonBonusData:
     properties:
-      hintResult:
-        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonHintResultDTO'
-      hintType:
+      bonusInventory:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonBonusInventoryDTO'
+      bonusResult:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonBonusResultDTO'
+      bonusType:
         type: string
-      remainingHints:
+      remainingCount:
         type: integer
     required:
-    - hintResult
-    - hintType
-    - remainingHints
+    - bonusInventory
+    - bonusResult
+    - bonusType
+    - remainingCount
     type: object
-  internal_infrastructure_http_handlers.UseMarathonHintRequest:
+  internal_infrastructure_http_handlers.UseMarathonBonusRequest:
     properties:
-      hintType:
+      bonusType:
+        description: '"shield", "fifty_fifty", "skip", "freeze"'
         type: string
       playerId:
         type: string
       questionId:
         type: string
     required:
-    - hintType
+    - bonusType
     - playerId
     - questionId
     type: object
-  internal_infrastructure_http_handlers.UseMarathonHintResponse:
+  internal_infrastructure_http_handlers.UseMarathonBonusResponse:
     properties:
       data:
-        $ref: '#/definitions/internal_infrastructure_http_handlers.UseMarathonHintData'
+        $ref: '#/definitions/internal_infrastructure_http_handlers.UseMarathonBonusData'
     required:
     - data
     type: object
@@ -2036,8 +2120,8 @@ paths:
     post:
       consumes:
       - application/json
-      description: Submit an answer for the current question in a marathon game. Game
-        continues if correct, loses life if incorrect.
+      description: Submit an answer for the current question. Returns next question
+        or game over with continue offer.
       parameters:
       - description: Game ID
         in: path
@@ -2076,34 +2160,34 @@ paths:
       summary: Submit an answer in marathon mode
       tags:
       - marathon
-  /marathon/{gameId}/hint:
+  /marathon/{gameId}/bonus:
     post:
       consumes:
       - application/json
-      description: 'Use a hint to help with the current question. Available hints:
-        fifty_fifty (remove 2 wrong answers), extra_time (+10 seconds), skip (skip
-        question without losing life)'
+      description: 'Use a bonus for the current question. Available bonuses: shield
+        (protect from wrong answer), fifty_fifty (remove 2 wrong answers), skip (skip
+        question), freeze (+10 seconds)'
       parameters:
       - description: Game ID
         in: path
         name: gameId
         required: true
         type: string
-      - description: Use hint request
+      - description: Use bonus request
         in: body
         name: request
         required: true
         schema:
-          $ref: '#/definitions/internal_infrastructure_http_handlers.UseMarathonHintRequest'
+          $ref: '#/definitions/internal_infrastructure_http_handlers.UseMarathonBonusRequest'
       produces:
       - application/json
       responses:
         "200":
-          description: Hint result with remaining hints
+          description: Bonus result with remaining inventory
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handlers.UseMarathonHintResponse'
+            $ref: '#/definitions/internal_infrastructure_http_handlers.UseMarathonBonusResponse'
         "400":
-          description: Invalid request, hint not available, or wrong question
+          description: Invalid request, bonus not available, or wrong question
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "401":
@@ -2118,15 +2202,58 @@ paths:
           description: Internal server error
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
-      summary: Use a hint in marathon mode
+      summary: Use a bonus in marathon mode
+      tags:
+      - marathon
+  /marathon/{gameId}/continue:
+    post:
+      consumes:
+      - application/json
+      description: Pay coins or watch ad to continue playing after losing all lives.
+        Resets lives to 1.
+      parameters:
+      - description: Game ID
+        in: path
+        name: gameId
+        required: true
+        type: string
+      - description: Continue request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.ContinueMarathonRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Game resumed with 1 life
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ContinueMarathonResponse'
+        "400":
+          description: Invalid request or game not in game_over state
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized - game belongs to another player
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Game not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Continue a marathon game after game over
       tags:
       - marathon
   /marathon/leaderboard:
     get:
       consumes:
       - application/json
-      description: Get the leaderboard for a specific category or all categories,
-        with optional time frame filter
+      description: Get the leaderboard for a specific category or all categories
       parameters:
       - description: Category ID (empty or 'all' for all categories)
         in: query

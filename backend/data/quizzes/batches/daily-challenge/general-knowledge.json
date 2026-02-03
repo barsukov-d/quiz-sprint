@@ -1,0 +1,305 @@
+{
+  "batch": {
+    "version": 1,
+    "generated": "2026-02-03T00:00:00Z",
+    "cat": "daily-challenge",
+    "tags": ["difficulty:medium", "topic:general-knowledge"]
+  },
+  "quizzes": [
+    {
+      "t": "Science & Nature",
+      "d": "Test your knowledge of the natural world, physics, chemistry, and biology",
+      "tags": ["topic:science"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {
+          "t": "What planet is known as the Red Planet?",
+          "a": ["Venus", "Mars", "Jupiter", "Saturn"],
+          "c": 1
+        },
+        {
+          "t": "What gas do plants absorb from the atmosphere?",
+          "a": ["Oxygen", "Nitrogen", "Carbon dioxide", "Hydrogen"],
+          "c": 2
+        },
+        {
+          "t": "How many bones are in the adult human body?",
+          "a": ["186", "206", "226", "256"],
+          "c": 1
+        },
+        {
+          "t": "What is the chemical symbol for gold?",
+          "a": ["Go", "Gd", "Au", "Ag"],
+          "c": 2
+        },
+        {
+          "t": "What is the hardest natural substance on Earth?",
+          "a": ["Granite", "Iron", "Diamond", "Quartz"],
+          "c": 2
+        },
+        {
+          "t": "Which organ in the human body is the largest?",
+          "a": ["Liver", "Brain", "Skin", "Heart"],
+          "c": 2
+        },
+        {
+          "t": "What is the speed of light approximately?",
+          "a": ["300,000 km/s", "150,000 km/s", "500,000 km/s", "1,000,000 km/s"],
+          "c": 0
+        },
+        {
+          "t": "What element does 'O' represent on the periodic table?",
+          "a": ["Osmium", "Oganesson", "Oxygen", "Gold"],
+          "c": 2
+        },
+        {
+          "t": "How many chromosomes do humans have?",
+          "a": ["23", "44", "46", "48"],
+          "c": 2
+        },
+        {
+          "t": "What is the most abundant gas in Earth's atmosphere?",
+          "a": ["Oxygen", "Carbon dioxide", "Nitrogen", "Argon"],
+          "c": 2
+        }
+      ]
+    },
+    {
+      "t": "World History",
+      "d": "Journey through major historical events, figures, and civilizations",
+      "tags": ["topic:history"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {
+          "t": "In what year did World War II end?",
+          "a": ["1943", "1944", "1945", "1946"],
+          "c": 2
+        },
+        {
+          "t": "Who was the first President of the United States?",
+          "a": ["Thomas Jefferson", "John Adams", "George Washington", "Benjamin Franklin"],
+          "c": 2
+        },
+        {
+          "t": "The ancient city of Rome was built on how many hills?",
+          "a": ["5", "6", "7", "8"],
+          "c": 2
+        },
+        {
+          "t": "Which empire was ruled by Genghis Khan?",
+          "a": ["Ottoman Empire", "Roman Empire", "Mongol Empire", "Persian Empire"],
+          "c": 2
+        },
+        {
+          "t": "In which year did the Berlin Wall fall?",
+          "a": ["1987", "1988", "1989", "1990"],
+          "c": 2
+        },
+        {
+          "t": "What was the name of the ship that brought the Pilgrims to America?",
+          "a": ["Santa Maria", "Mayflower", "Victoria", "Endeavour"],
+          "c": 1
+        },
+        {
+          "t": "Which ancient civilization built the Machu Picchu complex?",
+          "a": ["Maya", "Aztec", "Inca", "Olmec"],
+          "c": 2
+        },
+        {
+          "t": "Who discovered penicillin?",
+          "a": ["Louis Pasteur", "Alexander Fleming", "Joseph Lister", "Robert Koch"],
+          "c": 1
+        },
+        {
+          "t": "The French Revolution began in which year?",
+          "a": ["1776", "1789", "1799", "1804"],
+          "c": 1
+        },
+        {
+          "t": "Which country was the first to put a human in space?",
+          "a": ["United States", "Soviet Union", "China", "France"],
+          "c": 1
+        }
+      ]
+    },
+    {
+      "t": "Geography & Travel",
+      "d": "Explore the world through questions about countries, capitals, and landmarks",
+      "tags": ["topic:geography"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {
+          "t": "What is the longest river in the world?",
+          "a": ["Amazon", "Nile", "Yangtze", "Mississippi"],
+          "c": 1
+        },
+        {
+          "t": "Which country has the most time zones?",
+          "a": ["Russia", "USA", "France", "China"],
+          "c": 2
+        },
+        {
+          "t": "What is the smallest country in the world?",
+          "a": ["Monaco", "Vatican City", "San Marino", "Liechtenstein"],
+          "c": 1
+        },
+        {
+          "t": "On which continent is the Sahara Desert located?",
+          "a": ["Asia", "South America", "Africa", "Australia"],
+          "c": 2
+        },
+        {
+          "t": "What is the capital of Australia?",
+          "a": ["Sydney", "Melbourne", "Canberra", "Brisbane"],
+          "c": 2
+        },
+        {
+          "t": "Which ocean is the largest?",
+          "a": ["Atlantic", "Indian", "Pacific", "Arctic"],
+          "c": 2
+        },
+        {
+          "t": "Mount Everest is located on the border of which two countries?",
+          "a": ["India and China", "Nepal and China", "Nepal and India", "Tibet and India"],
+          "c": 1
+        },
+        {
+          "t": "What is the largest island in the world?",
+          "a": ["Madagascar", "Borneo", "Greenland", "New Guinea"],
+          "c": 2
+        },
+        {
+          "t": "Which European city is known as the City of Light?",
+          "a": ["London", "Rome", "Paris", "Barcelona"],
+          "c": 2
+        },
+        {
+          "t": "How many continents are there on Earth?",
+          "a": ["5", "6", "7", "8"],
+          "c": 2
+        }
+      ]
+    },
+    {
+      "t": "Pop Culture & Entertainment",
+      "d": "Movies, music, sports, and everything pop culture",
+      "tags": ["topic:entertainment"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {
+          "t": "Who directed the movie 'Jurassic Park'?",
+          "a": ["James Cameron", "Steven Spielberg", "George Lucas", "Ridley Scott"],
+          "c": 1
+        },
+        {
+          "t": "Which band released the album 'Abbey Road'?",
+          "a": ["The Rolling Stones", "The Beatles", "Pink Floyd", "Led Zeppelin"],
+          "c": 1
+        },
+        {
+          "t": "In which sport would you perform a slam dunk?",
+          "a": ["Volleyball", "Tennis", "Basketball", "Baseball"],
+          "c": 2
+        },
+        {
+          "t": "What is the highest-grossing film franchise of all time?",
+          "a": ["Star Wars", "Harry Potter", "Marvel Cinematic Universe", "James Bond"],
+          "c": 2
+        },
+        {
+          "t": "Which artist painted the Mona Lisa?",
+          "a": ["Michelangelo", "Raphael", "Leonardo da Vinci", "Donatello"],
+          "c": 2
+        },
+        {
+          "t": "How many players are on a standard soccer team on the field?",
+          "a": ["9", "10", "11", "12"],
+          "c": 2
+        },
+        {
+          "t": "What instrument has 88 keys?",
+          "a": ["Guitar", "Piano", "Organ", "Accordion"],
+          "c": 1
+        },
+        {
+          "t": "Who wrote the Harry Potter book series?",
+          "a": ["J.R.R. Tolkien", "C.S. Lewis", "J.K. Rowling", "Stephen King"],
+          "c": 2
+        },
+        {
+          "t": "Which country hosted the first modern Olympic Games in 1896?",
+          "a": ["France", "United States", "Greece", "United Kingdom"],
+          "c": 2
+        },
+        {
+          "t": "What is the name of the fictional continent in Game of Thrones?",
+          "a": ["Middle-earth", "Narnia", "Westeros", "Azeroth"],
+          "c": 2
+        }
+      ]
+    },
+    {
+      "t": "Food & Culture",
+      "d": "Culinary traditions, famous dishes, and cultural facts from around the world",
+      "tags": ["topic:food"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {
+          "t": "Which country is the origin of sushi?",
+          "a": ["China", "Japan", "Korea", "Thailand"],
+          "c": 1
+        },
+        {
+          "t": "What is the main ingredient in guacamole?",
+          "a": ["Tomato", "Avocado", "Pepper", "Lime"],
+          "c": 1
+        },
+        {
+          "t": "Which Italian city is considered the birthplace of pizza?",
+          "a": ["Rome", "Milan", "Naples", "Florence"],
+          "c": 2
+        },
+        {
+          "t": "What is the most consumed beverage in the world after water?",
+          "a": ["Coffee", "Tea", "Milk", "Beer"],
+          "c": 1
+        },
+        {
+          "t": "Kimchi is a traditional dish from which country?",
+          "a": ["Japan", "China", "South Korea", "Vietnam"],
+          "c": 2
+        },
+        {
+          "t": "What spice gives curry its yellow color?",
+          "a": ["Paprika", "Saffron", "Turmeric", "Cumin"],
+          "c": 2
+        },
+        {
+          "t": "Which nut is used to make marzipan?",
+          "a": ["Walnut", "Almond", "Cashew", "Pistachio"],
+          "c": 1
+        },
+        {
+          "t": "What is the traditional Japanese rice wine called?",
+          "a": ["Soju", "Sake", "Baijiu", "Mirin"],
+          "c": 1
+        },
+        {
+          "t": "Which country is the world's largest producer of coffee?",
+          "a": ["Colombia", "Vietnam", "Brazil", "Ethiopia"],
+          "c": 2
+        },
+        {
+          "t": "What type of pastry is a croissant?",
+          "a": ["Puff pastry", "Shortcrust", "Laminated dough", "Choux pastry"],
+          "c": 2
+        }
+      ]
+    }
+  ]
+}
