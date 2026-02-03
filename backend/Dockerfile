@@ -53,6 +53,11 @@ RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
     -o /app/quiz-sprint-import \
     ./cmd/import
 
+RUN CGO_ENABLED=0 GOOS=linux GOARCH=amd64 go build \
+    -ldflags="-s -w" \
+    -o /app/quiz-sprint-export \
+    ./cmd/export
+
 # ==========================================
 # Stage 4: Production - Minimal runtime
 # ==========================================
@@ -71,6 +76,7 @@ WORKDIR /app
 # Copy binaries, migrations, and quiz data from builder
 COPY --from=builder /app/quiz-sprint-api .
 COPY --from=builder /app/quiz-sprint-import .
+COPY --from=builder /app/quiz-sprint-export .
 COPY --from=builder /app/migrations ./migrations
 COPY --from=builder /app/data ./data
 

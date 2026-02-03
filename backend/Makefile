@@ -110,6 +110,47 @@ docker-import-quiz: ## Import a single quiz via Docker (usage: make docker-impor
 	docker compose exec api /app/quiz-sprint-import -file=/app/data/quizzes/$(FILE)
 
 # ============================================
+# Quiz Export Commands
+# ============================================
+
+.PHONY: export-all-quizzes
+export-all-quizzes: ## Export all quizzes from DB to JSON files (individual)
+	go run cmd/export/main.go -dir=data/quizzes/exported
+
+.PHONY: export-all-quizzes-batch
+export-all-quizzes-batch: ## Export all quizzes as a single batch JSON file
+	go run cmd/export/main.go -dir=data/quizzes/exported -batch
+
+.PHONY: export-quiz
+export-quiz: ## Export a single quiz by ID (usage: make export-quiz ID=<uuid>)
+	@if [ -z "$(ID)" ]; then \
+		echo "Error: ID parameter is required"; \
+		echo "Usage: make export-quiz ID=<quiz-uuid>"; \
+		exit 1; \
+	fi
+	go run cmd/export/main.go -id=$(ID) -dir=data/quizzes/exported
+
+.PHONY: list-quizzes
+list-quizzes: ## List all quizzes in the database
+	go run cmd/export/main.go -list
+
+# ============================================
+# Docker Export Commands (staging/production)
+# ============================================
+
+.PHONY: docker-export-all
+docker-export-all: ## Export all quizzes via Docker (individual files)
+	docker compose exec api /app/quiz-sprint-export -dir=/app/data/quizzes/exported
+
+.PHONY: docker-export-all-batch
+docker-export-all-batch: ## Export all quizzes via Docker (single batch file)
+	docker compose exec api /app/quiz-sprint-export -dir=/app/data/quizzes/exported -batch
+
+.PHONY: docker-list-quizzes
+docker-list-quizzes: ## List all quizzes via Docker
+	docker compose exec api /app/quiz-sprint-export -list
+
+# ============================================
 # Daily Challenge Debug Commands
 # ============================================
 
