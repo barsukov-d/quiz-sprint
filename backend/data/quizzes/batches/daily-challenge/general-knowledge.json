@@ -2,7 +2,7 @@
   "batch": {
     "version": 1,
     "generated": "2026-02-03T00:00:00Z",
-    "cat": "general-knowledge",
+    "cat": "daily-challenge",
     "tags": ["difficulty:medium", "format:daily-challenge"]
   },
   "quizzes": [

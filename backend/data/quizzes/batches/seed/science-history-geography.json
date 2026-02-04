@@ -1,0 +1,149 @@
+{
+  "batch": {
+    "version": 1,
+    "generated": "2024-01-01T00:00:00Z",
+    "tags": ["difficulty:medium"]
+  },
+  "quizzes": [
+    {
+      "t": "Physics Fundamentals",
+      "d": "Explore classical mechanics, energy, and forces in our physical world",
+      "cat": "science",
+      "tags": ["topic:physics"],
+      "l": 360,
+      "p": 70,
+      "q": [
+        {
+          "t": "What is Newton's First Law of Motion?",
+          "a": ["Force equals mass times acceleration", "Every action has an equal and opposite reaction", "Energy cannot be created or destroyed", "An object at rest stays at rest unless acted upon by a force"],
+          "c": 3
+        },
+        {
+          "t": "What is the speed of light in vacuum?",
+          "a": ["150,000,000 meters per second", "500,000,000 meters per second", "299,792,458 meters per second", "1,000,000 meters per second"],
+          "c": 2
+        },
+        {
+          "t": "What is kinetic energy?",
+          "a": ["Energy stored in position", "Energy of motion", "Heat energy", "Chemical energy"],
+          "c": 1
+        },
+        {
+          "t": "What is gravity?",
+          "a": ["A force that attracts objects with mass toward each other", "A type of energy", "A chemical reaction", "A magnetic force"],
+          "c": 0
+        },
+        {
+          "t": "What is the formula for force?",
+          "a": ["E = mc\u00b2", "P = mv", "W = Fd", "F = ma (Force equals mass times acceleration)"],
+          "c": 3
+        }
+      ]
+    },
+    {
+      "t": "World History Milestones",
+      "d": "Journey through major historical events that shaped our modern world",
+      "cat": "history",
+      "tags": ["topic:world-history"],
+      "l": 420,
+      "p": 65,
+      "q": [
+        {
+          "t": "In what year did World War II end?",
+          "a": ["1945", "1944", "1946", "1943"],
+          "c": 0
+        },
+        {
+          "t": "Who was the first president of the United States?",
+          "a": ["Thomas Jefferson", "George Washington", "Abraham Lincoln", "John Adams"],
+          "c": 1
+        },
+        {
+          "t": "When did the Berlin Wall fall?",
+          "a": ["1991", "1987", "1990", "1989"],
+          "c": 3
+        },
+        {
+          "t": "What ancient civilization built the pyramids?",
+          "a": ["Ancient Greeks", "Ancient Romans", "Ancient Egyptians", "Maya"],
+          "c": 2
+        },
+        {
+          "t": "Who wrote the Communist Manifesto?",
+          "a": ["Karl Marx and Friedrich Engels", "Vladimir Lenin", "Joseph Stalin", "Mao Zedong"],
+          "c": 0
+        }
+      ]
+    },
+    {
+      "t": "Countries & Capitals Quiz",
+      "d": "Test your knowledge of world capitals, countries, and their locations",
+      "cat": "geography",
+      "tags": ["topic:capitals"],
+      "l": 180,
+      "p": 60,
+      "q": [
+        {
+          "t": "What is the capital of France?",
+          "a": ["London", "Berlin", "Paris", "Madrid"],
+          "c": 2
+        },
+        {
+          "t": "What is the capital of Japan?",
+          "a": ["Seoul", "Beijing", "Bangkok", "Tokyo"],
+          "c": 3
+        },
+        {
+          "t": "What is the capital of Australia?",
+          "a": ["Canberra", "Sydney", "Melbourne", "Brisbane"],
+          "c": 0
+        },
+        {
+          "t": "Which country has the largest population?",
+          "a": ["China", "India", "United States", "Indonesia"],
+          "c": 1
+        },
+        {
+          "t": "What is the smallest country in the world?",
+          "a": ["Monaco", "Vatican City", "San Marino", "Liechtenstein"],
+          "c": 1
+        }
+      ]
+    },
+    {
+      "t": "Arts & Culture Trivia",
+      "d": "Explore art, music, literature, and cultural achievements throughout history",
+      "cat": "general-knowledge",
+      "tags": ["topic:arts"],
+      "l": 300,
+      "p": 65,
+      "q": [
+        {
+          "t": "Who painted the Mona Lisa?",
+          "a": ["Michelangelo", "Leonardo da Vinci", "Raphael", "Donatello"],
+          "c": 1
+        },
+        {
+          "t": "Who wrote \"Romeo and Juliet\"?",
+          "a": ["Charles Dickens", "Jane Austen", "William Shakespeare", "Mark Twain"],
+          "c": 2
+        },
+        {
+          "t": "What is the largest museum in the world?",
+          "a": ["The British Museum", "The Metropolitan Museum of Art", "The Hermitage", "The Louvre"],
+          "c": 3
+        },
+        {
+          "t": "Who composed the \"Four Seasons\"?",
+          "a": ["Antonio Vivaldi", "Wolfgang Amadeus Mozart", "Ludwig van Beethoven", "Johann Sebastian Bach"],
+          "c": 0
+        },
+        {
+          "t": "In which city is the Sistine Chapel located?",
+          "a": ["Rome", "Florence", "Vatican City", "Venice"],
+          "c": 2
+        }
+      ]
+    }
+  ]
+}

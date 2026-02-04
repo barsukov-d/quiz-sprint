@@ -1,0 +1,78 @@
+{
+  "batch": {
+    "version": 1,
+    "generated": "2024-01-01T00:00:00Z",
+    "cat": "programming",
+    "tags": ["difficulty:medium"]
+  },
+  "quizzes": [
+    {
+      "t": "JavaScript ES6+ Fundamentals",
+      "d": "Master modern JavaScript features including arrow functions, promises, async/await, and destructuring",
+      "tags": ["language:javascript", "topic:es6"],
+      "l": 300,
+      "p": 70,
+      "q": [
+        {
+          "t": "What does the spread operator (...) do in JavaScript?",
+          "a": ["Creates a new variable", "Defines a function", "Expands an iterable into individual elements", "Creates a loop"],
+          "c": 2
+        },
+        {
+          "t": "What is the purpose of async/await?",
+          "a": ["To handle asynchronous operations in a synchronous-looking way", "To create classes", "To define constants", "To create loops"],
+          "c": 0
+        },
+        {
+          "t": "What is a closure in JavaScript?",
+          "a": ["An async function", "A loop structure", "A class method", "A function with access to its outer scope even after the outer function returns"],
+          "c": 3
+        },
+        {
+          "t": "What is the difference between let and const?",
+          "a": ["They are exactly the same", "const cannot be reassigned, let can be reassigned", "let is faster than const", "const is deprecated"],
+          "c": 1
+        },
+        {
+          "t": "What does array.map() return?",
+          "a": ["A filtered array", "A sorted array", "A new array with transformed elements", "A reversed array"],
+          "c": 2
+        }
+      ]
+    },
+    {
+      "t": "Python Programming Essentials",
+      "d": "Test your knowledge of Python syntax, data structures, and core concepts",
+      "tags": ["language:python", "topic:basics"],
+      "l": 240,
+      "p": 65,
+      "q": [
+        {
+          "t": "What is a list comprehension in Python?",
+          "a": ["A type of loop", "A concise way to create lists", "A function decorator", "A class method"],
+          "c": 1
+        },
+        {
+          "t": "What does the \"self\" keyword represent in Python classes?",
+          "a": ["The class itself", "A global variable", "A function parameter", "The instance of the class"],
+          "c": 3
+        },
+        {
+          "t": "What is the difference between a tuple and a list?",
+          "a": ["Tuples are immutable, lists are mutable", "They are exactly the same", "Lists are immutable, tuples are mutable", "Tuples are faster than lists"],
+          "c": 0
+        },
+        {
+          "t": "What does the \"with\" statement do?",
+          "a": ["Creates a new variable", "Defines a function", "Ensures proper resource cleanup using context managers", "Creates a loop"],
+          "c": 2
+        },
+        {
+          "t": "What is a decorator in Python?",
+          "a": ["A type of variable", "A function that modifies another function", "A loop structure", "A class attribute"],
+          "c": 1
+        }
+      ]
+    }
+  ]
+}

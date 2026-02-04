@@ -75,6 +75,15 @@ INSERT INTO categories (id, name, slug, description, icon_url, color, display_or
         '/icons/lightbulb.svg',
         '#8B5CF6',
         5
+    ),
+    (
+        'dc000000-0000-0000-0000-000000000001',
+        'Daily Challenge',
+        'daily-challenge',
+        'Daily quiz questions refreshed every day',
+        '/icons/calendar.svg',
+        '#F97316',
+        6
     )
 ON CONFLICT (id) DO NOTHING;
 

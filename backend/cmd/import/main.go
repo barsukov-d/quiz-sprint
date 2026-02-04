@@ -150,8 +150,10 @@ func inferCategoryIDFromName(db *sql.DB, categoryName string) (*quiz.CategoryID,
 		return nil, fmt.Errorf("failed to fetch categories: %w", err)
 	}
 
+	normalizedInput := strings.ReplaceAll(strings.ToLower(categoryName), "-", " ")
 	for _, cat := range categories {
-		if strings.EqualFold(cat.Name().String(), categoryName) {
+		normalizedName := strings.ToLower(cat.Name().String())
+		if normalizedName == normalizedInput || strings.EqualFold(cat.Name().String(), categoryName) {
 			id := cat.ID()
 			return &id, nil
 		}
