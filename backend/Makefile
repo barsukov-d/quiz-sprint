@@ -151,6 +151,32 @@ docker-list-quizzes: ## List all quizzes via Docker
 	docker compose exec api /app/quiz-sprint-export -list
 
 # ============================================
+# Quiz Cleanup Commands
+# ============================================
+
+.PHONY: clean-duplicate-quizzes
+clean-duplicate-quizzes: ## Remove duplicate quizzes from dev DB (keeps oldest by title)
+	docker compose -f docker-compose.dev.yml exec -T postgres psql -U quiz_user -d quiz_sprint_dev -c "\
+		DELETE FROM quizzes WHERE id IN ( \
+			SELECT id FROM ( \
+				SELECT id, title, ROW_NUMBER() OVER (PARTITION BY title ORDER BY created_at ASC) as rn \
+				FROM quizzes \
+			) sub WHERE rn > 1 \
+		); \
+		SELECT 'Remaining quizzes: ' || count(*) FROM quizzes;"
+
+.PHONY: docker-clean-duplicate-quizzes
+docker-clean-duplicate-quizzes: ## Remove duplicate quizzes from staging/production DB
+	docker compose exec -T postgres psql -U $${DB_USER} -d $${DB_NAME} -c "\
+		DELETE FROM quizzes WHERE id IN ( \
+			SELECT id FROM ( \
+				SELECT id, title, ROW_NUMBER() OVER (PARTITION BY title ORDER BY created_at ASC) as rn \
+				FROM quizzes \
+			) sub WHERE rn > 1 \
+		); \
+		SELECT 'Remaining quizzes: ' || count(*) FROM quizzes;"
+
+# ============================================
 # Daily Challenge Debug Commands
 # ============================================
 

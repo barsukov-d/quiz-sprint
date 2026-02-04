@@ -667,7 +667,7 @@ func (r *QuizRepository) saveQuiz(tx *sql.Tx, q *quiz.Quiz) error {
 		ON CONFLICT (id) DO UPDATE SET
 			title = EXCLUDED.title,
 			description = EXCLUDED.description,
-			category_id = EXCLUDED.category_id,
+			category_id = COALESCE(EXCLUDED.category_id, quizzes.category_id),
 			time_limit = EXCLUDED.time_limit,
 			passing_score = EXCLUDED.passing_score,
 			updated_at = EXCLUDED.updated_at,

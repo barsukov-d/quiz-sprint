@@ -23,6 +23,7 @@ type QuizImportData struct {
 	Title        string           `json:"title"`
 	Description  string           `json:"description"`
 	CategoryID   *string          `json:"categoryId,omitempty"` // Optional category ID
+	CategoryName string           `json:"-"`                    // Category name (from compact "cat" field, not serialized)
 	TimeLimit    int              `json:"timeLimit"`            // seconds
 	PassingScore int              `json:"passingScore"`         // percentage (0-100)
 	Questions    []QuestionImport `json:"questions"`
@@ -206,6 +207,7 @@ func convertCompactToVerbose(compact CompactQuiz, batchTags []string) QuizImport
 		Title:        compact.T,
 		Description:  compact.D,
 		CategoryID:   nil, // Will be inferred later
+		CategoryName: compact.Cat,
 		TimeLimit:    timeLimit,
 		PassingScore: passingScore,
 		Questions:    questions,
@@ -255,8 +257,12 @@ func main() {
 			if !strings.HasSuffix(name, ".json") {
 				return nil
 			}
-			// Skip templates and schema files
+			// Skip templates, schema files, and exported directory
 			if strings.HasPrefix(strings.ToUpper(name), "TEMPLATE") {
+				return nil
+			}
+			// Skip exported directory (contains DB dumps, not source data)
+			if strings.Contains(path, "/exported/") || strings.Contains(path, "\\exported\\") {
 				return nil
 			}
 			files = append(files, path)
@@ -457,6 +463,23 @@ func validateQuizData(data *QuizImportData) error {
 	return nil
 }
 
+// findExistingQuizID checks if a quiz with the same title already exists in the database
+func findExistingQuizID(db *sql.DB, title string) (*quiz.QuizID, error) {
+	var idStr string
+	err := db.QueryRow("SELECT id FROM quizzes WHERE title = $1 LIMIT 1", title).Scan(&idStr)
+	if err == sql.ErrNoRows {
+		return nil, nil
+	}
+	if err != nil {
+		return nil, err
+	}
+	id, err := quiz.NewQuizIDFromString(idStr)
+	if err != nil {
+		return nil, err
+	}
+	return &id, nil
+}
+
 // saveQuizToDB converts import data to domain model and saves to database
 func saveQuizToDB(db *sql.DB, data *QuizImportData, batchID *string, generatedAt *int64) error {
 	// Create repositories
@@ -479,7 +502,7 @@ func saveQuizToDB(db *sql.DB, data *QuizImportData, batchID *string, generatedAt
 		return fmt.Errorf("invalid passing score: %w", err)
 	}
 
-	// Convert category ID if provided, otherwise infer from tags
+	// Convert category ID if provided, otherwise use category name, otherwise infer from tags
 	var categoryID quiz.CategoryID
 	if data.CategoryID != nil && *data.CategoryID != "" {
 		cid, err := quiz.NewCategoryIDFromString(*data.CategoryID)
@@ -487,24 +510,42 @@ func saveQuizToDB(db *sql.DB, data *QuizImportData, batchID *string, generatedAt
 			return fmt.Errorf("invalid categoryId: %w", err)
 		}
 		categoryID = cid
-	} else if len(data.Tags) > 0 {
-		// Infer category from tags
-		categoryName := inferCategoryFromTags(data.Tags)
-		log.Printf("  Inferred category: %s (from tags)", categoryName)
-
-		cid, err := inferCategoryIDFromName(db, categoryName)
-		if err != nil {
-			log.Printf("  Warning: %v (quiz will have no category)", err)
-			// Continue without category - categoryID remains zero value
-		} else if cid != nil {
-			categoryID = *cid
+	} else {
+		// Determine category name: explicit "cat" field → infer from tags
+		categoryName := data.CategoryName
+		if categoryName == "" && len(data.Tags) > 0 {
+			categoryName = inferCategoryFromTags(data.Tags)
+			log.Printf("  Inferred category: %s (from tags)", categoryName)
+		} else if categoryName != "" {
+			log.Printf("  Category: %s", categoryName)
 		}
+
+		if categoryName != "" {
+			cid, err := inferCategoryIDFromName(db, categoryName)
+			if err != nil {
+				log.Printf("  Warning: %v (quiz will have no category)", err)
+			} else if cid != nil {
+				categoryID = *cid
+			}
+		}
+	}
+
+	// Check for existing quiz with the same title (deduplication)
+	existingID, err := findExistingQuizID(db, data.Title)
+	if err != nil {
+		return fmt.Errorf("failed to check for existing quiz: %w", err)
+	}
+
+	quizID := quiz.NewQuizID()
+	if existingID != nil {
+		quizID = *existingID
+		log.Printf("  Updating existing quiz (ID: %s)", quizID.String())
 	}
 
 	// Create Quiz aggregate
 	createdAt := int64(0) // Will be set by database
 	quizAggregate, err := quiz.NewQuiz(
-		quiz.NewQuizID(), // Generate new ID
+		quizID,
 		title,
 		data.Description,
 		categoryID,

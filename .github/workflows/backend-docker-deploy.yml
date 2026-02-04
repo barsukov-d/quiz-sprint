@@ -103,6 +103,7 @@ jobs:
             DB_NAME=quiz_sprint_staging
             CORS_ORIGINS=https://staging.quiz-sprint-tma.online
             TELEGRAM_BOT_TOKEN=${{ secrets.STAGING_TELEGRAM_BOT_TOKEN }}
+            ADMIN_API_KEY=${{ secrets.STAGING_ADMIN_API_KEY }}
             EOF
 
             # Update docker-compose with correct image
@@ -187,6 +188,30 @@ jobs:
             echo "::error::Health check failed (HTTP $RESPONSE)"
             exit 1
           fi
+
+      - name: Clean duplicates and import quiz data
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /opt/quiz-sprint/staging
+
+            # Clean duplicate quizzes (keep oldest by title)
+            echo "🧹 Cleaning duplicate quizzes..."
+            docker compose exec -T postgres psql -U ${DB_USER:-quiz_user} -d ${DB_NAME:-quiz_sprint_staging} -c "
+              DELETE FROM quizzes WHERE id IN (
+                SELECT id FROM (
+                  SELECT id, title, ROW_NUMBER() OVER (PARTITION BY title ORDER BY created_at ASC) as rn
+                  FROM quizzes
+                ) sub WHERE rn > 1
+              );" || echo "⚠️ Duplicate cleanup skipped"
+
+            # Import quiz data (with dedup - safe to run multiple times)
+            echo "📦 Importing quiz data..."
+            docker compose exec -T api /app/quiz-sprint-import -dir=/app/data/quizzes || echo "⚠️ Quiz import failed (non-critical)"
+            echo "✅ Quiz data sync completed"
 
   # ===========================================
   # Deploy to Production
@@ -314,6 +339,30 @@ jobs:
             echo "::error::Health check failed (HTTP $RESPONSE)"
             exit 1
           fi
+
+      - name: Clean duplicates and import quiz data
+        uses: appleboy/ssh-action@v1.0.3
+        with:
+          host: ${{ secrets.VPS_HOST }}
+          username: ${{ secrets.VPS_USER }}
+          key: ${{ secrets.VPS_SSH_KEY }}
+          script: |
+            cd /opt/quiz-sprint/production
+
+            # Clean duplicate quizzes (keep oldest by title)
+            echo "🧹 Cleaning duplicate quizzes..."
+            docker compose exec -T postgres psql -U ${DB_USER:-quiz_user} -d ${DB_NAME:-quiz_sprint_production} -c "
+              DELETE FROM quizzes WHERE id IN (
+                SELECT id FROM (
+                  SELECT id, title, ROW_NUMBER() OVER (PARTITION BY title ORDER BY created_at ASC) as rn
+                  FROM quizzes
+                ) sub WHERE rn > 1
+              );" || echo "⚠️ Duplicate cleanup skipped"
+
+            # Import quiz data (with dedup - safe to run multiple times)
+            echo "📦 Importing quiz data..."
+            docker compose exec -T api /app/quiz-sprint-import -dir=/app/data/quizzes || echo "⚠️ Quiz import failed (non-critical)"
+            echo "✅ Quiz data sync completed"
 
   # ===========================================
   # Notify

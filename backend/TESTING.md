@@ -1,16 +1,30 @@
 # Testing Guide
 
-> Admin API key для dev: `dev-admin-key-2026`
-> Base URL: `http://localhost:3000` (Docker) или `https://dev.quiz-sprint-tma.online`
+## Окружения
+
+| Env | Base URL | Admin Key |
+|-----|----------|-----------|
+| Dev (local) | `http://localhost:3000` | `dev-admin-key-2026` |
+| Dev (tunnel) | `https://dev.quiz-sprint-tma.online` | `dev-admin-key-2026` |
+| Staging | `https://staging.quiz-sprint-tma.online` | GitHub Secret `STAGING_ADMIN_API_KEY` |
 
 ## Setup
 
 ```bash
-# Переменные для удобства
+# === Dev ===
 BASE=http://localhost:3000/api/v1
 KEY="X-Admin-Key: dev-admin-key-2026"
-PLAYER="your-telegram-id"
+PLAYER="1121083057"
+
+# === Staging ===
+BASE=https://staging.quiz-sprint-tma.online/api/v1
+KEY="X-Admin-Key: staging-admin-key-2026"
+PLAYER="1121083057"
 ```
+
+> **Staging Admin Key:** хранится в GitHub Secrets → `STAGING_ADMIN_API_KEY`.
+> Чтобы добавить/изменить: GitHub → Settings → Secrets → Actions → `STAGING_ADMIN_API_KEY`.
+> После изменения нужен редеплой staging.
 
 ---
 

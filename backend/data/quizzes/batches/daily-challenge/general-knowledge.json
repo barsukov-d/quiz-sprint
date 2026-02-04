@@ -2,8 +2,8 @@
   "batch": {
     "version": 1,
     "generated": "2026-02-03T00:00:00Z",
-    "cat": "daily-challenge",
-    "tags": ["difficulty:medium", "topic:general-knowledge"]
+    "cat": "general-knowledge",
+    "tags": ["difficulty:medium", "format:daily-challenge"]
   },
   "quizzes": [
     {
@@ -73,13 +73,13 @@
       "p": 70,
       "q": [
         {
-          "t": "In what year did World War II end?",
-          "a": ["1943", "1944", "1945", "1946"],
-          "c": 2
+          "t": "What treaty ended World War I?",
+          "a": ["Treaty of Paris", "Treaty of Versailles", "Treaty of Ghent", "Treaty of Westphalia"],
+          "c": 1
         },
         {
-          "t": "Who was the first President of the United States?",
-          "a": ["Thomas Jefferson", "John Adams", "George Washington", "Benjamin Franklin"],
+          "t": "Which explorer first reached the South Pole?",
+          "a": ["Robert Falcon Scott", "Ernest Shackleton", "Roald Amundsen", "Edmund Hillary"],
           "c": 2
         },
         {
@@ -93,8 +93,8 @@
           "c": 2
         },
         {
-          "t": "In which year did the Berlin Wall fall?",
-          "a": ["1987", "1988", "1989", "1990"],
+          "t": "What was the longest-lasting empire in history?",
+          "a": ["Roman Empire", "Ottoman Empire", "Byzantine Empire", "Holy Roman Empire"],
           "c": 2
         },
         {
@@ -142,9 +142,9 @@
           "c": 2
         },
         {
-          "t": "What is the smallest country in the world?",
-          "a": ["Monaco", "Vatican City", "San Marino", "Liechtenstein"],
-          "c": 1
+          "t": "Which country has the longest coastline in the world?",
+          "a": ["Australia", "Russia", "Canada", "Indonesia"],
+          "c": 2
         },
         {
           "t": "On which continent is the Sahara Desert located?",
@@ -152,8 +152,8 @@
           "c": 2
         },
         {
-          "t": "What is the capital of Australia?",
-          "a": ["Sydney", "Melbourne", "Canberra", "Brisbane"],
+          "t": "What is the driest continent on Earth?",
+          "a": ["Africa", "Australia", "Antarctica", "South America"],
           "c": 2
         },
         {
@@ -211,9 +211,9 @@
           "c": 2
         },
         {
-          "t": "Which artist painted the Mona Lisa?",
-          "a": ["Michelangelo", "Raphael", "Leonardo da Vinci", "Donatello"],
-          "c": 2
+          "t": "What is the best-selling video game of all time?",
+          "a": ["Tetris", "Minecraft", "GTA V", "Wii Sports"],
+          "c": 1
         },
         {
           "t": "How many players are on a standard soccer team on the field?",
