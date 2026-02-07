@@ -1109,3 +1109,214 @@ type AdminResetPlayerResponse struct {
 }
 
 // @name AdminResetPlayerResponse
+
+// ========================================
+// Duel (PvP) Models
+// ========================================
+
+// JoinQueueRequest is the request for joining matchmaking queue
+type JoinQueueRequest struct {
+	PlayerID string `json:"playerId" validate:"required"`
+}
+
+// @name JoinQueueRequest
+
+// JoinQueueResponse wraps the join queue response
+type JoinQueueResponse struct {
+	Data struct {
+		QueueID       string `json:"queueId"`
+		Status        string `json:"status"`
+		EstimatedWait int    `json:"estimatedWait"`
+		MMRRange      string `json:"mmrRange"`
+		Position      int    `json:"position"`
+	} `json:"data"`
+}
+
+// @name JoinQueueResponse
+
+// LeaveQueueResponse wraps the leave queue response
+type LeaveQueueResponse struct {
+	Data struct {
+		Success        bool `json:"success"`
+		TicketRefunded bool `json:"ticketRefunded"`
+		NewTicketCount int  `json:"newTicketCount"`
+	} `json:"data"`
+}
+
+// @name LeaveQueueResponse
+
+// SendChallengeRequest is the request for sending a challenge
+type SendChallengeRequest struct {
+	PlayerID string `json:"playerId" validate:"required"`
+	FriendID string `json:"friendId" validate:"required"`
+}
+
+// @name SendChallengeRequest
+
+// SendChallengeResponse wraps the send challenge response
+type SendChallengeResponse struct {
+	Data struct {
+		ChallengeID    string `json:"challengeId"`
+		Status         string `json:"status"`
+		ExpiresIn      int    `json:"expiresIn"`
+		TicketConsumed bool   `json:"ticketConsumed"`
+	} `json:"data"`
+}
+
+// @name SendChallengeResponse
+
+// RespondChallengeRequest is the request for responding to a challenge
+type RespondChallengeRequest struct {
+	PlayerID string `json:"playerId" validate:"required"`
+	Action   string `json:"action" validate:"required"` // "accept" or "decline"
+}
+
+// @name RespondChallengeRequest
+
+// RespondChallengeResponse wraps the respond challenge response
+type RespondChallengeResponse struct {
+	Data struct {
+		Success        bool    `json:"success"`
+		MatchID        *string `json:"matchId,omitempty"`
+		TicketConsumed bool    `json:"ticketConsumed"`
+		StartsIn       *int    `json:"startsIn,omitempty"`
+	} `json:"data"`
+}
+
+// @name RespondChallengeResponse
+
+// CreateChallengeLinkRequest is the request for creating a challenge link
+type CreateChallengeLinkRequest struct {
+	PlayerID string `json:"playerId" validate:"required"`
+}
+
+// @name CreateChallengeLinkRequest
+
+// CreateChallengeLinkResponse wraps the create link response
+type CreateChallengeLinkResponse struct {
+	Data struct {
+		ChallengeLink string `json:"challengeLink"`
+		ExpiresAt     int64  `json:"expiresAt"`
+		ShareText     string `json:"shareText"`
+	} `json:"data"`
+}
+
+// @name CreateChallengeLinkResponse
+
+// GetDuelStatusResponse wraps the duel status response
+type GetDuelStatusResponse struct {
+	Data struct {
+		HasActiveDuel     bool                 `json:"hasActiveDuel"`
+		ActiveMatchID     *string              `json:"activeMatchId,omitempty"`
+		Player            DuelPlayerRatingDTO  `json:"player"`
+		Tickets           int                  `json:"tickets"`
+		FriendsOnline     []DuelFriendDTO      `json:"friendsOnline"`
+		PendingChallenges []DuelChallengeDTO   `json:"pendingChallenges"`
+		SeasonID          string               `json:"seasonId"`
+		SeasonEndsAt      int64                `json:"seasonEndsAt"`
+	} `json:"data"`
+}
+
+// @name GetDuelStatusResponse
+
+// DuelPlayerRatingDTO represents player's competitive ranking
+type DuelPlayerRatingDTO struct {
+	PlayerID     string  `json:"playerId"`
+	MMR          int     `json:"mmr"`
+	League       string  `json:"league"`
+	Division     int     `json:"division"`
+	LeagueLabel  string  `json:"leagueLabel"`
+	LeagueIcon   string  `json:"leagueIcon"`
+	PeakMMR      int     `json:"peakMmr"`
+	PeakLeague   string  `json:"peakLeague"`
+	SeasonWins   int     `json:"seasonWins"`
+	SeasonLosses int     `json:"seasonLosses"`
+	WinRate      float64 `json:"winRate"`
+	GamesAtRank  int     `json:"gamesAtRank"`
+	CanDemote    bool    `json:"canDemote"`
+}
+
+// @name DuelPlayerRatingDTO
+
+// DuelFriendDTO represents an online friend
+type DuelFriendDTO struct {
+	ID       string `json:"id"`
+	Username string `json:"username"`
+	Avatar   string `json:"avatar,omitempty"`
+	MMR      int    `json:"mmr"`
+	League   string `json:"league"`
+	IsOnline bool   `json:"isOnline"`
+	InMatch  bool   `json:"inMatch"`
+}
+
+// @name DuelFriendDTO
+
+// DuelChallengeDTO represents a pending challenge
+type DuelChallengeDTO struct {
+	ID            string  `json:"id"`
+	ChallengerID  string  `json:"challengerId"`
+	ChallengedID  *string `json:"challengedId,omitempty"`
+	Type          string  `json:"type"`
+	Status        string  `json:"status"`
+	ChallengeLink string  `json:"challengeLink,omitempty"`
+	ExpiresAt     int64   `json:"expiresAt"`
+	ExpiresIn     int     `json:"expiresIn"`
+	CreatedAt     int64   `json:"createdAt"`
+}
+
+// @name DuelChallengeDTO
+
+// GetMatchHistoryResponse wraps the match history response
+type GetMatchHistoryResponse struct {
+	Data struct {
+		Matches []MatchHistoryEntryDTO `json:"matches"`
+		Total   int                    `json:"total"`
+		HasMore bool                   `json:"hasMore"`
+	} `json:"data"`
+}
+
+// @name GetMatchHistoryResponse
+
+// MatchHistoryEntryDTO represents a match in history
+type MatchHistoryEntryDTO struct {
+	MatchID       string `json:"matchId"`
+	Opponent      string `json:"opponent"`
+	OpponentMMR   int    `json:"opponentMmr"`
+	Result        string `json:"result"`
+	PlayerScore   int    `json:"playerScore"`
+	OpponentScore int    `json:"opponentScore"`
+	MMRChange     int    `json:"mmrChange"`
+	IsFriendMatch bool   `json:"isFriendMatch"`
+	CompletedAt   int64  `json:"completedAt"`
+}
+
+// @name MatchHistoryEntryDTO
+
+// GetDuelLeaderboardResponse wraps the duel leaderboard response
+type GetDuelLeaderboardResponse struct {
+	Data struct {
+		Type       string                   `json:"type"`
+		SeasonID   string                   `json:"seasonId,omitempty"`
+		EndsAt     int64                    `json:"endsAt,omitempty"`
+		Entries    []DuelLeaderboardEntryDTO `json:"entries"`
+		PlayerRank int                      `json:"playerRank"`
+	} `json:"data"`
+}
+
+// @name GetDuelLeaderboardResponse
+
+// DuelLeaderboardEntryDTO represents a leaderboard entry
+type DuelLeaderboardEntryDTO struct {
+	Rank       int     `json:"rank"`
+	PlayerID   string  `json:"playerId"`
+	Username   string  `json:"username"`
+	Avatar     string  `json:"avatar,omitempty"`
+	MMR        int     `json:"mmr"`
+	League     string  `json:"league"`
+	LeagueIcon string  `json:"leagueIcon"`
+	Wins       int     `json:"wins"`
+	Losses     int     `json:"losses"`
+	WinRate    float64 `json:"winRate"`
+}
+
+// @name DuelLeaderboardEntryDTO

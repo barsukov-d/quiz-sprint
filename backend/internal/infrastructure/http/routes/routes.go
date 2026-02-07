@@ -12,10 +12,12 @@ import (
 	appUser "github.com/barsukov/quiz-sprint/backend/internal/application/user"
 	appMarathon "github.com/barsukov/quiz-sprint/backend/internal/application/marathon"
 	appDaily "github.com/barsukov/quiz-sprint/backend/internal/application/daily_challenge"
+	appDuel "github.com/barsukov/quiz-sprint/backend/internal/application/quick_duel"
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
 	domainUser "github.com/barsukov/quiz-sprint/backend/internal/domain/user"
 	domainMarathon "github.com/barsukov/quiz-sprint/backend/internal/domain/solo_marathon"
 	domainDaily "github.com/barsukov/quiz-sprint/backend/internal/domain/daily_challenge"
+	domainDuel "github.com/barsukov/quiz-sprint/backend/internal/domain/quick_duel"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/handlers"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/middleware"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/messaging"
@@ -88,6 +90,22 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	if db != nil && quizRepo != nil && questionRepo != nil {
 		dailyQuizRepo = postgres.NewDailyQuizRepository(db)
 		dailyGameRepo = postgres.NewDailyGameRepository(db, quizRepo, questionRepo, dailyQuizRepo)
+	}
+
+	// Duel (PvP) repositories: only available with PostgreSQL
+	var (
+		duelGameRepo     domainDuel.DuelGameRepository
+		playerRatingRepo domainDuel.PlayerRatingRepository
+		challengeRepo    domainDuel.ChallengeRepository
+		referralRepo     domainDuel.ReferralRepository
+		seasonRepo       domainDuel.SeasonRepository
+	)
+	if db != nil {
+		duelGameRepo = postgres.NewDuelGameRepository(db)
+		playerRatingRepo = postgres.NewPlayerRatingRepository(db)
+		challengeRepo = postgres.NewChallengeRepository(db)
+		referralRepo = postgres.NewReferralRepository(db)
+		seasonRepo = postgres.NewSeasonRepository(db)
 	}
 
 	// ========================================
@@ -287,6 +305,70 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		)
 	}
 
+	// Duel (PvP) use cases (only if database is available)
+	var (
+		getDuelStatusUC        *appDuel.GetDuelStatusUseCase
+		joinQueueUC            *appDuel.JoinQueueUseCase
+		leaveQueueUC           *appDuel.LeaveQueueUseCase
+		sendChallengeUC        *appDuel.SendChallengeUseCase
+		respondChallengeUC     *appDuel.RespondChallengeUseCase
+		createChallengeLinkUC  *appDuel.CreateChallengeLinkUseCase
+		getMatchHistoryUC      *appDuel.GetMatchHistoryUseCase
+		getDuelLeaderboardUC   *appDuel.GetLeaderboardUseCase
+	)
+
+	if duelGameRepo != nil && playerRatingRepo != nil && challengeRepo != nil && referralRepo != nil && seasonRepo != nil && userRepo != nil {
+		duelEventBus := appDuel.NewNoOpEventBus() // Simple event bus for now
+
+		// Note: MatchmakingQueue requires Redis, using nil for now
+		var matchmakingQueue domainDuel.MatchmakingQueue = nil
+
+		getDuelStatusUC = appDuel.NewGetDuelStatusUseCase(
+			playerRatingRepo,
+			duelGameRepo,
+			challengeRepo,
+			seasonRepo,
+			userRepo,
+		)
+		if matchmakingQueue != nil {
+			joinQueueUC = appDuel.NewJoinQueueUseCase(
+				matchmakingQueue,
+				playerRatingRepo,
+				duelGameRepo,
+				seasonRepo,
+			)
+			leaveQueueUC = appDuel.NewLeaveQueueUseCase(
+				matchmakingQueue,
+			)
+		}
+		sendChallengeUC = appDuel.NewSendChallengeUseCase(
+			challengeRepo,
+			duelGameRepo,
+			duelEventBus,
+		)
+		respondChallengeUC = appDuel.NewRespondChallengeUseCase(
+			challengeRepo,
+			duelGameRepo,
+			playerRatingRepo,
+			seasonRepo,
+			duelEventBus,
+		)
+		createChallengeLinkUC = appDuel.NewCreateChallengeLinkUseCase(
+			challengeRepo,
+			duelEventBus,
+		)
+		getMatchHistoryUC = appDuel.NewGetMatchHistoryUseCase(
+			duelGameRepo,
+			userRepo,
+		)
+		getDuelLeaderboardUC = appDuel.NewGetLeaderboardUseCase(
+			playerRatingRepo,
+			referralRepo,
+			seasonRepo,
+			userRepo,
+		)
+	}
+
 	// ========================================
 	// Infrastructure Layer: HTTP Handlers
 	// ========================================
@@ -352,6 +434,21 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			getPlayerStreakUC,
 			openChestUC,
 			retryUC,
+		)
+	}
+
+	// Duel (PvP) handler (only if database is available)
+	var duelHandler *handlers.DuelHandler
+	if getDuelStatusUC != nil {
+		duelHandler = handlers.NewDuelHandler(
+			getDuelStatusUC,
+			joinQueueUC,
+			leaveQueueUC,
+			sendChallengeUC,
+			respondChallengeUC,
+			createChallengeLinkUC,
+			getMatchHistoryUC,
+			getDuelLeaderboardUC,
 		)
 	}
 
@@ -445,6 +542,19 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		daily.Get("/status", dailyChallengeHandler.GetDailyStatus)
 		daily.Get("/leaderboard", dailyChallengeHandler.GetDailyLeaderboard)
 		daily.Get("/streak", dailyChallengeHandler.GetPlayerStreak)
+	}
+
+	// Duel (PvP) routes (only if database is available)
+	if duelHandler != nil {
+		duel := v1.Group("/duel")
+		duel.Get("/status", duelHandler.GetDuelStatus)
+		duel.Post("/queue/join", duelHandler.JoinQueue)
+		duel.Delete("/queue/leave", duelHandler.LeaveQueue)
+		duel.Post("/challenge", duelHandler.SendChallenge)
+		duel.Post("/challenge/link", duelHandler.CreateChallengeLink)
+		duel.Post("/challenge/:challengeId/respond", duelHandler.RespondChallenge)
+		duel.Get("/history", duelHandler.GetMatchHistory)
+		duel.Get("/leaderboard", duelHandler.GetDuelLeaderboard)
 	}
 
 	// Admin routes (debug/testing, protected by API key)
