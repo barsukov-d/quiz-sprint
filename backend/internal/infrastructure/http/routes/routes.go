@@ -2,6 +2,7 @@ package routes
 
 import (
 	"database/sql"
+	"log"
 	"math/rand"
 	"time"
 
@@ -23,6 +24,7 @@ import (
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/messaging"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence/memory"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence/postgres"
+	redisStore "github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence/redis"
 
 	"github.com/gofiber/contrib/v3/swaggo"
 )
@@ -99,6 +101,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		challengeRepo    domainDuel.ChallengeRepository
 		referralRepo     domainDuel.ReferralRepository
 		seasonRepo       domainDuel.SeasonRepository
+		matchmakingQueue domainDuel.MatchmakingQueue
 	)
 	if db != nil {
 		duelGameRepo = postgres.NewDuelGameRepository(db)
@@ -106,6 +109,15 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		challengeRepo = postgres.NewChallengeRepository(db)
 		referralRepo = postgres.NewReferralRepository(db)
 		seasonRepo = postgres.NewSeasonRepository(db)
+
+		// Initialize Redis for matchmaking queue
+		redisClient, err := redisStore.NewClient()
+		if err != nil {
+			log.Printf("⚠️ Redis not available, matchmaking queue disabled: %v", err)
+		} else {
+			log.Println("✅ Connected to Redis for matchmaking queue")
+			matchmakingQueue = redisStore.NewMatchmakingQueue(redisClient)
+		}
 	}
 
 	// ========================================
@@ -319,9 +331,6 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 	if duelGameRepo != nil && playerRatingRepo != nil && challengeRepo != nil && referralRepo != nil && seasonRepo != nil && userRepo != nil {
 		duelEventBus := appDuel.NewNoOpEventBus() // Simple event bus for now
-
-		// Note: MatchmakingQueue requires Redis, using nil for now
-		var matchmakingQueue domainDuel.MatchmakingQueue = nil
 
 		getDuelStatusUC = appDuel.NewGetDuelStatusUseCase(
 			playerRatingRepo,
