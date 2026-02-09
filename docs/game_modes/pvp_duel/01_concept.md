@@ -128,7 +128,7 @@ Player A → "Вызвать друга" → Share link → Friend opens → Ins
 | Friend reaches Silver | 10 🎟️ + Exclusive avatar | — |
 | Friend reaches Gold | 20 🎟️ + Exclusive title | — |
 
-**Referral link:** `t.me/quizsprintbot?start=ref_USER123`
+**Referral link:** `t.me/quiz_sprint_dev_bot?start=ref_USER123`
 
 ### 3. Friends Leaderboard
 Separate tab showing only friends:

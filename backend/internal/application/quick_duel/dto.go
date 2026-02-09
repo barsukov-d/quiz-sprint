@@ -277,9 +277,10 @@ type RequestRematchInput struct {
 }
 
 type RequestRematchOutput struct {
-	RematchID string `json:"rematchId"`
-	ExpiresIn int    `json:"expiresIn"`
-	Status    string `json:"status"`
+	RematchID string  `json:"rematchId"`
+	ExpiresIn int     `json:"expiresIn"`
+	Status    string  `json:"status"`
+	MatchID   *string `json:"matchId,omitempty"`
 }
 
 // ========================================
@@ -352,6 +353,32 @@ type ClaimReferralRewardOutput struct {
 }
 
 // ========================================
+// StartMatch Use Case
+// ========================================
+
+type StartMatchInput struct {
+	Player1ID       string `json:"player1Id"`
+	Player2ID       string `json:"player2Id"`
+	Player1Username string `json:"player1Username"`
+	Player2Username string `json:"player2Username"`
+	IsFriendMatch   bool   `json:"isFriendMatch"`
+}
+
+type StartMatchOutput struct {
+	MatchID   string `json:"matchId"`
+	Player1ID string `json:"player1Id"`
+	Player2ID string `json:"player2Id"`
+	StartsAt  int64  `json:"startsAt"`
+}
+
+// RoundQuestionOutput represents a question for a round
+type RoundQuestionOutput struct {
+	QuestionID   string              `json:"questionId"`
+	QuestionText string              `json:"questionText"`
+	Answers      []map[string]string `json:"answers"`
+}
+
+// ========================================
 // SubmitDuelAnswer Use Case
 // ========================================
 
@@ -360,17 +387,20 @@ type SubmitDuelAnswerInput struct {
 	MatchID    string `json:"matchId"`
 	QuestionID string `json:"questionId"`
 	AnswerID   string `json:"answerId"`
-	ClientTime int64  `json:"clientTime"` // For latency compensation
+	TimeTaken  int    `json:"timeTaken"` // milliseconds
 }
 
 type SubmitDuelAnswerOutput struct {
-	Received        bool              `json:"received"`
-	IsCorrect       bool              `json:"isCorrect"`
-	PointsEarned    int               `json:"pointsEarned"`
-	PlayerScore     int               `json:"playerScore"`
-	OpponentScore   int               `json:"opponentScore"`
-	OpponentAnswered bool             `json:"opponentAnswered"`
-	RoundComplete   bool              `json:"roundComplete"`
-	IsGameFinished  bool              `json:"isGameFinished"`
-	GameResult      *GetMatchResultOutput `json:"gameResult,omitempty"`
+	IsCorrect        bool   `json:"isCorrect"`
+	CorrectAnswerID  string `json:"correctAnswerId"`
+	PointsEarned     int    `json:"pointsEarned"`
+	Player1Score     int    `json:"player1Score"`
+	Player2Score     int    `json:"player2Score"`
+	RoundComplete    bool   `json:"roundComplete"`
+	MatchComplete    bool   `json:"matchComplete"`
+	WinnerID         string `json:"winnerId,omitempty"`
+	Player1MMRChange int    `json:"player1MmrChange,omitempty"`
+	Player2MMRChange int    `json:"player2MmrChange,omitempty"`
+	Player1NewMMR    int    `json:"player1NewMmr,omitempty"`
+	Player2NewMMR    int    `json:"player2NewMmr,omitempty"`
 }

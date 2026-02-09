@@ -270,6 +270,25 @@ definitions:
     required:
     - data
     type: object
+  internal_infrastructure_http_handlers.CreateChallengeLinkRequest:
+    properties:
+      playerId:
+        type: string
+    required:
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.CreateChallengeLinkResponse:
+    properties:
+      data:
+        properties:
+          challengeLink:
+            type: string
+          expiresAt:
+            type: integer
+          shareText:
+            type: string
+        type: object
+    type: object
   internal_infrastructure_http_handlers.DailyGameDTO:
     properties:
       baseScore:
@@ -350,6 +369,73 @@ definitions:
     - completedAt
     - rank
     - score
+    type: object
+  internal_infrastructure_http_handlers.DuelChallengeDTO:
+    properties:
+      challengeLink:
+        type: string
+      challengedId:
+        type: string
+      challengerId:
+        type: string
+      createdAt:
+        type: integer
+      expiresAt:
+        type: integer
+      expiresIn:
+        type: integer
+      id:
+        type: string
+      status:
+        type: string
+      type:
+        type: string
+    type: object
+  internal_infrastructure_http_handlers.DuelFriendDTO:
+    properties:
+      avatar:
+        type: string
+      id:
+        type: string
+      inMatch:
+        type: boolean
+      isOnline:
+        type: boolean
+      league:
+        type: string
+      mmr:
+        type: integer
+      username:
+        type: string
+    type: object
+  internal_infrastructure_http_handlers.DuelPlayerRatingDTO:
+    properties:
+      canDemote:
+        type: boolean
+      division:
+        type: integer
+      gamesAtRank:
+        type: integer
+      league:
+        type: string
+      leagueIcon:
+        type: string
+      leagueLabel:
+        type: string
+      mmr:
+        type: integer
+      peakLeague:
+        type: string
+      peakMmr:
+        type: integer
+      playerId:
+        type: string
+      seasonLosses:
+        type: integer
+      seasonWins:
+        type: integer
+      winRate:
+        type: number
     type: object
   internal_infrastructure_http_handlers.ErrorDetail:
     properties:
@@ -527,6 +613,32 @@ definitions:
     required:
     - data
     type: object
+  internal_infrastructure_http_handlers.GetDuelStatusResponse:
+    properties:
+      data:
+        properties:
+          activeMatchId:
+            type: string
+          friendsOnline:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.DuelFriendDTO'
+            type: array
+          hasActiveDuel:
+            type: boolean
+          pendingChallenges:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO'
+            type: array
+          player:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.DuelPlayerRatingDTO'
+          seasonEndsAt:
+            type: integer
+          seasonId:
+            type: string
+          tickets:
+            type: integer
+        type: object
+    type: object
   internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse:
     properties:
       data:
@@ -586,6 +698,20 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.GetMarathonStatusData'
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.GetMatchHistoryResponse:
+    properties:
+      data:
+        properties:
+          hasMore:
+            type: boolean
+          matches:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.MatchHistoryEntryDTO'
+            type: array
+          total:
+            type: integer
+        type: object
     type: object
   internal_infrastructure_http_handlers.GetPersonalBestsData:
     properties:
@@ -708,6 +834,29 @@ definitions:
     - userId
     - username
     type: object
+  internal_infrastructure_http_handlers.JoinQueueRequest:
+    properties:
+      playerId:
+        type: string
+    required:
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.JoinQueueResponse:
+    properties:
+      data:
+        properties:
+          estimatedWait:
+            type: integer
+          mmrRange:
+            type: string
+          position:
+            type: integer
+          queueId:
+            type: string
+          status:
+            type: string
+        type: object
+    type: object
   internal_infrastructure_http_handlers.LeaderboardEntryDTO:
     properties:
       completedAt:
@@ -726,6 +875,18 @@ definitions:
     - score
     - userId
     - username
+    type: object
+  internal_infrastructure_http_handlers.LeaveQueueResponse:
+    properties:
+      data:
+        properties:
+          newTicketCount:
+            type: integer
+          success:
+            type: boolean
+          ticketRefunded:
+            type: boolean
+        type: object
     type: object
   internal_infrastructure_http_handlers.ListCategoriesResponse:
     properties:
@@ -951,6 +1112,27 @@ definitions:
     - bestStreak
     - category
     type: object
+  internal_infrastructure_http_handlers.MatchHistoryEntryDTO:
+    properties:
+      completedAt:
+        type: integer
+      isFriendMatch:
+        type: boolean
+      matchId:
+        type: string
+      mmrChange:
+        type: integer
+      opponent:
+        type: string
+      opponentMmr:
+        type: integer
+      opponentScore:
+        type: integer
+      playerScore:
+        type: integer
+      result:
+        type: string
+    type: object
   internal_infrastructure_http_handlers.OpenChestData:
     properties:
       chestType:
@@ -1073,6 +1255,52 @@ definitions:
     required:
     - data
     type: object
+  internal_infrastructure_http_handlers.RequestRematchRequest:
+    properties:
+      playerId:
+        type: string
+    required:
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.RequestRematchResponse:
+    properties:
+      data:
+        properties:
+          expiresIn:
+            type: integer
+          matchId:
+            type: string
+          rematchId:
+            type: string
+          status:
+            type: string
+        type: object
+    type: object
+  internal_infrastructure_http_handlers.RespondChallengeRequest:
+    properties:
+      action:
+        description: '"accept" or "decline"'
+        type: string
+      playerId:
+        type: string
+    required:
+    - action
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.RespondChallengeResponse:
+    properties:
+      data:
+        properties:
+          matchId:
+            type: string
+          startsIn:
+            type: integer
+          success:
+            type: boolean
+          ticketConsumed:
+            type: boolean
+        type: object
+    type: object
   internal_infrastructure_http_handlers.RetryChallengeData:
     properties:
       coinsDeducted:
@@ -1109,6 +1337,30 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.RetryChallengeData'
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.SendChallengeRequest:
+    properties:
+      friendId:
+        type: string
+      playerId:
+        type: string
+    required:
+    - friendId
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.SendChallengeResponse:
+    properties:
+      data:
+        properties:
+          challengeId:
+            type: string
+          expiresIn:
+            type: integer
+          status:
+            type: string
+          ticketConsumed:
+            type: boolean
+        type: object
     type: object
   internal_infrastructure_http_handlers.SessionDTO:
     properties:
@@ -2049,6 +2301,326 @@ paths:
       summary: Get player streak
       tags:
       - daily-challenge
+  /duel/challenge:
+    post:
+      consumes:
+      - application/json
+      description: Send a direct challenge to a friend
+      parameters:
+      - description: Challenge request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.SendChallengeRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Challenge sent
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.SendChallengeResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "409":
+          description: Friend busy
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Send friend challenge
+      tags:
+      - duel
+  /duel/challenge/{challengeId}/respond:
+    post:
+      consumes:
+      - application/json
+      description: Accept or decline a friend challenge
+      parameters:
+      - description: Challenge ID
+        in: path
+        name: challengeId
+        required: true
+        type: string
+      - description: Response request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.RespondChallengeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Response processed
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.RespondChallengeResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Challenge not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "409":
+          description: Challenge expired
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Respond to challenge
+      tags:
+      - duel
+  /duel/challenge/link:
+    post:
+      consumes:
+      - application/json
+      description: Generate a shareable challenge link (24h valid)
+      parameters:
+      - description: Link request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.CreateChallengeLinkRequest'
+      produces:
+      - application/json
+      responses:
+        "201":
+          description: Link created
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.CreateChallengeLinkResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Create challenge link
+      tags:
+      - duel
+  /duel/history:
+    get:
+      consumes:
+      - application/json
+      description: Get player's duel match history with pagination
+      parameters:
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      - description: Limit (default 20, max 100)
+        in: query
+        name: limit
+        type: integer
+      - description: Offset
+        in: query
+        name: offset
+        type: integer
+      - description: 'Filter: all, friends, wins, losses'
+        in: query
+        name: filter
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Match history
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetMatchHistoryResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get match history
+      tags:
+      - duel
+  /duel/leaderboard:
+    get:
+      consumes:
+      - application/json
+      description: Get leaderboard by type (seasonal, friends, referrals)
+      parameters:
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      - description: 'Type: seasonal, friends, referrals (default seasonal)'
+        in: query
+        name: type
+        type: string
+      - description: Limit (default 10, max 100)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Leaderboard
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetLeaderboardResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get duel leaderboard
+      tags:
+      - duel
+  /duel/match/{matchId}/rematch:
+    post:
+      consumes:
+      - application/json
+      description: Request a rematch after a completed duel
+      parameters:
+      - description: Match ID
+        in: path
+        name: matchId
+        required: true
+        type: string
+      - description: Rematch request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.RequestRematchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Rematch requested
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.RequestRematchResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Match not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "409":
+          description: Cannot rematch
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Request rematch
+      tags:
+      - duel
+  /duel/queue/join:
+    post:
+      consumes:
+      - application/json
+      description: Enter random matchmaking queue
+      parameters:
+      - description: Join request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.JoinQueueRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Joined queue
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.JoinQueueResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "409":
+          description: Already in queue or match
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Join matchmaking queue
+      tags:
+      - duel
+  /duel/queue/leave:
+    delete:
+      consumes:
+      - application/json
+      description: Cancel queue search (ticket refunded)
+      parameters:
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Left queue
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.LeaveQueueResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Leave matchmaking queue
+      tags:
+      - duel
+  /duel/status:
+    get:
+      consumes:
+      - application/json
+      description: Get player's duel status, MMR, pending challenges
+      parameters:
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Status
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetDuelStatusResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get duel status
+      tags:
+      - duel
   /leaderboard:
     get:
       consumes:

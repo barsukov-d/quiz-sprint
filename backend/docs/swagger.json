@@ -712,6 +712,492 @@
                 }
             }
         },
+        "/duel/challenge": {
+            "post": {
+                "description": "Send a direct challenge to a friend",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Send friend challenge",
+                "parameters": [
+                    {
+                        "description": "Challenge request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.SendChallengeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Challenge sent",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.SendChallengeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Friend busy",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/challenge/link": {
+            "post": {
+                "description": "Generate a shareable challenge link (24h valid)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Create challenge link",
+                "parameters": [
+                    {
+                        "description": "Link request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.CreateChallengeLinkRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "201": {
+                        "description": "Link created",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.CreateChallengeLinkResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/challenge/{challengeId}/respond": {
+            "post": {
+                "description": "Accept or decline a friend challenge",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Respond to challenge",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Challenge ID",
+                        "name": "challengeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Response request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RespondChallengeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Response processed",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RespondChallengeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Challenge not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Challenge expired",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/history": {
+            "get": {
+                "description": "Get player's duel match history with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Get match history",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Offset",
+                        "name": "offset",
+                        "in": "query"
+                    },
+                    {
+                        "type": "string",
+                        "description": "Filter: all, friends, wins, losses",
+                        "name": "filter",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Match history",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetMatchHistoryResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/leaderboard": {
+            "get": {
+                "description": "Get leaderboard by type (seasonal, friends, referrals)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Get duel leaderboard",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Type: seasonal, friends, referrals (default seasonal)",
+                        "name": "type",
+                        "in": "query"
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 10, max 100)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Leaderboard",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetLeaderboardResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/match/{matchId}/rematch": {
+            "post": {
+                "description": "Request a rematch after a completed duel",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Request rematch",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Match ID",
+                        "name": "matchId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Rematch request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RequestRematchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rematch requested",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RequestRematchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Match not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Cannot rematch",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/queue/join": {
+            "post": {
+                "description": "Enter random matchmaking queue",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Join matchmaking queue",
+                "parameters": [
+                    {
+                        "description": "Join request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.JoinQueueRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Joined queue",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.JoinQueueResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Already in queue or match",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/queue/leave": {
+            "delete": {
+                "description": "Cancel queue search (ticket refunded)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Leave matchmaking queue",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Left queue",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.LeaveQueueResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/status": {
+            "get": {
+                "description": "Get player's duel status, MMR, pending challenges",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Get duel status",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Status",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetDuelStatusResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/leaderboard": {
             "get": {
                 "description": "Get the global leaderboard across all quizzes (sum of best scores per quiz)",
@@ -2435,6 +2921,36 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.CreateChallengeLinkRequest": {
+            "type": "object",
+            "required": [
+                "playerId"
+            ],
+            "properties": {
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.CreateChallengeLinkResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "challengeLink": {
+                            "type": "string"
+                        },
+                        "expiresAt": {
+                            "type": "integer"
+                        },
+                        "shareText": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.DailyGameDTO": {
             "type": "object",
             "required": [
@@ -2545,6 +3061,108 @@
                 },
                 "score": {
                     "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.DuelChallengeDTO": {
+            "type": "object",
+            "properties": {
+                "challengeLink": {
+                    "type": "string"
+                },
+                "challengedId": {
+                    "type": "string"
+                },
+                "challengerId": {
+                    "type": "string"
+                },
+                "createdAt": {
+                    "type": "integer"
+                },
+                "expiresAt": {
+                    "type": "integer"
+                },
+                "expiresIn": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "type": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.DuelFriendDTO": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "inMatch": {
+                    "type": "boolean"
+                },
+                "isOnline": {
+                    "type": "boolean"
+                },
+                "league": {
+                    "type": "string"
+                },
+                "mmr": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.DuelPlayerRatingDTO": {
+            "type": "object",
+            "properties": {
+                "canDemote": {
+                    "type": "boolean"
+                },
+                "division": {
+                    "type": "integer"
+                },
+                "gamesAtRank": {
+                    "type": "integer"
+                },
+                "league": {
+                    "type": "string"
+                },
+                "leagueIcon": {
+                    "type": "string"
+                },
+                "leagueLabel": {
+                    "type": "string"
+                },
+                "mmr": {
+                    "type": "integer"
+                },
+                "peakLeague": {
+                    "type": "string"
+                },
+                "peakMmr": {
+                    "type": "integer"
+                },
+                "playerId": {
+                    "type": "string"
+                },
+                "seasonLosses": {
+                    "type": "integer"
+                },
+                "seasonWins": {
+                    "type": "integer"
+                },
+                "winRate": {
+                    "type": "number"
                 }
             }
         },
@@ -2804,6 +3422,46 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.GetDuelStatusResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "activeMatchId": {
+                            "type": "string"
+                        },
+                        "friendsOnline": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.DuelFriendDTO"
+                            }
+                        },
+                        "hasActiveDuel": {
+                            "type": "boolean"
+                        },
+                        "pendingChallenges": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO"
+                            }
+                        },
+                        "player": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.DuelPlayerRatingDTO"
+                        },
+                        "seasonEndsAt": {
+                            "type": "integer"
+                        },
+                        "seasonId": {
+                            "type": "string"
+                        },
+                        "tickets": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse": {
             "type": "object",
             "required": [
@@ -2893,6 +3551,28 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.GetMarathonStatusData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetMatchHistoryResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "hasMore": {
+                            "type": "boolean"
+                        },
+                        "matches": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.MatchHistoryEntryDTO"
+                            }
+                        },
+                        "total": {
+                            "type": "integer"
+                        }
+                    }
                 }
             }
         },
@@ -3074,6 +3754,42 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.JoinQueueRequest": {
+            "type": "object",
+            "required": [
+                "playerId"
+            ],
+            "properties": {
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.JoinQueueResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "estimatedWait": {
+                            "type": "integer"
+                        },
+                        "mmrRange": {
+                            "type": "string"
+                        },
+                        "position": {
+                            "type": "integer"
+                        },
+                        "queueId": {
+                            "type": "string"
+                        },
+                        "status": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.LeaderboardEntryDTO": {
             "type": "object",
             "required": [
@@ -3098,6 +3814,25 @@
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.LeaveQueueResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "newTicketCount": {
+                            "type": "integer"
+                        },
+                        "success": {
+                            "type": "boolean"
+                        },
+                        "ticketRefunded": {
+                            "type": "boolean"
+                        }
+                    }
                 }
             }
         },
@@ -3424,6 +4159,38 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.MatchHistoryEntryDTO": {
+            "type": "object",
+            "properties": {
+                "completedAt": {
+                    "type": "integer"
+                },
+                "isFriendMatch": {
+                    "type": "boolean"
+                },
+                "matchId": {
+                    "type": "string"
+                },
+                "mmrChange": {
+                    "type": "integer"
+                },
+                "opponent": {
+                    "type": "string"
+                },
+                "opponentMmr": {
+                    "type": "integer"
+                },
+                "opponentScore": {
+                    "type": "integer"
+                },
+                "playerScore": {
+                    "type": "integer"
+                },
+                "result": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.OpenChestData": {
             "type": "object",
             "required": [
@@ -3602,6 +4369,77 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.RequestRematchRequest": {
+            "type": "object",
+            "required": [
+                "playerId"
+            ],
+            "properties": {
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.RequestRematchResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "expiresIn": {
+                            "type": "integer"
+                        },
+                        "matchId": {
+                            "type": "string"
+                        },
+                        "rematchId": {
+                            "type": "string"
+                        },
+                        "status": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.RespondChallengeRequest": {
+            "type": "object",
+            "required": [
+                "action",
+                "playerId"
+            ],
+            "properties": {
+                "action": {
+                    "description": "\"accept\" or \"decline\"",
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.RespondChallengeResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "matchId": {
+                            "type": "string"
+                        },
+                        "startsIn": {
+                            "type": "integer"
+                        },
+                        "success": {
+                            "type": "boolean"
+                        },
+                        "ticketConsumed": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.RetryChallengeData": {
             "type": "object",
             "required": [
@@ -3653,6 +4491,43 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.RetryChallengeData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.SendChallengeRequest": {
+            "type": "object",
+            "required": [
+                "friendId",
+                "playerId"
+            ],
+            "properties": {
+                "friendId": {
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.SendChallengeResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "challengeId": {
+                            "type": "string"
+                        },
+                        "expiresIn": {
+                            "type": "integer"
+                        },
+                        "status": {
+                            "type": "string"
+                        },
+                        "ticketConsumed": {
+                            "type": "boolean"
+                        }
+                    }
                 }
             }
         },

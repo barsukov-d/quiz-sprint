@@ -2,6 +2,7 @@
 import { useAuth } from '@/composables/useAuth'
 import DailyChallengeCard from '@/components/DailyChallenge/DailyChallengeCard.vue'
 import MarathonCard from '@/components/Marathon/MarathonCard.vue'
+import DuelCard from '@/components/Duel/DuelCard.vue'
 import GameModeCard from '@/components/shared/GameModeCard.vue'
 
 const { currentUser, isAuthenticated } = useAuth()
@@ -49,15 +50,8 @@ const playerId = currentUser.value?.id || 'guest'
 				<!-- Solo Marathon -->
 				<MarathonCard :player-id="playerId" />
 
-				<!-- Coming Soon: Quick Duel -->
-				<GameModeCard
-					title="Quick Duel"
-					icon="i-heroicons-bolt"
-					description="1v1 real-time battle against other players"
-					:disabled="true"
-					badge="Coming Soon"
-					badge-color="yellow"
-				/>
+				<!-- PvP Duel -->
+				<DuelCard :player-id="playerId" />
 
 				<!-- Coming Soon: Party Mode -->
 				<GameModeCard

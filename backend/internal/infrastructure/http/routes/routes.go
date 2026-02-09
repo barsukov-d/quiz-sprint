@@ -327,6 +327,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		createChallengeLinkUC  *appDuel.CreateChallengeLinkUseCase
 		getMatchHistoryUC      *appDuel.GetMatchHistoryUseCase
 		getDuelLeaderboardUC   *appDuel.GetLeaderboardUseCase
+		requestRematchUC       *appDuel.RequestRematchUseCase
 	)
 
 	if duelGameRepo != nil && playerRatingRepo != nil && challengeRepo != nil && referralRepo != nil && seasonRepo != nil && userRepo != nil {
@@ -375,6 +376,11 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			referralRepo,
 			seasonRepo,
 			userRepo,
+		)
+		requestRematchUC = appDuel.NewRequestRematchUseCase(
+			duelGameRepo,
+			challengeRepo,
+			duelEventBus,
 		)
 	}
 
@@ -458,6 +464,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			createChallengeLinkUC,
 			getMatchHistoryUC,
 			getDuelLeaderboardUC,
+			requestRematchUC,
 		)
 	}
 
@@ -509,6 +516,14 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 	ws.Get("/leaderboard/:id", websocket.New(wsHub.HandleLeaderboardWebSocket))
 	ws.Get("/leaderboard/global", websocket.New(wsHub.HandleGlobalLeaderboardWebSocket))
+
+	// Duel WebSocket (if database available)
+	if duelGameRepo != nil {
+		// Note: StartMatchUseCase and SubmitDuelAnswerUseCase would need QuestionRepository
+		// For now, create hub without use cases (they can be added later)
+		duelWsHub := handlers.NewDuelWebSocketHub(nil, nil)
+		ws.Get("/duel/:matchId", websocket.New(duelWsHub.HandleDuelWebSocket))
+	}
 
 	// User routes (only if database is available)
 	if userHandler != nil {
@@ -564,6 +579,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		duel.Post("/challenge/:challengeId/respond", duelHandler.RespondChallenge)
 		duel.Get("/history", duelHandler.GetMatchHistory)
 		duel.Get("/leaderboard", duelHandler.GetDuelLeaderboard)
+		duel.Post("/match/:matchId/rematch", duelHandler.RequestRematch)
 	}
 
 	// Admin routes (debug/testing, protected by API key)

@@ -18,10 +18,17 @@
 
 ## Quick Navigation
 
-- **Backend**: `backend/internal/domain/pvp_duel/` (TBD)
-- **Frontend**: `tma/src/views/DuelView.vue` (TBD)
+- **Domain**: `backend/internal/domain/quick_duel/`
+- **Application**: `backend/internal/application/quick_duel/`
+- **Handlers**: `backend/internal/infrastructure/http/handlers/duel_handlers.go`
+- **Repositories**: `backend/internal/infrastructure/persistence/postgres/*_repository.go`
+- **Redis Queue**: `backend/internal/infrastructure/persistence/redis/matchmaking_queue.go`
+- **Migration**: `backend/migrations/013_create_duel_tables.sql`
+- **Frontend**: `tma/src/views/Duel/` (DuelLobbyView, DuelPlayView, DuelResultsView)
+- **Components**: `tma/src/components/Duel/DuelCard.vue`
+- **Composables**: `tma/src/composables/usePvPDuel.ts`, `tma/src/composables/useDuelWebSocket.ts`
 - **API**: `/api/v1/duel/*`
-- **WebSocket**: `/ws/duel`
+- **WebSocket**: `/ws/duel` (TBD)
 
 ---
 
@@ -62,43 +69,43 @@
 ## Implementation Checklist
 
 ### Phase 1: Core Duel (MVP)
-- [ ] Domain model (DuelMatch, PlayerRating)
-- [ ] Matchmaking queue (Redis)
-- [ ] WebSocket server for real-time sync
-- [ ] Question distribution (same for both)
-- [ ] Answer submission + scoring
-- [ ] MMR calculation
-- [ ] Basic result screen
+- [x] Domain model (DuelGame, PlayerRating, EloRating, League, Division)
+- [x] Matchmaking queue (Redis sorted sets)
+- [x] WebSocket server for real-time sync (DuelWebSocketHub)
+- [x] Question distribution (same for both via StartMatchUseCase)
+- [x] Answer submission + scoring (SubmitDuelAnswerUseCase)
+- [x] MMR/ELO calculation (K-factor 32, min ±10)
+- [x] Basic result screen (frontend) - DuelResultsView.vue
 
 ### Phase 2: Friend Features
-- [ ] Direct friend challenge
-- [ ] Challenge link generation
+- [x] Direct friend challenge (60s expiry)
+- [x] Challenge link generation (24h expiry)
 - [ ] Push notifications (Telegram)
-- [ ] Friends online status
-- [ ] Rematch flow
+- [x] Friends online status (Redis OnlineTracker)
+- [x] Rematch flow (RequestRematchUseCase)
 
 ### Phase 3: Ranking & Seasons
-- [ ] League system (6 leagues × 4 divisions)
-- [ ] Promotion/demotion logic
-- [ ] Seasonal leaderboard
-- [ ] Season reset job
+- [x] League system (6 leagues × 4 divisions)
+- [x] Promotion/demotion logic (with 3-game protection)
+- [x] Seasonal leaderboard
+- [x] Season reset job (soft reset formula)
 - [ ] Seasonal reward distribution
 
 ### Phase 4: Virality
-- [ ] Referral tracking
-- [ ] Referral milestone rewards
+- [x] Referral tracking (5 milestones)
+- [x] Referral milestone rewards
 - [ ] Victory card generation (image)
 - [ ] Share to Telegram/Stories
-- [ ] Friends leaderboard
+- [x] Friends leaderboard
 - [ ] Revenge notifications
 
 ### Phase 5: Frontend
-- [ ] Duel lobby view
-- [ ] Matchmaking screen
-- [ ] Friend challenge UI
-- [ ] Live duel screen (WebSocket)
-- [ ] Result screen with sharing
-- [ ] Leaderboard views
+- [x] Duel lobby view (DuelLobbyView.vue)
+- [x] Matchmaking screen (in lobby)
+- [x] Friend challenge UI (in lobby)
+- [x] Live duel screen (DuelPlayView.vue + WebSocket)
+- [x] Result screen with sharing (DuelResultsView.vue)
+- [x] Leaderboard views (in lobby tabs)
 
 ---
 

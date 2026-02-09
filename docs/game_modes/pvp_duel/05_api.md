@@ -252,10 +252,10 @@ POST /api/v1/duel/challenge/link
 ```json
 {
   "data": {
-    "challengeLink": "t.me/quizsprintbot?start=duel_abc123",
+    "challengeLink": "t.me/quiz_sprint_dev_bot?start=duel_abc123",
     "expiresAt": 1706515200,
     "expiresIn": 86400,
-    "shareText": "⚔️ Вызываю тебя на дуэль в Quiz Sprint!\nПокажи кто здесь умнее! 🧠\n\nt.me/quizsprintbot?start=duel_abc123"
+    "shareText": "⚔️ Вызываю тебя на дуэль в Quiz Sprint!\nПокажи кто здесь умнее! 🧠\n\nt.me/quiz_sprint_dev_bot?start=duel_abc123"
   }
 }
 ```
@@ -317,7 +317,7 @@ GET /api/v1/duel/match/:matchId
     "winReason": "score",
     "completedAt": 1706429100,
     "share": {
-      "text": "⚔️ ПОБЕДА В ДУЭЛИ!\n@YourName 🏆\n5 : 4\n🥇 Gold III\n\nПопробуй победить меня!\nt.me/quizsprintbot?start=duel_abc123",
+      "text": "⚔️ ПОБЕДА В ДУЭЛИ!\n@YourName 🏆\n5 : 4\n🥇 Gold III\n\nПопробуй победить меня!\nt.me/quiz_sprint_dev_bot?start=duel_abc123",
       "imageUrl": "https://api.quiz-sprint.online/share/m_xyz789.png"
     },
     "rematch": {
@@ -453,7 +453,7 @@ GET /api/v1/duel/referrals
 ```json
 {
   "data": {
-    "referralLink": "t.me/quizsprintbot?start=ref_user123",
+    "referralLink": "t.me/quiz_sprint_dev_bot?start=ref_user123",
     "totalReferrals": 8,
     "activeReferrals": 5,
     "pendingRewards": [

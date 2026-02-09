@@ -4,6 +4,7 @@ import (
 	"strconv"
 
 	"github.com/gofiber/fiber/v3"
+	"github.com/google/uuid"
 
 	appDuel "github.com/barsukov/quiz-sprint/backend/internal/application/quick_duel"
 	domainDuel "github.com/barsukov/quiz-sprint/backend/internal/domain/quick_duel"
@@ -19,6 +20,7 @@ type DuelHandler struct {
 	createLinkUC        *appDuel.CreateChallengeLinkUseCase
 	getHistoryUC        *appDuel.GetMatchHistoryUseCase
 	getLeaderboardUC    *appDuel.GetLeaderboardUseCase
+	requestRematchUC    *appDuel.RequestRematchUseCase
 }
 
 func NewDuelHandler(
@@ -30,6 +32,7 @@ func NewDuelHandler(
 	createLinkUC *appDuel.CreateChallengeLinkUseCase,
 	getHistoryUC *appDuel.GetMatchHistoryUseCase,
 	getLeaderboardUC *appDuel.GetLeaderboardUseCase,
+	requestRematchUC *appDuel.RequestRematchUseCase,
 ) *DuelHandler {
 	return &DuelHandler{
 		getStatusUC:         getStatusUC,
@@ -40,6 +43,7 @@ func NewDuelHandler(
 		createLinkUC:        createLinkUC,
 		getHistoryUC:        getHistoryUC,
 		getLeaderboardUC:    getLeaderboardUC,
+		requestRematchUC:    requestRematchUC,
 	}
 }
 
@@ -177,6 +181,11 @@ func (h *DuelHandler) SendChallenge(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/challenge/{challengeId}/respond [post]
 func (h *DuelHandler) RespondChallenge(c fiber.Ctx) error {
+	challengeID := c.Params("challengeId")
+	if _, err := uuid.Parse(challengeID); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid challenge ID format")
+	}
+
 	var req RespondChallengeRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
@@ -192,7 +201,7 @@ func (h *DuelHandler) RespondChallenge(c fiber.Ctx) error {
 
 	output, err := h.respondChallengeUC.Execute(appDuel.RespondChallengeInput{
 		PlayerID:    req.PlayerID,
-		ChallengeID: c.Params("challengeId"),
+		ChallengeID: challengeID,
 		Action:      req.Action,
 	})
 	if err != nil {
@@ -319,11 +328,57 @@ func (h *DuelHandler) GetDuelLeaderboard(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": output})
 }
 
+// RequestRematch handles POST /api/v1/duel/match/:matchId/rematch
+// @Summary Request rematch
+// @Description Request a rematch after a completed duel
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Param matchId path string true "Match ID"
+// @Param request body RequestRematchRequest true "Rematch request"
+// @Success 200 {object} RequestRematchResponse "Rematch requested"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 404 {object} ErrorResponse "Match not found"
+// @Failure 409 {object} ErrorResponse "Cannot rematch"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /duel/match/{matchId}/rematch [post]
+func (h *DuelHandler) RequestRematch(c fiber.Ctx) error {
+	if h.requestRematchUC == nil {
+		return fiber.NewError(fiber.StatusNotImplemented, "Rematch not available")
+	}
+
+	matchID := c.Params("matchId")
+	if _, err := uuid.Parse(matchID); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid match ID format")
+	}
+
+	var req RequestRematchRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if req.PlayerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+
+	output, err := h.requestRematchUC.Execute(appDuel.RequestRematchInput{
+		PlayerID: req.PlayerID,
+		MatchID:  matchID,
+	})
+	if err != nil {
+		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
+}
+
 // mapDuelError maps domain errors to HTTP errors
 func mapDuelError(err error) error {
 	switch err {
 	case domainDuel.ErrGameNotFound:
 		return fiber.NewError(fiber.StatusNotFound, "Match not found")
+	case domainDuel.ErrGameNotActive:
+		return fiber.NewError(fiber.StatusConflict, "Match is not active")
 	case domainDuel.ErrChallengeNotFound:
 		return fiber.NewError(fiber.StatusNotFound, "Challenge not found")
 	case domainDuel.ErrChallengeExpired:

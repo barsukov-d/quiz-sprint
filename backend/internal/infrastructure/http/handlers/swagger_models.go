@@ -1320,3 +1320,22 @@ type DuelLeaderboardEntryDTO struct {
 }
 
 // @name DuelLeaderboardEntryDTO
+
+// RequestRematchRequest is the request for rematch
+type RequestRematchRequest struct {
+	PlayerID string `json:"playerId" validate:"required"`
+}
+
+// @name RequestRematchRequest
+
+// RequestRematchResponse wraps the rematch response
+type RequestRematchResponse struct {
+	Data struct {
+		RematchID string  `json:"rematchId"`
+		Status    string  `json:"status"`
+		ExpiresIn int     `json:"expiresIn"`
+		MatchID   *string `json:"matchId,omitempty"`
+	} `json:"data"`
+}
+
+// @name RequestRematchResponse
