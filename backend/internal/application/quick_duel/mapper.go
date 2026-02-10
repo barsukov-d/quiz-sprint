@@ -47,8 +47,8 @@ func ToDuelPlayerDTO(player quick_duel.DuelPlayer, rating *quick_duel.PlayerRati
 	}
 }
 
-// ToDuelMatchDTO converts domain DuelGame to DTO
-func ToDuelMatchDTO(game *quick_duel.DuelGame, player1Rating, player2Rating *quick_duel.PlayerRating) DuelMatchDTO {
+// ToDuelGameDTO converts domain DuelGame to DTO
+func ToDuelGameDTO(game *quick_duel.DuelGame, player1Rating, player2Rating *quick_duel.PlayerRating) DuelGameDTO {
 	var winnerID *string
 	if game.Status() == quick_duel.GameStatusFinished {
 		if game.Player1().Score() > game.Player2().Score() {
@@ -60,17 +60,17 @@ func ToDuelMatchDTO(game *quick_duel.DuelGame, player1Rating, player2Rating *qui
 		}
 	}
 
-	return DuelMatchDTO{
-		ID:            game.ID().String(),
-		Status:        string(game.Status()),
-		Player1:       ToDuelPlayerDTO(game.Player1(), player1Rating),
-		Player2:       ToDuelPlayerDTO(game.Player2(), player2Rating),
-		CurrentRound:  game.CurrentRound(),
-		TotalRounds:   quick_duel.QuestionsPerDuel,
-		StartedAt:     game.StartedAt(),
-		FinishedAt:    game.FinishedAt(),
-		WinnerID:      winnerID,
-		IsFriendMatch: false, // TODO: check if friend match
+	return DuelGameDTO{
+		ID:           game.ID().String(),
+		Status:       string(game.Status()),
+		Player1:      ToDuelPlayerDTO(game.Player1(), player1Rating),
+		Player2:      ToDuelPlayerDTO(game.Player2(), player2Rating),
+		CurrentRound: game.CurrentRound(),
+		TotalRounds:  quick_duel.QuestionsPerDuel,
+		StartedAt:    game.StartedAt(),
+		FinishedAt:   game.FinishedAt(),
+		WinnerID:     winnerID,
+		IsFriendGame: false, // TODO: check if friend game
 	}
 }
 
@@ -120,8 +120,8 @@ func ToChallengeDTO(challenge *quick_duel.DuelChallenge, now int64) ChallengeDTO
 	}
 }
 
-// ToMatchHistoryEntryDTO converts domain DuelGame to history entry DTO
-func ToMatchHistoryEntryDTO(game *quick_duel.DuelGame, playerID string, opponentUsername string) MatchHistoryEntryDTO {
+// ToGameHistoryEntryDTO converts domain DuelGame to history entry DTO
+func ToGameHistoryEntryDTO(game *quick_duel.DuelGame, playerID string, opponentUsername string) GameHistoryEntryDTO {
 	isPlayer1 := game.Player1().UserID().String() == playerID
 
 	var result string
@@ -149,15 +149,15 @@ func ToMatchHistoryEntryDTO(game *quick_duel.DuelGame, playerID string, opponent
 		result = "draw"
 	}
 
-	return MatchHistoryEntryDTO{
-		MatchID:       game.ID().String(),
+	return GameHistoryEntryDTO{
+		GameID:        game.ID().String(),
 		Opponent:      opponentUsername,
 		OpponentMMR:   opponentMMR,
 		Result:        result,
 		PlayerScore:   playerScore,
 		OpponentScore: opponentScore,
 		MMRChange:     mmrChange,
-		IsFriendMatch: false, // TODO
+		IsFriendGame:  false, // TODO
 		CompletedAt:   game.FinishedAt(),
 	}
 }

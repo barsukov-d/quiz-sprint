@@ -14,7 +14,7 @@ const {
   friendsOnline,
   pendingChallenges,
   hasActiveDuel,
-  activeMatchId,
+  activeGameId,
   mmr,
   leagueLabel,
   leagueIcon,
@@ -23,7 +23,7 @@ const {
   winRate,
   leaderboard,
   playerRank,
-  matchHistory,
+  gameHistory,
   isSearching,
   searchTime,
   isLoading,
@@ -33,6 +33,7 @@ const {
   sendChallenge,
   respondChallenge,
   createChallengeLink,
+  shareChallengeToTelegram,
   goToActiveDuel,
   refetchStatus,
   refetchLeaderboard,
@@ -89,6 +90,19 @@ const handleCopyLink = () => {
   navigator.clipboard.writeText(challengeLink.value)
 }
 
+const isSharing = ref(false)
+
+const handleShareToTelegram = async () => {
+  try {
+    isSharing.value = true
+    await shareChallengeToTelegram()
+  } catch (error) {
+    console.error('Failed to share:', error)
+  } finally {
+    isSharing.value = false
+  }
+}
+
 const handleChallengeFriend = async (friendId: string) => {
   await sendChallenge(friendId)
 }
@@ -103,7 +117,7 @@ onMounted(async () => {
   await refetchHistory()
 
   // If has active duel, redirect
-  if (hasActiveDuel.value && activeMatchId.value) {
+  if (hasActiveDuel.value && activeGameId.value) {
     goToActiveDuel()
   }
 })
@@ -255,14 +269,28 @@ onMounted(async () => {
         </div>
       </UCard>
 
-      <!-- Challenge Link -->
+      <!-- Invite Friend -->
       <UCard>
         <h3 class="font-semibold mb-3">Challenge a Friend</h3>
+
+        <!-- Primary: Share via Telegram -->
+        <UButton
+          icon="i-heroicons-paper-airplane"
+          color="primary"
+          block
+          :loading="isSharing"
+          @click="handleShareToTelegram"
+        >
+          Invite Friend via Telegram
+        </UButton>
+
+        <!-- Secondary: Create link manually -->
         <UButton
           icon="i-heroicons-link"
           color="gray"
           variant="soft"
           block
+          class="mt-2"
           @click="handleCreateLink"
         >
           Create Challenge Link
@@ -293,10 +321,10 @@ onMounted(async () => {
             <div class="flex items-center gap-2">
               <div class="w-2 h-2 bg-green-500 rounded-full" />
               <span>{{ friend.username }}</span>
-              <UBadge v-if="friend.inMatch" size="xs" color="orange">In Match</UBadge>
+              <UBadge v-if="friend.inGame" size="xs" color="orange">In Game</UBadge>
             </div>
             <UButton
-              v-if="!friend.inMatch"
+              v-if="!friend.inGame"
               size="xs"
               @click="handleChallengeFriend(friend.id!)"
             >
@@ -344,37 +372,37 @@ onMounted(async () => {
 
     <!-- History Tab -->
     <div v-else-if="activeTab === 'history'">
-      <div v-if="matchHistory.length === 0" class="text-center py-8 text-gray-500">
-        No matches yet
+      <div v-if="gameHistory.length === 0" class="text-center py-8 text-gray-500">
+        No games yet
       </div>
       <div v-else class="space-y-2">
         <UCard
-          v-for="match in matchHistory"
-          :key="match.matchId"
+          v-for="game in gameHistory"
+          :key="game.gameId"
           class="!p-3"
         >
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-3">
               <UIcon
-                :name="match.result === 'win' ? 'i-heroicons-trophy' : 'i-heroicons-x-circle'"
-                :class="match.result === 'win' ? 'text-green-500' : 'text-red-500'"
+                :name="game.result === 'win' ? 'i-heroicons-trophy' : 'i-heroicons-x-circle'"
+                :class="game.result === 'win' ? 'text-green-500' : 'text-red-500'"
                 class="size-6"
               />
               <div>
-                <p class="font-medium">vs {{ match.opponent }}</p>
+                <p class="font-medium">vs {{ game.opponent }}</p>
                 <p class="text-xs text-gray-500">
-                  {{ match.playerScore }} - {{ match.opponentScore }}
+                  {{ game.playerScore }} - {{ game.opponentScore }}
                 </p>
               </div>
             </div>
             <div class="text-right">
               <p
-                :class="match.mmrChange! >= 0 ? 'text-green-600' : 'text-red-600'"
+                :class="game.mmrChange! >= 0 ? 'text-green-600' : 'text-red-600'"
                 class="font-semibold"
               >
-                {{ match.mmrChange! >= 0 ? '+' : '' }}{{ match.mmrChange }} MMR
+                {{ game.mmrChange! >= 0 ? '+' : '' }}{{ game.mmrChange }} MMR
               </p>
-              <UBadge v-if="match.isFriendMatch" size="xs" color="blue" variant="soft">
+              <UBadge v-if="game.isFriendGame" size="xs" color="blue" variant="soft">
                 Friend
               </UBadge>
             </div>

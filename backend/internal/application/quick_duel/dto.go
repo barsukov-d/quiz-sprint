@@ -17,18 +17,18 @@ type DuelPlayerDTO struct {
 	Connected  bool    `json:"connected"`
 }
 
-// DuelMatchDTO represents a duel match
-type DuelMatchDTO struct {
-	ID            string          `json:"id"`
-	Status        string          `json:"status"`
-	Player1       DuelPlayerDTO   `json:"player1"`
-	Player2       DuelPlayerDTO   `json:"player2"`
-	CurrentRound  int             `json:"currentRound"`
-	TotalRounds   int             `json:"totalRounds"`
-	StartedAt     int64           `json:"startedAt"`
-	FinishedAt    int64           `json:"finishedAt,omitempty"`
-	WinnerID      *string         `json:"winnerId,omitempty"`
-	IsFriendMatch bool            `json:"isFriendMatch"`
+// DuelGameDTO represents a duel game
+type DuelGameDTO struct {
+	ID           string          `json:"id"`
+	Status       string          `json:"status"`
+	Player1      DuelPlayerDTO   `json:"player1"`
+	Player2      DuelPlayerDTO   `json:"player2"`
+	CurrentRound int             `json:"currentRound"`
+	TotalRounds  int             `json:"totalRounds"`
+	StartedAt    int64           `json:"startedAt"`
+	FinishedAt   int64           `json:"finishedAt,omitempty"`
+	WinnerID     *string         `json:"winnerId,omitempty"`
+	IsFriendGame bool            `json:"isFriendGame"`
 }
 
 // DuelQuestionDTO represents a question in a duel (no IsCorrect field!)
@@ -91,16 +91,16 @@ type ChallengeDTO struct {
 	CreatedAt     int64   `json:"createdAt"`
 }
 
-// MatchHistoryEntryDTO represents a match in history
-type MatchHistoryEntryDTO struct {
-	MatchID       string `json:"matchId"`
+// GameHistoryEntryDTO represents a game in history
+type GameHistoryEntryDTO struct {
+	GameID        string `json:"gameId"`
 	Opponent      string `json:"opponent"`
 	OpponentMMR   int    `json:"opponentMmr"`
 	Result        string `json:"result"`
 	PlayerScore   int    `json:"playerScore"`
 	OpponentScore int    `json:"opponentScore"`
 	MMRChange     int    `json:"mmrChange"`
-	IsFriendMatch bool   `json:"isFriendMatch"`
+	IsFriendGame  bool   `json:"isFriendGame"`
 	CompletedAt   int64  `json:"completedAt"`
 }
 
@@ -131,7 +131,7 @@ type FriendDTO struct {
 	MMR      int    `json:"mmr"`
 	League   string `json:"league"`
 	IsOnline bool   `json:"isOnline"`
-	InMatch  bool   `json:"inMatch"`
+	InGame   bool   `json:"inGame"`
 }
 
 // ========================================
@@ -144,7 +144,7 @@ type GetDuelStatusInput struct {
 
 type GetDuelStatusOutput struct {
 	HasActiveDuel     bool              `json:"hasActiveDuel"`
-	ActiveMatchID     *string           `json:"activeMatchId,omitempty"`
+	ActiveGameID      *string           `json:"activeGameId,omitempty"`
 	Player            PlayerRatingDTO   `json:"player"`
 	Tickets           int               `json:"tickets"`
 	FriendsOnline     []FriendDTO       `json:"friendsOnline"`
@@ -211,7 +211,7 @@ type RespondChallengeInput struct {
 
 type RespondChallengeOutput struct {
 	Success        bool    `json:"success"`
-	MatchID        *string `json:"matchId,omitempty"`
+	GameID         *string `json:"gameId,omitempty"`
 	TicketConsumed bool    `json:"ticketConsumed"`
 	StartsIn       *int    `json:"startsIn,omitempty"`
 }
@@ -231,15 +231,15 @@ type CreateChallengeLinkOutput struct {
 }
 
 // ========================================
-// GetMatchResult Use Case
+// GetGameResult Use Case
 // ========================================
 
-type GetMatchResultInput struct {
+type GetGameResultInput struct {
 	PlayerID string `json:"playerId"`
-	MatchID  string `json:"matchId"`
+	GameID   string `json:"gameId"`
 }
 
-type MatchQuestionResultDTO struct {
+type GameQuestionResultDTO struct {
 	QuestionNum       int    `json:"questionNumber"`
 	QuestionText      string `json:"questionText"`
 	PlayerAnswerID    string `json:"playerAnswerId"`
@@ -251,19 +251,19 @@ type MatchQuestionResultDTO struct {
 	CorrectAnswerID   string `json:"correctAnswerId"`
 }
 
-type GetMatchResultOutput struct {
-	MatchID         string                   `json:"matchId"`
-	Result          string                   `json:"result"` // "win", "loss", "draw"
-	PlayerScore     int                      `json:"playerScore"`
-	OpponentScore   int                      `json:"opponentScore"`
-	MMRChange       int                      `json:"mmrChange"`
-	NewMMR          int                      `json:"newMmr"`
-	RankChange      *string                  `json:"rankChange,omitempty"` // "promoted", "demoted", null
-	NewLeague       string                   `json:"newLeague"`
-	NewDivision     int                      `json:"newDivision"`
-	Opponent        DuelPlayerDTO            `json:"opponent"`
-	Questions       []MatchQuestionResultDTO `json:"questions"`
-	CanRematch      bool                     `json:"canRematch"`
+type GetGameResultOutput struct {
+	GameID           string                  `json:"gameId"`
+	Result           string                  `json:"result"` // "win", "loss", "draw"
+	PlayerScore      int                     `json:"playerScore"`
+	OpponentScore    int                     `json:"opponentScore"`
+	MMRChange        int                     `json:"mmrChange"`
+	NewMMR           int                     `json:"newMmr"`
+	RankChange       *string                 `json:"rankChange,omitempty"` // "promoted", "demoted", null
+	NewLeague        string                  `json:"newLeague"`
+	NewDivision      int                     `json:"newDivision"`
+	Opponent         DuelPlayerDTO           `json:"opponent"`
+	Questions        []GameQuestionResultDTO `json:"questions"`
+	CanRematch       bool                    `json:"canRematch"`
 	RematchExpiresIn *int                    `json:"rematchExpiresIn,omitempty"`
 }
 
@@ -273,31 +273,31 @@ type GetMatchResultOutput struct {
 
 type RequestRematchInput struct {
 	PlayerID string `json:"playerId"`
-	MatchID  string `json:"matchId"`
+	GameID   string `json:"gameId"`
 }
 
 type RequestRematchOutput struct {
 	RematchID string  `json:"rematchId"`
 	ExpiresIn int     `json:"expiresIn"`
 	Status    string  `json:"status"`
-	MatchID   *string `json:"matchId,omitempty"`
+	GameID    *string `json:"gameId,omitempty"`
 }
 
 // ========================================
-// GetMatchHistory Use Case
+// GetGameHistory Use Case
 // ========================================
 
-type GetMatchHistoryInput struct {
+type GetGameHistoryInput struct {
 	PlayerID string `json:"playerId"`
 	Limit    int    `json:"limit"`
 	Offset   int    `json:"offset"`
 	Filter   string `json:"filter"` // "all", "friends", "wins", "losses"
 }
 
-type GetMatchHistoryOutput struct {
-	Matches []MatchHistoryEntryDTO `json:"matches"`
-	Total   int                    `json:"total"`
-	HasMore bool                   `json:"hasMore"`
+type GetGameHistoryOutput struct {
+	Games   []GameHistoryEntryDTO `json:"games"`
+	Total   int                   `json:"total"`
+	HasMore bool                  `json:"hasMore"`
 }
 
 // ========================================
@@ -353,19 +353,19 @@ type ClaimReferralRewardOutput struct {
 }
 
 // ========================================
-// StartMatch Use Case
+// StartGame Use Case
 // ========================================
 
-type StartMatchInput struct {
+type StartGameInput struct {
 	Player1ID       string `json:"player1Id"`
 	Player2ID       string `json:"player2Id"`
 	Player1Username string `json:"player1Username"`
 	Player2Username string `json:"player2Username"`
-	IsFriendMatch   bool   `json:"isFriendMatch"`
+	IsFriendGame    bool   `json:"isFriendGame"`
 }
 
-type StartMatchOutput struct {
-	MatchID   string `json:"matchId"`
+type StartGameOutput struct {
+	GameID    string `json:"gameId"`
 	Player1ID string `json:"player1Id"`
 	Player2ID string `json:"player2Id"`
 	StartsAt  int64  `json:"startsAt"`
@@ -384,7 +384,7 @@ type RoundQuestionOutput struct {
 
 type SubmitDuelAnswerInput struct {
 	PlayerID   string `json:"playerId"`
-	MatchID    string `json:"matchId"`
+	GameID     string `json:"gameId"`
 	QuestionID string `json:"questionId"`
 	AnswerID   string `json:"answerId"`
 	TimeTaken  int    `json:"timeTaken"` // milliseconds
@@ -397,7 +397,7 @@ type SubmitDuelAnswerOutput struct {
 	Player1Score     int    `json:"player1Score"`
 	Player2Score     int    `json:"player2Score"`
 	RoundComplete    bool   `json:"roundComplete"`
-	MatchComplete    bool   `json:"matchComplete"`
+	GameComplete     bool   `json:"gameComplete"`
 	WinnerID         string `json:"winnerId,omitempty"`
 	Player1MMRChange int    `json:"player1MmrChange,omitempty"`
 	Player2MMRChange int    `json:"player2MmrChange,omitempty"`

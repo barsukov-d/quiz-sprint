@@ -12,7 +12,7 @@ Home → "Дуэль" → Shows:
 
 ## Game Flow
 
-### 1. Pre-Match Screen
+### 1. Pre-Game Screen
 ```
 ┌─────────────────────────────────────┐
 │  ⚔️ РЕЙТИНГОВАЯ ДУЭЛЬ        🎟️ × 3│
@@ -118,7 +118,7 @@ Home → "Дуэль" → Shows:
 - 20-30s: ±200 MMR
 - 30-45s: ±300 MMR
 - 45-60s: ±500 MMR
-- 60s+: Offer bot match
+- 60s+: Offer bot game
 
 ---
 
@@ -204,7 +204,7 @@ Home → "Дуэль" → Shows:
 
 ---
 
-### 6. Match Result Screen
+### 6. Game Result Screen
 ```
 ┌─────────────────────────────────────┐
 │                                     │
@@ -401,7 +401,7 @@ WAITING_QUESTION → ANSWERING → ANSWERED → WAITING_OPPONENT
 - Both players' answers and times
 - Running scores
 - MMR before/after
-- Match timestamp
+- Game timestamp
 
 **Frontend only tracks:**
 - UI animations
@@ -427,7 +427,7 @@ WAITING_QUESTION → ANSWERING → ANSWERED → WAITING_OPPONENT
 - 10s grace period to reconnect
 - If reconnected → Resume (timer continues)
 - If timeout → Auto-lose current question (no answer = wrong)
-- 3 consecutive timeouts → Forfeit match, opponent wins
+- 3 consecutive timeouts → Forfeit game, opponent wins
 
 **Reconnect UI:**
 ```
@@ -443,7 +443,7 @@ WAITING_QUESTION → ANSWERING → ANSWERED → WAITING_OPPONENT
 
 ---
 
-## Bot Match (Fallback)
+## Bot Game (Fallback)
 
 If queue timeout (60s):
 ```
@@ -463,5 +463,5 @@ If queue timeout (60s):
 - Answers with realistic timing (3-8s)
 - Accuracy based on player's league (harder in higher ranks)
 - Clearly labeled as "🤖 Bot"
-- NO MMR change for bot matches
-- Ticket NOT consumed (refunded)
+- NO MMR change for bot games
+- **Ticket handling:** Ticket is never consumed for bot games (player keeps their ticket)

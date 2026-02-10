@@ -12,7 +12,7 @@ const duelId = computed(() => route.params.duelId as string)
 const playerId = computed(() => currentUser.value?.id ?? '')
 
 const {
-  matchHistory,
+  gameHistory,
   requestRematch,
   refetchHistory,
   isLoading,
@@ -29,13 +29,13 @@ const rematchError = ref<string | null>(null)
 // Computed
 // ===========================
 
-// Find this match in history
-const matchData = computed(() => {
-  return matchHistory.value.find((m) => m.matchId === duelId.value)
+// Find this game in history
+const gameData = computed(() => {
+  return gameHistory.value.find((g) => g.gameId === duelId.value)
 })
 
-const didWin = computed(() => matchData.value?.result === 'win')
-const isDraw = computed(() => matchData.value?.result === 'draw')
+const didWin = computed(() => gameData.value?.result === 'win')
+const isDraw = computed(() => gameData.value?.result === 'draw')
 
 const resultIcon = computed(() => {
   if (isDraw.value) return 'i-heroicons-minus-circle'
@@ -52,7 +52,7 @@ const resultText = computed(() => {
   return didWin.value ? 'Victory!' : 'Defeat'
 })
 
-const mmrChange = computed(() => matchData.value?.mmrChange ?? 0)
+const mmrChange = computed(() => gameData.value?.mmrChange ?? 0)
 const mmrChangeColor = computed(() => (mmrChange.value >= 0 ? 'text-green-600' : 'text-red-600'))
 
 // ===========================
@@ -90,8 +90,8 @@ const handleHome = () => {
 const handleShare = () => {
   // TODO: Share victory card
   const text = didWin.value
-    ? `I just won a PvP Duel! ${matchData.value?.playerScore} - ${matchData.value?.opponentScore}`
-    : `Just finished a PvP Duel: ${matchData.value?.playerScore} - ${matchData.value?.opponentScore}`
+    ? `I just won a PvP Duel! ${gameData.value?.playerScore} - ${gameData.value?.opponentScore}`
+    : `Just finished a PvP Duel: ${gameData.value?.playerScore} - ${gameData.value?.opponentScore}`
 
   if (navigator.share) {
     navigator.share({
@@ -117,7 +117,7 @@ onMounted(async () => {
       <button class="p-2 -ml-2" @click="handleHome">
         <UIcon name="i-heroicons-x-mark" class="size-6" />
       </button>
-      <h1 class="text-lg font-semibold">Match Result</h1>
+      <h1 class="text-lg font-semibold">Game Result</h1>
       <div class="w-10" />
     </div>
 
@@ -136,16 +136,16 @@ onMounted(async () => {
         <div class="text-center">
           <p class="text-sm text-gray-500 dark:text-gray-400">You</p>
           <p class="text-5xl font-bold text-primary">
-            {{ matchData?.playerScore ?? 0 }}
+            {{ gameData?.playerScore ?? 0 }}
           </p>
         </div>
         <span class="text-2xl text-gray-400">-</span>
         <div class="text-center">
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            {{ matchData?.opponent ?? 'Opponent' }}
+            {{ gameData?.opponent ?? 'Opponent' }}
           </p>
           <p class="text-5xl font-bold text-orange-500">
-            {{ matchData?.opponentScore ?? 0 }}
+            {{ gameData?.opponentScore ?? 0 }}
           </p>
         </div>
       </div>
@@ -157,15 +157,15 @@ onMounted(async () => {
         </p>
       </div>
 
-      <!-- Friend Match Badge -->
+      <!-- Friend Game Badge -->
       <UBadge
-        v-if="matchData?.isFriendMatch"
+        v-if="gameData?.isFriendGame"
         color="blue"
         variant="soft"
         size="lg"
         class="mb-6"
       >
-        Friend Match
+        Friend Game
       </UBadge>
     </div>
 

@@ -74,10 +74,11 @@ Skill-based matchmaking:
 | ±50 | 10s |
 | ±100 | 20s |
 | ±200 | 30s |
-| ±300+ | 45s (then expand further) |
+| ±300 | 45s |
+| ±500 | 60s |
 
 ### Fallback
-If no match found in 60s → Offer bot match (clearly labeled).
+If no opponent found in 60s → Offer bot game (clearly labeled as 🤖 Bot).
 
 ## Victory Conditions
 
@@ -118,15 +119,16 @@ Challenge flow:
 Player A → "Вызвать друга" → Share link → Friend opens → Instant duel
 ```
 
-**No queue waiting** for friend matches — instant start.
+**No queue waiting** for friend games — instant start.
 
 ### 2. Referral System
 | Milestone | Reward for Inviter | Reward for Invitee |
 |-----------|-------------------|-------------------|
-| Friend registers | 3 🎟️ | 3 🎟️ |
-| Friend plays 5 duels | 5 🎟️ + 500 coins | — |
-| Friend reaches Silver | 10 🎟️ + Exclusive avatar | — |
-| Friend reaches Gold | 20 🎟️ + Exclusive title | — |
+| Friend registers | 3 🎟️ + 100 coins | 3 🎟️ + 100 coins |
+| Friend plays 5 duels | 5 🎟️ + 300 coins | 200 coins |
+| Friend reaches Silver | 10 🎟️ + 500 coins + 🏷️ "Наставник" | 300 coins |
+| Friend reaches Gold | 20 🎟️ + 1,000 coins + Exclusive avatar | 500 coins |
+| Friend reaches Platinum | 50 🎟️ + 3,000 coins + Legendary title | 1,000 coins |
 
 **Referral link:** `t.me/quiz_sprint_dev_bot?start=ref_USER123`
 
@@ -195,7 +197,7 @@ Monthly events:
 Friends can watch live duels:
 - Real-time question + answers
 - React with emojis
-- Share ongoing match
+- Share ongoing game
 
 ---
 

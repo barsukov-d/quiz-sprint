@@ -878,9 +878,9 @@ const docTemplate = `{
                 }
             }
         },
-        "/duel/history": {
-            "get": {
-                "description": "Get player's duel match history with pagination",
+        "/duel/game/{gameId}/rematch": {
+            "post": {
+                "description": "Request a rematch after a completed duel",
                 "consumes": [
                     "application/json"
                 ],
@@ -890,7 +890,72 @@ const docTemplate = `{
                 "tags": [
                     "duel"
                 ],
-                "summary": "Get match history",
+                "summary": "Request rematch",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID",
+                        "name": "gameId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Rematch request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RequestRematchRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rematch requested",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RequestRematchResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Cannot rematch",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/history": {
+            "get": {
+                "description": "Get player's duel game history with pagination",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Get game history",
                 "parameters": [
                     {
                         "type": "string",
@@ -920,9 +985,9 @@ const docTemplate = `{
                 ],
                 "responses": {
                     "200": {
-                        "description": "Match history",
+                        "description": "Game history",
                         "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetMatchHistoryResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetGameHistoryResponse"
                         }
                     },
                     "400": {
@@ -996,71 +1061,6 @@ const docTemplate = `{
                 }
             }
         },
-        "/duel/match/{matchId}/rematch": {
-            "post": {
-                "description": "Request a rematch after a completed duel",
-                "consumes": [
-                    "application/json"
-                ],
-                "produces": [
-                    "application/json"
-                ],
-                "tags": [
-                    "duel"
-                ],
-                "summary": "Request rematch",
-                "parameters": [
-                    {
-                        "type": "string",
-                        "description": "Match ID",
-                        "name": "matchId",
-                        "in": "path",
-                        "required": true
-                    },
-                    {
-                        "description": "Rematch request",
-                        "name": "request",
-                        "in": "body",
-                        "required": true,
-                        "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RequestRematchRequest"
-                        }
-                    }
-                ],
-                "responses": {
-                    "200": {
-                        "description": "Rematch requested",
-                        "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RequestRematchResponse"
-                        }
-                    },
-                    "400": {
-                        "description": "Invalid request",
-                        "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
-                        }
-                    },
-                    "404": {
-                        "description": "Match not found",
-                        "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
-                        }
-                    },
-                    "409": {
-                        "description": "Cannot rematch",
-                        "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
-                        }
-                    },
-                    "500": {
-                        "description": "Internal error",
-                        "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
-                        }
-                    }
-                }
-            }
-        },
         "/duel/queue/join": {
             "post": {
                 "description": "Enter random matchmaking queue",
@@ -1099,7 +1099,7 @@ const docTemplate = `{
                         }
                     },
                     "409": {
-                        "description": "Already in queue or match",
+                        "description": "Already in queue or game",
                         "schema": {
                             "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
@@ -3108,7 +3108,7 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
-                "inMatch": {
+                "inGame": {
                     "type": "boolean"
                 },
                 "isOnline": {
@@ -3223,6 +3223,38 @@ const docTemplate = `{
                 },
                 "totalScore": {
                     "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GameHistoryEntryDTO": {
+            "type": "object",
+            "properties": {
+                "completedAt": {
+                    "type": "integer"
+                },
+                "gameId": {
+                    "type": "string"
+                },
+                "isFriendGame": {
+                    "type": "boolean"
+                },
+                "mmrChange": {
+                    "type": "integer"
+                },
+                "opponent": {
+                    "type": "string"
+                },
+                "opponentMmr": {
+                    "type": "integer"
+                },
+                "opponentScore": {
+                    "type": "integer"
+                },
+                "playerScore": {
+                    "type": "integer"
+                },
+                "result": {
+                    "type": "string"
                 }
             }
         },
@@ -3431,7 +3463,7 @@ const docTemplate = `{
                 "data": {
                     "type": "object",
                     "properties": {
-                        "activeMatchId": {
+                        "activeGameId": {
                             "type": "string"
                         },
                         "friendsOnline": {
@@ -3459,6 +3491,28 @@ const docTemplate = `{
                             "type": "string"
                         },
                         "tickets": {
+                            "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetGameHistoryResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "games": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.GameHistoryEntryDTO"
+                            }
+                        },
+                        "hasMore": {
+                            "type": "boolean"
+                        },
+                        "total": {
                             "type": "integer"
                         }
                     }
@@ -3554,28 +3608,6 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.GetMarathonStatusData"
-                }
-            }
-        },
-        "internal_infrastructure_http_handlers.GetMatchHistoryResponse": {
-            "type": "object",
-            "properties": {
-                "data": {
-                    "type": "object",
-                    "properties": {
-                        "hasMore": {
-                            "type": "boolean"
-                        },
-                        "matches": {
-                            "type": "array",
-                            "items": {
-                                "$ref": "#/definitions/internal_infrastructure_http_handlers.MatchHistoryEntryDTO"
-                            }
-                        },
-                        "total": {
-                            "type": "integer"
-                        }
-                    }
                 }
             }
         },
@@ -4162,38 +4194,6 @@ const docTemplate = `{
                 }
             }
         },
-        "internal_infrastructure_http_handlers.MatchHistoryEntryDTO": {
-            "type": "object",
-            "properties": {
-                "completedAt": {
-                    "type": "integer"
-                },
-                "isFriendMatch": {
-                    "type": "boolean"
-                },
-                "matchId": {
-                    "type": "string"
-                },
-                "mmrChange": {
-                    "type": "integer"
-                },
-                "opponent": {
-                    "type": "string"
-                },
-                "opponentMmr": {
-                    "type": "integer"
-                },
-                "opponentScore": {
-                    "type": "integer"
-                },
-                "playerScore": {
-                    "type": "integer"
-                },
-                "result": {
-                    "type": "string"
-                }
-            }
-        },
         "internal_infrastructure_http_handlers.OpenChestData": {
             "type": "object",
             "required": [
@@ -4392,7 +4392,7 @@ const docTemplate = `{
                         "expiresIn": {
                             "type": "integer"
                         },
-                        "matchId": {
+                        "gameId": {
                             "type": "string"
                         },
                         "rematchId": {
@@ -4427,7 +4427,7 @@ const docTemplate = `{
                 "data": {
                     "type": "object",
                     "properties": {
-                        "matchId": {
+                        "gameId": {
                             "type": "string"
                         },
                         "startsIn": {

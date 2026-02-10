@@ -1177,7 +1177,7 @@ type RespondChallengeRequest struct {
 type RespondChallengeResponse struct {
 	Data struct {
 		Success        bool    `json:"success"`
-		MatchID        *string `json:"matchId,omitempty"`
+		GameID         *string `json:"gameId,omitempty"`
 		TicketConsumed bool    `json:"ticketConsumed"`
 		StartsIn       *int    `json:"startsIn,omitempty"`
 	} `json:"data"`
@@ -1207,7 +1207,7 @@ type CreateChallengeLinkResponse struct {
 type GetDuelStatusResponse struct {
 	Data struct {
 		HasActiveDuel     bool                 `json:"hasActiveDuel"`
-		ActiveMatchID     *string              `json:"activeMatchId,omitempty"`
+		ActiveGameID      *string              `json:"activeGameId,omitempty"`
 		Player            DuelPlayerRatingDTO  `json:"player"`
 		Tickets           int                  `json:"tickets"`
 		FriendsOnline     []DuelFriendDTO      `json:"friendsOnline"`
@@ -1246,7 +1246,7 @@ type DuelFriendDTO struct {
 	MMR      int    `json:"mmr"`
 	League   string `json:"league"`
 	IsOnline bool   `json:"isOnline"`
-	InMatch  bool   `json:"inMatch"`
+	InGame   bool   `json:"inGame"`
 }
 
 // @name DuelFriendDTO
@@ -1266,31 +1266,31 @@ type DuelChallengeDTO struct {
 
 // @name DuelChallengeDTO
 
-// GetMatchHistoryResponse wraps the match history response
-type GetMatchHistoryResponse struct {
+// GetGameHistoryResponse wraps the game history response
+type GetGameHistoryResponse struct {
 	Data struct {
-		Matches []MatchHistoryEntryDTO `json:"matches"`
-		Total   int                    `json:"total"`
-		HasMore bool                   `json:"hasMore"`
+		Games   []GameHistoryEntryDTO `json:"games"`
+		Total   int                   `json:"total"`
+		HasMore bool                  `json:"hasMore"`
 	} `json:"data"`
 }
 
-// @name GetMatchHistoryResponse
+// @name GetGameHistoryResponse
 
-// MatchHistoryEntryDTO represents a match in history
-type MatchHistoryEntryDTO struct {
-	MatchID       string `json:"matchId"`
+// GameHistoryEntryDTO represents a game in history
+type GameHistoryEntryDTO struct {
+	GameID        string `json:"gameId"`
 	Opponent      string `json:"opponent"`
 	OpponentMMR   int    `json:"opponentMmr"`
 	Result        string `json:"result"`
 	PlayerScore   int    `json:"playerScore"`
 	OpponentScore int    `json:"opponentScore"`
 	MMRChange     int    `json:"mmrChange"`
-	IsFriendMatch bool   `json:"isFriendMatch"`
+	IsFriendGame  bool   `json:"isFriendGame"`
 	CompletedAt   int64  `json:"completedAt"`
 }
 
-// @name MatchHistoryEntryDTO
+// @name GameHistoryEntryDTO
 
 // GetDuelLeaderboardResponse wraps the duel leaderboard response
 type GetDuelLeaderboardResponse struct {
@@ -1334,7 +1334,7 @@ type RequestRematchResponse struct {
 		RematchID string  `json:"rematchId"`
 		Status    string  `json:"status"`
 		ExpiresIn int     `json:"expiresIn"`
-		MatchID   *string `json:"matchId,omitempty"`
+		GameID    *string `json:"gameId,omitempty"`
 	} `json:"data"`
 }
 

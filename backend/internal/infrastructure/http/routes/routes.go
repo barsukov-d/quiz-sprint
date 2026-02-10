@@ -325,7 +325,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		sendChallengeUC        *appDuel.SendChallengeUseCase
 		respondChallengeUC     *appDuel.RespondChallengeUseCase
 		createChallengeLinkUC  *appDuel.CreateChallengeLinkUseCase
-		getMatchHistoryUC      *appDuel.GetMatchHistoryUseCase
+		getGameHistoryUC       *appDuel.GetGameHistoryUseCase
 		getDuelLeaderboardUC   *appDuel.GetLeaderboardUseCase
 		requestRematchUC       *appDuel.RequestRematchUseCase
 	)
@@ -367,7 +367,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			challengeRepo,
 			duelEventBus,
 		)
-		getMatchHistoryUC = appDuel.NewGetMatchHistoryUseCase(
+		getGameHistoryUC = appDuel.NewGetGameHistoryUseCase(
 			duelGameRepo,
 			userRepo,
 		)
@@ -462,7 +462,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			sendChallengeUC,
 			respondChallengeUC,
 			createChallengeLinkUC,
-			getMatchHistoryUC,
+			getGameHistoryUC,
 			getDuelLeaderboardUC,
 			requestRematchUC,
 		)
@@ -577,9 +577,9 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		duel.Post("/challenge", duelHandler.SendChallenge)
 		duel.Post("/challenge/link", duelHandler.CreateChallengeLink)
 		duel.Post("/challenge/:challengeId/respond", duelHandler.RespondChallenge)
-		duel.Get("/history", duelHandler.GetMatchHistory)
+		duel.Get("/history", duelHandler.GetGameHistory)
 		duel.Get("/leaderboard", duelHandler.GetDuelLeaderboard)
-		duel.Post("/match/:matchId/rematch", duelHandler.RequestRematch)
+		duel.Post("/game/:gameId/rematch", duelHandler.RequestRematch)
 	}
 
 	// Admin routes (debug/testing, protected by API key)

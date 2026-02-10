@@ -4,13 +4,13 @@
 
 ### Both players find each other simultaneously
 **Behavior:**
-- Server assigns match atomically
+- Server assigns game atomically
 - First transaction wins
 - Other player stays in queue
 
 ```go
-// Use Redis SETNX for atomic match creation
-if !redis.SetNX("match:pending:"+player1+":"+player2, matchID) {
+// Use Redis SETNX for atomic game creation
+if !redis.SetNX("game:pending:"+player1+":"+player2, gameID) {
     // Already matched by other instance
     return
 }
@@ -23,16 +23,16 @@ if !redis.SetNX("match:pending:"+player1+":"+player2, matchID) {
 
 ### No opponent found in 60 seconds
 **Behavior:**
-- Offer bot match
+- Offer bot game
 - If declined → Return ticket
 - If accepted → Play vs bot, no MMR change
 
 ### Same player matched twice in a row
 **Prevention:**
 ```go
-func canMatch(player1, player2 PlayerID) bool {
-    lastMatch := getLastMatch(player1)
-    if lastMatch != nil && lastMatch.OpponentID == player2 {
+func canBeMatched(player1, player2 PlayerID) bool {
+    lastGame := getLastGame(player1)
+    if lastGame != nil && lastGame.OpponentID == player2 {
         return false  // Prevent immediate rematch
     }
     return true
@@ -58,11 +58,11 @@ func canMatch(player1, player2 PlayerID) bool {
 **Behavior:**
 - First challenge wins (by timestamp)
 - Second challenge auto-converts to "accept"
-- Match starts immediately
+- Game starts immediately
 
 ### Challenge link used by wrong person
 **Behavior:**
-- Only original link creator can match
+- Only original link creator can start the game
 - Other person sees: "Ссылка уже использована"
 
 ### Challenge link used after 24h expiry
@@ -99,7 +99,7 @@ func canMatch(player1, player2 PlayerID) bool {
 ### Player submits answer twice
 **Behavior:**
 ```go
-if isAlreadyAnswered(matchID, questionID, playerID) {
+if isAlreadyAnswered(gameID, questionID, playerID) {
     return ErrQuestionAlreadyAnswered
 }
 ```
@@ -109,7 +109,7 @@ if isAlreadyAnswered(matchID, questionID, playerID) {
 ### Player tries to answer wrong question
 **Behavior:**
 ```go
-if match.CurrentQuestionIndex != questionIndex {
+if game.CurrentQuestionIndex != questionIndex {
     return ErrInvalidQuestion
 }
 ```
@@ -117,9 +117,9 @@ if match.CurrentQuestionIndex != questionIndex {
 ### One player answers, other disconnects
 **Behavior:**
 1. Start 10s grace period
-2. If reconnected → Continue match
+2. If reconnected → Continue game
 3. If timeout → Current question = wrong for disconnected player
-4. 3 consecutive timeouts → Forfeit match
+4. 3 consecutive timeouts → Forfeit game
 
 ---
 
@@ -129,7 +129,7 @@ if match.CurrentQuestionIndex != questionIndex {
 **Behavior:**
 - 5s grace period
 - If reconnected → Continue countdown
-- If timeout → Match cancelled, both tickets refunded
+- If timeout → Game cancelled, both tickets refunded
 
 ### Disconnect mid-question
 **Behavior:**
@@ -139,15 +139,15 @@ if match.CurrentQuestionIndex != questionIndex {
 - If timeout → Wrong answer, move to next question
 
 ```go
-func handleDisconnect(matchID, playerID string) {
+func handleDisconnect(gameID, playerID string) {
     go func() {
         time.Sleep(10 * time.Second)
         if !isReconnected(playerID) {
-            submitEmptyAnswer(matchID, playerID)
-            incrementMissedQuestions(matchID, playerID)
+            submitEmptyAnswer(gameID, playerID)
+            incrementMissedQuestions(gameID, playerID)
 
-            if getMissedQuestions(matchID, playerID) >= 3 {
-                forfeitMatch(matchID, playerID)
+            if getMissedQuestions(gameID, playerID) >= 3 {
+                forfeitGame(gameID, playerID)
             }
         }
     }()
@@ -156,15 +156,15 @@ func handleDisconnect(matchID, playerID string) {
 
 ### Both players disconnect
 **Behavior:**
-- Match paused
+- Game paused
 - 30s to reconnect for either
-- If neither returns → Match cancelled, no MMR change, tickets refunded
+- If neither returns → Game cancelled, no MMR change, tickets refunded
 
-### Reconnect after match completed
+### Reconnect after game completed
 **Behavior:**
 - Show final results
 - MMR already applied
-- Can view match history
+- Can view game history
 
 ---
 
@@ -173,25 +173,25 @@ func handleDisconnect(matchID, playerID string) {
 ### Tied score (5:5)
 **Tiebreaker:** Total time
 ```go
-func determineWinner(match *DuelMatch) PlayerID {
-    if match.Player1.Score > match.Player2.Score {
-        return match.Player1.ID
+func determineWinner(game *DuelGame) PlayerID {
+    if game.Player1.Score > game.Player2.Score {
+        return game.Player1.ID
     }
-    if match.Player2.Score > match.Player1.Score {
-        return match.Player2.ID
+    if game.Player2.Score > game.Player1.Score {
+        return game.Player2.ID
     }
 
     // Tied score - check time
-    if match.Player1.TotalTime < match.Player2.TotalTime {
-        return match.Player1.ID
+    if game.Player1.TotalTime < game.Player2.TotalTime {
+        return game.Player1.ID
     }
-    if match.Player2.TotalTime < match.Player1.TotalTime {
-        return match.Player2.ID
+    if game.Player2.TotalTime < game.Player1.TotalTime {
+        return game.Player2.ID
     }
 
     // Extremely rare: same score, same time
     // Use first correct answer
-    return firstCorrectPlayer(match)
+    return firstCorrectPlayer(game)
 }
 ```
 
@@ -282,7 +282,7 @@ func validateReferral(inviter, invitee *Player) error {
 
 ### Inviter and invitee duel immediately after registration
 **Behavior:**
-- Allowed (friend matches are encouraged)
+- Allowed (friend games are encouraged)
 - But: No MMR for brand new accounts (placement protection)
 - Win trading detection: 50/50 win rate over 20+ games → flag
 
@@ -299,7 +299,7 @@ func validateReferral(inviter, invitee *Player) error {
 ### Both request rematch simultaneously
 **Behavior:**
 - Both requests treated as "accept"
-- Match starts immediately
+- Game starts immediately
 - Both tickets consumed
 
 ### Rematch with insufficient tickets
@@ -310,17 +310,17 @@ func validateReferral(inviter, invitee *Player) error {
 
 ### Opponent accepts rematch but disconnects before start
 **Behavior:**
-- Ticket consumed (match was accepted)
-- Match cancelled
+- Ticket consumed (rematch was accepted)
+- Game cancelled
 - No MMR change
 
 ---
 
 ## Season Edge Cases
 
-### Match starts Sunday 23:59, ends Monday 00:01
+### Game starts Sunday 23:59, ends Monday 00:01
 **Behavior:**
-- Match counts for NEW season
+- Game counts for NEW season
 - Based on `completedAt` timestamp
 
 ### Player banned mid-season
@@ -370,7 +370,7 @@ func validateClientTime(clientTime, serverTime int64) int64 {
 ```go
 // Each answer has unique nonce
 type AnswerSubmission struct {
-    MatchID    string
+    GameID     string
     QuestionID string
     AnswerID   string
     Nonce      string
@@ -389,17 +389,17 @@ func validateSubmission(sub *AnswerSubmission) error {
 ### WebSocket connection hijacking
 **Mitigation:**
 - Token-based authentication
-- Token expires after match
-- New token for each match
+- Token expires after game
+- New token for each game
 
 ---
 
-## Bot Match Edge Cases
+## Bot Game Edge Cases
 
 ### Player accepts bot, then finds real player
 **Not possible:**
-- Bot match starts immediately
-- Cannot be in queue during match
+- Bot game starts immediately
+- Cannot be in queue during game
 
 ### Bot difficulty by league
 ```go
@@ -416,11 +416,11 @@ func getBotAccuracy(playerLeague League) float64 {
 }
 ```
 
-### Player rage-quits bot match
+### Player rage-quits bot game
 **Behavior:**
-- Match ends, no penalty
+- Game ends, no penalty
 - No MMR change (it's vs bot)
-- Ticket was refunded at bot match start
+- Ticket was refunded at bot game start
 
 ---
 
@@ -467,9 +467,9 @@ SEASON_ENDED
 ## Monitoring & Alerts
 
 ### Key metrics
-- Match completion rate
+- Game completion rate
 - Avg queue time
-- Disconnect rate during match
+- Disconnect rate during game
 - MMR distribution by league
 - Referral conversion rate
 

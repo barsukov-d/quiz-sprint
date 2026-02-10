@@ -1,5 +1,6 @@
 import { computed, ref } from 'vue'
 import { useRouter } from 'vue-router'
+import { shareURL } from '@tma.js/sdk'
 import {
   useGetDuelStatus,
   useGetDuelLeaderboard,
@@ -9,7 +10,7 @@ import {
   usePostDuelChallenge,
   usePostDuelChallengeChallengeidRespond,
   usePostDuelChallengeLink,
-  usePostDuelMatchMatchidRematch,
+  usePostDuelGameGameidRematch,
 } from '@/api/generated'
 
 /**
@@ -18,7 +19,7 @@ import {
  * SERVER-SIDE STATE ARCHITECTURE:
  * - Backend is the single source of truth
  * - Frontend fetches fresh data from API
- * - Real-time updates via WebSocket (when in match)
+ * - Real-time updates via WebSocket (when in game)
  */
 export function usePvPDuel(playerId: string) {
   const router = useRouter()
@@ -39,7 +40,7 @@ export function usePvPDuel(playerId: string) {
   const sendChallengeMutation = usePostDuelChallenge()
   const respondChallengeMutation = usePostDuelChallengeChallengeidRespond()
   const createLinkMutation = usePostDuelChallengeLink()
-  const rematchMutation = usePostDuelMatchMatchidRematch()
+  const rematchMutation = usePostDuelGameGameidRematch()
 
   // Main status endpoint
   const {
@@ -93,7 +94,7 @@ export function usePvPDuel(playerId: string) {
 
   // Status data
   const hasActiveDuel = computed(() => statusData.value?.data?.hasActiveDuel ?? false)
-  const activeMatchId = computed(() => statusData.value?.data?.activeMatchId ?? null)
+  const activeGameId = computed(() => statusData.value?.data?.activeGameId ?? null)
   const player = computed(() => statusData.value?.data?.player ?? null)
   const tickets = computed(() => statusData.value?.data?.tickets ?? 0)
   const friendsOnline = computed(() => statusData.value?.data?.friendsOnline ?? [])
@@ -132,7 +133,7 @@ export function usePvPDuel(playerId: string) {
   })
 
   // History
-  const matchHistory = computed(() => historyData.value?.data?.matches ?? [])
+  const gameHistory = computed(() => historyData.value?.data?.games ?? [])
 
   // Loading states
   const isLoading = computed(
@@ -144,7 +145,7 @@ export function usePvPDuel(playerId: string) {
       respondChallengeMutation.isPending.value,
   )
 
-  // Can play (has tickets and not in match)
+  // Can play (has tickets and not in game)
   const canPlay = computed(() => tickets.value > 0 && !hasActiveDuel.value && !isSearching.value)
 
   // ===========================
@@ -231,9 +232,9 @@ export function usePvPDuel(playerId: string) {
       attempts++
       await refetchStatus()
 
-      if (hasActiveDuel.value && activeMatchId.value) {
+      if (hasActiveDuel.value && activeGameId.value) {
         stopSearching()
-        router.push({ name: 'duel-play', params: { duelId: activeMatchId.value } })
+        router.push({ name: 'duel-play', params: { duelId: activeGameId.value } })
         return
       }
 
@@ -279,9 +280,9 @@ export function usePvPDuel(playerId: string) {
       console.log('[usePvPDuel] Challenge response:', response.data)
       await refetchStatus()
 
-      // If accepted and match started, navigate to play
-      if (action === 'accept' && response.data?.matchId) {
-        router.push({ name: 'duel-play', params: { duelId: response.data.matchId } })
+      // If accepted and game started, navigate to play
+      if (action === 'accept' && response.data?.gameId) {
+        router.push({ name: 'duel-play', params: { duelId: response.data.gameId } })
       }
 
       return response.data
@@ -312,22 +313,50 @@ export function usePvPDuel(playerId: string) {
   }
 
   /**
+   * Share challenge link via Telegram
+   * Creates a new challenge link and opens Telegram share dialog
+   */
+  const shareChallengeToTelegram = async (message?: string) => {
+    try {
+      console.log('[usePvPDuel] Sharing challenge to Telegram...')
+
+      // Create a new challenge link
+      const result = await createChallengeLink()
+
+      if (!result?.challengeLink) {
+        throw new Error('Failed to create challenge link')
+      }
+
+      // Share via Telegram using TMA SDK
+      const shareMessage = message ?? '⚔️ Вызываю тебя на дуэль в Quiz Sprint!'
+      shareURL(result.challengeLink, shareMessage)
+
+      console.log('[usePvPDuel] Challenge shared:', result.challengeLink)
+
+      return result
+    } catch (error) {
+      console.error('[usePvPDuel] Failed to share challenge:', error)
+      throw error
+    }
+  }
+
+  /**
    * Request rematch after a game
    */
-  const requestRematch = async (matchId: string) => {
+  const requestRematch = async (gameId: string) => {
     try {
-      console.log('[usePvPDuel] Requesting rematch for:', matchId)
+      console.log('[usePvPDuel] Requesting rematch for:', gameId)
 
       const response = await rematchMutation.mutateAsync({
-        matchId,
+        gameId,
         data: { playerId },
       })
 
       console.log('[usePvPDuel] Rematch response:', response.data)
 
       // If rematch auto-accepted (opponent already requested)
-      if (response.data?.status === 'accepted' && response.data?.matchId) {
-        router.push({ name: 'duel-play', params: { duelId: response.data.matchId } })
+      if (response.data?.status === 'accepted' && response.data?.gameId) {
+        router.push({ name: 'duel-play', params: { duelId: response.data.gameId } })
       }
 
       return response.data
@@ -341,8 +370,8 @@ export function usePvPDuel(playerId: string) {
    * Navigate to active duel
    */
   const goToActiveDuel = () => {
-    if (activeMatchId.value) {
-      router.push({ name: 'duel-play', params: { duelId: activeMatchId.value } })
+    if (activeGameId.value) {
+      router.push({ name: 'duel-play', params: { duelId: activeGameId.value } })
     }
   }
 
@@ -361,7 +390,7 @@ export function usePvPDuel(playerId: string) {
   return {
     // Status
     hasActiveDuel,
-    activeMatchId,
+    activeGameId,
     player,
     tickets,
     friendsOnline,
@@ -384,7 +413,7 @@ export function usePvPDuel(playerId: string) {
     playerRank,
 
     // History
-    matchHistory,
+    gameHistory,
 
     // UI State
     isSearching,
@@ -398,6 +427,7 @@ export function usePvPDuel(playerId: string) {
     sendChallenge,
     respondChallenge,
     createChallengeLink,
+    shareChallengeToTelegram,
     requestRematch,
     goToActiveDuel,
     initialize,

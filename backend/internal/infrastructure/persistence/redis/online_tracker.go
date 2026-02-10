@@ -9,9 +9,9 @@ import (
 )
 
 const (
-	onlineKeyPrefix = "duel:online:"       // Key: duel:online:{playerID} -> TTL marker
-	inMatchKeyPrefix = "duel:inmatch:"     // Key: duel:inmatch:{playerID} -> matchID
-	defaultOnlineTTL = 60                  // seconds
+	onlineKeyPrefix = "duel:online:"      // Key: duel:online:{playerID} -> TTL marker
+	inGameKeyPrefix = "duel:ingame:"      // Key: duel:ingame:{playerID} -> gameID
+	defaultOnlineTTL = 60                 // seconds
 )
 
 // OnlineTracker tracks player online status using Redis
@@ -89,39 +89,39 @@ func (t *OnlineTracker) GetOnlineFriends(playerID string, friendIDs []string) ([
 	return online, nil
 }
 
-// SetInMatch marks a player as being in a match
-func (t *OnlineTracker) SetInMatch(playerID string, matchID string) error {
+// SetInGame marks a player as being in a game
+func (t *OnlineTracker) SetInGame(playerID string, gameID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	key := inMatchKeyPrefix + playerID
-	// Set with long TTL (matches shouldn't last more than 10 minutes)
-	return t.rdb.Set(ctx, key, matchID, 10*time.Minute).Err()
+	key := inGameKeyPrefix + playerID
+	// Set with long TTL (games shouldn't last more than 10 minutes)
+	return t.rdb.Set(ctx, key, gameID, 10*time.Minute).Err()
 }
 
-// ClearInMatch removes the in-match marker
-func (t *OnlineTracker) ClearInMatch(playerID string) error {
+// ClearInGame removes the in-game marker
+func (t *OnlineTracker) ClearInGame(playerID string) error {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	key := inMatchKeyPrefix + playerID
+	key := inGameKeyPrefix + playerID
 	return t.rdb.Del(ctx, key).Err()
 }
 
-// GetMatchID returns the match ID a player is in (empty if not in match)
-func (t *OnlineTracker) GetMatchID(playerID string) (string, error) {
+// GetGameID returns the game ID a player is in (empty if not in game)
+func (t *OnlineTracker) GetGameID(playerID string) (string, error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
-	key := inMatchKeyPrefix + playerID
-	matchID, err := t.rdb.Get(ctx, key).Result()
+	key := inGameKeyPrefix + playerID
+	gameID, err := t.rdb.Get(ctx, key).Result()
 	if err == redis.Nil {
 		return "", nil
 	}
 	if err != nil {
 		return "", err
 	}
-	return matchID, nil
+	return gameID, nil
 }
 
 // Heartbeat refreshes the online status (called periodically by client)
@@ -188,22 +188,22 @@ func (t *OnlineTracker) BulkSetOnline(playerIDs []string, expiresInSeconds int) 
 }
 
 // GetPlayerStatus returns detailed status for a player
-func (t *OnlineTracker) GetPlayerStatus(playerID string) (isOnline bool, matchID string, err error) {
+func (t *OnlineTracker) GetPlayerStatus(playerID string) (isOnline bool, gameID string, err error) {
 	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
 	defer cancel()
 
 	pipe := t.rdb.Pipeline()
 	onlineCmd := pipe.Exists(ctx, onlineKeyPrefix+playerID)
-	matchCmd := pipe.Get(ctx, inMatchKeyPrefix+playerID)
+	gameCmd := pipe.Get(ctx, inGameKeyPrefix+playerID)
 
 	_, err = pipe.Exec(ctx)
-	// Ignore redis.Nil errors for the match key
+	// Ignore redis.Nil errors for the game key
 	if err != nil && err != redis.Nil {
 		return false, "", fmt.Errorf("failed to get player status: %w", err)
 	}
 
 	isOnline = onlineCmd.Val() > 0
-	matchID, _ = matchCmd.Result() // Ignore error, empty string is fine
+	gameID, _ = gameCmd.Result() // Ignore error, empty string is fine
 
-	return isOnline, matchID, nil
+	return isOnline, gameID, nil
 }

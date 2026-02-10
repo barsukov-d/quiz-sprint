@@ -397,7 +397,7 @@ definitions:
         type: string
       id:
         type: string
-      inMatch:
+      inGame:
         type: boolean
       isOnline:
         type: boolean
@@ -475,6 +475,27 @@ definitions:
     - percentage
     - questionsCount
     - totalScore
+    type: object
+  internal_infrastructure_http_handlers.GameHistoryEntryDTO:
+    properties:
+      completedAt:
+        type: integer
+      gameId:
+        type: string
+      isFriendGame:
+        type: boolean
+      mmrChange:
+        type: integer
+      opponent:
+        type: string
+      opponentMmr:
+        type: integer
+      opponentScore:
+        type: integer
+      playerScore:
+        type: integer
+      result:
+        type: string
     type: object
   internal_infrastructure_http_handlers.GameResultsDTO:
     properties:
@@ -617,7 +638,7 @@ definitions:
     properties:
       data:
         properties:
-          activeMatchId:
+          activeGameId:
             type: string
           friendsOnline:
             items:
@@ -636,6 +657,20 @@ definitions:
           seasonId:
             type: string
           tickets:
+            type: integer
+        type: object
+    type: object
+  internal_infrastructure_http_handlers.GetGameHistoryResponse:
+    properties:
+      data:
+        properties:
+          games:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.GameHistoryEntryDTO'
+            type: array
+          hasMore:
+            type: boolean
+          total:
             type: integer
         type: object
     type: object
@@ -698,20 +733,6 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.GetMarathonStatusData'
     required:
     - data
-    type: object
-  internal_infrastructure_http_handlers.GetMatchHistoryResponse:
-    properties:
-      data:
-        properties:
-          hasMore:
-            type: boolean
-          matches:
-            items:
-              $ref: '#/definitions/internal_infrastructure_http_handlers.MatchHistoryEntryDTO'
-            type: array
-          total:
-            type: integer
-        type: object
     type: object
   internal_infrastructure_http_handlers.GetPersonalBestsData:
     properties:
@@ -1112,27 +1133,6 @@ definitions:
     - bestStreak
     - category
     type: object
-  internal_infrastructure_http_handlers.MatchHistoryEntryDTO:
-    properties:
-      completedAt:
-        type: integer
-      isFriendMatch:
-        type: boolean
-      matchId:
-        type: string
-      mmrChange:
-        type: integer
-      opponent:
-        type: string
-      opponentMmr:
-        type: integer
-      opponentScore:
-        type: integer
-      playerScore:
-        type: integer
-      result:
-        type: string
-    type: object
   internal_infrastructure_http_handlers.OpenChestData:
     properties:
       chestType:
@@ -1268,7 +1268,7 @@ definitions:
         properties:
           expiresIn:
             type: integer
-          matchId:
+          gameId:
             type: string
           rematchId:
             type: string
@@ -1291,7 +1291,7 @@ definitions:
     properties:
       data:
         properties:
-          matchId:
+          gameId:
             type: string
           startsIn:
             type: integer
@@ -2408,11 +2408,54 @@ paths:
       summary: Create challenge link
       tags:
       - duel
+  /duel/game/{gameId}/rematch:
+    post:
+      consumes:
+      - application/json
+      description: Request a rematch after a completed duel
+      parameters:
+      - description: Game ID
+        in: path
+        name: gameId
+        required: true
+        type: string
+      - description: Rematch request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.RequestRematchRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Rematch requested
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.RequestRematchResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Game not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "409":
+          description: Cannot rematch
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Request rematch
+      tags:
+      - duel
   /duel/history:
     get:
       consumes:
       - application/json
-      description: Get player's duel match history with pagination
+      description: Get player's duel game history with pagination
       parameters:
       - description: Player ID
         in: query
@@ -2435,9 +2478,9 @@ paths:
       - application/json
       responses:
         "200":
-          description: Match history
+          description: Game history
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handlers.GetMatchHistoryResponse'
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetGameHistoryResponse'
         "400":
           description: Invalid request
           schema:
@@ -2446,7 +2489,7 @@ paths:
           description: Internal error
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
-      summary: Get match history
+      summary: Get game history
       tags:
       - duel
   /duel/leaderboard:
@@ -2486,49 +2529,6 @@ paths:
       summary: Get duel leaderboard
       tags:
       - duel
-  /duel/match/{matchId}/rematch:
-    post:
-      consumes:
-      - application/json
-      description: Request a rematch after a completed duel
-      parameters:
-      - description: Match ID
-        in: path
-        name: matchId
-        required: true
-        type: string
-      - description: Rematch request
-        in: body
-        name: request
-        required: true
-        schema:
-          $ref: '#/definitions/internal_infrastructure_http_handlers.RequestRematchRequest'
-      produces:
-      - application/json
-      responses:
-        "200":
-          description: Rematch requested
-          schema:
-            $ref: '#/definitions/internal_infrastructure_http_handlers.RequestRematchResponse'
-        "400":
-          description: Invalid request
-          schema:
-            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
-        "404":
-          description: Match not found
-          schema:
-            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
-        "409":
-          description: Cannot rematch
-          schema:
-            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
-        "500":
-          description: Internal error
-          schema:
-            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
-      summary: Request rematch
-      tags:
-      - duel
   /duel/queue/join:
     post:
       consumes:
@@ -2553,7 +2553,7 @@ paths:
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "409":
-          description: Already in queue or match
+          description: Already in queue or game
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
         "500":

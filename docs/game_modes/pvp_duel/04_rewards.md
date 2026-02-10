@@ -194,6 +194,15 @@ Monthly special events:
 
 ### Ticket Sources
 
+#### From Daily Challenge (Primary Source)
+| Daily Challenge Result | Tickets Earned |
+|----------------------|----------------|
+| 0-4 correct (Wooden Chest) | 1 🎟️ |
+| 5-7 correct (Silver Chest) | 2 🎟️ |
+| 8-10 correct (Golden Chest) | 3 🎟️ |
+
+#### All Sources Summary
+
 | Source | Amount | Frequency |
 |--------|--------|-----------|
 | Daily Challenge completion | 1-3 | Daily |

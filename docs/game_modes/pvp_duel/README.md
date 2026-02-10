@@ -36,7 +36,7 @@
 
 ### Core Gameplay
 - [x] 1v1 real-time duels
-- [x] 10 identical questions
+- [x] 7 identical questions
 - [x] 10 seconds per question
 - [x] No bonuses (pure skill)
 - [x] Score + time tiebreaker

@@ -4,7 +4,7 @@
 
 ### Rating Calculation
 ```go
-func CalculateMMRChange(winnerMMR, loserMMR int, result MatchResult) (winnerDelta, loserDelta int) {
+func CalculateMMRChange(winnerMMR, loserMMR int, result GameResult) (winnerDelta, loserDelta int) {
     K := 32  // K-factor (sensitivity)
 
     // Expected score (probability of winning)
@@ -49,13 +49,15 @@ New players start at **1000 MMR** (Silver IV).
 
 ### League Thresholds
 
-| League | Division | MMR Min | MMR Max |
-|--------|----------|---------|---------|
-| 🥉 Bronze IV | 0 | 0 | 249 |
-| 🥉 Bronze III | 1 | 250 | 499 |
-| 🥉 Bronze II | 2 | 500 | 749 |
-| 🥉 Bronze I | 3 | 750 | 999 |
-| 🥈 Silver IV | 4 | 1000 | 1124 |
+**Note:** Bronze divisions have 250 MMR range (vs 125 for other leagues) to provide more progression room for new players learning the game.
+
+| League | Division | MMR Min | MMR Max | Range |
+|--------|----------|---------|---------|-------|
+| 🥉 Bronze IV | 0 | 0 | 249 | 250 |
+| 🥉 Bronze III | 1 | 250 | 499 | 250 |
+| 🥉 Bronze II | 2 | 500 | 749 | 250 |
+| 🥉 Bronze I | 3 | 750 | 999 | 250 |
+| 🥈 Silver IV | 4 | 1000 | 1124 | 125 |
 | 🥈 Silver III | 5 | 1125 | 1249 |
 | 🥈 Silver II | 6 | 1250 | 1374 |
 | 🥈 Silver I | 7 | 1375 | 1499 |
@@ -145,7 +147,7 @@ func DetermineWinnerByFirstCorrect(answers1, answers2 []Answer) int {
 
 ### Queue Algorithm
 ```go
-func FindMatch(player Player) (*Match, error) {
+func FindOpponent(player Player) (*DuelGame, error) {
     startTime := time.Now()
 
     for {
@@ -159,7 +161,7 @@ func FindMatch(player Player) (*Match, error) {
         )
 
         if opponent != nil {
-            return CreateMatch(player, opponent), nil
+            return CreateDuelGame(player, opponent), nil
         }
 
         if elapsed > 60*time.Second {
@@ -187,9 +189,9 @@ func CalculateMMRRange(elapsed time.Duration) int {
 ```
 
 ### Matchmaking Constraints
-- Cannot match with same opponent twice in a row
-- Cannot match with blocked players
-- Bot matches: No MMR change, ticket refunded
+- Cannot be matched with same opponent twice in a row
+- Cannot be matched with blocked players
+- Bot games: No MMR change, ticket refunded
 
 ---
 
@@ -274,10 +276,10 @@ func StartDuel(player1, player2 *Player) error {
 |----------|--------|
 | Queue cancelled by player | ✅ Yes |
 | Queue timeout (no opponent) | ✅ Yes |
-| Match completed normally | ❌ No |
+| Game completed normally | ❌ No |
 | Opponent disconnected (forfeit) | ❌ No (win awarded) |
 | Server error | ✅ Yes |
-| Bot match accepted | ✅ Yes |
+| Bot game accepted | ✅ Yes |
 
 ---
 
@@ -285,25 +287,25 @@ func StartDuel(player1, player2 *Player) error {
 
 ### Disconnect Forfeit
 ```go
-func HandleDisconnect(matchID, playerID string) {
+func HandleDisconnect(gameID, playerID string) {
     // Start 10s grace period
     time.AfterFunc(10*time.Second, func() {
         if !IsReconnected(playerID) {
-            IncrementMissedQuestions(matchID, playerID)
+            IncrementMissedQuestions(gameID, playerID)
 
-            if GetMissedQuestions(matchID, playerID) >= 3 {
-                ForfeitMatch(matchID, playerID)
+            if GetMissedQuestions(gameID, playerID) >= 3 {
+                ForfeitGame(gameID, playerID)
             }
         }
     })
 }
 
-func ForfeitMatch(matchID, loserID string) {
-    match := GetMatch(matchID)
-    winner := GetOpponent(match, loserID)
+func ForfeitGame(gameID, loserID string) {
+    game := GetDuelGame(gameID)
+    winner := GetOpponent(game, loserID)
 
     // Award win to opponent
-    CompleteMatch(match, winner.ID, "forfeit")
+    CompleteGame(game, winner.ID, "forfeit")
 
     // Normal MMR calculation applies
     ApplyMMRChange(winner.ID, loser.ID)
@@ -352,14 +354,14 @@ func ValidateAnswer(playerID string, answer Answer) error {
 
 ---
 
-## Match History
+## Game History
 
 ### Data Retention
 ```sql
--- Keep full match details for 90 days
+-- Keep full game details for 90 days
 -- Keep summary (W/L, MMR change) forever
 
-CREATE TABLE duel_matches (
+CREATE TABLE duel_games (
     id VARCHAR(36) PRIMARY KEY,
     player1_id VARCHAR(36),
     player2_id VARCHAR(36),

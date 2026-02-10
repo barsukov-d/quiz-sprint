@@ -191,3 +191,62 @@ Daily Challenge → Chest → Resources:
 
 **Shared:**
 - Quiz, Question, Answer, Session (Shared Kernel), Coins
+
+---
+
+## PvP Duel Context
+
+### Aggregates
+- `pvp_duel.DuelGame` - Single 1v1 duel between two players
+  - ❌ Avoid: DuelMatch, DuelSession
+- `pvp_duel.PlayerRating` - Player's MMR and league standing
+- `pvp_duel.DuelChallenge` - Friend challenge request
+- `pvp_duel.Referral` - Track friend invitations and rewards
+
+### Value Objects
+- `DuelPlayer` - Player state within a duel (answers, score, time)
+- `PlayerAnswer` - Single answer submission
+- `League` - Enum: `bronze`, `silver`, `gold`, `platinum`, `diamond`, `legend`
+- `GameStatus` - Enum: `waiting`, `countdown`, `in_progress`, `completed`, `cancelled`
+  - ❌ Avoid: MatchStatus
+- `WinReason` - Enum: `score`, `time`, `forfeit`
+- `Milestone` - Referral milestone: `registered`, `played_5_duels`, `reached_silver`, etc.
+
+### Domain Services
+- `MMRCalculator` - ELO-based rating calculation (K=32)
+- `MatchmakingService` - Queue management and opponent finding
+- `ChallengeService` - Friend challenge creation and acceptance
+- `ReferralService` - Milestone tracking and reward distribution
+
+### Key Terms
+- **Duel** - 1v1 real-time quiz game (7 questions, 10s each)
+  - ❌ Avoid: Match, Battle, Fight
+- **MMR** - Matchmaking Rating (ELO-based, starts at 1000)
+- **League** - Rank tier (Bronze → Legend)
+- **Division** - Sub-rank within league (IV → I)
+- **PvP Ticket** - Entry cost for duel (1 ticket per game)
+- **Challenge** - Friend duel invitation (direct or via link)
+- **Rematch** - Immediate re-duel with same opponent
+
+### Domain Events
+```
+DuelGameCreatedEvent
+DuelGameCompletedEvent
+DuelAnswerSubmittedEvent
+PlayerPromotedEvent
+PlayerDemotedEvent
+DuelChallengeCreatedEvent
+ReferralMilestoneAchievedEvent
+SeasonEndedEvent
+```
+
+### Anti-patterns
+- ❌ `DuelMatch` → `DuelGame`
+- ❌ `MatchStatus` → `GameStatus`
+- ❌ `isFriendMatch` → `isFriendGame`
+- ❌ `match_found` → `game_found`
+- ❌ `match_complete` → `game_complete`
+
+### Context-Specific Terms
+**PvP Duel Only:**
+- DuelGame, DuelChallenge, PlayerRating, League, Division, MMR, PvP Ticket, Rematch, Referral

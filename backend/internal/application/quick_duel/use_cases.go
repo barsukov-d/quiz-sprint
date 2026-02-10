@@ -57,12 +57,12 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 		return GetDuelStatusOutput{}, err
 	}
 
-	// Check for active match
-	var activeMatchID *string
-	activeMatch, err := uc.duelGameRepo.FindActiveByPlayer(playerID)
-	if err == nil && activeMatch != nil {
-		id := activeMatch.ID().String()
-		activeMatchID = &id
+	// Check for active game
+	var activeGameID *string
+	activeGame, err := uc.duelGameRepo.FindActiveByPlayer(playerID)
+	if err == nil && activeGame != nil {
+		id := activeGame.ID().String()
+		activeGameID = &id
 	}
 
 	// Get pending challenges
@@ -80,8 +80,8 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 	_, seasonEndsAt, _ := uc.seasonRepo.GetSeasonInfo(seasonID)
 
 	return GetDuelStatusOutput{
-		HasActiveDuel:     activeMatchID != nil,
-		ActiveMatchID:     activeMatchID,
+		HasActiveDuel:     activeGameID != nil,
+		ActiveGameID:      activeGameID,
 		Player:            ToPlayerRatingDTO(rating),
 		Tickets:           10, // TODO: get from user wallet
 		FriendsOnline:     []FriendDTO{}, // TODO: implement friends service
@@ -133,10 +133,10 @@ func (uc *JoinQueueUseCase) Execute(input JoinQueueInput) (JoinQueueOutput, erro
 		return JoinQueueOutput{}, quick_duel.ErrAlreadyInQueue
 	}
 
-	// Check if already in match
-	activeMatch, err := uc.duelGameRepo.FindActiveByPlayer(playerID)
-	if err == nil && activeMatch != nil {
-		return JoinQueueOutput{}, quick_duel.ErrAlreadyInMatch
+	// Check if already in game
+	activeGame, err := uc.duelGameRepo.FindActiveByPlayer(playerID)
+	if err == nil && activeGame != nil {
+		return JoinQueueOutput{}, quick_duel.ErrAlreadyInGame
 	}
 
 	// Get player rating
@@ -252,9 +252,9 @@ func (uc *SendChallengeUseCase) Execute(input SendChallengeInput) (SendChallenge
 		return SendChallengeOutput{}, err
 	}
 
-	// Check if friend is already in a match
-	activeMatch, err := uc.duelGameRepo.FindActiveByPlayer(friendID)
-	if err == nil && activeMatch != nil {
+	// Check if friend is already in a game
+	activeGame, err := uc.duelGameRepo.FindActiveByPlayer(friendID)
+	if err == nil && activeGame != nil {
 		return SendChallengeOutput{}, quick_duel.ErrFriendBusy
 	}
 
@@ -366,13 +366,13 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 		uc.eventBus.Publish(event)
 	}
 
-	// TODO: Create match between challenger and challenged
+	// TODO: Create game between challenger and challenged
 	// For now, return placeholder
 	startsIn := 3
 
 	return RespondChallengeOutput{
 		Success:        true,
-		MatchID:        nil, // Will be set when match is created
+		GameID:         nil, // Will be set when game is created
 		TicketConsumed: true,
 		StartsIn:       &startsIn,
 	}, nil
@@ -430,28 +430,28 @@ func (uc *CreateChallengeLinkUseCase) Execute(input CreateChallengeLinkInput) (C
 }
 
 // ========================================
-// GetMatchHistory Use Case
+// GetGameHistory Use Case
 // ========================================
 
-type GetMatchHistoryUseCase struct {
+type GetGameHistoryUseCase struct {
 	duelGameRepo quick_duel.DuelGameRepository
 	userRepo     domainUser.UserRepository
 }
 
-func NewGetMatchHistoryUseCase(
+func NewGetGameHistoryUseCase(
 	duelGameRepo quick_duel.DuelGameRepository,
 	userRepo domainUser.UserRepository,
-) *GetMatchHistoryUseCase {
-	return &GetMatchHistoryUseCase{
+) *GetGameHistoryUseCase {
+	return &GetGameHistoryUseCase{
 		duelGameRepo: duelGameRepo,
 		userRepo:     userRepo,
 	}
 }
 
-func (uc *GetMatchHistoryUseCase) Execute(input GetMatchHistoryInput) (GetMatchHistoryOutput, error) {
+func (uc *GetGameHistoryUseCase) Execute(input GetGameHistoryInput) (GetGameHistoryOutput, error) {
 	playerID, err := shared.NewUserID(input.PlayerID)
 	if err != nil {
-		return GetMatchHistoryOutput{}, err
+		return GetGameHistoryOutput{}, err
 	}
 
 	limit := input.Limit
@@ -462,17 +462,17 @@ func (uc *GetMatchHistoryUseCase) Execute(input GetMatchHistoryInput) (GetMatchH
 		limit = 100
 	}
 
-	matches, total, err := uc.duelGameRepo.FindByPlayerPaginated(playerID, limit, input.Offset, input.Filter)
+	games, total, err := uc.duelGameRepo.FindByPlayerPaginated(playerID, limit, input.Offset, input.Filter)
 	if err != nil {
-		return GetMatchHistoryOutput{}, err
+		return GetGameHistoryOutput{}, err
 	}
 
-	entries := make([]MatchHistoryEntryDTO, 0, len(matches))
-	for _, match := range matches {
+	entries := make([]GameHistoryEntryDTO, 0, len(games))
+	for _, game := range games {
 		// Determine opponent
-		opponentID := match.Player2().UserID()
-		if match.Player1().UserID().String() != input.PlayerID {
-			opponentID = match.Player1().UserID()
+		opponentID := game.Player2().UserID()
+		if game.Player1().UserID().String() != input.PlayerID {
+			opponentID = game.Player1().UserID()
 		}
 
 		opponentUsername := "Player"
@@ -480,13 +480,13 @@ func (uc *GetMatchHistoryUseCase) Execute(input GetMatchHistoryInput) (GetMatchH
 			opponentUsername = user.Username().String()
 		}
 
-		entries = append(entries, ToMatchHistoryEntryDTO(match, input.PlayerID, opponentUsername))
+		entries = append(entries, ToGameHistoryEntryDTO(game, input.PlayerID, opponentUsername))
 	}
 
-	return GetMatchHistoryOutput{
-		Matches: entries,
+	return GetGameHistoryOutput{
+		Games:   entries,
 		Total:   total,
-		HasMore: input.Offset+len(matches) < total,
+		HasMore: input.Offset+len(games) < total,
 	}, nil
 }
 
@@ -587,10 +587,10 @@ func (uc *GetLeaderboardUseCase) Execute(input GetLeaderboardInput) (GetLeaderbo
 }
 
 // ========================================
-// StartMatch Use Case
+// StartGame Use Case
 // ========================================
 
-type StartMatchUseCase struct {
+type StartGameUseCase struct {
 	duelGameRepo     quick_duel.DuelGameRepository
 	playerRatingRepo quick_duel.PlayerRatingRepository
 	questionRepo     QuestionRepository
@@ -617,14 +617,14 @@ type AnswerData struct {
 	IsCorrect bool
 }
 
-func NewStartMatchUseCase(
+func NewStartGameUseCase(
 	duelGameRepo quick_duel.DuelGameRepository,
 	playerRatingRepo quick_duel.PlayerRatingRepository,
 	questionRepo QuestionRepository,
 	seasonRepo quick_duel.SeasonRepository,
 	eventBus EventBus,
-) *StartMatchUseCase {
-	return &StartMatchUseCase{
+) *StartGameUseCase {
+	return &StartGameUseCase{
 		duelGameRepo:     duelGameRepo,
 		playerRatingRepo: playerRatingRepo,
 		questionRepo:     questionRepo,
@@ -633,35 +633,35 @@ func NewStartMatchUseCase(
 	}
 }
 
-func (uc *StartMatchUseCase) Execute(input StartMatchInput) (StartMatchOutput, error) {
+func (uc *StartGameUseCase) Execute(input StartGameInput) (StartGameOutput, error) {
 	now := time.Now().UTC().Unix()
 
 	player1ID, err := shared.NewUserID(input.Player1ID)
 	if err != nil {
-		return StartMatchOutput{}, err
+		return StartGameOutput{}, err
 	}
 
 	player2ID, err := shared.NewUserID(input.Player2ID)
 	if err != nil {
-		return StartMatchOutput{}, err
+		return StartGameOutput{}, err
 	}
 
 	// Get player ratings
 	seasonID, _ := uc.seasonRepo.GetCurrentSeason()
 	rating1, err := uc.playerRatingRepo.FindOrCreate(player1ID, seasonID, now)
 	if err != nil {
-		return StartMatchOutput{}, err
+		return StartGameOutput{}, err
 	}
 
 	rating2, err := uc.playerRatingRepo.FindOrCreate(player2ID, seasonID, now)
 	if err != nil {
-		return StartMatchOutput{}, err
+		return StartGameOutput{}, err
 	}
 
 	// Get random questions for the duel
 	questions, err := uc.questionRepo.FindRandomByDifficulty(quick_duel.QuestionsPerDuel, "medium")
 	if err != nil {
-		return StartMatchOutput{}, err
+		return StartGameOutput{}, err
 	}
 
 	// Create players
@@ -687,18 +687,18 @@ func (uc *StartMatchUseCase) Execute(input StartMatchInput) (StartMatchOutput, e
 	// Create duel game
 	game, err := quick_duel.NewDuelGame(player1, player2, questionIDs, now)
 	if err != nil {
-		return StartMatchOutput{}, err
+		return StartGameOutput{}, err
 	}
 	game.Start(now)
 
 	// Save game
 	err = uc.duelGameRepo.Save(game)
 	if err != nil {
-		return StartMatchOutput{}, err
+		return StartGameOutput{}, err
 	}
 
-	return StartMatchOutput{
-		MatchID:   game.ID().String(),
+	return StartGameOutput{
+		GameID:    game.ID().String(),
 		Player1ID: player1ID.String(),
 		Player2ID: player2ID.String(),
 		StartsAt:  now + 3, // 3 second countdown
@@ -706,8 +706,8 @@ func (uc *StartMatchUseCase) Execute(input StartMatchInput) (StartMatchOutput, e
 }
 
 // GetRoundQuestion returns the question for a specific round
-func (uc *StartMatchUseCase) GetRoundQuestion(matchID string, roundNum int) (*RoundQuestionOutput, error) {
-	gameID := quick_duel.NewGameIDFromString(matchID)
+func (uc *StartGameUseCase) GetRoundQuestion(gameIDStr string, roundNum int) (*RoundQuestionOutput, error) {
+	gameID := quick_duel.NewGameIDFromString(gameIDStr)
 	game, err := uc.duelGameRepo.FindByID(gameID)
 	if err != nil {
 		return nil, err
@@ -785,7 +785,7 @@ func NewSubmitDuelAnswerUseCase(
 func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*SubmitDuelAnswerOutput, error) {
 	now := time.Now().UTC().Unix()
 
-	gameID := quick_duel.NewGameIDFromString(input.MatchID)
+	gameID := quick_duel.NewGameIDFromString(input.GameID)
 	game, err := uc.duelGameRepo.FindByID(gameID)
 	if err != nil {
 		return nil, err
@@ -818,12 +818,12 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 
 	// Track this answer
 	currentRound := game.CurrentRound()
-	if uc.roundAnswers[input.MatchID] == nil {
-		uc.roundAnswers[input.MatchID] = make(map[int][]playerAnswer)
+	if uc.roundAnswers[input.GameID] == nil {
+		uc.roundAnswers[input.GameID] = make(map[int][]playerAnswer)
 	}
 
-	uc.roundAnswers[input.MatchID][currentRound] = append(
-		uc.roundAnswers[input.MatchID][currentRound],
+	uc.roundAnswers[input.GameID][currentRound] = append(
+		uc.roundAnswers[input.GameID][currentRound],
 		playerAnswer{
 			PlayerID:  input.PlayerID,
 			AnswerID:  input.AnswerID,
@@ -834,7 +834,7 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 	)
 
 	// Check if round is complete (both players answered)
-	roundAnswers := uc.roundAnswers[input.MatchID][currentRound]
+	roundAnswers := uc.roundAnswers[input.GameID][currentRound]
 	roundComplete := len(roundAnswers) >= 2
 
 	// Calculate current scores
@@ -849,8 +849,8 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 		}
 	}
 
-	// Check if match is complete
-	matchComplete := roundComplete && currentRound >= quick_duel.QuestionsPerDuel
+	// Check if game is complete
+	gameComplete := roundComplete && currentRound >= quick_duel.QuestionsPerDuel
 
 	output := &SubmitDuelAnswerOutput{
 		IsCorrect:       isCorrect,
@@ -859,18 +859,18 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 		Player1Score:    player1Score,
 		Player2Score:    player2Score,
 		RoundComplete:   roundComplete,
-		MatchComplete:   matchComplete,
+		GameComplete:    gameComplete,
 	}
 
-	// If match is complete, calculate MMR changes
-	if matchComplete {
-		uc.finalizeMatch(game, player1Score, player2Score, now, output)
+	// If game is complete, calculate MMR changes
+	if gameComplete {
+		uc.finalizeGame(game, player1Score, player2Score, now, output)
 	}
 
 	return output, nil
 }
 
-func (uc *SubmitDuelAnswerUseCase) finalizeMatch(
+func (uc *SubmitDuelAnswerUseCase) finalizeGame(
 	game *quick_duel.DuelGame,
 	player1Score, player2Score int,
 	now int64,
@@ -903,10 +903,10 @@ func (uc *SubmitDuelAnswerUseCase) finalizeMatch(
 	rating1, err := uc.playerRatingRepo.FindOrCreate(game.Player1().UserID(), seasonID, now)
 	if err == nil {
 		oldMMR1 := rating1.MMR()
-		rating1.ApplyMatchResult(quick_duel.MatchResult{
+		rating1.ApplyGameResult(quick_duel.GameResult{
 			Won:         player1Won,
 			OpponentMMR: game.Player2().Elo().Rating(),
-			MatchTime:   now,
+			GameTime:    now,
 		})
 		uc.playerRatingRepo.Save(rating1)
 		output.Player1MMRChange = rating1.MMR() - oldMMR1
@@ -917,10 +917,10 @@ func (uc *SubmitDuelAnswerUseCase) finalizeMatch(
 	rating2, err := uc.playerRatingRepo.FindOrCreate(game.Player2().UserID(), seasonID, now)
 	if err == nil {
 		oldMMR2 := rating2.MMR()
-		rating2.ApplyMatchResult(quick_duel.MatchResult{
+		rating2.ApplyGameResult(quick_duel.GameResult{
 			Won:         player2Won,
 			OpponentMMR: game.Player1().Elo().Rating(),
-			MatchTime:   now,
+			GameTime:    now,
 		})
 		uc.playerRatingRepo.Save(rating2)
 		output.Player2MMRChange = rating2.MMR() - oldMMR2
@@ -971,31 +971,31 @@ func (uc *RequestRematchUseCase) Execute(input RequestRematchInput) (RequestRema
 		return RequestRematchOutput{}, err
 	}
 
-	// Get the original match
-	matchID := quick_duel.NewGameIDFromString(input.MatchID)
-	match, err := uc.duelGameRepo.FindByID(matchID)
+	// Get the original game
+	gameID := quick_duel.NewGameIDFromString(input.GameID)
+	game, err := uc.duelGameRepo.FindByID(gameID)
 	if err != nil {
 		return RequestRematchOutput{}, err
 	}
 
-	// Verify player was in the match
-	isPlayer1 := match.Player1().UserID().String() == input.PlayerID
-	isPlayer2 := match.Player2().UserID().String() == input.PlayerID
+	// Verify player was in the game
+	isPlayer1 := game.Player1().UserID().String() == input.PlayerID
+	isPlayer2 := game.Player2().UserID().String() == input.PlayerID
 	if !isPlayer1 && !isPlayer2 {
 		return RequestRematchOutput{}, quick_duel.ErrGameNotFound
 	}
 
-	// Verify match is finished
-	if match.Status() != quick_duel.GameStatusFinished {
+	// Verify game is finished
+	if game.Status() != quick_duel.GameStatusFinished {
 		return RequestRematchOutput{}, quick_duel.ErrGameNotActive
 	}
 
 	// Determine opponent
 	var opponentID quick_duel.UserID
 	if isPlayer1 {
-		opponentID = match.Player2().UserID()
+		opponentID = game.Player2().UserID()
 	} else {
-		opponentID = match.Player1().UserID()
+		opponentID = game.Player1().UserID()
 	}
 
 	// Check if opponent already requested rematch (auto-accept)
@@ -1016,7 +1016,7 @@ func (uc *RequestRematchUseCase) Execute(input RequestRematchInput) (RequestRema
 					RematchID: c.ID().String(),
 					Status:    "accepted",
 					ExpiresIn: 0,
-					MatchID:   nil, // Would be set when match starts
+					GameID:    nil, // Would be set when game starts
 				}, nil
 			}
 		}
@@ -1060,9 +1060,9 @@ type OnlineTracker interface {
 	SetOnline(playerID string, expiresInSeconds int) error
 	IsOnline(playerID string) (bool, error)
 	GetOnlineFriends(playerID string, friendIDs []string) ([]string, error)
-	SetInMatch(playerID string, matchID string) error
-	ClearInMatch(playerID string) error
-	GetMatchID(playerID string) (string, error)
+	SetInGame(playerID string, gameID string) error
+	ClearInGame(playerID string) error
+	GetGameID(playerID string) (string, error)
 }
 
 func NewGetOnlineFriendsUseCase(
@@ -1103,15 +1103,15 @@ func (uc *GetOnlineFriendsUseCase) Execute(input GetOnlineFriendsInput) (GetOnli
 			continue
 		}
 
-		// Check if in match
-		matchID, _ := uc.onlineTracker.GetMatchID(friendID)
-		inMatch := matchID != ""
+		// Check if in game
+		gameID, _ := uc.onlineTracker.GetGameID(friendID)
+		inGame := gameID != ""
 
 		friends = append(friends, FriendDTO{
 			ID:       friendID,
 			Username: user.Username().String(),
 			IsOnline: true,
-			InMatch:  inMatch,
+			InGame:   inGame,
 		})
 	}
 

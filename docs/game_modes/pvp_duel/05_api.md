@@ -2,7 +2,7 @@
 
 ## Architecture Note: Real-Time + REST
 
-- **REST API:** Match setup, results, history
+- **REST API:** Game setup, results, history
 - **WebSocket:** Live duel sync (questions, answers, opponent status)
 
 ---
@@ -103,12 +103,12 @@ POST /api/v1/duel/queue/join
 }
 ```
 
-**WebSocket message when match found:**
+**WebSocket message when game found:**
 ```json
 {
-  "type": "match_found",
+  "type": "game_found",
   "data": {
-    "matchId": "m_xyz789",
+    "gameId": "g_xyz789",
     "opponent": {
       "id": "user_456",
       "username": "ProGamer",
@@ -205,11 +205,11 @@ POST /api/v1/duel/challenge/:challengeId/respond
 }
 ```
 
-**Response 200 (Match starts):**
+**Response 200 (Game starts):**
 ```json
 {
   "data": {
-    "matchId": "m_xyz789",
+    "gameId": "g_xyz789",
     "status": "starting",
     "ticketConsumed": true,
     "ticketsRemaining": 2,
@@ -262,20 +262,20 @@ POST /api/v1/duel/challenge/link
 
 ---
 
-### 7. Get Match Result
+### 7. Get Game Result
 
 ```http
-GET /api/v1/duel/match/:matchId
+GET /api/v1/duel/game/:gameId
 ```
 
 **Response 200:**
 ```json
 {
   "data": {
-    "matchId": "m_xyz789",
+    "gameId": "g_xyz789",
     "status": "completed",
     "winner": "user_123",
-    "isFriendMatch": true,
+    "isFriendGame": true,
     "players": {
       "player1": {
         "id": "user_123",
@@ -334,7 +334,7 @@ GET /api/v1/duel/match/:matchId
 ### 8. Request Rematch
 
 ```http
-POST /api/v1/duel/match/:matchId/rematch
+POST /api/v1/duel/game/:gameId/rematch
 ```
 
 **Response 201:**
@@ -366,7 +366,52 @@ POST /api/v1/duel/match/:matchId/rematch
 
 ---
 
-### 9. Get Match History
+### 8b. Surrender
+
+```http
+POST /api/v1/duel/game/:gameId/surrender
+```
+
+**Availability:** Only after question 3 (to prevent rage-quits on first question).
+
+**Response 200:**
+```json
+{
+  "data": {
+    "gameId": "g_xyz789",
+    "result": "forfeit",
+    "winner": "user_456",
+    "mmrChange": -25,
+    "newMmr": 1625,
+    "message": "Вы сдались. Победа присуждена сопернику."
+  }
+}
+```
+
+**Response 400 (too early):**
+```json
+{
+  "error": {
+    "code": "SURRENDER_TOO_EARLY",
+    "message": "Сдаться можно только после 3-го вопроса"
+  }
+}
+```
+
+**WebSocket to opponent:**
+```json
+{
+  "type": "opponent_surrendered",
+  "data": {
+    "gameId": "g_xyz789",
+    "message": "Соперник сдался. Победа!"
+  }
+}
+```
+
+---
+
+### 9. Get Game History
 
 ```http
 GET /api/v1/duel/history?limit=20&offset=0&filter=friends
@@ -381,9 +426,9 @@ GET /api/v1/duel/history?limit=20&offset=0&filter=friends
 ```json
 {
   "data": {
-    "matches": [
+    "games": [
       {
-        "matchId": "m_xyz789",
+        "gameId": "g_xyz789",
         "opponent": {
           "id": "user_456",
           "username": "ProGamer",
@@ -392,7 +437,7 @@ GET /api/v1/duel/history?limit=20&offset=0&filter=friends
         "result": "win",
         "score": "5:4",
         "mmrChange": 28,
-        "isFriendMatch": true,
+        "isFriendGame": true,
         "completedAt": 1706429100
       }
     ],
@@ -527,12 +572,12 @@ wss://quiz-sprint-tma.online/ws/duel?token=<auth_token>
 
 ### Message Types (Server → Client)
 
-#### match_found
+#### game_found
 ```json
 {
-  "type": "match_found",
+  "type": "game_found",
   "data": {
-    "matchId": "m_xyz789",
+    "gameId": "g_xyz789",
     "opponent": {...},
     "startsIn": 3
   }
@@ -597,10 +642,10 @@ wss://quiz-sprint-tma.online/ws/duel?token=<auth_token>
 }
 ```
 
-#### match_complete
+#### game_complete
 ```json
 {
-  "type": "match_complete",
+  "type": "game_complete",
   "data": {
     "result": "win",
     "finalScore": {
@@ -610,7 +655,7 @@ wss://quiz-sprint-tma.online/ws/duel?token=<auth_token>
     "mmrChange": 28,
     "newMmr": 1678,
     "rankChange": null,
-    "matchId": "m_xyz789"
+    "gameId": "g_xyz789"
   }
 }
 ```
@@ -645,7 +690,7 @@ wss://quiz-sprint-tma.online/ws/duel?token=<auth_token>
 {
   "type": "submit_answer",
   "data": {
-    "matchId": "m_xyz789",
+    "gameId": "g_xyz789",
     "questionId": "q_003",
     "answerId": "a_002",
     "clientTime": 4200
@@ -658,8 +703,18 @@ wss://quiz-sprint-tma.online/ws/duel?token=<auth_token>
 {
   "type": "send_emote",
   "data": {
-    "matchId": "m_xyz789",
+    "gameId": "g_xyz789",
     "emote": "fire"
+  }
+}
+```
+
+#### surrender
+```json
+{
+  "type": "surrender",
+  "data": {
+    "gameId": "g_xyz789"
   }
 }
 ```
@@ -672,9 +727,9 @@ wss://quiz-sprint-tma.online/ws/duel?token=<auth_token>
 |------|------|-------------|
 | 400 | `INSUFFICIENT_TICKETS` | Not enough tickets |
 | 400 | `ALREADY_IN_QUEUE` | Already searching for match |
-| 400 | `ALREADY_IN_MATCH` | Currently in active duel |
+| 400 | `ALREADY_IN_GAME` | Currently in active duel |
 | 400 | `INVALID_CHALLENGE` | Challenge expired or invalid |
-| 404 | `MATCH_NOT_FOUND` | Match doesn't exist |
+| 404 | `GAME_NOT_FOUND` | Game doesn't exist |
 | 404 | `FRIEND_NOT_FOUND` | Friend ID invalid |
 | 409 | `CHALLENGE_EXPIRED` | Challenge timed out |
 | 409 | `FRIEND_BUSY` | Friend already in queue/match |
@@ -685,16 +740,16 @@ wss://quiz-sprint-tma.online/ws/duel?token=<auth_token>
 ## Domain Events
 
 ```go
-type DuelMatchStartedEvent struct {
-    MatchID      string
+type DuelGameStartedEvent struct {
+    GameID       string
     Player1ID    string
     Player2ID    string
-    IsFriendMatch bool
+    IsFriendGame bool
     Timestamp    int64
 }
 
 type DuelAnswerSubmittedEvent struct {
-    MatchID      string
+    GameID       string
     PlayerID     string
     QuestionID   string
     AnswerID     string
@@ -703,17 +758,17 @@ type DuelAnswerSubmittedEvent struct {
     Timestamp    int64
 }
 
-type DuelMatchCompletedEvent struct {
-    MatchID       string
-    WinnerID      string
-    LoserID       string
-    WinnerScore   int
-    LoserScore    int
+type DuelGameCompletedEvent struct {
+    GameID         string
+    WinnerID       string
+    LoserID        string
+    WinnerScore    int
+    LoserScore     int
     WinnerMMRDelta int
     LoserMMRDelta  int
-    WinReason     string  // "score", "time", "forfeit"
-    IsFriendMatch bool
-    Timestamp     int64
+    WinReason      string  // "score", "time", "forfeit", "surrender"
+    IsFriendGame   bool
+    Timestamp      int64
 }
 
 type DuelChallengeCreatedEvent struct {

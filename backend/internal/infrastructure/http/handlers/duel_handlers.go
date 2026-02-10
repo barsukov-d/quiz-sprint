@@ -18,7 +18,7 @@ type DuelHandler struct {
 	sendChallengeUC     *appDuel.SendChallengeUseCase
 	respondChallengeUC  *appDuel.RespondChallengeUseCase
 	createLinkUC        *appDuel.CreateChallengeLinkUseCase
-	getHistoryUC        *appDuel.GetMatchHistoryUseCase
+	getHistoryUC        *appDuel.GetGameHistoryUseCase
 	getLeaderboardUC    *appDuel.GetLeaderboardUseCase
 	requestRematchUC    *appDuel.RequestRematchUseCase
 }
@@ -30,7 +30,7 @@ func NewDuelHandler(
 	sendChallengeUC *appDuel.SendChallengeUseCase,
 	respondChallengeUC *appDuel.RespondChallengeUseCase,
 	createLinkUC *appDuel.CreateChallengeLinkUseCase,
-	getHistoryUC *appDuel.GetMatchHistoryUseCase,
+	getHistoryUC *appDuel.GetGameHistoryUseCase,
 	getLeaderboardUC *appDuel.GetLeaderboardUseCase,
 	requestRematchUC *appDuel.RequestRematchUseCase,
 ) *DuelHandler {
@@ -83,7 +83,7 @@ func (h *DuelHandler) GetDuelStatus(c fiber.Ctx) error {
 // @Param request body JoinQueueRequest true "Join request"
 // @Success 200 {object} JoinQueueResponse "Joined queue"
 // @Failure 400 {object} ErrorResponse "Invalid request"
-// @Failure 409 {object} ErrorResponse "Already in queue or match"
+// @Failure 409 {object} ErrorResponse "Already in queue or game"
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/queue/join [post]
 func (h *DuelHandler) JoinQueue(c fiber.Ctx) error {
@@ -242,9 +242,9 @@ func (h *DuelHandler) CreateChallengeLink(c fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": output})
 }
 
-// GetMatchHistory handles GET /api/v1/duel/history
-// @Summary Get match history
-// @Description Get player's duel match history with pagination
+// GetGameHistory handles GET /api/v1/duel/history
+// @Summary Get game history
+// @Description Get player's duel game history with pagination
 // @Tags duel
 // @Accept json
 // @Produce json
@@ -252,11 +252,11 @@ func (h *DuelHandler) CreateChallengeLink(c fiber.Ctx) error {
 // @Param limit query int false "Limit (default 20, max 100)"
 // @Param offset query int false "Offset"
 // @Param filter query string false "Filter: all, friends, wins, losses"
-// @Success 200 {object} GetMatchHistoryResponse "Match history"
+// @Success 200 {object} GetGameHistoryResponse "Game history"
 // @Failure 400 {object} ErrorResponse "Invalid request"
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/history [get]
-func (h *DuelHandler) GetMatchHistory(c fiber.Ctx) error {
+func (h *DuelHandler) GetGameHistory(c fiber.Ctx) error {
 	playerID := c.Query("playerId")
 	if playerID == "" {
 		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
@@ -276,7 +276,7 @@ func (h *DuelHandler) GetMatchHistory(c fiber.Ctx) error {
 	}
 	filter := c.Query("filter", "all")
 
-	output, err := h.getHistoryUC.Execute(appDuel.GetMatchHistoryInput{
+	output, err := h.getHistoryUC.Execute(appDuel.GetGameHistoryInput{
 		PlayerID: playerID,
 		Limit:    limit,
 		Offset:   offset,
@@ -328,28 +328,28 @@ func (h *DuelHandler) GetDuelLeaderboard(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": output})
 }
 
-// RequestRematch handles POST /api/v1/duel/match/:matchId/rematch
+// RequestRematch handles POST /api/v1/duel/game/:gameId/rematch
 // @Summary Request rematch
 // @Description Request a rematch after a completed duel
 // @Tags duel
 // @Accept json
 // @Produce json
-// @Param matchId path string true "Match ID"
+// @Param gameId path string true "Game ID"
 // @Param request body RequestRematchRequest true "Rematch request"
 // @Success 200 {object} RequestRematchResponse "Rematch requested"
 // @Failure 400 {object} ErrorResponse "Invalid request"
-// @Failure 404 {object} ErrorResponse "Match not found"
+// @Failure 404 {object} ErrorResponse "Game not found"
 // @Failure 409 {object} ErrorResponse "Cannot rematch"
 // @Failure 500 {object} ErrorResponse "Internal error"
-// @Router /duel/match/{matchId}/rematch [post]
+// @Router /duel/game/{gameId}/rematch [post]
 func (h *DuelHandler) RequestRematch(c fiber.Ctx) error {
 	if h.requestRematchUC == nil {
 		return fiber.NewError(fiber.StatusNotImplemented, "Rematch not available")
 	}
 
-	matchID := c.Params("matchId")
-	if _, err := uuid.Parse(matchID); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid match ID format")
+	gameID := c.Params("gameId")
+	if _, err := uuid.Parse(gameID); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid game ID format")
 	}
 
 	var req RequestRematchRequest
@@ -363,7 +363,7 @@ func (h *DuelHandler) RequestRematch(c fiber.Ctx) error {
 
 	output, err := h.requestRematchUC.Execute(appDuel.RequestRematchInput{
 		PlayerID: req.PlayerID,
-		MatchID:  matchID,
+		GameID:   gameID,
 	})
 	if err != nil {
 		return mapDuelError(err)
@@ -376,19 +376,19 @@ func (h *DuelHandler) RequestRematch(c fiber.Ctx) error {
 func mapDuelError(err error) error {
 	switch err {
 	case domainDuel.ErrGameNotFound:
-		return fiber.NewError(fiber.StatusNotFound, "Match not found")
+		return fiber.NewError(fiber.StatusNotFound, "Game not found")
 	case domainDuel.ErrGameNotActive:
-		return fiber.NewError(fiber.StatusConflict, "Match is not active")
+		return fiber.NewError(fiber.StatusConflict, "Game is not active")
 	case domainDuel.ErrChallengeNotFound:
 		return fiber.NewError(fiber.StatusNotFound, "Challenge not found")
 	case domainDuel.ErrChallengeExpired:
 		return fiber.NewError(fiber.StatusConflict, "Challenge has expired")
 	case domainDuel.ErrAlreadyInQueue:
 		return fiber.NewError(fiber.StatusConflict, "Already in matchmaking queue")
-	case domainDuel.ErrAlreadyInMatch:
-		return fiber.NewError(fiber.StatusConflict, "Already in an active match")
+	case domainDuel.ErrAlreadyInGame:
+		return fiber.NewError(fiber.StatusConflict, "Already in an active game")
 	case domainDuel.ErrFriendBusy:
-		return fiber.NewError(fiber.StatusConflict, "Friend is already in a match")
+		return fiber.NewError(fiber.StatusConflict, "Friend is already in a game")
 	case domainDuel.ErrInsufficientTickets:
 		return fiber.NewError(fiber.StatusBadRequest, "Insufficient tickets")
 	case domainDuel.ErrCannotChallengeSelf:

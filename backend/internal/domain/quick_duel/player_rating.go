@@ -83,15 +83,15 @@ func ReconstructPlayerRating(
 	}
 }
 
-// MatchResult represents the result of a duel match for rating calculation
-type MatchResult struct {
-	Won          bool
-	OpponentMMR  int
-	MatchTime    int64
+// GameResult represents the result of a duel game for rating calculation
+type GameResult struct {
+	Won         bool
+	OpponentMMR int
+	GameTime    int64
 }
 
-// ApplyMatchResult updates rating based on match result
-func (pr *PlayerRating) ApplyMatchResult(result MatchResult) {
+// ApplyGameResult updates rating based on game result
+func (pr *PlayerRating) ApplyGameResult(result GameResult) {
 	oldLeague := pr.league
 	oldDivision := pr.division
 
@@ -157,7 +157,7 @@ func (pr *PlayerRating) ApplyMatchResult(result MatchResult) {
 				oldLeague, oldDivision,
 				newLeague, newDivision,
 				pr.mmr,
-				result.MatchTime,
+				result.GameTime,
 			))
 		} else {
 			// Demoted
@@ -166,7 +166,7 @@ func (pr *PlayerRating) ApplyMatchResult(result MatchResult) {
 				oldLeague, oldDivision,
 				newLeague, newDivision,
 				pr.mmr,
-				result.MatchTime,
+				result.GameTime,
 			))
 		}
 	} else {
@@ -175,7 +175,7 @@ func (pr *PlayerRating) ApplyMatchResult(result MatchResult) {
 
 	pr.league = newLeague
 	pr.division = newDivision
-	pr.updatedAt = result.MatchTime
+	pr.updatedAt = result.GameTime
 
 	// Update peak if new high
 	if pr.mmr > pr.peakMMR {

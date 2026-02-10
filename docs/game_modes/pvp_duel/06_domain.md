@@ -7,14 +7,14 @@
 
 ## Aggregates
 
-### DuelMatch (Root)
+### DuelGame (Root)
 
 **Purpose:** Represents a single 1v1 quiz duel between two players.
 
 ```go
-type DuelMatch struct {
-    id              MatchID
-    status          MatchStatus         // waiting, in_progress, completed, cancelled
+type DuelGame struct {
+    id              GameID
+    status          GameStatus          // waiting, countdown, in_progress, completed, cancelled
 
     player1         *DuelPlayer
     player2         *DuelPlayer
@@ -22,7 +22,7 @@ type DuelMatch struct {
     questions       []DuelQuestion      // 7 questions
     currentQuestion int                 // 0-6
 
-    isFriendMatch   bool
+    isFriendGame    bool
     challengeID     *ChallengeID        // If from challenge
 
     startedAt       int64
@@ -41,18 +41,18 @@ type DuelMatch struct {
 
 **Factory:**
 ```go
-func NewDuelMatch(
+func NewDuelGame(
     player1 *Player,
     player2 *Player,
     questions []Question,
-    isFriendMatch bool,
+    isFriendGame bool,
     startedAt int64,
-) (*DuelMatch, error)
+) (*DuelGame, error)
 ```
 
 **Key Methods:**
 ```go
-func (dm *DuelMatch) SubmitAnswer(
+func (dg *DuelGame) SubmitAnswer(
     playerID PlayerID,
     questionID QuestionID,
     answerID AnswerID,
@@ -60,19 +60,19 @@ func (dm *DuelMatch) SubmitAnswer(
     submittedAt int64,
 ) (*AnswerResult, error)
 
-func (dm *DuelMatch) GetCurrentQuestion() *DuelQuestion
-func (dm *DuelMatch) IsComplete() bool
-func (dm *DuelMatch) GetWinner() (*PlayerID, WinReason)
-func (dm *DuelMatch) CalculateMMRChanges() (player1Delta, player2Delta int)
-func (dm *DuelMatch) Forfeit(playerID PlayerID) error
+func (dg *DuelGame) GetCurrentQuestion() *DuelQuestion
+func (dg *DuelGame) IsComplete() bool
+func (dg *DuelGame) GetWinner() (*PlayerID, WinReason)
+func (dg *DuelGame) CalculateMMRChanges() (player1Delta, player2Delta int)
+func (dg *DuelGame) Forfeit(playerID PlayerID) error
 ```
 
 **Repository:**
 ```go
-type DuelMatchRepository interface {
-    GetByID(id MatchID) (*DuelMatch, error)
-    GetActiveByPlayer(playerID PlayerID) (*DuelMatch, error)
-    Save(dm *DuelMatch) error
+type DuelGameRepository interface {
+    GetByID(id GameID) (*DuelGame, error)
+    GetActiveByPlayer(playerID PlayerID) (*DuelGame, error)
+    Save(dg *DuelGame) error
 }
 ```
 
@@ -172,6 +172,42 @@ const (
 
 ---
 
+### PlayerTickets
+
+**Purpose:** Track PvP tickets for duel entry.
+
+**Note:** Tickets are stored in `user.Inventory` (User Context), not in PvP Duel context.
+
+```go
+// Query tickets via User Context
+type TicketService interface {
+    GetTicketBalance(playerID PlayerID) (int, error)
+    ConsumeTicket(playerID PlayerID) error
+    RefundTicket(playerID PlayerID) error
+    AddTickets(playerID PlayerID, amount int, source TicketSource) error
+}
+
+type TicketSource string
+const (
+    TicketSourceDailyChallenge TicketSource = "daily_challenge"
+    TicketSourceDailyMission   TicketSource = "daily_mission"
+    TicketSourceWeeklyMission  TicketSource = "weekly_mission"
+    TicketSourceReferral       TicketSource = "referral"
+    TicketSourceSeasonal       TicketSource = "seasonal"
+    TicketSourcePurchase       TicketSource = "purchase"
+    TicketSourceFriendDuel     TicketSource = "friend_duel_bonus"
+)
+```
+
+**Ticket acquisition from Daily Challenge:**
+| Daily Challenge Result | Tickets Earned |
+|----------------------|----------------|
+| 0-4 correct (Wooden Chest) | 1 🎟️ |
+| 5-7 correct (Silver Chest) | 2 🎟️ |
+| 8-10 correct (Golden Chest) | 3 🎟️ |
+
+---
+
 ## Value Objects
 
 ### DuelPlayer
@@ -260,17 +296,17 @@ func (l League) Icon() string {
 
 ---
 
-### MatchStatus
+### GameStatus
 
 ```go
-type MatchStatus string
+type GameStatus string
 
 const (
-    MatchStatusWaiting    MatchStatus = "waiting"
-    MatchStatusCountdown  MatchStatus = "countdown"
-    MatchStatusInProgress MatchStatus = "in_progress"
-    MatchStatusCompleted  MatchStatus = "completed"
-    MatchStatusCancelled  MatchStatus = "cancelled"
+    GameStatusWaiting    GameStatus = "waiting"
+    GameStatusCountdown  GameStatus = "countdown"
+    GameStatusInProgress GameStatus = "in_progress"
+    GameStatusCompleted  GameStatus = "completed"
+    GameStatusCancelled  GameStatus = "cancelled"
 )
 ```
 
@@ -324,7 +360,7 @@ func (c *MMRCalculator) Calculate(winnerMMR, loserMMR int) (winnerDelta, loserDe
 ```go
 type MatchmakingService struct {
     queue      *MatchmakingQueue
-    repository DuelMatchRepository
+    repository DuelGameRepository
 }
 
 func (s *MatchmakingService) JoinQueue(player *Player) (*QueueEntry, error) {
@@ -348,7 +384,7 @@ func (s *MatchmakingService) JoinQueue(player *Player) (*QueueEntry, error) {
     return entry, nil
 }
 
-func (s *MatchmakingService) FindMatch(entry *QueueEntry) (*DuelMatch, error) {
+func (s *MatchmakingService) FindOpponent(entry *QueueEntry) (*DuelGame, error) {
     elapsed := time.Since(time.Unix(entry.JoinedAt, 0))
     mmrRange := s.calculateMMRRange(elapsed)
 
@@ -362,10 +398,10 @@ func (s *MatchmakingService) FindMatch(entry *QueueEntry) (*DuelMatch, error) {
         return nil, ErrNoOpponentFound
     }
 
-    // Create match
-    match := NewDuelMatch(...)
+    // Create game
+    game := NewDuelGame(...)
 
-    return match, nil
+    return game, nil
 }
 ```
 
@@ -445,11 +481,11 @@ func (s *ReferralService) CheckMilestones(inviteeID PlayerID) error {
 ## Domain Events
 
 ```go
-type DuelMatchCreatedEvent struct {
-    MatchID       MatchID
+type DuelGameCreatedEvent struct {
+    GameID        GameID
     Player1ID     PlayerID
     Player2ID     PlayerID
-    IsFriendMatch bool
+    IsFriendGame  bool
     Timestamp     int64
 }
 
@@ -462,8 +498,8 @@ type DuelQuestionAnsweredEvent struct {
     Timestamp     int64
 }
 
-type DuelMatchCompletedEvent struct {
-    MatchID        MatchID
+type DuelGameCompletedEvent struct {
+    GameID         GameID
     WinnerID       PlayerID
     LoserID        PlayerID
     WinnerScore    int
@@ -471,7 +507,7 @@ type DuelMatchCompletedEvent struct {
     WinReason      WinReason
     WinnerMMRDelta int
     LoserMMRDelta  int
-    IsFriendMatch  bool
+    IsFriendGame   bool
     Timestamp      int64
 }
 
@@ -700,14 +736,14 @@ var (
 
 ### User Context
 ```
-DuelMatch --[PlayerID]--> user.User
+DuelGame --[PlayerID]--> user.User
 Tickets consumed → user.Inventory
 Rewards → user.Inventory
 ```
 
 ### Quiz Context
 ```
-DuelMatch uses quiz.Question
+DuelGame uses quiz.Question
 Questions filtered by difficulty (medium only for duels)
 ```
 
