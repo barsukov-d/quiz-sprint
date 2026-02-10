@@ -12,15 +12,16 @@ import (
 
 // DuelHandler handles HTTP requests for PvP Duel game mode
 type DuelHandler struct {
-	getStatusUC         *appDuel.GetDuelStatusUseCase
-	joinQueueUC         *appDuel.JoinQueueUseCase
-	leaveQueueUC        *appDuel.LeaveQueueUseCase
-	sendChallengeUC     *appDuel.SendChallengeUseCase
-	respondChallengeUC  *appDuel.RespondChallengeUseCase
-	createLinkUC        *appDuel.CreateChallengeLinkUseCase
-	getHistoryUC        *appDuel.GetGameHistoryUseCase
-	getLeaderboardUC    *appDuel.GetLeaderboardUseCase
-	requestRematchUC    *appDuel.RequestRematchUseCase
+	getStatusUC          *appDuel.GetDuelStatusUseCase
+	joinQueueUC          *appDuel.JoinQueueUseCase
+	leaveQueueUC         *appDuel.LeaveQueueUseCase
+	sendChallengeUC      *appDuel.SendChallengeUseCase
+	respondChallengeUC   *appDuel.RespondChallengeUseCase
+	acceptByLinkCodeUC   *appDuel.AcceptByLinkCodeUseCase
+	createLinkUC         *appDuel.CreateChallengeLinkUseCase
+	getHistoryUC         *appDuel.GetGameHistoryUseCase
+	getLeaderboardUC     *appDuel.GetLeaderboardUseCase
+	requestRematchUC     *appDuel.RequestRematchUseCase
 }
 
 func NewDuelHandler(
@@ -29,21 +30,23 @@ func NewDuelHandler(
 	leaveQueueUC *appDuel.LeaveQueueUseCase,
 	sendChallengeUC *appDuel.SendChallengeUseCase,
 	respondChallengeUC *appDuel.RespondChallengeUseCase,
+	acceptByLinkCodeUC *appDuel.AcceptByLinkCodeUseCase,
 	createLinkUC *appDuel.CreateChallengeLinkUseCase,
 	getHistoryUC *appDuel.GetGameHistoryUseCase,
 	getLeaderboardUC *appDuel.GetLeaderboardUseCase,
 	requestRematchUC *appDuel.RequestRematchUseCase,
 ) *DuelHandler {
 	return &DuelHandler{
-		getStatusUC:         getStatusUC,
-		joinQueueUC:         joinQueueUC,
-		leaveQueueUC:        leaveQueueUC,
-		sendChallengeUC:     sendChallengeUC,
-		respondChallengeUC:  respondChallengeUC,
-		createLinkUC:        createLinkUC,
-		getHistoryUC:        getHistoryUC,
-		getLeaderboardUC:    getLeaderboardUC,
-		requestRematchUC:    requestRematchUC,
+		getStatusUC:          getStatusUC,
+		joinQueueUC:          joinQueueUC,
+		leaveQueueUC:         leaveQueueUC,
+		sendChallengeUC:      sendChallengeUC,
+		respondChallengeUC:   respondChallengeUC,
+		acceptByLinkCodeUC:   acceptByLinkCodeUC,
+		createLinkUC:         createLinkUC,
+		getHistoryUC:         getHistoryUC,
+		getLeaderboardUC:     getLeaderboardUC,
+		requestRematchUC:     requestRematchUC,
 	}
 }
 
@@ -203,6 +206,40 @@ func (h *DuelHandler) RespondChallenge(c fiber.Ctx) error {
 		PlayerID:    req.PlayerID,
 		ChallengeID: challengeID,
 		Action:      req.Action,
+	})
+	if err != nil {
+		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
+}
+
+// AcceptByLinkCode handles POST /api/v1/duel/challenge/accept-by-code
+// @Summary Accept challenge by link code
+// @Description Accept a challenge using the link code from deep link (e.g., "duel_abc12345")
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Param request body AcceptByLinkCodeRequest true "Accept request"
+// @Success 200 {object} AcceptByLinkCodeResponse "Challenge accepted"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 404 {object} ErrorResponse "Challenge not found"
+// @Failure 409 {object} ErrorResponse "Challenge expired or already accepted"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /duel/challenge/accept-by-code [post]
+func (h *DuelHandler) AcceptByLinkCode(c fiber.Ctx) error {
+	var req AcceptByLinkCodeRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if req.PlayerID == "" || req.LinkCode == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId and linkCode are required")
+	}
+
+	output, err := h.acceptByLinkCodeUC.Execute(appDuel.AcceptByLinkCodeInput{
+		PlayerID: req.PlayerID,
+		LinkCode: req.LinkCode,
 	})
 	if err != nil {
 		return mapDuelError(err)

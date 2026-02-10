@@ -217,6 +217,23 @@ type RespondChallengeOutput struct {
 }
 
 // ========================================
+// AcceptByLinkCode Use Case
+// ========================================
+
+type AcceptByLinkCodeInput struct {
+	PlayerID string `json:"playerId"`
+	LinkCode string `json:"linkCode"` // e.g., "duel_abc12345"
+}
+
+type AcceptByLinkCodeOutput struct {
+	Success        bool    `json:"success"`
+	GameID         *string `json:"gameId,omitempty"`
+	TicketConsumed bool    `json:"ticketConsumed"`
+	StartsIn       *int    `json:"startsIn,omitempty"`
+	ChallengerID   string  `json:"challengerId"`
+}
+
+// ========================================
 // CreateChallengeLink Use Case
 // ========================================
 

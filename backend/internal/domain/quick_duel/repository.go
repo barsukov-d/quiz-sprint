@@ -75,8 +75,11 @@ type ChallengeRepository interface {
 	// FindByID retrieves a challenge by ID
 	FindByID(id ChallengeID) (*DuelChallenge, error)
 
-	// FindByLink retrieves a challenge by link code
+	// FindByLink retrieves a challenge by full link
 	FindByLink(link string) (*DuelChallenge, error)
+
+	// FindByLinkCode retrieves a challenge by link code (e.g., "duel_abc12345")
+	FindByLinkCode(code string) (*DuelChallenge, error)
 
 	// FindPendingForPlayer retrieves pending challenges for a player
 	FindPendingForPlayer(playerID UserID) ([]*DuelChallenge, error)

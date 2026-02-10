@@ -111,7 +111,7 @@ func NewLinkChallenge(
 	}
 
 	challengeID := NewChallengeID()
-	link := "t.me/quiz_sprint_dev_bot?start=duel_" + challengeID.String()[:8]
+	link := "https://t.me/quiz_sprint_dev_bot?startapp=duel_" + challengeID.String()[:8]
 
 	challenge := &DuelChallenge{
 		id:            challengeID,

@@ -85,6 +85,18 @@ func (r *ChallengeRepository) FindByLink(link string) (*quick_duel.DuelChallenge
 	return r.scanChallenge(r.db.QueryRow(query, link))
 }
 
+func (r *ChallengeRepository) FindByLinkCode(code string) (*quick_duel.DuelChallenge, error) {
+	// Search by link code suffix (e.g., "duel_abc12345")
+	query := `
+		SELECT id, challenger_id, challenged_id, challenge_type, status,
+			challenge_link, match_id, expires_at, created_at, responded_at
+		FROM duel_challenges
+		WHERE challenge_link LIKE '%' || $1
+	`
+
+	return r.scanChallenge(r.db.QueryRow(query, code))
+}
+
 func (r *ChallengeRepository) FindPendingForPlayer(playerID quick_duel.UserID) ([]*quick_duel.DuelChallenge, error) {
 	query := `
 		SELECT id, challenger_id, challenged_id, challenge_type, status,

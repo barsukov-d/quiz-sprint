@@ -4,7 +4,7 @@ if (import.meta.env.DEV) {
 	eruda.init()
 }
 import { onMounted, ref, computed } from 'vue'
-import { useRoute } from 'vue-router'
+import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from './composables/useAuth'
 import { usePostUserRegister } from './api/generated/hooks/userController/usePostUserRegister'
 import BottomTabBar from './components/BottomTabBar.vue'
@@ -14,6 +14,7 @@ import { viewport } from '@tma.js/sdk'
 viewport.safeAreaInsetTop()
 
 const route = useRoute()
+const router = useRouter()
 
 // Show bottom navigation only on main screens, hide during quiz play and results
 const showBottomNav = computed(() => {
@@ -21,13 +22,36 @@ const showBottomNav = computed(() => {
 	return !hiddenRoutes.includes(route.name as string)
 })
 
-const { isInitialized, getRawInitData, setCurrentUser } = useAuth()
+const { isInitialized, getRawInitData, setCurrentUser, consumeStartParam } = useAuth()
 
 const isLoading = ref(true)
 const error = ref<string | null>(null)
 
 // Мутация для регистрации пользователя
 const { mutateAsync: registerUser } = usePostUserRegister()
+
+// Handle deep link navigation
+const handleDeepLink = (startParam: string) => {
+	// Duel challenge link: duel_abc12345
+	if (startParam.startsWith('duel_')) {
+		console.log('🎮 Duel challenge detected, redirecting to lobby')
+		router.push({
+			name: 'duel-lobby',
+			query: { challenge: startParam },
+		})
+		return
+	}
+
+	// Referral link: ref_user123
+	if (startParam.startsWith('ref_')) {
+		console.log('👥 Referral link detected:', startParam)
+		// Store referral for later processing
+		localStorage.setItem('referral_code', startParam)
+		return
+	}
+
+	console.log('❓ Unknown deep link type:', startParam)
+}
 
 // Автоматическая регистрация/логин при загрузке
 onMounted(async () => {
@@ -71,6 +95,13 @@ onMounted(async () => {
 				console.log('Welcome new user!')
 			} else {
 				console.log('Welcome back!')
+			}
+
+			// Handle deep link after successful registration
+			const startParam = consumeStartParam()
+			if (startParam) {
+				console.log('🔗 Processing deep link:', startParam)
+				handleDeepLink(startParam)
 			}
 		}
 	} catch (err) {

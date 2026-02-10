@@ -130,7 +130,7 @@ Player A → "Вызвать друга" → Share link → Friend opens → Ins
 | Friend reaches Gold | 20 🎟️ + 1,000 coins + Exclusive avatar | 500 coins |
 | Friend reaches Platinum | 50 🎟️ + 3,000 coins + Legendary title | 1,000 coins |
 
-**Referral link:** `t.me/quiz_sprint_dev_bot?start=ref_USER123`
+**Referral link:** `https://t.me/quiz_sprint_dev_bot?startapp=ref_USER123`
 
 ### 3. Friends Leaderboard
 Separate tab showing only friends:

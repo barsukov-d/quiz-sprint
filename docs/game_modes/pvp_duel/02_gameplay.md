@@ -259,8 +259,8 @@ Home → "Дуэль" → Shows:
 │  │  "Кто следующий?" 😎        │    │
 │  │                             │    │
 │  │  ▶️ Сыграй со мной:         │    │
-│  │  t.me/quiz_sprint_dev_bot?start=  │    │
-│  │  duel_abc123                │    │
+│  │  t.me/quiz_sprint_dev_bot?  │    │
+│  │  startapp=duel_abc123       │    │
 │  └─────────────────────────────┘    │
 │                                     │
 │  Отправить в:                       │
@@ -270,8 +270,10 @@ Home → "Дуэль" → Shows:
 ```
 
 **Share link behavior:**
-- Clicking link → Opens bot → Shows "Accept Duel from @YourName"
-- New user → Registers first, then challenge appears
+- Clicking link → Opens TMA directly with `?startapp=duel_xxx` parameter
+- TMA extracts `startParam`, authenticates user, navigates to duel lobby
+- Deep link handler auto-accepts challenge via `POST /duel/challenge/accept-by-code`
+- New user → Registers first, then challenge is auto-accepted
 - Existing user → Direct to duel lobby
 
 ---

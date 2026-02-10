@@ -252,13 +252,47 @@ POST /api/v1/duel/challenge/link
 ```json
 {
   "data": {
-    "challengeLink": "t.me/quiz_sprint_dev_bot?start=duel_abc123",
+    "challengeLink": "https://t.me/quiz_sprint_dev_bot?startapp=duel_abc123",
     "expiresAt": 1706515200,
     "expiresIn": 86400,
-    "shareText": "⚔️ Вызываю тебя на дуэль в Quiz Sprint!\nПокажи кто здесь умнее! 🧠\n\nt.me/quiz_sprint_dev_bot?start=duel_abc123"
+    "shareText": "⚔️ Вызываю тебя на дуэль в Quiz Sprint!\nПокажи кто здесь умнее! 🧠\n\nhttps://t.me/quiz_sprint_dev_bot?startapp=duel_abc123"
   }
 }
 ```
+
+---
+
+### 6a. Accept Challenge by Link Code
+
+Used by TMA when user opens deep link with `?startapp=duel_xxx` parameter.
+
+```http
+POST /api/v1/duel/challenge/accept-by-code
+```
+
+**Request:**
+```json
+{
+  "playerId": "user_123",
+  "linkCode": "duel_abc12345"
+}
+```
+
+**Response 200:**
+```json
+{
+  "data": {
+    "success": true,
+    "gameId": "g_xyz789",
+    "ticketConsumed": true,
+    "startsIn": 3,
+    "challengerId": "user_456"
+  }
+}
+```
+
+**Error 404:** Challenge not found
+**Error 409:** Challenge expired or already accepted
 
 ---
 
@@ -317,7 +351,7 @@ GET /api/v1/duel/game/:gameId
     "winReason": "score",
     "completedAt": 1706429100,
     "share": {
-      "text": "⚔️ ПОБЕДА В ДУЭЛИ!\n@YourName 🏆\n5 : 4\n🥇 Gold III\n\nПопробуй победить меня!\nt.me/quiz_sprint_dev_bot?start=duel_abc123",
+      "text": "⚔️ ПОБЕДА В ДУЭЛИ!\n@YourName 🏆\n5 : 4\n🥇 Gold III\n\nПопробуй победить меня!\nhttps://t.me/quiz_sprint_dev_bot?startapp=duel_abc123",
       "imageUrl": "https://api.quiz-sprint.online/share/m_xyz789.png"
     },
     "rematch": {
@@ -498,7 +532,7 @@ GET /api/v1/duel/referrals
 ```json
 {
   "data": {
-    "referralLink": "t.me/quiz_sprint_dev_bot?start=ref_user123",
+    "referralLink": "https://t.me/quiz_sprint_dev_bot?startapp=ref_user123",
     "totalReferrals": 8,
     "activeReferrals": 5,
     "pendingRewards": [
@@ -567,77 +601,99 @@ POST /api/v1/duel/referrals/:friendId/claim
 
 ### Connection
 ```
-wss://quiz-sprint-tma.online/ws/duel?token=<auth_token>
+wss://quiz-sprint-tma.online/ws/duel/:gameId?playerId=<player_id>
 ```
 
 ### Message Types (Server → Client)
 
-#### game_found
+#### connected
 ```json
 {
-  "type": "game_found",
+  "type": "connected",
   "data": {
     "gameId": "g_xyz789",
-    "opponent": {...},
-    "startsIn": 3
+    "playerId": "user_123"
   }
 }
 ```
 
-#### question
+#### game_ready
+When both players are connected:
 ```json
 {
-  "type": "question",
+  "type": "game_ready",
   "data": {
-    "questionNumber": 3,
-    "totalQuestions": 7,
-    "questionId": "q_003",
-    "text": "Какой элемент имеет символ Au?",
-    "answers": [
-      {"id": "a_001", "text": "Серебро", "position": 0},
-      {"id": "a_002", "text": "Золото", "position": 1},
-      {"id": "a_003", "text": "Медь", "position": 2},
-      {"id": "a_004", "text": "Алюминий", "position": 3}
-    ],
-    "timeLimit": 10000,
+    "gameId": "g_xyz789",
+    "player1Id": "user_123",
+    "player2Id": "user_456",
+    "startsIn": 3,
+    "totalRounds": 7
+  }
+}
+```
+
+#### new_question
+```json
+{
+  "type": "new_question",
+  "data": {
+    "roundNum": 3,
+    "totalRounds": 7,
+    "question": {
+      "id": "q_003",
+      "text": "Какой элемент имеет символ Au?",
+      "answers": [
+        {"id": "a_001", "text": "Серебро"},
+        {"id": "a_002", "text": "Золото"},
+        {"id": "a_003", "text": "Медь"},
+        {"id": "a_004", "text": "Алюминий"}
+      ],
+      "timeLimit": 10
+    },
     "serverTime": 1706429050000
   }
 }
 ```
 
-#### opponent_answered
-```json
-{
-  "type": "opponent_answered",
-  "data": {
-    "questionNumber": 3,
-    "opponentAnswered": true,
-    "yourStatus": "answering"
-  }
-}
-```
-
 #### answer_result
+Sent to both players when someone answers:
 ```json
 {
   "type": "answer_result",
   "data": {
-    "questionNumber": 3,
-    "yourAnswer": {
-      "answerId": "a_002",
-      "isCorrect": true,
-      "timeTaken": 4200
-    },
-    "opponentAnswer": {
-      "isCorrect": false,
-      "timeTaken": 3800
-    },
-    "correctAnswerId": "a_002",
-    "scores": {
-      "you": 3,
-      "opponent": 2
-    },
-    "nextQuestionIn": 1500
+    "playerId": "user_123",
+    "questionId": "q_003",
+    "isCorrect": true,
+    "correctAnswer": "a_002",
+    "pointsEarned": 100,
+    "timeTaken": 4200,
+    "player1Score": 3,
+    "player2Score": 2
+  }
+}
+```
+
+#### round_complete
+When both players have answered:
+```json
+{
+  "type": "round_complete",
+  "data": {
+    "roundNum": 3,
+    "player1Score": 3,
+    "player2Score": 2,
+    "nextRoundIn": 2
+  }
+}
+```
+
+#### round_timeout
+When time runs out:
+```json
+{
+  "type": "round_timeout",
+  "data": {
+    "roundNum": 3
   }
 }
 ```
@@ -647,27 +703,13 @@ wss://quiz-sprint-tma.online/ws/duel?token=<auth_token>
 {
   "type": "game_complete",
   "data": {
-    "result": "win",
-    "finalScore": {
-      "you": 5,
-      "opponent": 4
-    },
-    "mmrChange": 28,
-    "newMmr": 1678,
-    "rankChange": null,
-    "gameId": "g_xyz789"
-  }
-}
-```
-
-#### challenge_received
-```json
-{
-  "type": "challenge_received",
-  "data": {
-    "challengeId": "ch_abc123",
-    "from": {...},
-    "expiresIn": 60
+    "winnerId": "user_123",
+    "player1Score": 5,
+    "player2Score": 4,
+    "player1MMRChange": 28,
+    "player2MMRChange": -28,
+    "player1NewMMR": 1678,
+    "player2NewMMR": 1692
   }
 }
 ```
@@ -677,9 +719,17 @@ wss://quiz-sprint-tma.online/ws/duel?token=<auth_token>
 {
   "type": "opponent_disconnected",
   "data": {
-    "gracePeriod": 10,
-    "message": "Соперник отключился. Ожидание..."
+    "playerId": "user_456",
+    "reconnectIn": 30
   }
+}
+```
+
+#### error
+```json
+{
+  "type": "error",
+  "error": "Error message"
 }
 ```
 
@@ -690,32 +740,28 @@ wss://quiz-sprint-tma.online/ws/duel?token=<auth_token>
 {
   "type": "submit_answer",
   "data": {
+    "playerId": "user_123",
     "gameId": "g_xyz789",
     "questionId": "q_003",
     "answerId": "a_002",
-    "clientTime": 4200
+    "timeTaken": 4200
   }
 }
 ```
 
-#### send_emote
+#### player_ready
+Signal ready for next round:
 ```json
 {
-  "type": "send_emote",
-  "data": {
-    "gameId": "g_xyz789",
-    "emote": "fire"
-  }
+  "type": "player_ready"
 }
 ```
 
-#### surrender
+#### ping
+Heartbeat:
 ```json
 {
-  "type": "surrender",
-  "data": {
-    "gameId": "g_xyz789"
-  }
+  "type": "ping"
 }
 ```
 

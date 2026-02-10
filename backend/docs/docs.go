@@ -767,6 +767,64 @@ const docTemplate = `{
                 }
             }
         },
+        "/duel/challenge/accept-by-code": {
+            "post": {
+                "description": "Accept a challenge using the link code from deep link (e.g., \"duel_abc12345\")",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Accept challenge by link code",
+                "parameters": [
+                    {
+                        "description": "Accept request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AcceptByLinkCodeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Challenge accepted",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AcceptByLinkCodeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Challenge not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Challenge expired or already accepted",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/duel/challenge/link": {
             "post": {
                 "description": "Generate a shareable challenge link (24h valid)",
@@ -2547,6 +2605,47 @@ const docTemplate = `{
             "properties": {
                 "userId": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AcceptByLinkCodeRequest": {
+            "type": "object",
+            "required": [
+                "linkCode",
+                "playerId"
+            ],
+            "properties": {
+                "linkCode": {
+                    "description": "e.g., \"duel_abc12345\"",
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AcceptByLinkCodeResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "challengerId": {
+                            "type": "string"
+                        },
+                        "gameId": {
+                            "type": "string"
+                        },
+                        "startsIn": {
+                            "type": "integer"
+                        },
+                        "success": {
+                            "type": "boolean"
+                        },
+                        "ticketConsumed": {
+                            "type": "boolean"
+                        }
+                    }
                 }
             }
         },

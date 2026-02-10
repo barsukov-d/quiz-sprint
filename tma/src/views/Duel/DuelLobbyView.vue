@@ -1,10 +1,12 @@
 <script setup lang="ts">
 import { computed, onMounted, ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePvPDuel } from '@/composables/usePvPDuel'
+import { usePostDuelChallengeAcceptByCode } from '@/api/generated/hooks/duelController/usePostDuelChallengeAcceptByCode'
 
 const router = useRouter()
+const route = useRoute()
 const { currentUser } = useAuth()
 
 const playerId = computed(() => currentUser.value?.id ?? '')
@@ -40,6 +42,9 @@ const {
   refetchHistory,
 } = usePvPDuel(playerId.value)
 
+// Accept by link code mutation
+const { mutateAsync: acceptByLinkCode, isPending: isAcceptingChallenge } = usePostDuelChallengeAcceptByCode()
+
 // ===========================
 // UI State
 // ===========================
@@ -47,6 +52,8 @@ const {
 const activeTab = ref('play')
 const showChallengeLink = ref(false)
 const challengeLink = ref('')
+const deepLinkChallenge = ref<string | null>(null)
+const deepLinkError = ref<string | null>(null)
 
 // ===========================
 // Computed
@@ -108,6 +115,42 @@ const handleChallengeFriend = async (friendId: string) => {
 }
 
 // ===========================
+// Deep Link Handling
+// ===========================
+
+const handleAcceptByLinkCode = async (linkCode: string) => {
+  if (!playerId.value) {
+    deepLinkError.value = 'Пожалуйста, авторизуйтесь'
+    return
+  }
+
+  try {
+    console.log('[DuelLobby] Accepting challenge by link code:', linkCode)
+    const response = await acceptByLinkCode({
+      data: {
+        playerId: playerId.value,
+        linkCode,
+      },
+    })
+
+    if (response.data?.success) {
+      console.log('[DuelLobby] Challenge accepted, game starting...')
+      deepLinkChallenge.value = null
+      // Clear the query param
+      router.replace({ name: 'duel-lobby' })
+      // Refresh status to get the new game
+      await refetchStatus()
+      if (hasActiveDuel.value && activeGameId.value) {
+        goToActiveDuel()
+      }
+    }
+  } catch (error: unknown) {
+    console.error('[DuelLobby] Failed to accept challenge:', error)
+    deepLinkError.value = 'Не удалось принять вызов. Возможно, ссылка устарела.'
+  }
+}
+
+// ===========================
 // Lifecycle
 // ===========================
 
@@ -119,6 +162,16 @@ onMounted(async () => {
   // If has active duel, redirect
   if (hasActiveDuel.value && activeGameId.value) {
     goToActiveDuel()
+    return
+  }
+
+  // Check for deep link challenge
+  const challengeCode = route.query.challenge as string
+  if (challengeCode) {
+    console.log('[DuelLobby] Deep link challenge detected:', challengeCode)
+    deepLinkChallenge.value = challengeCode
+    // Auto-accept the challenge
+    await handleAcceptByLinkCode(challengeCode)
   }
 })
 </script>
@@ -133,6 +186,35 @@ onMounted(async () => {
       <h1 class="text-xl font-bold">PvP Duel</h1>
       <div class="w-10" />
     </div>
+
+    <!-- Deep Link Challenge Loading -->
+    <UCard v-if="isAcceptingChallenge" class="mb-4">
+      <div class="flex items-center justify-center gap-3 py-4">
+        <div class="animate-spin">
+          <UIcon name="i-heroicons-arrow-path" class="size-6 text-primary" />
+        </div>
+        <p class="font-medium">Принимаем вызов...</p>
+      </div>
+    </UCard>
+
+    <!-- Deep Link Error -->
+    <UCard v-if="deepLinkError" class="mb-4 border-red-200 dark:border-red-800">
+      <div class="flex items-center gap-3">
+        <UIcon name="i-heroicons-exclamation-circle" class="size-6 text-red-500" />
+        <div>
+          <p class="font-medium text-red-600 dark:text-red-400">{{ deepLinkError }}</p>
+          <UButton
+            size="xs"
+            color="gray"
+            variant="link"
+            class="mt-1"
+            @click="deepLinkError = null; router.replace({ name: 'duel-lobby' })"
+          >
+            Закрыть
+          </UButton>
+        </div>
+      </div>
+    </UCard>
 
     <!-- Player Rating Card -->
     <UCard class="mb-4">

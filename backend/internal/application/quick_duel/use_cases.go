@@ -379,6 +379,77 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 }
 
 // ========================================
+// AcceptByLinkCode Use Case
+// ========================================
+
+type AcceptByLinkCodeUseCase struct {
+	challengeRepo    quick_duel.ChallengeRepository
+	duelGameRepo     quick_duel.DuelGameRepository
+	playerRatingRepo quick_duel.PlayerRatingRepository
+	seasonRepo       quick_duel.SeasonRepository
+	eventBus         EventBus
+}
+
+func NewAcceptByLinkCodeUseCase(
+	challengeRepo quick_duel.ChallengeRepository,
+	duelGameRepo quick_duel.DuelGameRepository,
+	playerRatingRepo quick_duel.PlayerRatingRepository,
+	seasonRepo quick_duel.SeasonRepository,
+	eventBus EventBus,
+) *AcceptByLinkCodeUseCase {
+	return &AcceptByLinkCodeUseCase{
+		challengeRepo:    challengeRepo,
+		duelGameRepo:     duelGameRepo,
+		playerRatingRepo: playerRatingRepo,
+		seasonRepo:       seasonRepo,
+		eventBus:         eventBus,
+	}
+}
+
+func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptByLinkCodeOutput, error) {
+	now := time.Now().UTC().Unix()
+
+	playerID, err := shared.NewUserID(input.PlayerID)
+	if err != nil {
+		return AcceptByLinkCodeOutput{}, err
+	}
+
+	// Find challenge by link code
+	challenge, err := uc.challengeRepo.FindByLinkCode(input.LinkCode)
+	if err != nil {
+		return AcceptByLinkCodeOutput{}, err
+	}
+
+	// Accept challenge
+	err = challenge.Accept(playerID, now)
+	if err != nil {
+		return AcceptByLinkCodeOutput{}, err
+	}
+
+	// Save challenge
+	err = uc.challengeRepo.Save(challenge)
+	if err != nil {
+		return AcceptByLinkCodeOutput{}, err
+	}
+
+	// Publish events
+	for _, event := range challenge.Events() {
+		uc.eventBus.Publish(event)
+	}
+
+	// TODO: Create game between challenger and challenged
+	startsIn := 3
+
+	return AcceptByLinkCodeOutput{
+		Success:        true,
+		GameID:         nil,
+		TicketConsumed: true,
+		StartsIn:       &startsIn,
+		ChallengerID:   challenge.ChallengerID().String(),
+	}, nil
+}
+
+// ========================================
 // CreateChallengeLink Use Case
 // ========================================
 

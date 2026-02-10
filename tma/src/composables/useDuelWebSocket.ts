@@ -20,7 +20,7 @@ export interface DuelPlayer {
   connected: boolean
 }
 
-export interface DuelMatch {
+export interface DuelGame {
   id: string
   status: 'waiting' | 'countdown' | 'in_progress' | 'finished'
   player1: DuelPlayer
@@ -41,7 +41,7 @@ export interface RoundResult {
   correctAnswerId: string
 }
 
-export interface MatchResult {
+export interface GameResult {
   winnerId?: string
   player1Score: number
   player2Score: number
@@ -51,21 +51,66 @@ export interface MatchResult {
   player2NewMmr: number
 }
 
+// WebSocket message types matching backend implementation
 type WebSocketMessage =
-  | { type: 'match_info'; match: DuelMatch }
-  | { type: 'countdown'; seconds: number }
-  | { type: 'round_start'; question: DuelQuestion; round: number }
-  | { type: 'opponent_answered' }
-  | { type: 'round_result'; result: RoundResult; scores: { player1: number; player2: number } }
-  | { type: 'match_finished'; result: MatchResult }
-  | { type: 'opponent_disconnected' }
-  | { type: 'opponent_reconnected' }
-  | { type: 'error'; message: string }
+  | { type: 'connected'; data: { gameId: string; playerId: string } }
+  | {
+      type: 'game_ready'
+      data: {
+        gameId: string
+        player1Id: string
+        player2Id: string
+        startsIn: number
+        totalRounds: number
+      }
+    }
+  | {
+      type: 'new_question'
+      data: {
+        roundNum: number
+        totalRounds: number
+        question: { id: string; text: string; answers: { id: string; text: string }[]; timeLimit: number }
+        serverTime: number
+      }
+    }
+  | {
+      type: 'answer_result'
+      data: {
+        playerId: string
+        questionId: string
+        isCorrect: boolean
+        correctAnswer: string
+        pointsEarned: number
+        timeTaken: number
+        player1Score: number
+        player2Score: number
+      }
+    }
+  | {
+      type: 'round_complete'
+      data: { roundNum: number; player1Score: number; player2Score: number; nextRoundIn: number }
+    }
+  | { type: 'round_timeout'; data: { roundNum: number } }
+  | {
+      type: 'game_complete'
+      data: {
+        winnerId?: string
+        player1Score: number
+        player2Score: number
+        player1MMRChange: number
+        player2MMRChange: number
+        player1NewMMR: number
+        player2NewMMR: number
+      }
+    }
+  | { type: 'opponent_disconnected'; data: { playerId: string; reconnectIn: number } }
+  | { type: 'error'; error: string }
+  | { type: 'pong' }
 
 /**
  * WebSocket composable for real-time duel gameplay
  */
-export function useDuelWebSocket(matchId: string, playerId: string) {
+export function useDuelWebSocket(gameId: string, playerId: string) {
   // ===========================
   // State
   // ===========================
@@ -76,50 +121,50 @@ export function useDuelWebSocket(matchId: string, playerId: string) {
   const reconnectAttempts = ref(0)
   const maxReconnectAttempts = 5
 
-  // Match state
-  const match = ref<DuelMatch | null>(null)
+  // Game state
+  const game = ref<DuelGame | null>(null)
   const currentQuestion = ref<DuelQuestion | null>(null)
   const currentRound = ref(0)
   const countdownSeconds = ref(0)
   const opponentAnswered = ref(false)
   const lastRoundResult = ref<RoundResult | null>(null)
-  const matchResult = ref<MatchResult | null>(null)
+  const gameResult = ref<GameResult | null>(null)
   const error = ref<string | null>(null)
 
   // ===========================
   // Computed
   // ===========================
 
-  const isPlayer1 = computed(() => match.value?.player1.id === playerId)
+  const isPlayer1 = computed(() => game.value?.player1.id === playerId)
 
   const myPlayer = computed(() => {
-    if (!match.value) return null
-    return isPlayer1.value ? match.value.player1 : match.value.player2
+    if (!game.value) return null
+    return isPlayer1.value ? game.value.player1 : game.value.player2
   })
 
   const opponent = computed(() => {
-    if (!match.value) return null
-    return isPlayer1.value ? match.value.player2 : match.value.player1
+    if (!game.value) return null
+    return isPlayer1.value ? game.value.player2 : game.value.player1
   })
 
   const myScore = computed(() => myPlayer.value?.score ?? 0)
   const opponentScore = computed(() => opponent.value?.score ?? 0)
 
-  const isWaiting = computed(() => match.value?.status === 'waiting')
-  const isCountdown = computed(() => match.value?.status === 'countdown')
-  const isPlaying = computed(() => match.value?.status === 'in_progress')
-  const isFinished = computed(() => match.value?.status === 'finished')
+  const isWaiting = computed(() => game.value?.status === 'waiting')
+  const isCountdown = computed(() => game.value?.status === 'countdown')
+  const isPlaying = computed(() => game.value?.status === 'in_progress')
+  const isFinished = computed(() => game.value?.status === 'finished')
 
   const didWin = computed(() => {
-    if (!matchResult.value || !matchResult.value.winnerId) return null
-    return matchResult.value.winnerId === playerId
+    if (!gameResult.value || !gameResult.value.winnerId) return null
+    return gameResult.value.winnerId === playerId
   })
 
   const myMmrChange = computed(() => {
-    if (!matchResult.value) return 0
+    if (!gameResult.value) return 0
     return isPlayer1.value
-      ? matchResult.value.player1MmrChange
-      : matchResult.value.player2MmrChange
+      ? gameResult.value.player1MmrChange
+      : gameResult.value.player2MmrChange
   })
 
   // ===========================
@@ -129,7 +174,7 @@ export function useDuelWebSocket(matchId: string, playerId: string) {
   const connect = () => {
     const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
     const host = window.location.host
-    const wsUrl = `${protocol}//${host}/ws/duel/${matchId}?playerId=${playerId}`
+    const wsUrl = `${protocol}//${host}/ws/duel/${gameId}?playerId=${playerId}`
 
     console.log('[DuelWS] Connecting to:', wsUrl)
 
@@ -188,45 +233,113 @@ export function useDuelWebSocket(matchId: string, playerId: string) {
     console.log('[DuelWS] Message:', message.type, message)
 
     switch (message.type) {
-      case 'match_info':
-        match.value = message.match
+      case 'connected':
+        console.log('[DuelWS] Connected to game:', message.data.gameId)
         break
 
-      case 'countdown':
-        countdownSeconds.value = message.seconds
-        if (match.value) {
-          match.value.status = 'countdown'
+      case 'game_ready':
+        // Initialize game state when both players are ready
+        game.value = {
+          id: message.data.gameId,
+          status: 'countdown',
+          player1: {
+            id: message.data.player1Id,
+            username: '',
+            mmr: 0,
+            league: '',
+            leagueIcon: '',
+            score: 0,
+            connected: true,
+          },
+          player2: {
+            id: message.data.player2Id,
+            username: '',
+            mmr: 0,
+            league: '',
+            leagueIcon: '',
+            score: 0,
+            connected: true,
+          },
+          currentRound: 0,
+          totalRounds: message.data.totalRounds,
+          startedAt: Date.now(),
         }
+        countdownSeconds.value = message.data.startsIn
+        // Countdown timer
+        const countdownInterval = setInterval(() => {
+          countdownSeconds.value--
+          if (countdownSeconds.value <= 0) {
+            clearInterval(countdownInterval)
+          }
+        }, 1000)
         break
 
-      case 'round_start':
-        currentQuestion.value = message.question
-        currentRound.value = message.round
+      case 'new_question':
+        currentQuestion.value = {
+          id: message.data.question.id,
+          questionNumber: message.data.roundNum,
+          text: message.data.question.text,
+          answers: message.data.question.answers,
+          timeLimit: message.data.question.timeLimit,
+          serverTime: message.data.serverTime,
+        }
+        currentRound.value = message.data.roundNum
         opponentAnswered.value = false
         lastRoundResult.value = null
-        if (match.value) {
-          match.value.status = 'in_progress'
-          match.value.currentRound = message.round
+        if (game.value) {
+          game.value.status = 'in_progress'
+          game.value.currentRound = message.data.roundNum
+          game.value.totalRounds = message.data.totalRounds
         }
         break
 
-      case 'opponent_answered':
-        opponentAnswered.value = true
-        break
-
-      case 'round_result':
-        lastRoundResult.value = message.result
-        if (match.value) {
-          match.value.player1.score = message.scores.player1
-          match.value.player2.score = message.scores.player2
+      case 'answer_result':
+        // Check if this is opponent's answer (mark opponent as answered)
+        if (message.data.playerId !== playerId) {
+          opponentAnswered.value = true
+        }
+        // Update scores
+        if (game.value) {
+          game.value.player1.score = message.data.player1Score
+          game.value.player2.score = message.data.player2Score
+        }
+        // Store last result for feedback
+        lastRoundResult.value = {
+          questionNumber: currentRound.value,
+          player1Correct: false, // Will be filled from specific player data
+          player1Time: 0,
+          player2Correct: false,
+          player2Time: 0,
+          correctAnswerId: message.data.correctAnswer,
         }
         break
 
-      case 'match_finished':
-        matchResult.value = message.result
-        if (match.value) {
-          match.value.status = 'finished'
-          match.value.winnerId = message.result.winnerId
+      case 'round_complete':
+        // Both players answered, round is complete
+        if (game.value) {
+          game.value.player1.score = message.data.player1Score
+          game.value.player2.score = message.data.player2Score
+        }
+        break
+
+      case 'round_timeout':
+        // Time ran out for the round
+        console.log('[DuelWS] Round timeout:', message.data.roundNum)
+        break
+
+      case 'game_complete':
+        gameResult.value = {
+          winnerId: message.data.winnerId,
+          player1Score: message.data.player1Score,
+          player2Score: message.data.player2Score,
+          player1MmrChange: message.data.player1MMRChange,
+          player2MmrChange: message.data.player2MMRChange,
+          player1NewMmr: message.data.player1NewMMR,
+          player2NewMmr: message.data.player2NewMMR,
+        }
+        if (game.value) {
+          game.value.status = 'finished'
+          game.value.winnerId = message.data.winnerId
         }
         break
 
@@ -236,14 +349,12 @@ export function useDuelWebSocket(matchId: string, playerId: string) {
         }
         break
 
-      case 'opponent_reconnected':
-        if (opponent.value) {
-          opponent.value.connected = true
-        }
+      case 'error':
+        error.value = message.error
         break
 
-      case 'error':
-        error.value = message.message
+      case 'pong':
+        // Heartbeat response
         break
     }
   }
@@ -294,14 +405,14 @@ export function useDuelWebSocket(matchId: string, playerId: string) {
     connect,
     disconnect,
 
-    // Match state
-    match,
+    // Game state
+    game,
     currentQuestion,
     currentRound,
     countdownSeconds,
     opponentAnswered,
     lastRoundResult,
-    matchResult,
+    gameResult,
 
     // Computed
     isPlayer1,

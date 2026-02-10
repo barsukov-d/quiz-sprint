@@ -24,7 +24,7 @@ const {
   isReconnecting,
   error,
   connect,
-  match,
+  game,
   currentQuestion,
   currentRound,
   countdownSeconds,
@@ -66,7 +66,7 @@ const answerStartTime = ref(0)
 // Computed
 // ===========================
 
-const totalRounds = computed(() => match.value?.totalRounds ?? 10)
+const totalRounds = computed(() => game.value?.totalRounds ?? 7)
 
 const answerLabels = ['A', 'B', 'C', 'D']
 

@@ -1185,6 +1185,27 @@ type RespondChallengeResponse struct {
 
 // @name RespondChallengeResponse
 
+// AcceptByLinkCodeRequest is the request for accepting a challenge via link code
+type AcceptByLinkCodeRequest struct {
+	PlayerID string `json:"playerId" validate:"required"`
+	LinkCode string `json:"linkCode" validate:"required"` // e.g., "duel_abc12345"
+}
+
+// @name AcceptByLinkCodeRequest
+
+// AcceptByLinkCodeResponse wraps the accept by link response
+type AcceptByLinkCodeResponse struct {
+	Data struct {
+		Success        bool    `json:"success"`
+		GameID         *string `json:"gameId,omitempty"`
+		TicketConsumed bool    `json:"ticketConsumed"`
+		StartsIn       *int    `json:"startsIn,omitempty"`
+		ChallengerID   string  `json:"challengerId"`
+	} `json:"data"`
+}
+
+// @name AcceptByLinkCodeResponse
+
 // CreateChallengeLinkRequest is the request for creating a challenge link
 type CreateChallengeLinkRequest struct {
 	PlayerID string `json:"playerId" validate:"required"`
