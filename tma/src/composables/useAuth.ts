@@ -17,6 +17,7 @@ const telegramUser = ref<TelegramUser | null>(null)
 const currentUser = ref<InternalInfrastructureHttpHandlersUserDTO | null>(null)
 const authError = ref<string | null>(null)
 const initDataRaw = ref<string | null>(null) // RAW init data для Authorization header
+const startParam = ref<string | null>(null) // Deep link parameter from ?startapp=xxx
 
 /**
  * Composable для управления авторизацией через Telegram Mini App
@@ -40,6 +41,13 @@ export function useAuth() {
 			console.log('🔍 Full launch params:', launchParams)
 			console.log('🔍 initDataRaw from SDK:', launchParams.initDataRaw)
 			console.log('🔍 initData from SDK:', launchParams.initData)
+			console.log('🔍 startParam from SDK:', launchParams.startParam)
+
+			// Extract startParam for deep linking (from ?startapp=xxx)
+			if (launchParams.startParam) {
+				startParam.value = launchParams.startParam as string
+				console.log('✅ Deep link startParam:', startParam.value)
+			}
 
 			let rawData: string | undefined = launchParams.initDataRaw as string | undefined
 			let parsedData: ParsedInitData | undefined = launchParams.initData as
@@ -154,6 +162,15 @@ export function useAuth() {
 		authError.value = null
 	}
 
+	/**
+	 * Get and clear startParam (use once after handling deep link)
+	 */
+	const consumeStartParam = () => {
+		const param = startParam.value
+		startParam.value = null
+		return param
+	}
+
 	// Computed свойства
 	const isAuthenticated = computed(() => currentUser.value !== null)
 	const userId = computed(() => currentUser.value?.id || null)
@@ -167,11 +184,13 @@ export function useAuth() {
 		userId,
 		authError,
 		initDataRaw,
+		startParam,
 
 		// Методы
 		initializeTMA,
 		getRawInitData,
 		setCurrentUser,
 		clearAuth,
+		consumeStartParam,
 	}
 }

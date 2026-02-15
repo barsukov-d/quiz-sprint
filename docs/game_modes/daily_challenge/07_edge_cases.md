@@ -51,7 +51,7 @@ if now - startedAt > 24h && status == "in_progress":
 - Progress persists
 
 **Resume:**
-- Player returns → `GET /api/v1/daily/status`
+- Player returns → `GET /api/v1/daily-challenge/status`
 - Response includes `gameId` if incomplete
 - Frontend resumes from `currentQuestionIndex`
 
