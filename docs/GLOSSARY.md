@@ -20,7 +20,7 @@
 
 ### Game
 - Process of playing Quiz in specific mode
-- Types: `DailyGame`, `MarathonGame`
+- Types: `DailyGame`, `MarathonGame`, `DuelGame`
 - ❌ Avoid: Session (for modes), Match, Round
 
 ### Session
@@ -38,11 +38,11 @@
 ### Value Objects
 - `StreakSystem` - Consecutive days (immutable)
 - `ChestType` - Enum: `wooden`, `silver`, `golden`
-- `GameStatus` - Enum: `in_progress`, `completed`, `abandoned`
+- `DailyGameStatus` - Enum: `in_progress`, `completed`, `abandoned`
 
 ### Key Terms
 - **Daily Chest** - Reward (0-4→Wooden, 5-7→Silver, 8-10→Golden)
-- **Daily Streak** - Multiplier: 3d→1.1x, 7d→1.25x, 30d→1.5x
+- **Daily Streak** - Multiplier applied to BOTH finalScore AND chest coins: 3d→1.1x, 7d→1.25x, 14d→1.4x, 30d→1.5x
 - **Second Attempt** - Retry: 100 coins OR Ad
 
 ### Anti-patterns
@@ -95,19 +95,23 @@
 
 **Daily Challenge:**
 ```
+DailyQuizCreatedEvent
 DailyGameStartedEvent
+DailyQuestionAnsweredEvent
 DailyGameCompletedEvent
-ChestOpenedEvent
 StreakMilestoneReachedEvent
+ChestEarnedEvent
 ```
 
 **Solo Marathon:**
 ```
 MarathonGameStartedEvent
+MarathonQuestionAnsweredEvent
+BonusUsedEvent
+LifeLostEvent
 MarathonGameOverEvent
-MarathonBonusUsedEvent
-MarathonContinueUsedEvent
-MarathonNewRecordEvent
+ContinueUsedEvent
+DifficultyIncreasedEvent
 ```
 
 ---
@@ -116,7 +120,7 @@ MarathonNewRecordEvent
 
 ### Go Code
 
-**Aggregates:** `DailyGame`, `MarathonGame`
+**Aggregates:** `DailyGame`, `MarathonGame`, `DuelGame`
 **Value Objects:** `StreakSystem`, `LivesSystem`, `ChestType`
 **Services:** `ChestRewardCalculator`, `DifficultyCalculator`
 **Methods:** `AnswerQuestion()`, `UseBonus()` (imperative verb)
@@ -124,11 +128,11 @@ MarathonNewRecordEvent
 **Events:** `GameStartedEvent` (past tense)
 
 ### Database
-**Tables:** `daily_games`, `marathon_games` (snake_case, plural)
+**Tables:** `daily_games`, `marathon_games`, `duel_games` (snake_case, plural)
 **Indexes:** `idx_daily_games_player_date`
 
 ### API
-**Routes:** `/api/v1/daily/start`, `/api/v1/marathon/:gameId/answer`
+**Routes:** `/api/v1/daily-challenge/start`, `/api/v1/marathon/:gameId/answer`
 
 ### Frontend
 **Views:** `DailyChallenge.vue`, `SoloMarathon.vue`
@@ -138,7 +142,7 @@ MarathonNewRecordEvent
 
 ## DDD Patterns
 
-**Aggregate Root:** Main entity. Examples: `DailyQuiz`, `DailyGame`, `MarathonGame`
+**Aggregate Root:** Main entity. Examples: `DailyQuiz`, `DailyGame`, `MarathonGame`, `DuelGame`
 
 **Value Object:** Immutable, no identity. Examples: `StreakSystem`, `LivesSystem`
 ```go
@@ -173,8 +177,9 @@ func (s *StreakSystem) Update(date Date)
 
 ```
 Daily Challenge → Chest → Resources:
-  ├─ Coins → Marathon Continue
-  └─ Bonuses → Marathon strategic usage
+  ├─ Coins → Marathon Continue, Streak Recovery, Second Attempt
+  ├─ Bonuses → Marathon strategic usage
+  └─ PvP Tickets → PvP Duel entry, Party Mode entry
 ```
 
 **Anti-Corruption:** Contexts do NOT import each other. Use Domain Events + Application Layer.
@@ -190,7 +195,7 @@ Daily Challenge → Chest → Resources:
 - MarathonGame, LivesSystem, BonusInventory, Continue, Personal Best
 
 **Shared:**
-- Quiz, Question, Answer, Session (Shared Kernel), Coins
+- Quiz, Question, Answer, Session (Shared Kernel), Coins, PvP Tickets
 
 ---
 
@@ -207,9 +212,9 @@ Daily Challenge → Chest → Resources:
 - `DuelPlayer` - Player state within a duel (answers, score, time)
 - `PlayerAnswer` - Single answer submission
 - `League` - Enum: `bronze`, `silver`, `gold`, `platinum`, `diamond`, `legend`
-- `GameStatus` - Enum: `waiting`, `countdown`, `in_progress`, `completed`, `cancelled`
+- `DuelGameStatus` - Enum: `waiting`, `countdown`, `in_progress`, `completed`, `cancelled`
   - ❌ Avoid: MatchStatus
-- `WinReason` - Enum: `score`, `time`, `forfeit`
+- `WinReason` - Enum: `score`, `time`, `forfeit` (surrender maps to `forfeit`)
 - `Milestone` - Referral milestone: `registered`, `played_5_duels`, `reached_silver`, etc.
 
 ### Domain Services
@@ -231,18 +236,27 @@ Daily Challenge → Chest → Resources:
 ### Domain Events
 ```
 DuelGameCreatedEvent
-DuelGameCompletedEvent
-DuelAnswerSubmittedEvent
+DuelGameStartedEvent
+RoundStartedEvent
+PlayerAnsweredEvent
+RoundCompletedEvent
+DuelGameFinishedEvent
+PlayerDisconnectedEvent
+PlayerReconnectedEvent
 PlayerPromotedEvent
 PlayerDemotedEvent
-DuelChallengeCreatedEvent
-ReferralMilestoneAchievedEvent
-SeasonEndedEvent
+SeasonResetEvent
+ChallengeCreatedEvent
+ChallengeAcceptedEvent
+ChallengeDeclinedEvent
+ChallengeExpiredEvent
+ReferralCreatedEvent
+ReferralMilestoneEvent
 ```
 
 ### Anti-patterns
 - ❌ `DuelMatch` → `DuelGame`
-- ❌ `MatchStatus` → `GameStatus`
+- ❌ `MatchStatus` → `DuelGameStatus`
 - ❌ `isFriendMatch` → `isFriendGame`
 - ❌ `match_found` → `game_found`
 - ❌ `match_complete` → `game_complete`

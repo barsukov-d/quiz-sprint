@@ -794,7 +794,7 @@ type DuelGameStartedEvent struct {
     Timestamp    int64
 }
 
-type DuelAnswerSubmittedEvent struct {
+type PlayerAnsweredEvent struct {
     GameID       string
     PlayerID     string
     QuestionID   string
@@ -804,7 +804,7 @@ type DuelAnswerSubmittedEvent struct {
     Timestamp    int64
 }
 
-type DuelGameCompletedEvent struct {
+type DuelGameFinishedEvent struct {
     GameID         string
     WinnerID       string
     LoserID        string
@@ -812,12 +812,12 @@ type DuelGameCompletedEvent struct {
     LoserScore     int
     WinnerMMRDelta int
     LoserMMRDelta  int
-    WinReason      string  // "score", "time", "forfeit", "surrender"
+    WinReason      string  // "score", "time", "forfeit"
     IsFriendGame   bool
     Timestamp      int64
 }
 
-type DuelChallengeCreatedEvent struct {
+type ChallengeCreatedEvent struct {
     ChallengeID  string
     ChallengerID string
     ChallengedID string
@@ -825,7 +825,7 @@ type DuelChallengeCreatedEvent struct {
     Timestamp    int64
 }
 
-type ReferralMilestoneReachedEvent struct {
+type ReferralMilestoneEvent struct {
     InviterID    string
     InviteeID    string
     Milestone    string  // "registered", "played_5", "reached_silver"

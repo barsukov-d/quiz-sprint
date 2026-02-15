@@ -23,7 +23,7 @@
 ### DailyChallengeView.vue
 
 **Only does:**
-- Fetch status: `GET /api/v1/daily/status`
+- Fetch status: `GET /api/v1/daily-challenge/status`
 - Render based on `hasPlayed` flag
 - Show "Start" or "Results" screen
 
@@ -40,7 +40,7 @@
 - Display current question from server (`GET /status`)
 - Render 4 answer buttons (AnswerButton component)
 - Track timer (visual only, GameTimer component)
-- Send answer: `POST /api/v1/daily/:gameId/answer`
+- Send answer: `POST /api/v1/daily-challenge/:gameId/answer`
 - Show instant feedback (correct/incorrect) from backend response
 - Navigate to results when game completes
 
@@ -136,7 +136,7 @@ const results = {
 ### ChestOpening.vue
 
 **Only does:**
-- Call `POST /api/v1/daily/:gameId/chest/open`
+- Call `POST /api/v1/daily-challenge/:gameId/chest/open`
 - Play animation
 - Display rewards from response
 

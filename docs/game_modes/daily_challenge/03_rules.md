@@ -19,6 +19,8 @@ streakMultiplier = getStreakBonus(streak)
 finalScore = floor(baseScore * streakMultiplier)
 ```
 
+**Note:** Streak multiplier is applied to BOTH finalScore AND chest coins (see Rewards doc).
+
 ### Streak Multiplier Table
 
 | Streak | Multiplier | Formula |

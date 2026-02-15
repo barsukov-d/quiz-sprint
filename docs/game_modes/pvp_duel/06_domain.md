@@ -203,8 +203,8 @@ const (
 | Daily Challenge Result | Tickets Earned |
 |----------------------|----------------|
 | 0-4 correct (Wooden Chest) | 1 🎟️ |
-| 5-7 correct (Silver Chest) | 2 🎟️ |
-| 8-10 correct (Golden Chest) | 3 🎟️ |
+| 5-7 correct (Silver Chest) | 2-3 🎟️ |
+| 8-10 correct (Golden Chest) | 4-5 🎟️ |
 
 ---
 
@@ -370,7 +370,7 @@ func (s *MatchmakingService) JoinQueue(player *Player) (*QueueEntry, error) {
     }
 
     if _, err := s.repository.GetActiveByPlayer(player.ID); err == nil {
-        return nil, ErrAlreadyInMatch
+        return nil, ErrAlreadyInGame
     }
 
     entry := &QueueEntry{
@@ -489,8 +489,8 @@ type DuelGameCreatedEvent struct {
     Timestamp     int64
 }
 
-type DuelQuestionAnsweredEvent struct {
-    MatchID       MatchID
+type PlayerAnsweredEvent struct {
+    GameID        GameID
     PlayerID      PlayerID
     QuestionIndex int
     IsCorrect     bool
@@ -498,7 +498,7 @@ type DuelQuestionAnsweredEvent struct {
     Timestamp     int64
 }
 
-type DuelGameCompletedEvent struct {
+type DuelGameFinishedEvent struct {
     GameID         GameID
     WinnerID       PlayerID
     LoserID        PlayerID
@@ -536,7 +536,7 @@ type ReferralCreatedEvent struct {
     Timestamp  int64
 }
 
-type ReferralMilestoneAchievedEvent struct {
+type ReferralMilestoneEvent struct {
     ReferralID ReferralID
     InviterID  PlayerID
     InviteeID  PlayerID
@@ -544,7 +544,7 @@ type ReferralMilestoneAchievedEvent struct {
     Timestamp  int64
 }
 
-type SeasonEndedEvent struct {
+type SeasonResetEvent struct {
     SeasonID       SeasonID
     TopPlayers     []PlayerID
     RewardsQueued  int
@@ -556,9 +556,9 @@ type SeasonEndedEvent struct {
 
 ## Database Schema
 
-### duel_matches
+### duel_games
 ```sql
-CREATE TABLE duel_matches (
+CREATE TABLE duel_games (
     id VARCHAR(36) PRIMARY KEY,
     status VARCHAR(20) NOT NULL,
 
@@ -577,7 +577,7 @@ CREATE TABLE duel_matches (
     player2_mmr_after INT,
 
     win_reason VARCHAR(20),
-    is_friend_match BOOLEAN DEFAULT FALSE,
+    is_friend_game BOOLEAN DEFAULT FALSE,
     challenge_id VARCHAR(36),
 
     questions_data JSONB NOT NULL,
@@ -685,11 +685,11 @@ ZRANGEBYSCORE duel:queue 1600 1700 LIMIT 0 1
 
 ### Active Matches
 ```
-Key: duel:active:{matchId}
+Key: duel:active:{gameId}
 Type: Hash
 
-HSET duel:active:m_xyz789 status "in_progress" currentQuestion 3 ...
-HGET duel:active:m_xyz789 status
+HSET duel:active:g_xyz789 status "in_progress" currentQuestion 3 ...
+HGET duel:active:g_xyz789 status
 ```
 
 ### Player Online Status
@@ -717,9 +717,9 @@ ZREVRANK duel:leaderboard:seasonal:2026-S04 "user_123"
 
 ```go
 var (
-    ErrMatchNotFound       = errors.New("match not found")
+    ErrGameNotFound       = errors.New("match not found")
     ErrAlreadyInQueue      = errors.New("already in queue")
-    ErrAlreadyInMatch      = errors.New("already in match")
+    ErrAlreadyInGame      = errors.New("already in match")
     ErrNoOpponentFound     = errors.New("no opponent found")
     ErrInsufficientTickets = errors.New("insufficient tickets")
     ErrChallengeExpired    = errors.New("challenge expired")

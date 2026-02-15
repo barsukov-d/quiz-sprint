@@ -448,7 +448,7 @@ type MarathonGameStartedEvent struct {
     Timestamp     int64
 }
 
-type MarathonAnswerSubmittedEvent struct {
+type MarathonQuestionAnsweredEvent struct {
     GameID        string
     PlayerID      string
     QuestionID    string
@@ -459,7 +459,7 @@ type MarathonAnswerSubmittedEvent struct {
     Timestamp     int64
 }
 
-type MarathonBonusUsedEvent struct {
+type BonusUsedEvent struct {
     GameID     string
     PlayerID   string
     BonusType  string
@@ -478,7 +478,7 @@ type MarathonGameOverEvent struct {
     Timestamp       int64
 }
 
-type MarathonContinueUsedEvent struct {
+type ContinueUsedEvent struct {
     GameID        string
     PlayerID      string
     ContinueCount int
