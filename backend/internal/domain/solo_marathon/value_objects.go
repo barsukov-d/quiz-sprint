@@ -335,6 +335,16 @@ func (bi BonusInventory) Count(bonusType BonusType) int {
 	}
 }
 
+// Add merges two BonusInventory values by summing each bonus type
+func (bi BonusInventory) Add(other BonusInventory) BonusInventory {
+	return BonusInventory{
+		shield:     bi.shield + other.shield,
+		fiftyFifty: bi.fiftyFifty + other.fiftyFifty,
+		skip:       bi.skip + other.skip,
+		freeze:     bi.freeze + other.freeze,
+	}
+}
+
 // Getters
 func (bi BonusInventory) Shield() int     { return bi.shield }
 func (bi BonusInventory) FiftyFifty() int { return bi.fiftyFifty }

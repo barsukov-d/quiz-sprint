@@ -77,11 +77,13 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		questionRepo      quiz.QuestionRepository
 		marathonRepo      domainMarathon.Repository
 		personalBestRepo  domainMarathon.PersonalBestRepository
+		bonusWalletRepo   domainMarathon.BonusWalletRepository
 	)
 	if db != nil {
 		questionRepo = postgres.NewQuestionRepository(db)
 		marathonRepo = postgres.NewMarathonRepository(db, questionRepo)
 		personalBestRepo = postgres.NewPersonalBestRepository(db)
+		bonusWalletRepo = postgres.NewBonusWalletRepository(db)
 	}
 
 	// Daily Challenge repositories: only available with PostgreSQL
@@ -131,6 +133,33 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 	// Daily Challenge event bus
 	dailyChallengeEventBus := messaging.NewDailyChallengeEventBus(true) // Enable logging
+
+	// Subscribe to ChestEarnedEvent: credit marathon bonuses to player's wallet
+	if bonusWalletRepo != nil {
+		dailyChallengeEventBus.Subscribe("chest_earned", func(event domainDaily.Event) {
+			chestEvent, ok := event.(domainDaily.ChestEarnedEvent)
+			if !ok {
+				return
+			}
+
+			playerID := chestEvent.PlayerID()
+			wallet, err := bonusWalletRepo.FindByPlayer(playerID)
+			if err != nil || wallet == nil {
+				wallet = domainMarathon.NewBonusWallet(playerID)
+			}
+
+			for _, bonus := range chestEvent.MarathonBonuses() {
+				wallet.AddBonus(domainMarathon.BonusType(string(bonus)))
+			}
+
+			if err := bonusWalletRepo.Save(wallet); err != nil {
+				log.Printf("[DAILY→MARATHON] Failed to credit bonuses: %v", err)
+			} else {
+				log.Printf("[DAILY→MARATHON] Credited %d bonuses to player %s",
+					len(chestEvent.MarathonBonuses()), playerID.String())
+			}
+		})
+	}
 
 	// ========================================
 	// Infrastructure Layer: WebSocket Hub
@@ -221,6 +250,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			questionRepo,
 			categoryRepo,
 			marathonEventBus,
+			bonusWalletRepo,
 		)
 		submitMarathonAnswerUC = appMarathon.NewSubmitMarathonAnswerUseCase(
 			marathonRepo,
@@ -245,6 +275,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		)
 		getMarathonStatusUC = appMarathon.NewGetMarathonStatusUseCase(
 			marathonRepo,
+			bonusWalletRepo,
 		)
 		getPersonalBestsUC = appMarathon.NewGetPersonalBestsUseCase(
 			personalBestRepo,

@@ -15,6 +15,7 @@ type StartMarathonUseCase struct {
 	questionRepo     quiz.QuestionRepository
 	categoryRepo     quiz.CategoryRepository
 	eventBus         EventBus
+	bonusWalletRepo  solo_marathon.BonusWalletRepository
 }
 
 // NewStartMarathonUseCase creates a new StartMarathonUseCase
@@ -24,6 +25,7 @@ func NewStartMarathonUseCase(
 	questionRepo quiz.QuestionRepository,
 	categoryRepo quiz.CategoryRepository,
 	eventBus EventBus,
+	bonusWalletRepo solo_marathon.BonusWalletRepository,
 ) *StartMarathonUseCase {
 	return &StartMarathonUseCase{
 		marathonRepo:     marathonRepo,
@@ -31,6 +33,7 @@ func NewStartMarathonUseCase(
 		questionRepo:     questionRepo,
 		categoryRepo:     categoryRepo,
 		eventBus:         eventBus,
+		bonusWalletRepo:  bonusWalletRepo,
 	}
 }
 
@@ -76,9 +79,18 @@ func (uc *StartMarathonUseCase) Execute(input StartMarathonInput) (StartMarathon
 	}
 	// personalBest can be nil - that's okay for first-time players
 
-	// 5. Create MarathonGame aggregate (V2 with default bonuses)
+	// 5. Create MarathonGame aggregate (V2 with defaults + wallet bonuses)
 	now := time.Now().Unix()
-	bonuses := solo_marathon.NewBonusInventory()
+	defaultBonuses := solo_marathon.NewBonusInventory()
+	var walletBonuses solo_marathon.BonusInventory
+	if uc.bonusWalletRepo != nil {
+		wallet, err := uc.bonusWalletRepo.FindByPlayer(playerID)
+		if err == nil && wallet != nil {
+			walletBonuses = wallet.ConsumeAll()
+			_ = uc.bonusWalletRepo.Save(wallet) // Save zeroed wallet
+		}
+	}
+	bonuses := defaultBonuses.Add(walletBonuses)
 	game, err := solo_marathon.NewMarathonGameV2(
 		playerID,
 		category,

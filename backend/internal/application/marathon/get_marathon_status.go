@@ -9,15 +9,18 @@ import (
 
 // GetMarathonStatusUseCase handles retrieving active marathon game status
 type GetMarathonStatusUseCase struct {
-	marathonRepo solo_marathon.Repository
+	marathonRepo    solo_marathon.Repository
+	bonusWalletRepo solo_marathon.BonusWalletRepository
 }
 
 // NewGetMarathonStatusUseCase creates a new GetMarathonStatusUseCase
 func NewGetMarathonStatusUseCase(
 	marathonRepo solo_marathon.Repository,
+	bonusWalletRepo solo_marathon.BonusWalletRepository,
 ) *GetMarathonStatusUseCase {
 	return &GetMarathonStatusUseCase{
-		marathonRepo: marathonRepo,
+		marathonRepo:    marathonRepo,
+		bonusWalletRepo: bonusWalletRepo,
 	}
 }
 
@@ -29,23 +32,27 @@ func (uc *GetMarathonStatusUseCase) Execute(input GetMarathonStatusInput) (GetMa
 		return GetMarathonStatusOutput{}, err
 	}
 
-	// 2. Default bonus inventory (what player starts with in a new game)
-	defaultBonuses := solo_marathon.NewBonusInventory()
-	defaultBonusDTO := BonusInventoryDTO{
-		Shield:     defaultBonuses.Shield(),
-		FiftyFifty: defaultBonuses.FiftyFifty(),
-		Skip:       defaultBonuses.Skip(),
-		Freeze:     defaultBonuses.Freeze(),
-	}
-
-	// 3. Find active game for player
+	// 2. Find active game for player
 	game, err := uc.marathonRepo.FindActiveByPlayer(playerID)
 	if err != nil {
 		if err == solo_marathon.ErrGameNotFound {
-			// No active game - return default bonuses so UI can display them
+			// No active game - return defaults + wallet bonuses so UI can display them
+			combined := solo_marathon.NewBonusInventory()
+			if uc.bonusWalletRepo != nil {
+				wallet, walletErr := uc.bonusWalletRepo.FindByPlayer(playerID)
+				if walletErr == nil && wallet != nil {
+					combined = combined.Add(wallet.ToBonusInventory())
+				}
+			}
+			bonusDTO := BonusInventoryDTO{
+				Shield:     combined.Shield(),
+				FiftyFifty: combined.FiftyFifty(),
+				Skip:       combined.Skip(),
+				Freeze:     combined.Freeze(),
+			}
 			return GetMarathonStatusOutput{
 				HasActiveGame:  false,
-				BonusInventory: &defaultBonusDTO,
+				BonusInventory: &bonusDTO,
 			}, nil
 		}
 		return GetMarathonStatusOutput{}, err
