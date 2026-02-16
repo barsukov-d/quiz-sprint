@@ -9,13 +9,20 @@ import (
 // DailyChallengeEventBus is an in-memory implementation of daily_challenge.EventBus
 type DailyChallengeEventBus struct {
 	enableLogging bool
+	handlers      map[string][]func(daily_challenge.Event)
 }
 
 // NewDailyChallengeEventBus creates a new daily challenge event bus
 func NewDailyChallengeEventBus(enableLogging bool) *DailyChallengeEventBus {
 	return &DailyChallengeEventBus{
 		enableLogging: enableLogging,
+		handlers:      make(map[string][]func(daily_challenge.Event)),
 	}
+}
+
+// Subscribe registers a handler for a specific event type
+func (eb *DailyChallengeEventBus) Subscribe(eventType string, handler func(daily_challenge.Event)) {
+	eb.handlers[eventType] = append(eb.handlers[eventType], handler)
 }
 
 // Publish publishes a single daily challenge event
@@ -32,6 +39,11 @@ func (eb *DailyChallengeEventBus) dispatch(event daily_challenge.Event) {
 
 	if eb.enableLogging {
 		eb.logEvent(event)
+	}
+
+	// Call registered handlers
+	for _, handler := range eb.handlers[event.EventType()] {
+		handler(event)
 	}
 }
 
@@ -55,6 +67,10 @@ func (eb *DailyChallengeEventBus) logEvent(event daily_challenge.Event) {
 	case daily_challenge.StreakMilestoneReachedEvent:
 		log.Printf("[DAILY CHALLENGE] Streak Milestone: playerId=%s, streak=%d days, bonus=%d%%",
 			e.PlayerID().String(), e.StreakDays(), e.BonusPercent())
+
+	case daily_challenge.ChestEarnedEvent:
+		log.Printf("[DAILY CHALLENGE] Chest Earned: gameId=%s, playerId=%s, chest=%s, bonuses=%d",
+			e.GameID().String(), e.PlayerID().String(), e.ChestType().String(), len(e.MarathonBonuses()))
 
 	default:
 		log.Printf("[DAILY CHALLENGE] Unknown event: %s at %d", event.EventType(), event.OccurredAt())

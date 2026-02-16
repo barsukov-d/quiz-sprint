@@ -394,17 +394,18 @@ func (h *AdminHandler) SimulateStreak(c fiber.Ctx) error {
 			req.BaseScore, date.Unix(), date.Add(5*time.Minute).Unix())
 
 		gameID := fmt.Sprintf("aaaaaaaa-bbbb-cccc-dddd-%012d", i)
+		questionStartedAt := date.Unix()
 
 		_, err = h.db.Exec(`
 			INSERT INTO daily_games (id, player_id, daily_quiz_id, date, status, session_state,
-				current_streak, best_streak, last_played_date, attempt_number)
-			VALUES ($1, $2, $3, $4, 'completed', $5::jsonb, $6, $7, $8, 1)
+				current_streak, best_streak, last_played_date, attempt_number, question_started_at)
+			VALUES ($1, $2, $3, $4, 'completed', $5::jsonb, $6, $7, $8, 1, $9)
 			ON CONFLICT (player_id, date, attempt_number) DO UPDATE SET
 				current_streak = EXCLUDED.current_streak,
 				best_streak = EXCLUDED.best_streak,
 				last_played_date = EXCLUDED.last_played_date
 		`, gameID, req.PlayerID, dailyQuizID, dateStr, sessionState,
-			streak, streak, dateStr)
+			streak, streak, dateStr, questionStartedAt)
 
 		if err != nil {
 			return fiber.NewError(fiber.StatusInternalServerError, "Failed to insert game for "+dateStr+": "+err.Error())

@@ -307,7 +307,7 @@ The API endpoint accepts POST request and returns game data...
 
 Good:
 ```
-POST /api/v1/daily/start
+POST /api/v1/daily-challenge/start
 → 201 {gameId, questions, streak}
 → 409 Already played
 ```

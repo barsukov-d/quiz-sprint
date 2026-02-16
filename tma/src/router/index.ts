@@ -16,6 +16,11 @@ import DailyChallengeResultsView from '../views/DailyChallenge/DailyChallengeRes
 import MarathonCategoryView from '../views/Marathon/MarathonCategoryView.vue'
 import MarathonPlayView from '../views/Marathon/MarathonPlayView.vue'
 import MarathonGameOverView from '../views/Marathon/MarathonGameOverView.vue'
+
+// PvP Duel Views
+import DuelLobbyView from '../views/Duel/DuelLobbyView.vue'
+import DuelPlayView from '../views/Duel/DuelPlayView.vue'
+import DuelResultsView from '../views/Duel/DuelResultsView.vue'
 // DailyChallengeReviewView removed — feedback is now shown inline during gameplay
 // TODO: Import DailyChallengeIntroView when created
 // import DailyChallengeIntroView from '../views/DailyChallenge/DailyChallengeIntroView.vue'
@@ -98,6 +103,27 @@ const router = createRouter({
 					path: 'gameover',
 					name: 'marathon-gameover',
 					component: MarathonGameOverView,
+				},
+			],
+		},
+		// PvP Duel Routes
+		{
+			path: '/duel',
+			children: [
+				{
+					path: '',
+					name: 'duel-lobby',
+					component: DuelLobbyView,
+				},
+				{
+					path: 'play/:duelId',
+					name: 'duel-play',
+					component: DuelPlayView,
+				},
+				{
+					path: 'results/:duelId',
+					name: 'duel-results',
+					component: DuelResultsView,
 				},
 			],
 		},

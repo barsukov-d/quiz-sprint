@@ -303,7 +303,7 @@ type MarathonQuestionAnsweredEvent struct {
     Timestamp      int64
 }
 
-type MarathonLifeLostEvent struct {
+type LifeLostEvent struct {
     GameID         GameID
     PlayerID       UserID
     LivesRemaining int
@@ -311,7 +311,7 @@ type MarathonLifeLostEvent struct {
     Timestamp      int64
 }
 
-type MarathonBonusUsedEvent struct {
+type BonusUsedEvent struct {
     GameID     GameID
     PlayerID   UserID
     BonusType  BonusType
@@ -331,22 +331,13 @@ type MarathonGameOverEvent struct {
     Timestamp       int64
 }
 
-type MarathonContinueUsedEvent struct {
+type ContinueUsedEvent struct {
     GameID        GameID
     PlayerID      UserID
     ContinueCount int
     PaymentMethod PaymentMethod
     CostCoins     int
     Timestamp     int64
-}
-
-type MarathonNewRecordEvent struct {
-    GameID       GameID
-    PlayerID     UserID
-    NewRecord    int
-    OldRecord    int
-    BonusCoins   int
-    Timestamp    int64
 }
 ```
 

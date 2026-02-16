@@ -32,3 +32,13 @@ type PersonalBestRepository interface {
 	// FindAllByPlayer retrieves all personal bests for a player (across all categories)
 	FindAllByPlayer(playerID UserID) ([]*PersonalBest, error)
 }
+
+// BonusWalletRepository defines the interface for bonus wallet persistence
+type BonusWalletRepository interface {
+	// FindByPlayer retrieves the bonus wallet for a player
+	// Returns nil, nil if no wallet exists yet
+	FindByPlayer(playerID UserID) (*BonusWallet, error)
+
+	// Save persists a bonus wallet (upsert)
+	Save(wallet *BonusWallet) error
+}

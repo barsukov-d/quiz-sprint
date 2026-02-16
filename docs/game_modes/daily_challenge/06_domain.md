@@ -236,11 +236,12 @@ type StreakMilestoneReachedEvent struct {
     Timestamp    int64
 }
 
-type ChestOpenedEvent struct {
+type ChestEarnedEvent struct {
     PlayerID   UserID
     GameID     GameID
     ChestType  ChestType
     Rewards    ChestContents
+    StreakBonus float64
     Timestamp  int64
 }
 ```
@@ -252,7 +253,7 @@ type ChestOpenedEvent struct {
 ### User Context
 ```
 DailyGame --[PlayerID]--> user.User
-ChestOpenedEvent --> Update user.Inventory
+ChestEarnedEvent --> Update user.Inventory
 ```
 
 ### Quiz Context

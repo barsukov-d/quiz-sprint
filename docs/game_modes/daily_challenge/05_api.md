@@ -29,7 +29,7 @@ Authorization: tma <base64_encoded_init_data>
 ### 1. Start Daily Challenge
 
 ```http
-POST /api/v1/daily/start
+POST /api/v1/daily-challenge/start
 Content-Type: application/json
 ```
 
@@ -78,7 +78,7 @@ Content-Type: application/json
 ### 2. Submit Answer
 
 ```http
-POST /api/v1/daily/:gameId/answer
+POST /api/v1/daily-challenge/:gameId/answer
 Content-Type: application/json
 ```
 
@@ -140,7 +140,7 @@ Content-Type: application/json
 ### 3. Get Daily Status
 
 ```http
-GET /api/v1/daily/status?playerId=user_123&date=2026-01-28
+GET /api/v1/daily-challenge/status?playerId=user_123&date=2026-01-28
 ```
 
 **Response 200 OK (Not played):**
@@ -198,7 +198,7 @@ GET /api/v1/daily/status?playerId=user_123&date=2026-01-28
 ### 4. Get Leaderboard
 
 ```http
-GET /api/v1/daily/leaderboard?date=2026-01-28&limit=10&playerId=user_123
+GET /api/v1/daily-challenge/leaderboard?date=2026-01-28&limit=10&playerId=user_123
 ```
 
 **Response 200 OK:**
@@ -241,7 +241,7 @@ GET /api/v1/daily/leaderboard?date=2026-01-28&limit=10&playerId=user_123
 ### 5. Get Player Streak
 
 ```http
-GET /api/v1/daily/streak?playerId=user_123
+GET /api/v1/daily-challenge/streak?playerId=user_123
 ```
 
 **Response 200 OK:**
@@ -265,7 +265,7 @@ GET /api/v1/daily/streak?playerId=user_123
 ### 6. Open Chest (Get Rewards)
 
 ```http
-POST /api/v1/daily/:gameId/chest/open
+POST /api/v1/daily-challenge/:gameId/chest/open
 ```
 
 **Response 200 OK:**
@@ -296,7 +296,7 @@ POST /api/v1/daily/:gameId/chest/open
 ### 7. Retry Challenge (Second Attempt)
 
 ```http
-POST /api/v1/daily/:gameId/retry
+POST /api/v1/daily-challenge/:gameId/retry
 Content-Type: application/json
 ```
 
@@ -349,11 +349,12 @@ type DailyGameCompletedEvent struct {
     Timestamp      int64
 }
 
-type ChestOpenedEvent struct {
+type ChestEarnedEvent struct {
     PlayerID   string
     GameID     string
     ChestType  string
     Rewards    ChestContents
+    StreakBonus float64
     Timestamp  int64
 }
 
