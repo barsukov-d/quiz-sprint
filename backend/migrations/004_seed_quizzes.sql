@@ -1,6 +1,0 @@
--- ==========================================
--- Seed Data: Removed
--- ==========================================
--- Seed quizzes have been moved to JSON files in data/quizzes/batches/seed/
--- They are now imported via the import tool (cmd/import) for consistency
--- across all environments (dev, staging, production).

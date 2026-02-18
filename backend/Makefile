@@ -177,6 +177,18 @@ docker-clean-duplicate-quizzes: ## Remove duplicate quizzes from staging/product
 		SELECT 'Remaining quizzes: ' || count(*) FROM quizzes;"
 
 # ============================================
+# Admin CLI
+# ============================================
+
+.PHONY: admin
+admin: ## Admin CLI (no args = interactive menu, with args = one-shot command)
+	go run ./cmd/admin/... $(ARGS)
+
+.PHONY: build-admin
+build-admin: ## Build admin CLI binary
+	go build -o quiz-sprint-admin ./cmd/admin/...
+
+# ============================================
 # Daily Challenge Debug Commands
 # ============================================
 

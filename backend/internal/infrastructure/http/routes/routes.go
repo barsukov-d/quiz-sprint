@@ -635,6 +635,12 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 		// Player-wide admin
 		admin.Delete("/player/reset", adminHandler.ResetPlayer)
+
+		// Marathon admin
+		adminMarathon := admin.Group("/marathon")
+		adminMarathon.Patch("/game", adminHandler.UpdateMarathonGame)
+		adminMarathon.Get("/games", adminHandler.ListMarathonGames)
+		adminMarathon.Delete("/games", adminHandler.DeleteMarathonGames)
 	}
 
 	// Swagger documentation

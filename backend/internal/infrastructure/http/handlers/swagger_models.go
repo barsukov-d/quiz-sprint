@@ -1111,6 +1111,77 @@ type AdminResetPlayerResponse struct {
 // @name AdminResetPlayerResponse
 
 // ========================================
+// Marathon Admin Models
+// ========================================
+
+// AdminUpdateMarathonRequest — update active marathon game state (lives, bonuses)
+type AdminUpdateMarathonRequest struct {
+	PlayerID      string `json:"playerId" validate:"required"`
+	GameID        string `json:"gameId,omitempty"`        // if empty — find active game
+	Lives         *int   `json:"lives,omitempty"`         // set current_lives (0-3)
+	AddLives      *int   `json:"addLives,omitempty"`      // +/- lives
+	Shield        *int   `json:"shield,omitempty"`        // set bonus_shield
+	FiftyFifty    *int   `json:"fiftyFifty,omitempty"`    // set bonus_fifty_fifty
+	Skip          *int   `json:"skip,omitempty"`          // set bonus_skip
+	Freeze        *int   `json:"freeze,omitempty"`        // set bonus_freeze
+	AddShield     *int   `json:"addShield,omitempty"`     // +/- bonus_shield
+	AddFiftyFifty *int   `json:"addFiftyFifty,omitempty"` // +/- bonus_fifty_fifty
+	AddSkip       *int   `json:"addSkip,omitempty"`       // +/- bonus_skip
+	AddFreeze     *int   `json:"addFreeze,omitempty"`     // +/- bonus_freeze
+}
+
+// @name AdminUpdateMarathonRequest
+
+// AdminUpdateMarathonResponse wraps the marathon game update result
+type AdminUpdateMarathonResponse struct {
+	Data struct {
+		GameID      string `json:"gameId"`
+		PlayerID    string `json:"playerId"`
+		Lives       int    `json:"lives"`
+		ShieldActive bool  `json:"shieldActive"`
+		Bonuses     struct {
+			Shield     int `json:"shield"`
+			FiftyFifty int `json:"fiftyFifty"`
+			Skip       int `json:"skip"`
+			Freeze     int `json:"freeze"`
+		} `json:"bonuses"`
+	} `json:"data"`
+}
+
+// @name AdminUpdateMarathonResponse
+
+// AdminMarathonGameInfo represents a marathon game in admin list
+type AdminMarathonGameInfo struct {
+	ID             string  `json:"id"`
+	Status         string  `json:"status"`
+	Score          int     `json:"score"`
+	TotalQuestions int     `json:"totalQuestions"`
+	CurrentLives   int     `json:"currentLives"`
+	BonusShield    int     `json:"bonusShield"`
+	BonusFiftyFifty int   `json:"bonusFiftyFifty"`
+	BonusSkip      int     `json:"bonusSkip"`
+	BonusFreeze    int     `json:"bonusFreeze"`
+	ShieldActive   bool    `json:"shieldActive"`
+	ContinueCount  int     `json:"continueCount"`
+	DifficultyLevel string `json:"difficultyLevel"`
+	StartedAt      int64   `json:"startedAt"`
+	FinishedAt     *int64  `json:"finishedAt,omitempty"`
+}
+
+// @name AdminMarathonGameInfo
+
+// AdminListMarathonGamesResponse wraps the marathon games list
+type AdminListMarathonGamesResponse struct {
+	Data struct {
+		PlayerID string                  `json:"playerId"`
+		Games    []AdminMarathonGameInfo `json:"games"`
+		Count    int                     `json:"count"`
+	} `json:"data"`
+}
+
+// @name AdminListMarathonGamesResponse
+
+// ========================================
 // Duel (PvP) Models
 // ========================================
 

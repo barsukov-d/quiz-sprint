@@ -425,3 +425,247 @@ func (h *AdminHandler) SimulateStreak(c fiber.Ctx) error {
 		},
 	})
 }
+
+// UpdateMarathonGame handles PATCH /api/v1/admin/marathon/game
+// @Summary Update marathon game state
+// @Description Set lives and bonus values for an active marathon game (for testing)
+// @Tags admin
+// @Accept json
+// @Produce json
+// @Param X-Admin-Key header string true "Admin API key"
+// @Param request body AdminUpdateMarathonRequest true "Marathon game update"
+// @Success 200 {object} AdminUpdateMarathonResponse "Updated"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 404 {object} ErrorResponse "No game found"
+// @Router /admin/marathon/game [patch]
+func (h *AdminHandler) UpdateMarathonGame(c fiber.Ctx) error {
+	var req AdminUpdateMarathonRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+	if req.PlayerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+
+	// Find game ID: use provided or look up active game
+	gameID := req.GameID
+	if gameID == "" {
+		err := h.db.QueryRow(
+			`SELECT id FROM marathon_games WHERE player_id = $1 AND status IN ('in_progress', 'game_over') ORDER BY started_at DESC LIMIT 1`,
+			req.PlayerID,
+		).Scan(&gameID)
+		if err != nil {
+			return fiber.NewError(fiber.StatusNotFound, "No active marathon game found for player")
+		}
+	}
+
+	// Build dynamic SET clause
+	setClauses := ""
+	args := []interface{}{}
+	argIdx := 1
+
+	// Direct set fields
+	if req.Lives != nil {
+		setClauses += fmt.Sprintf("current_lives = $%d, ", argIdx)
+		args = append(args, *req.Lives)
+		argIdx++
+	}
+	if req.Shield != nil {
+		setClauses += fmt.Sprintf("bonus_shield = $%d, ", argIdx)
+		args = append(args, *req.Shield)
+		argIdx++
+	}
+	if req.FiftyFifty != nil {
+		setClauses += fmt.Sprintf("bonus_fifty_fifty = $%d, ", argIdx)
+		args = append(args, *req.FiftyFifty)
+		argIdx++
+	}
+	if req.Skip != nil {
+		setClauses += fmt.Sprintf("bonus_skip = $%d, ", argIdx)
+		args = append(args, *req.Skip)
+		argIdx++
+	}
+	if req.Freeze != nil {
+		setClauses += fmt.Sprintf("bonus_freeze = $%d, ", argIdx)
+		args = append(args, *req.Freeze)
+		argIdx++
+	}
+
+	// Additive fields
+	if req.AddLives != nil {
+		setClauses += fmt.Sprintf("current_lives = current_lives + $%d, ", argIdx)
+		args = append(args, *req.AddLives)
+		argIdx++
+	}
+	if req.AddShield != nil {
+		setClauses += fmt.Sprintf("bonus_shield = bonus_shield + $%d, ", argIdx)
+		args = append(args, *req.AddShield)
+		argIdx++
+	}
+	if req.AddFiftyFifty != nil {
+		setClauses += fmt.Sprintf("bonus_fifty_fifty = bonus_fifty_fifty + $%d, ", argIdx)
+		args = append(args, *req.AddFiftyFifty)
+		argIdx++
+	}
+	if req.AddSkip != nil {
+		setClauses += fmt.Sprintf("bonus_skip = bonus_skip + $%d, ", argIdx)
+		args = append(args, *req.AddSkip)
+		argIdx++
+	}
+	if req.AddFreeze != nil {
+		setClauses += fmt.Sprintf("bonus_freeze = bonus_freeze + $%d, ", argIdx)
+		args = append(args, *req.AddFreeze)
+		argIdx++
+	}
+
+	if setClauses == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "No fields to update")
+	}
+	setClauses = setClauses[:len(setClauses)-2] // Remove trailing ", "
+
+	query := fmt.Sprintf(
+		`UPDATE marathon_games SET %s WHERE id = $%d RETURNING current_lives, shield_active, bonus_shield, bonus_fifty_fifty, bonus_skip, bonus_freeze`,
+		setClauses, argIdx,
+	)
+	args = append(args, gameID)
+
+	var lives, shield, fiftyFifty, skip, freeze int
+	var shieldActive bool
+	err := h.db.QueryRow(query, args...).Scan(&lives, &shieldActive, &shield, &fiftyFifty, &skip, &freeze)
+	if err != nil {
+		return fiber.NewError(fiber.StatusNotFound, "Game not found or update failed: "+err.Error())
+	}
+
+	return c.JSON(fiber.Map{
+		"data": fiber.Map{
+			"gameId":       gameID,
+			"playerId":     req.PlayerID,
+			"lives":        lives,
+			"shieldActive": shieldActive,
+			"bonuses": fiber.Map{
+				"shield":     shield,
+				"fiftyFifty": fiftyFifty,
+				"skip":       skip,
+				"freeze":     freeze,
+			},
+		},
+	})
+}
+
+// ListMarathonGames handles GET /api/v1/admin/marathon/games
+// @Summary List marathon games
+// @Description List all marathon games for a player (debug view)
+// @Tags admin
+// @Produce json
+// @Param X-Admin-Key header string true "Admin API key"
+// @Param playerId query string true "Player ID"
+// @Param limit query int false "Limit (default 20)"
+// @Success 200 {object} AdminListMarathonGamesResponse "Games list"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Router /admin/marathon/games [get]
+func (h *AdminHandler) ListMarathonGames(c fiber.Ctx) error {
+	playerID := c.Query("playerId")
+	if playerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+
+	limit := fiber.Query[int](c, "limit", 20)
+	if limit < 1 || limit > 100 {
+		limit = 20
+	}
+
+	rows, err := h.db.Query(`
+		SELECT id, status, score, total_questions, current_lives,
+		       bonus_shield, bonus_fifty_fifty, bonus_skip, bonus_freeze,
+		       shield_active, continue_count, difficulty_level,
+		       started_at, finished_at
+		FROM marathon_games
+		WHERE player_id = $1
+		ORDER BY started_at DESC
+		LIMIT $2
+	`, playerID, limit)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Query failed: "+err.Error())
+	}
+	defer rows.Close()
+
+	var games []fiber.Map
+	for rows.Next() {
+		var (
+			id, status, difficulty                          string
+			score, totalQ, lives                            int
+			bShield, bFifty, bSkip, bFreeze, continueCount  int
+			shieldActive                                    bool
+			startedAt                                       int64
+			finishedAt                                      sql.NullInt64
+		)
+		if err := rows.Scan(&id, &status, &score, &totalQ, &lives,
+			&bShield, &bFifty, &bSkip, &bFreeze,
+			&shieldActive, &continueCount, &difficulty,
+			&startedAt, &finishedAt); err != nil {
+			return fiber.NewError(fiber.StatusInternalServerError, "Scan failed: "+err.Error())
+		}
+
+		game := fiber.Map{
+			"id":              id,
+			"status":          status,
+			"score":           score,
+			"totalQuestions":   totalQ,
+			"currentLives":    lives,
+			"bonusShield":     bShield,
+			"bonusFiftyFifty": bFifty,
+			"bonusSkip":       bSkip,
+			"bonusFreeze":     bFreeze,
+			"shieldActive":    shieldActive,
+			"continueCount":   continueCount,
+			"difficultyLevel": difficulty,
+			"startedAt":       startedAt,
+		}
+		if finishedAt.Valid {
+			game["finishedAt"] = finishedAt.Int64
+		}
+		games = append(games, game)
+	}
+
+	if games == nil {
+		games = []fiber.Map{}
+	}
+
+	return c.JSON(fiber.Map{
+		"data": fiber.Map{
+			"playerId": playerID,
+			"games":    games,
+			"count":    len(games),
+		},
+	})
+}
+
+// DeleteMarathonGames handles DELETE /api/v1/admin/marathon/games
+// @Summary Delete marathon games
+// @Description Delete all marathon games for a player
+// @Tags admin
+// @Produce json
+// @Param X-Admin-Key header string true "Admin API key"
+// @Param playerId query string true "Player ID"
+// @Success 200 {object} AdminDeleteGamesResponse "Deleted"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Router /admin/marathon/games [delete]
+func (h *AdminHandler) DeleteMarathonGames(c fiber.Ctx) error {
+	playerID := c.Query("playerId")
+	if playerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+
+	result, err := h.db.Exec(`DELETE FROM marathon_games WHERE player_id = $1`, playerID)
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, "Failed to delete: "+err.Error())
+	}
+
+	rows, _ := result.RowsAffected()
+	return c.JSON(fiber.Map{
+		"data": fiber.Map{
+			"deleted":  rows,
+			"playerId": playerID,
+		},
+	})
+}
