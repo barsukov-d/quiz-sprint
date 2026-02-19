@@ -222,6 +222,147 @@ const docTemplate = `{
                 }
             }
         },
+        "/admin/marathon/game": {
+            "patch": {
+                "description": "Set lives and bonus values for an active marathon game (for testing)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Update marathon game state",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin API key",
+                        "name": "X-Admin-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "description": "Marathon game update",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminUpdateMarathonRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Updated",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminUpdateMarathonResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "No game found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/admin/marathon/games": {
+            "get": {
+                "description": "List all marathon games for a player (debug view)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "List marathon games",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin API key",
+                        "name": "X-Admin-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    },
+                    {
+                        "type": "integer",
+                        "description": "Limit (default 20)",
+                        "name": "limit",
+                        "in": "query"
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Games list",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminListMarathonGamesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            },
+            "delete": {
+                "description": "Delete all marathon games for a player",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "admin"
+                ],
+                "summary": "Delete marathon games",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Admin API key",
+                        "name": "X-Admin-Key",
+                        "in": "header",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Deleted",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminDeleteGamesResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/admin/player/reset": {
             "delete": {
                 "description": "Delete ALL player data: daily games, marathon games, personal bests, quiz sessions, user stats. User profile is preserved.",
@@ -2728,6 +2869,75 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.AdminListMarathonGamesResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "count": {
+                            "type": "integer"
+                        },
+                        "games": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.AdminMarathonGameInfo"
+                            }
+                        },
+                        "playerId": {
+                            "type": "string"
+                        }
+                    }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AdminMarathonGameInfo": {
+            "type": "object",
+            "properties": {
+                "bonusFiftyFifty": {
+                    "type": "integer"
+                },
+                "bonusFreeze": {
+                    "type": "integer"
+                },
+                "bonusShield": {
+                    "type": "integer"
+                },
+                "bonusSkip": {
+                    "type": "integer"
+                },
+                "continueCount": {
+                    "type": "integer"
+                },
+                "currentLives": {
+                    "type": "integer"
+                },
+                "difficultyLevel": {
+                    "type": "string"
+                },
+                "finishedAt": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "shieldActive": {
+                    "type": "boolean"
+                },
+                "startedAt": {
+                    "type": "integer"
+                },
+                "status": {
+                    "type": "string"
+                },
+                "totalQuestions": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.AdminResetPlayerResponse": {
             "type": "object",
             "properties": {
@@ -2795,6 +3005,100 @@ const docTemplate = `{
                         },
                         "streakBuilt": {
                             "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AdminUpdateMarathonRequest": {
+            "type": "object",
+            "required": [
+                "playerId"
+            ],
+            "properties": {
+                "addFiftyFifty": {
+                    "description": "+/- bonus_fifty_fifty",
+                    "type": "integer"
+                },
+                "addFreeze": {
+                    "description": "+/- bonus_freeze",
+                    "type": "integer"
+                },
+                "addLives": {
+                    "description": "+/- lives",
+                    "type": "integer"
+                },
+                "addShield": {
+                    "description": "+/- bonus_shield",
+                    "type": "integer"
+                },
+                "addSkip": {
+                    "description": "+/- bonus_skip",
+                    "type": "integer"
+                },
+                "fiftyFifty": {
+                    "description": "set bonus_fifty_fifty",
+                    "type": "integer"
+                },
+                "freeze": {
+                    "description": "set bonus_freeze",
+                    "type": "integer"
+                },
+                "gameId": {
+                    "description": "if empty — find active game",
+                    "type": "string"
+                },
+                "lives": {
+                    "description": "set current_lives (0-3)",
+                    "type": "integer"
+                },
+                "playerId": {
+                    "type": "string"
+                },
+                "shield": {
+                    "description": "set bonus_shield",
+                    "type": "integer"
+                },
+                "skip": {
+                    "description": "set bonus_skip",
+                    "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.AdminUpdateMarathonResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "bonuses": {
+                            "type": "object",
+                            "properties": {
+                                "fiftyFifty": {
+                                    "type": "integer"
+                                },
+                                "freeze": {
+                                    "type": "integer"
+                                },
+                                "shield": {
+                                    "type": "integer"
+                                },
+                                "skip": {
+                                    "type": "integer"
+                                }
+                            }
+                        },
+                        "gameId": {
+                            "type": "string"
+                        },
+                        "lives": {
+                            "type": "integer"
+                        },
+                        "playerId": {
+                            "type": "string"
+                        },
+                        "shieldActive": {
+                            "type": "boolean"
                         }
                     }
                 }
@@ -5090,9 +5394,11 @@ const docTemplate = `{
                 "isCorrect",
                 "isGameOver",
                 "lifeLost",
+                "lifeRestored",
                 "lives",
                 "score",
                 "shieldConsumed",
+                "streakCount",
                 "timeTaken",
                 "totalQuestions"
             ],
@@ -5118,6 +5424,9 @@ const docTemplate = `{
                 "lifeLost": {
                     "type": "boolean"
                 },
+                "lifeRestored": {
+                    "type": "boolean"
+                },
                 "lives": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.MarathonLivesDTO"
                 },
@@ -5135,6 +5444,9 @@ const docTemplate = `{
                 },
                 "shieldConsumed": {
                     "type": "boolean"
+                },
+                "streakCount": {
+                    "type": "integer"
                 },
                 "timeTaken": {
                     "type": "integer"
