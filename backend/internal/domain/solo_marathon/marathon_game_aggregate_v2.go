@@ -282,8 +282,24 @@ func (mg *MarathonGameV2) AnswerQuestion(
 
 		result.DifficultyLevel = mg.difficulty.Level()
 
+		// d. Streak: increment counter
+		mg.streakCount++
+		if mg.streakCount > mg.bestStreak {
+			mg.bestStreak = mg.streakCount
+		}
+
+		// e. Check for life regen (every MarathonStreakForRegen correct answers)
+		if mg.streakCount%MarathonStreakForRegen == 0 && mg.lives.CurrentLives() < mg.lives.MaxLives() {
+			mg.lives = mg.lives.AddLives(1, answeredAt)
+			mg.livesRestored++
+			result.LifeRestored = true
+		}
+
 	} else {
 		// === INCORRECT ANSWER ===
+
+		// Streak always resets on wrong answer (even if shield protects life)
+		mg.streakCount = 0
 
 		if wasShieldActive {
 			// Shield protects from life loss
@@ -367,6 +383,9 @@ func (mg *MarathonGameV2) AnswerQuestion(
 		mg.difficulty.Level(),
 		answeredAt,
 	))
+
+	result.RemainingLives = mg.lives.CurrentLives()
+	result.StreakCount = mg.streakCount
 
 	return result, nil
 }
