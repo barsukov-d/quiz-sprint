@@ -74,8 +74,9 @@ type LivesSystem struct {
 }
 
 const (
-	MaxLives            = 3
-	LifeRegenInterval   = 4 * 60 * 60 // 4 hours in seconds
+	MaxLives              = 5
+	LifeRegenInterval     = 4 * 60 * 60 // 4 hours in seconds
+	MarathonStreakForRegen = 5           // correct answers in a row needed to restore 1 life
 )
 
 func NewLivesSystem(now int64) LivesSystem {

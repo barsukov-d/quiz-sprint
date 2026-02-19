@@ -29,16 +29,16 @@ func TestLivesSystem_LoseLife(t *testing.T) {
 	// Lose first life
 	newLives := lives.LoseLife(now + 100)
 
-	if newLives.CurrentLives() != 2 {
-		t.Errorf("Expected 2 lives after losing one, got %d", newLives.CurrentLives())
+	if newLives.CurrentLives() != MaxLives-1 {
+		t.Errorf("Expected %d lives after losing one, got %d", MaxLives-1, newLives.CurrentLives())
 	}
 	if newLives.LastUpdate() != now+100 {
 		t.Errorf("Expected last update %d, got %d", now+100, newLives.LastUpdate())
 	}
 
 	// Original should be unchanged (immutable)
-	if lives.CurrentLives() != 3 {
-		t.Errorf("Original lives should be unchanged, got %d", lives.CurrentLives())
+	if lives.CurrentLives() != MaxLives {
+		t.Errorf("Original lives should be unchanged at %d, got %d", MaxLives, lives.CurrentLives())
 	}
 }
 
@@ -88,10 +88,11 @@ func TestLivesSystem_RegenerateLives(t *testing.T) {
 		expectedLives int
 	}{
 		{"No time passed", 0, 1},
-		{"2 hours passed", 2 * 60 * 60, 1}, // Not enough for 1 life
-		{"4 hours passed", LifeRegenInterval, 2}, // Exactly 1 life
-		{"8 hours passed", 2 * LifeRegenInterval, 3}, // 2 lives (capped at max)
-		{"12 hours passed", 3 * LifeRegenInterval, 3}, // 3 lives but capped at max
+		{"2 hours passed", 2 * 60 * 60, 1},            // Not enough for 1 life
+		{"4 hours passed", LifeRegenInterval, 2},       // Exactly 1 life
+		{"8 hours passed", 2 * LifeRegenInterval, 3},  // 2 lives regened
+		{"16 hours passed", 4 * LifeRegenInterval, 5}, // 4 lives regened, capped at MaxLives=5
+		{"20 hours passed", 5 * LifeRegenInterval, 5}, // Capped at MaxLives=5
 	}
 
 	for _, tt := range tests {
@@ -149,21 +150,21 @@ func TestLivesSystem_TimeToNextLife(t *testing.T) {
 	}{
 		{
 			name:         "Already at max",
-			currentLives: 3,
+			currentLives: MaxLives,
 			lastUpdate:   now,
 			currentTime:  now,
 			expectedTime: 0,
 		},
 		{
 			name:         "Just lost a life",
-			currentLives: 2,
+			currentLives: MaxLives - 1,
 			lastUpdate:   now,
 			currentTime:  now,
 			expectedTime: LifeRegenInterval,
 		},
 		{
 			name:         "2 hours passed",
-			currentLives: 2,
+			currentLives: MaxLives - 1,
 			lastUpdate:   now,
 			currentTime:  now + (2 * 60 * 60),
 			expectedTime: LifeRegenInterval - (2 * 60 * 60),
@@ -209,10 +210,10 @@ func TestLivesSystem_Label(t *testing.T) {
 		lives    int
 		expected string
 	}{
-		{"3 lives", 3, "❤️❤️❤️"},
-		{"2 lives", 2, "❤️❤️🖤"},
-		{"1 life", 1, "❤️🖤🖤"},
-		{"0 lives", 0, "🖤🖤🖤"},
+		{"5 lives (full)", 5, "❤️❤️❤️❤️❤️"},
+		{"3 lives", 3, "❤️❤️❤️🖤🖤"},
+		{"1 life", 1, "❤️🖤🖤🖤🖤"},
+		{"0 lives", 0, "🖤🖤🖤🖤🖤"},
 	}
 
 	for _, tt := range tests {
@@ -648,5 +649,17 @@ func TestGetNextMilestone(t *testing.T) {
 			t.Errorf("GetNextMilestone(%d) = (%d, %d), want (%d, %d)",
 				tt.score, next, remaining, tt.expectedNext, tt.expectedRemaining)
 		}
+	}
+}
+
+// TestLivesSystem_StartsWith5Lives verifies marathon starts with 5 lives
+func TestLivesSystem_StartsWith5Lives(t *testing.T) {
+	lives := NewLivesSystem(1000000)
+
+	if lives.CurrentLives() != 5 {
+		t.Errorf("Expected 5 starting lives, got %d", lives.CurrentLives())
+	}
+	if lives.MaxLives() != 5 {
+		t.Errorf("Expected max 5 lives, got %d", lives.MaxLives())
 	}
 }
