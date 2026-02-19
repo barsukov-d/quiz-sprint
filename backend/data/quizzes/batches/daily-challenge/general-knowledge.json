@@ -1,304 +1,579 @@
 {
   "batch": {
     "version": 1,
-    "generated": "2026-02-03T00:00:00Z",
+    "generated": "2026-02-18T00:00:00Z",
     "cat": "daily-challenge",
     "tags": ["difficulty:medium", "format:daily-challenge"]
   },
   "quizzes": [
     {
-      "t": "Science & Nature",
-      "d": "Test your knowledge of the natural world, physics, chemistry, and biology",
-      "tags": ["topic:science"],
+      "t": "Daily Mix #1",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
       "l": 15,
       "p": 70,
       "q": [
-        {
-          "t": "What planet is known as the Red Planet?",
-          "a": ["Venus", "Mars", "Jupiter", "Saturn"],
-          "c": 1
-        },
-        {
-          "t": "What gas do plants absorb from the atmosphere?",
-          "a": ["Oxygen", "Nitrogen", "Carbon dioxide", "Hydrogen"],
-          "c": 2
-        },
-        {
-          "t": "How many bones are in the adult human body?",
-          "a": ["186", "206", "226", "256"],
-          "c": 1
-        },
-        {
-          "t": "What is the chemical symbol for gold?",
-          "a": ["Go", "Gd", "Au", "Ag"],
-          "c": 2
-        },
-        {
-          "t": "What is the hardest natural substance on Earth?",
-          "a": ["Granite", "Iron", "Diamond", "Quartz"],
-          "c": 2
-        },
-        {
-          "t": "Which organ in the human body is the largest?",
-          "a": ["Liver", "Brain", "Skin", "Heart"],
-          "c": 2
-        },
-        {
-          "t": "What is the speed of light approximately?",
-          "a": ["300,000 km/s", "150,000 km/s", "500,000 km/s", "1,000,000 km/s"],
-          "c": 0
-        },
-        {
-          "t": "What element does 'O' represent on the periodic table?",
-          "a": ["Osmium", "Oganesson", "Oxygen", "Gold"],
-          "c": 2
-        },
-        {
-          "t": "How many chromosomes do humans have?",
-          "a": ["23", "44", "46", "48"],
-          "c": 2
-        },
-        {
-          "t": "What is the most abundant gas in Earth's atmosphere?",
-          "a": ["Oxygen", "Carbon dioxide", "Nitrogen", "Argon"],
-          "c": 2
-        }
+        {"t": "Which planet is closest to the Sun?", "a": ["Venus", "Mercury", "Mars", "Earth"], "c": 1},
+        {"t": "In what year did the Berlin Wall fall?", "a": ["1987", "1989", "1991", "1993"], "c": 1},
+        {"t": "What is the capital of Brazil?", "a": ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador"], "c": 2},
+        {"t": "How many sides does a hexagon have?", "a": ["5", "6", "7", "8"], "c": 1},
+        {"t": "In tennis, what term means zero points?", "a": ["None", "Deuce", "Love", "Fault"], "c": 2},
+        {"t": "What nut is found in a Snickers bar?", "a": ["Cashew", "Walnut", "Almond", "Peanut"], "c": 3},
+        {"t": "What organ produces insulin?", "a": ["Liver", "Kidney", "Pancreas", "Gallbladder"], "c": 2},
+        {"t": "Which is traditionally considered the longest river in the world?", "a": ["Amazon", "Mississippi", "Nile", "Yangtze"], "c": 2},
+        {"t": "In which country did the Olympic Games originate?", "a": ["Italy", "Greece", "Rome", "Turkey"], "c": 1},
+        {"t": "Who wrote 'Romeo and Juliet'?", "a": ["Charles Dickens", "William Shakespeare", "Jane Austen", "Victor Hugo"], "c": 1}
       ]
     },
     {
-      "t": "World History",
-      "d": "Journey through major historical events, figures, and civilizations",
-      "tags": ["topic:history"],
+      "t": "Daily Mix #2",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
       "l": 15,
       "p": 70,
       "q": [
-        {
-          "t": "What treaty ended World War I?",
-          "a": ["Treaty of Paris", "Treaty of Versailles", "Treaty of Ghent", "Treaty of Westphalia"],
-          "c": 1
-        },
-        {
-          "t": "Which explorer first reached the South Pole?",
-          "a": ["Robert Falcon Scott", "Ernest Shackleton", "Roald Amundsen", "Edmund Hillary"],
-          "c": 2
-        },
-        {
-          "t": "The ancient city of Rome was built on how many hills?",
-          "a": ["5", "6", "7", "8"],
-          "c": 2
-        },
-        {
-          "t": "Which empire was ruled by Genghis Khan?",
-          "a": ["Ottoman Empire", "Roman Empire", "Mongol Empire", "Persian Empire"],
-          "c": 2
-        },
-        {
-          "t": "What was the longest-lasting empire in history?",
-          "a": ["Roman Empire", "Ottoman Empire", "Byzantine Empire", "Holy Roman Empire"],
-          "c": 2
-        },
-        {
-          "t": "What was the name of the ship that brought the Pilgrims to America?",
-          "a": ["Santa Maria", "Mayflower", "Victoria", "Endeavour"],
-          "c": 1
-        },
-        {
-          "t": "Which ancient civilization built the Machu Picchu complex?",
-          "a": ["Maya", "Aztec", "Inca", "Olmec"],
-          "c": 2
-        },
-        {
-          "t": "Who discovered penicillin?",
-          "a": ["Louis Pasteur", "Alexander Fleming", "Joseph Lister", "Robert Koch"],
-          "c": 1
-        },
-        {
-          "t": "The French Revolution began in which year?",
-          "a": ["1776", "1789", "1799", "1804"],
-          "c": 1
-        },
-        {
-          "t": "Which country was the first to put a human in space?",
-          "a": ["United States", "Soviet Union", "China", "France"],
-          "c": 1
-        }
+        {"t": "What is the chemical symbol for gold?", "a": ["Go", "Gd", "Au", "Ag"], "c": 2},
+        {"t": "Who was the first President of the United States?", "a": ["John Adams", "Thomas Jefferson", "George Washington", "Benjamin Franklin"], "c": 2},
+        {"t": "What is the largest ocean on Earth?", "a": ["Atlantic", "Indian", "Arctic", "Pacific"], "c": 3},
+        {"t": "How many teeth does an adult human typically have?", "a": ["28", "30", "32", "34"], "c": 2},
+        {"t": "In which sport is a 'birdie' a good score?", "a": ["Tennis", "Golf", "Badminton", "Cricket"], "c": 1},
+        {"t": "What is the main ingredient in hummus?", "a": ["Lentils", "Chickpeas", "Kidney beans", "Black beans"], "c": 1},
+        {"t": "What is the approximate speed of light?", "a": ["300,000 km/s", "150,000 km/s", "500,000 km/s", "200,000 km/s"], "c": 0},
+        {"t": "Which country has the most natural lakes?", "a": ["Russia", "USA", "Brazil", "Canada"], "c": 3},
+        {"t": "What is the longest wall ever built?", "a": ["Hadrian's Wall", "Great Wall of China", "Berlin Wall", "Aurelian Wall"], "c": 1},
+        {"t": "Who painted the Sistine Chapel ceiling?", "a": ["Leonardo da Vinci", "Raphael", "Michelangelo", "Titian"], "c": 2}
       ]
     },
     {
-      "t": "Geography & Travel",
-      "d": "Explore the world through questions about countries, capitals, and landmarks",
-      "tags": ["topic:geography"],
+      "t": "Daily Mix #3",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
       "l": 15,
       "p": 70,
       "q": [
-        {
-          "t": "What is the longest river in the world?",
-          "a": ["Amazon", "Nile", "Yangtze", "Mississippi"],
-          "c": 1
-        },
-        {
-          "t": "Which country has the most time zones?",
-          "a": ["Russia", "USA", "France", "China"],
-          "c": 2
-        },
-        {
-          "t": "Which country has the longest coastline in the world?",
-          "a": ["Australia", "Russia", "Canada", "Indonesia"],
-          "c": 2
-        },
-        {
-          "t": "On which continent is the Sahara Desert located?",
-          "a": ["Asia", "South America", "Africa", "Australia"],
-          "c": 2
-        },
-        {
-          "t": "What is the driest continent on Earth?",
-          "a": ["Africa", "Australia", "Antarctica", "South America"],
-          "c": 2
-        },
-        {
-          "t": "Which ocean is the largest?",
-          "a": ["Atlantic", "Indian", "Pacific", "Arctic"],
-          "c": 2
-        },
-        {
-          "t": "Mount Everest is located on the border of which two countries?",
-          "a": ["India and China", "Nepal and China", "Nepal and India", "Tibet and India"],
-          "c": 1
-        },
-        {
-          "t": "What is the largest island in the world?",
-          "a": ["Madagascar", "Borneo", "Greenland", "New Guinea"],
-          "c": 2
-        },
-        {
-          "t": "Which European city is known as the City of Light?",
-          "a": ["London", "Rome", "Paris", "Barcelona"],
-          "c": 2
-        },
-        {
-          "t": "How many continents are there on Earth?",
-          "a": ["5", "6", "7", "8"],
-          "c": 2
-        }
+        {"t": "What gas makes up most of Earth's atmosphere?", "a": ["Oxygen", "Carbon Dioxide", "Argon", "Nitrogen"], "c": 3},
+        {"t": "In which year did World War II end?", "a": ["1943", "1944", "1945", "1946"], "c": 2},
+        {"t": "What is the capital of Japan?", "a": ["Osaka", "Kyoto", "Tokyo", "Hiroshima"], "c": 2},
+        {"t": "How many bones are in the adult human body?", "a": ["196", "206", "216", "226"], "c": 1},
+        {"t": "Which national team has won the most FIFA World Cups?", "a": ["Germany", "Argentina", "France", "Brazil"], "c": 3},
+        {"t": "What country is the world's largest producer of coffee?", "a": ["Colombia", "Vietnam", "Ethiopia", "Brazil"], "c": 3},
+        {"t": "What is the hardest natural substance on Earth?", "a": ["Ruby", "Quartz", "Diamond", "Sapphire"], "c": 2},
+        {"t": "Which continent has no rivers?", "a": ["Australia", "Antarctica", "Europe", "Asia"], "c": 1},
+        {"t": "What does 'Wi-Fi' stand for?", "a": ["Wireless Fidelity", "Wide Field", "Wireless Frequency", "Wire First"], "c": 0},
+        {"t": "Who wrote the novel '1984'?", "a": ["Aldous Huxley", "Ray Bradbury", "George Orwell", "H.G. Wells"], "c": 2}
       ]
     },
     {
-      "t": "Pop Culture & Entertainment",
-      "d": "Movies, music, sports, and everything pop culture",
-      "tags": ["topic:entertainment"],
+      "t": "Daily Mix #4",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
       "l": 15,
       "p": 70,
       "q": [
-        {
-          "t": "Who directed the movie 'Jurassic Park'?",
-          "a": ["James Cameron", "Steven Spielberg", "George Lucas", "Ridley Scott"],
-          "c": 1
-        },
-        {
-          "t": "Which band released the album 'Abbey Road'?",
-          "a": ["The Rolling Stones", "The Beatles", "Pink Floyd", "Led Zeppelin"],
-          "c": 1
-        },
-        {
-          "t": "In which sport would you perform a slam dunk?",
-          "a": ["Volleyball", "Tennis", "Basketball", "Baseball"],
-          "c": 2
-        },
-        {
-          "t": "What is the highest-grossing film franchise of all time?",
-          "a": ["Star Wars", "Harry Potter", "Marvel Cinematic Universe", "James Bond"],
-          "c": 2
-        },
-        {
-          "t": "What is the best-selling video game of all time?",
-          "a": ["Tetris", "Minecraft", "GTA V", "Wii Sports"],
-          "c": 1
-        },
-        {
-          "t": "How many players are on a standard soccer team on the field?",
-          "a": ["9", "10", "11", "12"],
-          "c": 2
-        },
-        {
-          "t": "What instrument has 88 keys?",
-          "a": ["Guitar", "Piano", "Organ", "Accordion"],
-          "c": 1
-        },
-        {
-          "t": "Who wrote the Harry Potter book series?",
-          "a": ["J.R.R. Tolkien", "C.S. Lewis", "J.K. Rowling", "Stephen King"],
-          "c": 2
-        },
-        {
-          "t": "Which country hosted the first modern Olympic Games in 1896?",
-          "a": ["France", "United States", "Greece", "United Kingdom"],
-          "c": 2
-        },
-        {
-          "t": "What is the name of the fictional continent in Game of Thrones?",
-          "a": ["Middle-earth", "Narnia", "Westeros", "Azeroth"],
-          "c": 2
-        }
+        {"t": "What is the smallest planet in our solar system?", "a": ["Pluto", "Mars", "Mercury", "Venus"], "c": 2},
+        {"t": "Who was the first woman to win a Nobel Prize?", "a": ["Rosalind Franklin", "Marie Curie", "Dorothy Hodgkin", "Lise Meitner"], "c": 1},
+        {"t": "What is the capital of Egypt?", "a": ["Alexandria", "Luxor", "Cairo", "Aswan"], "c": 2},
+        {"t": "How many strings does a standard guitar have?", "a": ["4", "5", "6", "8"], "c": 2},
+        {"t": "In which sport do players use a shuttlecock?", "a": ["Squash", "Pickleball", "Badminton", "Table Tennis"], "c": 2},
+        {"t": "What is the largest organ in the human body?", "a": ["Liver", "Brain", "Heart", "Skin"], "c": 3},
+        {"t": "Which country is home to the majority of the Amazon rainforest?", "a": ["Peru", "Colombia", "Venezuela", "Brazil"], "c": 3},
+        {"t": "How many keys are on a standard piano?", "a": ["72", "76", "88", "92"], "c": 2},
+        {"t": "Who directed the film 'Titanic' (1997)?", "a": ["Steven Spielberg", "James Cameron", "Christopher Nolan", "Ridley Scott"], "c": 1},
+        {"t": "A croissant is made from what type of pastry?", "a": ["Puff pastry", "Choux pastry", "Filo pastry", "Brioche"], "c": 0}
       ]
     },
     {
-      "t": "Food & Culture",
-      "d": "Culinary traditions, famous dishes, and cultural facts from around the world",
-      "tags": ["topic:food"],
+      "t": "Daily Mix #5",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
       "l": 15,
       "p": 70,
       "q": [
-        {
-          "t": "Which country is the origin of sushi?",
-          "a": ["China", "Japan", "Korea", "Thailand"],
-          "c": 1
-        },
-        {
-          "t": "What is the main ingredient in guacamole?",
-          "a": ["Tomato", "Avocado", "Pepper", "Lime"],
-          "c": 1
-        },
-        {
-          "t": "Which Italian city is considered the birthplace of pizza?",
-          "a": ["Rome", "Milan", "Naples", "Florence"],
-          "c": 2
-        },
-        {
-          "t": "What is the most consumed beverage in the world after water?",
-          "a": ["Coffee", "Tea", "Milk", "Beer"],
-          "c": 1
-        },
-        {
-          "t": "Kimchi is a traditional dish from which country?",
-          "a": ["Japan", "China", "South Korea", "Vietnam"],
-          "c": 2
-        },
-        {
-          "t": "What spice gives curry its yellow color?",
-          "a": ["Paprika", "Saffron", "Turmeric", "Cumin"],
-          "c": 2
-        },
-        {
-          "t": "Which nut is used to make marzipan?",
-          "a": ["Walnut", "Almond", "Cashew", "Pistachio"],
-          "c": 1
-        },
-        {
-          "t": "What is the traditional Japanese rice wine called?",
-          "a": ["Soju", "Sake", "Baijiu", "Mirin"],
-          "c": 1
-        },
-        {
-          "t": "Which country is the world's largest producer of coffee?",
-          "a": ["Colombia", "Vietnam", "Brazil", "Ethiopia"],
-          "c": 2
-        },
-        {
-          "t": "What type of pastry is a croissant?",
-          "a": ["Puff pastry", "Shortcrust", "Laminated dough", "Choux pastry"],
-          "c": 2
-        }
+        {"t": "What is the atomic number of carbon?", "a": ["4", "6", "8", "12"], "c": 1},
+        {"t": "Which ancient wonder still exists today?", "a": ["Hanging Gardens of Babylon", "Colossus of Rhodes", "Great Pyramid of Giza", "Lighthouse of Alexandria"], "c": 2},
+        {"t": "What country has the largest land area?", "a": ["Canada", "China", "USA", "Russia"], "c": 3},
+        {"t": "How many players are on a soccer team on the field?", "a": ["9", "10", "11", "12"], "c": 2},
+        {"t": "Which country invented gunpowder?", "a": ["India", "Japan", "China", "Korea"], "c": 2},
+        {"t": "What is the main ingredient in guacamole?", "a": ["Lime", "Avocado", "Tomato", "Onion"], "c": 1},
+        {"t": "What is the most common blood type in humans?", "a": ["A+", "B+", "O+", "AB+"], "c": 2},
+        {"t": "How many time zones does Russia have?", "a": ["9", "11", "13", "15"], "c": 1},
+        {"t": "What does CPU stand for?", "a": ["Central Processing Unit", "Computer Power Unit", "Core Processing Unit", "Central Program Unit"], "c": 0},
+        {"t": "Who sculpted the statue of David?", "a": ["Raphael", "Donatello", "Michelangelo", "Bernini"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #6",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the chemical formula for water?", "a": ["H2O2", "HO", "H2O", "H3O"], "c": 2},
+        {"t": "In which year did the Titanic sink?", "a": ["1910", "1912", "1914", "1916"], "c": 1},
+        {"t": "What is the capital of Canada?", "a": ["Toronto", "Vancouver", "Montreal", "Ottawa"], "c": 3},
+        {"t": "How many continents are there on Earth?", "a": ["5", "6", "7", "8"], "c": 2},
+        {"t": "Which country is known as the Land of the Rising Sun?", "a": ["China", "Japan", "South Korea", "Vietnam"], "c": 1},
+        {"t": "Which planet has the most moons?", "a": ["Jupiter", "Saturn", "Uranus", "Neptune"], "c": 1},
+        {"t": "What is the longest bone in the human body?", "a": ["Tibia", "Fibula", "Femur", "Humerus"], "c": 2},
+        {"t": "What does GPS stand for?", "a": ["Global Positioning System", "General Purpose Software", "Geographic Position Service", "Ground Probe System"], "c": 0},
+        {"t": "What was the first commercially successful search engine?", "a": ["Bing", "Yahoo", "Google", "AltaVista"], "c": 2},
+        {"t": "Who wrote 'The Great Gatsby'?", "a": ["Ernest Hemingway", "John Steinbeck", "F. Scott Fitzgerald", "William Faulkner"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #7",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "How many elements are in the periodic table?", "a": ["100", "108", "118", "126"], "c": 2},
+        {"t": "Who built the Taj Mahal?", "a": ["Akbar the Great", "Babur", "Shah Jahan", "Aurangzeb"], "c": 2},
+        {"t": "What is the capital of Argentina?", "a": ["Montevideo", "Santiago", "Lima", "Buenos Aires"], "c": 3},
+        {"t": "How many players are on a volleyball team on the court?", "a": ["4", "5", "6", "7"], "c": 2},
+        {"t": "What sport is played at Wimbledon?", "a": ["Squash", "Tennis", "Badminton", "Racquetball"], "c": 1},
+        {"t": "What is considered the world's most popular spice?", "a": ["Cinnamon", "Black pepper", "Cumin", "Turmeric"], "c": 1},
+        {"t": "How many chromosomes does a typical human have?", "a": ["23", "44", "46", "48"], "c": 2},
+        {"t": "Which country is the world's largest island nation by number of islands?", "a": ["Madagascar", "Iceland", "Philippines", "Indonesia"], "c": 3},
+        {"t": "What does HTML stand for?", "a": ["High-Tech Machine Language", "HyperText Markup Language", "HyperText Machine Learning", "Hybrid Text Modeling Language"], "c": 1},
+        {"t": "Who wrote 'Pride and Prejudice'?", "a": ["Charlotte Brontë", "George Eliot", "Jane Austen", "Mary Shelley"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #8",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the most abundant element in the universe?", "a": ["Helium", "Carbon", "Oxygen", "Hydrogen"], "c": 3},
+        {"t": "In which year were the first modern Olympic Games held?", "a": ["1888", "1896", "1900", "1904"], "c": 1},
+        {"t": "What is the tallest mountain in Africa?", "a": ["Mount Kenya", "Mount Kilimanjaro", "Rwenzori Peak", "Simien"], "c": 1},
+        {"t": "How many points is a touchdown worth in American football?", "a": ["4", "6", "7", "8"], "c": 1},
+        {"t": "What is the primary ingredient in traditional Japanese miso soup?", "a": ["Tofu", "Fermented soy paste", "Seaweed", "Rice"], "c": 1},
+        {"t": "What is the nearest star to Earth (after the Sun)?", "a": ["Sirius", "Barnard's Star", "Proxima Centauri", "Betelgeuse"], "c": 2},
+        {"t": "How many countries are in the European Union?", "a": ["24", "25", "27", "28"], "c": 2},
+        {"t": "In what year was the first iPhone released?", "a": ["2005", "2006", "2007", "2008"], "c": 2},
+        {"t": "Who painted 'The Starry Night'?", "a": ["Claude Monet", "Pablo Picasso", "Vincent van Gogh", "Paul Gauguin"], "c": 2},
+        {"t": "What is the world's most widely spoken language by native speakers?", "a": ["English", "Spanish", "Mandarin Chinese", "Hindi"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #9",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the chemical symbol for iron?", "a": ["Ir", "In", "Fe", "Fo"], "c": 2},
+        {"t": "Who was the first human to walk on the Moon?", "a": ["Buzz Aldrin", "Yuri Gagarin", "Neil Armstrong", "John Glenn"], "c": 2},
+        {"t": "What is the capital of South Korea?", "a": ["Busan", "Seoul", "Incheon", "Daegu"], "c": 1},
+        {"t": "How many holes are on a standard golf course?", "a": ["9", "12", "18", "24"], "c": 2},
+        {"t": "What country created the sport of cricket?", "a": ["Australia", "India", "South Africa", "England"], "c": 3},
+        {"t": "What percentage of Earth's surface is covered by water?", "a": ["51%", "61%", "71%", "81%"], "c": 2},
+        {"t": "What is the largest hot desert in the world?", "a": ["Arabian Desert", "Namib Desert", "Gobi Desert", "Sahara Desert"], "c": 3},
+        {"t": "What does USB stand for?", "a": ["Universal Serial Bus", "Universal System Bridge", "Unified Serial Board", "Universal Service Base"], "c": 0},
+        {"t": "Who invented the World Wide Web?", "a": ["Bill Gates", "Steve Jobs", "Tim Berners-Lee", "Vint Cerf"], "c": 2},
+        {"t": "Who wrote 'The Odyssey'?", "a": ["Virgil", "Plato", "Homer", "Aristotle"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #10",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What planet is known as the Red Planet?", "a": ["Jupiter", "Venus", "Mars", "Saturn"], "c": 2},
+        {"t": "In what year was the Eiffel Tower completed?", "a": ["1887", "1889", "1892", "1895"], "c": 1},
+        {"t": "What is the capital of Mexico?", "a": ["Guadalajara", "Monterrey", "Puebla", "Mexico City"], "c": 3},
+        {"t": "What is the official language of Brazil?", "a": ["Spanish", "French", "Portuguese", "English"], "c": 2},
+        {"t": "How many rings are on the Olympic flag?", "a": ["4", "5", "6", "7"], "c": 1},
+        {"t": "How many chambers does the human heart have?", "a": ["2", "3", "4", "5"], "c": 2},
+        {"t": "What is the largest rainforest in the world?", "a": ["Congo", "Daintree", "Amazon", "Borneo"], "c": 2},
+        {"t": "What does 'AI' stand for?", "a": ["Automated Intelligence", "Artificial Intelligence", "Advanced Interface", "Automated Interface"], "c": 1},
+        {"t": "Who wrote 'Don Quixote'?", "a": ["Miguel de Cervantes", "Federico García Lorca", "Gabriel García Márquez", "Pablo Neruda"], "c": 0},
+        {"t": "Which country has the most UNESCO World Heritage Sites?", "a": ["France", "China", "Italy", "Spain"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #11",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "At what temperature does water boil at sea level?", "a": ["90°C", "95°C", "100°C", "105°C"], "c": 2},
+        {"t": "In which year did the French Revolution begin?", "a": ["1787", "1789", "1791", "1793"], "c": 1},
+        {"t": "What is the capital of India?", "a": ["Mumbai", "Kolkata", "New Delhi", "Chennai"], "c": 2},
+        {"t": "How many minutes are in a day?", "a": ["1440", "1080", "1200", "1320"], "c": 0},
+        {"t": "In basketball, how many points is a shot from beyond the three-point arc worth?", "a": ["1", "2", "3", "4"], "c": 2},
+        {"t": "What is the most consumed meat in the world?", "a": ["Beef", "Pork", "Chicken", "Lamb"], "c": 1},
+        {"t": "Which is the smallest continent?", "a": ["Antarctica", "Europe", "Australia", "South America"], "c": 2},
+        {"t": "How many colors are in a rainbow?", "a": ["5", "6", "7", "8"], "c": 2},
+        {"t": "What company developed the Android operating system?", "a": ["Microsoft", "Apple", "Google", "Samsung"], "c": 2},
+        {"t": "Who wrote 'The Divine Comedy'?", "a": ["Petrarch", "Dante Alighieri", "Boccaccio", "Virgil"], "c": 1}
+      ]
+    },
+    {
+      "t": "Daily Mix #12",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the chemical symbol for silver?", "a": ["Si", "Ag", "Sr", "Al"], "c": 1},
+        {"t": "Who was the first female Prime Minister of the United Kingdom?", "a": ["Theresa May", "Hillary Clinton", "Margaret Thatcher", "Angela Merkel"], "c": 2},
+        {"t": "What is the capital of Turkey?", "a": ["Istanbul", "Izmir", "Ankara", "Bursa"], "c": 2},
+        {"t": "How many players are on a baseball team?", "a": ["7", "8", "9", "10"], "c": 2},
+        {"t": "What sport uses a puck?", "a": ["Field hockey", "Ice hockey", "Polo", "Lacrosse"], "c": 1},
+        {"t": "From which country does the dish 'paella' originate?", "a": ["Italy", "Portugal", "Spain", "France"], "c": 2},
+        {"t": "What is the tallest animal in the world?", "a": ["Elephant", "Giraffe", "Ostrich", "Camel"], "c": 1},
+        {"t": "What is the largest country in Africa by area?", "a": ["Nigeria", "Ethiopia", "Congo", "Algeria"], "c": 3},
+        {"t": "In computing, what does RAM stand for?", "a": ["Rapid Access Memory", "Random Access Memory", "Read Access Memory", "Read And Memory"], "c": 1},
+        {"t": "Who painted 'The Birth of Venus'?", "a": ["Leonardo da Vinci", "Raphael", "Sandro Botticelli", "Caravaggio"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #13",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the approximate speed of sound in air?", "a": ["143 m/s", "243 m/s", "343 m/s", "443 m/s"], "c": 2},
+        {"t": "Who invented the telephone?", "a": ["Thomas Edison", "Nikola Tesla", "Alexander Graham Bell", "Guglielmo Marconi"], "c": 2},
+        {"t": "What is the capital of Australia?", "a": ["Sydney", "Melbourne", "Brisbane", "Canberra"], "c": 3},
+        {"t": "In which month does the Northern Hemisphere's longest day occur?", "a": ["May", "June", "July", "August"], "c": 1},
+        {"t": "How many Grand Slam tournaments are in tennis?", "a": ["2", "3", "4", "5"], "c": 2},
+        {"t": "What is tofu made from?", "a": ["Wheat", "Rice", "Soy milk", "Corn"], "c": 2},
+        {"t": "Which country has won the most Olympic gold medals in history?", "a": ["China", "Great Britain", "USA", "Russia"], "c": 2},
+        {"t": "What programming language was created by James Gosling?", "a": ["C++", "Python", "Java", "JavaScript"], "c": 2},
+        {"t": "How long does it take Earth to orbit the Sun?", "a": ["364 days", "365 days", "365.25 days", "366 days"], "c": 2},
+        {"t": "Who wrote 'Hamlet'?", "a": ["Christopher Marlowe", "Ben Jonson", "William Shakespeare", "John Milton"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #14",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What gas do plants produce during photosynthesis?", "a": ["Carbon Dioxide", "Nitrogen", "Oxygen", "Hydrogen"], "c": 2},
+        {"t": "In which year did the first Moon landing take place?", "a": ["1967", "1968", "1969", "1970"], "c": 2},
+        {"t": "What is the capital of China?", "a": ["Shanghai", "Hong Kong", "Nanjing", "Beijing"], "c": 3},
+        {"t": "How many players are on each team in American football?", "a": ["9", "10", "11", "12"], "c": 2},
+        {"t": "Which ocean is the smallest?", "a": ["Indian", "Arctic", "Southern", "Atlantic"], "c": 1},
+        {"t": "What is pasta primarily made from?", "a": ["Rice flour", "Corn flour", "Semolina wheat", "Barley"], "c": 2},
+        {"t": "What is the only mammal capable of true flight?", "a": ["Flying squirrel", "Sugar glider", "Bat", "Flying lemur"], "c": 2},
+        {"t": "What is the most spoken language in the world by total speakers?", "a": ["Spanish", "English", "Mandarin Chinese", "Hindi"], "c": 1},
+        {"t": "What does 'PDF' stand for?", "a": ["Portable Document Format", "Print Display Format", "Public Data Format", "Page Design Format"], "c": 0},
+        {"t": "Who wrote 'The Catcher in the Rye'?", "a": ["J.D. Salinger", "John Updike", "Philip Roth", "Saul Bellow"], "c": 0}
+      ]
+    },
+    {
+      "t": "Daily Mix #15",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the most common color of a ruby?", "a": ["Pink", "Orange", "Red", "Purple"], "c": 2},
+        {"t": "Who was the first leader of the Soviet Union?", "a": ["Joseph Stalin", "Leon Trotsky", "Vladimir Lenin", "Nikita Khrushchev"], "c": 2},
+        {"t": "What is the capital of Germany?", "a": ["Munich", "Hamburg", "Frankfurt", "Berlin"], "c": 3},
+        {"t": "How many seconds are in an hour?", "a": ["1800", "2400", "3600", "4200"], "c": 2},
+        {"t": "How far is the Moon from Earth approximately?", "a": ["284,000 km", "384,000 km", "484,000 km", "584,000 km"], "c": 1},
+        {"t": "What is considered the world's hottest chili pepper?", "a": ["Habanero", "Carolina Reaper", "Ghost Pepper", "Scotch Bonnet"], "c": 1},
+        {"t": "What percentage of Earth's water is fresh water?", "a": ["1%", "3%", "5%", "10%"], "c": 1},
+        {"t": "What was the name of the world's first space station?", "a": ["Mir", "SkyLab", "Salyut 1", "ISS"], "c": 2},
+        {"t": "What does 'ROM' stand for in computing?", "a": ["Random Output Memory", "Read-Only Memory", "Rapid Output Memory", "Read-Open Memory"], "c": 1},
+        {"t": "Who wrote 'Crime and Punishment'?", "a": ["Leo Tolstoy", "Anton Chekhov", "Fyodor Dostoevsky", "Ivan Turgenev"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #16",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the chemical symbol for potassium?", "a": ["Po", "Pt", "K", "Ka"], "c": 2},
+        {"t": "In which country was the printing press invented?", "a": ["China", "England", "Germany", "France"], "c": 2},
+        {"t": "What is the capital of Spain?", "a": ["Barcelona", "Seville", "Valencia", "Madrid"], "c": 3},
+        {"t": "How many bits are in a byte?", "a": ["4", "6", "8", "16"], "c": 2},
+        {"t": "How many Olympic gold medals did Michael Phelps win in total?", "a": ["18", "20", "23", "28"], "c": 2},
+        {"t": "What type of cuisine is pad thai?", "a": ["Chinese", "Vietnamese", "Thai", "Indonesian"], "c": 2},
+        {"t": "How far does light travel in one year (approximately)?", "a": ["6 trillion km", "9.5 trillion km", "12 trillion km", "15 trillion km"], "c": 1},
+        {"t": "Which city will host the 2028 Summer Olympics?", "a": ["Paris", "London", "Los Angeles", "Brisbane"], "c": 2},
+        {"t": "What does 'www' stand for?", "a": ["World Wide Web", "Wide World Web", "World Web Wide", "World Web Wire"], "c": 0},
+        {"t": "Who composed 'Beethoven's Fifth Symphony'?", "a": ["Mozart", "Beethoven", "Bach", "Brahms"], "c": 1}
+      ]
+    },
+    {
+      "t": "Daily Mix #17",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the scientific study of earthquakes called?", "a": ["Geophysics", "Seismology", "Volcanology", "Tectonics"], "c": 1},
+        {"t": "How long is the Great Wall of China approximately?", "a": ["6,000 km", "13,000 km", "21,000 km", "30,000 km"], "c": 2},
+        {"t": "What is the capital of Russia?", "a": ["St. Petersburg", "Novosibirsk", "Vladivostok", "Moscow"], "c": 3},
+        {"t": "How many official languages does the United Nations have?", "a": ["4", "5", "6", "7"], "c": 2},
+        {"t": "In cricket, what is it called when a bowler takes 3 wickets in 3 consecutive balls?", "a": ["Perfect pitch", "Hat-trick", "Triple play", "Clean sweep"], "c": 1},
+        {"t": "What is the world's most expensive spice?", "a": ["Cinnamon", "Vanilla", "Saffron", "Cardamom"], "c": 2},
+        {"t": "What is the average resting heart rate for a healthy adult?", "a": ["40–50 bpm", "60–100 bpm", "100–120 bpm", "120–140 bpm"], "c": 1},
+        {"t": "Which country has the longest coastline in the world?", "a": ["Russia", "USA", "Norway", "Canada"], "c": 3},
+        {"t": "What does 'JPEG' stand for?", "a": ["Joint Photographic Experts Group", "Just Photo Encoding Guide", "Joint Photo Export Group", "Junior Photo Encoding Guide"], "c": 0},
+        {"t": "Who is the author of the Harry Potter series?", "a": ["J.R.R. Tolkien", "C.S. Lewis", "J.K. Rowling", "Philip Pullman"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #18",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "Which element is the most reactive in the halogen group?", "a": ["Sodium", "Chlorine", "Fluorine", "Potassium"], "c": 2},
+        {"t": "Who wrote 'The Art of War'?", "a": ["Confucius", "Sun Tzu", "Lao Tzu", "Mencius"], "c": 1},
+        {"t": "What is the capital of Nigeria?", "a": ["Lagos", "Kano", "Ibadan", "Abuja"], "c": 3},
+        {"t": "How many sides does a dodecagon have?", "a": ["10", "11", "12", "13"], "c": 2},
+        {"t": "What is the highest possible score in 10-pin bowling?", "a": ["200", "250", "280", "300"], "c": 3},
+        {"t": "What food is the staple for more than half the world's population?", "a": ["Wheat", "Rice", "Corn", "Potato"], "c": 1},
+        {"t": "What is the most distant planet from the Sun?", "a": ["Saturn", "Uranus", "Neptune", "Pluto"], "c": 2},
+        {"t": "In which year did the Soviet Union dissolve?", "a": ["1989", "1990", "1991", "1992"], "c": 2},
+        {"t": "What was one of the earliest known computer programs (a self-replicating program)?", "a": ["MyDoom", "Morris Worm", "Creeper", "ILOVEYOU"], "c": 2},
+        {"t": "Who wrote 'Les Misérables'?", "a": ["Alexandre Dumas", "Gustave Flaubert", "Victor Hugo", "Honoré de Balzac"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #19",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the unit of electrical resistance?", "a": ["Volt", "Amp", "Watt", "Ohm"], "c": 3},
+        {"t": "In which city is the Louvre museum located?", "a": ["Rome", "Paris", "London", "Madrid"], "c": 1},
+        {"t": "What is the capital of Saudi Arabia?", "a": ["Jeddah", "Mecca", "Medina", "Riyadh"], "c": 3},
+        {"t": "How many players are on an ice hockey team on the ice at once?", "a": ["4", "5", "6", "7"], "c": 2},
+        {"t": "In what year did the first FIFA World Cup take place?", "a": ["1924", "1926", "1930", "1934"], "c": 2},
+        {"t": "Which fruit is known as the 'king of fruits' in Southeast Asia?", "a": ["Mango", "Durian", "Jackfruit", "Rambutan"], "c": 1},
+        {"t": "How many bones are in the human hand?", "a": ["21", "25", "27", "31"], "c": 2},
+        {"t": "What is the world's largest volcano by volume?", "a": ["Mount St. Helens", "Kilauea", "Mauna Loa", "Vesuvius"], "c": 2},
+        {"t": "What does the 'P' in 'VPN' stand for?", "a": ["Private", "Public", "Protected", "Proxy"], "c": 0},
+        {"t": "Who wrote 'War and Peace'?", "a": ["Fyodor Dostoevsky", "Leo Tolstoy", "Ivan Turgenev", "Anton Chekhov"], "c": 1}
+      ]
+    },
+    {
+      "t": "Daily Mix #20",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the chemical formula for table salt?", "a": ["NaO", "NaH", "NaCl", "NaSO4"], "c": 2},
+        {"t": "Who was the first European to reach India by sea?", "a": ["Christopher Columbus", "Ferdinand Magellan", "Vasco da Gama", "Bartolomeu Dias"], "c": 2},
+        {"t": "What is the capital of Pakistan?", "a": ["Karachi", "Lahore", "Islamabad", "Peshawar"], "c": 2},
+        {"t": "How many sides does a heptagon have?", "a": ["6", "7", "8", "9"], "c": 1},
+        {"t": "What sport is Lionel Messi famous for?", "a": ["Basketball", "Football/Soccer", "Tennis", "Baseball"], "c": 1},
+        {"t": "What is the main ingredient in beer?", "a": ["Barley", "Wheat", "Corn", "Rice"], "c": 0},
+        {"t": "What is the thinnest layer of the Earth?", "a": ["Mantle", "Outer core", "Crust", "Inner core"], "c": 2},
+        {"t": "In what year was the United Nations founded?", "a": ["1944", "1945", "1946", "1947"], "c": 1},
+        {"t": "Which Shakespeare play features the character Iago?", "a": ["Hamlet", "Macbeth", "King Lear", "Othello"], "c": 3},
+        {"t": "Who founded Apple Computer alongside Steve Jobs?", "a": ["Bill Gates", "Paul Allen", "Steve Wozniak", "Larry Page"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #21",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the process by which plants make food from sunlight?", "a": ["Respiration", "Photosynthesis", "Transpiration", "Fermentation"], "c": 1},
+        {"t": "Which battle ended Napoleon's rule?", "a": ["Battle of Austerlitz", "Battle of Leipzig", "Battle of Waterloo", "Battle of Trafalgar"], "c": 2},
+        {"t": "What is the capital of the Philippines?", "a": ["Cebu", "Quezon City", "Davao", "Manila"], "c": 3},
+        {"t": "What is the sum of angles in a triangle?", "a": ["90°", "120°", "180°", "360°"], "c": 2},
+        {"t": "How many times has Lionel Messi won the Ballon d'Or?", "a": ["5", "6", "7", "8"], "c": 3},
+        {"t": "What is the traditional hot drink of Morocco?", "a": ["Coffee", "Black tea", "Fruit juice", "Mint tea"], "c": 3},
+        {"t": "What is the deepest lake in the world?", "a": ["Crater Lake", "Lake Superior", "Lake Baikal", "Lake Tanganyika"], "c": 2},
+        {"t": "Approximately how many bones does a newborn baby have?", "a": ["206", "250", "270", "300"], "c": 2},
+        {"t": "What does 'HTTP' stand for?", "a": ["HyperText Transfer Protocol", "High Transfer Text Protocol", "HyperText Transmission Protocol", "HyperText Template Protocol"], "c": 0},
+        {"t": "Who wrote 'Moby Dick'?", "a": ["Herman Melville", "Nathaniel Hawthorne", "Mark Twain", "Edgar Allan Poe"], "c": 0}
+      ]
+    },
+    {
+      "t": "Daily Mix #22",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the unit of force in physics?", "a": ["Pascal", "Watt", "Newton", "Joule"], "c": 2},
+        {"t": "In which year did Christopher Columbus first reach the Americas?", "a": ["1488", "1490", "1492", "1494"], "c": 2},
+        {"t": "What is the capital of Vietnam?", "a": ["Ho Chi Minh City", "Da Nang", "Hue", "Hanoi"], "c": 3},
+        {"t": "How many zeros are in one billion?", "a": ["6", "8", "9", "12"], "c": 2},
+        {"t": "What is the most popular sport in India?", "a": ["Football", "Tennis", "Cricket", "Field hockey"], "c": 2},
+        {"t": "What is the boiling point of water on the Fahrenheit scale?", "a": ["212°F", "220°F", "200°F", "232°F"], "c": 0},
+        {"t": "How many countries share a border with Russia?", "a": ["12", "14", "16", "18"], "c": 1},
+        {"t": "What does 'SEO' stand for in digital marketing?", "a": ["Search Engine Optimization", "Social Engagement Output", "Structured Email Operation", "Secure Endpoint Output"], "c": 0},
+        {"t": "Who composed 'The Four Seasons'?", "a": ["Johann Sebastian Bach", "Wolfgang Amadeus Mozart", "Antonio Vivaldi", "Georg Frideric Handel"], "c": 2},
+        {"t": "What is the world's most widely cultivated fruit?", "a": ["Apple", "Banana", "Orange", "Tomato"], "c": 1}
+      ]
+    },
+    {
+      "t": "Daily Mix #23",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What vitamin does sunlight help the body produce?", "a": ["Vitamin A", "Vitamin B12", "Vitamin C", "Vitamin D"], "c": 3},
+        {"t": "Who was the last Pharaoh of ancient Egypt?", "a": ["Nefertiti", "Cleopatra VII", "Hatshepsut", "Nefertari"], "c": 1},
+        {"t": "What is the capital of New Zealand?", "a": ["Auckland", "Christchurch", "Wellington", "Queenstown"], "c": 2},
+        {"t": "In music, how many semitones are in an octave?", "a": ["8", "10", "12", "14"], "c": 2},
+        {"t": "Who holds the record for most goals scored across all FIFA World Cups?", "a": ["Pelé", "Ronaldo (Brazil)", "Miroslav Klose", "Just Fontaine"], "c": 2},
+        {"t": "What is sake?", "a": ["Japanese beer", "Japanese rice wine", "Japanese barley spirit", "Japanese plum wine"], "c": 1},
+        {"t": "How many layers does Earth's atmosphere have?", "a": ["3", "4", "5", "7"], "c": 2},
+        {"t": "What does 'ROM' stand for in computing?", "a": ["Random Output Memory", "Read-Only Memory", "Rapid Output Memory", "Read-Open Memory"], "c": 1},
+        {"t": "What is the name of the international space station orbiting Earth?", "a": ["Mir", "Skylab", "ISS", "Tiangong"], "c": 2},
+        {"t": "Who wrote 'The Count of Monte Cristo'?", "a": ["Gustave Flaubert", "Victor Hugo", "Alexandre Dumas", "Stendhal"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #24",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the most abundant metal in Earth's crust?", "a": ["Iron", "Copper", "Silicon", "Aluminum"], "c": 3},
+        {"t": "What event triggered the start of World War I?", "a": ["Assassination of Franz Ferdinand", "Sinking of the Lusitania", "German invasion of Belgium", "Russian Revolution"], "c": 0},
+        {"t": "What is the capital of Iran?", "a": ["Isfahan", "Tabriz", "Mashhad", "Tehran"], "c": 3},
+        {"t": "What is the sum of all interior angles in a quadrilateral?", "a": ["180°", "270°", "360°", "540°"], "c": 2},
+        {"t": "In which sport is the 'butterfly stroke' used?", "a": ["Water polo", "Surfing", "Swimming", "Synchronized swimming"], "c": 2},
+        {"t": "From which country does pizza originate?", "a": ["Greece", "France", "Italy", "Spain"], "c": 2},
+        {"t": "What is the scientific study of fossils called?", "a": ["Archaeology", "Paleontology", "Geology", "Anthropology"], "c": 1},
+        {"t": "In what year was the first email sent?", "a": ["1967", "1971", "1975", "1979"], "c": 1},
+        {"t": "In what year was Google founded?", "a": ["1996", "1997", "1998", "2000"], "c": 2},
+        {"t": "Who wrote 'One Hundred Years of Solitude'?", "a": ["Mario Vargas Llosa", "Pablo Neruda", "Gabriel García Márquez", "Julio Cortázar"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #25",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the chemical symbol for copper?", "a": ["Co", "Cp", "Cu", "Cr"], "c": 2},
+        {"t": "Who built the first successful airplane?", "a": ["Charles Lindbergh", "Orville and Wilbur Wright", "Glenn Curtiss", "Samuel Langley"], "c": 1},
+        {"t": "What is the capital of Indonesia?", "a": ["Surabaya", "Bandung", "Bali", "Jakarta"], "c": 3},
+        {"t": "How many days does February have in a non-leap year?", "a": ["27", "28", "29", "30"], "c": 1},
+        {"t": "What is the fastest land animal?", "a": ["Lion", "Horse", "Cheetah", "Greyhound"], "c": 2},
+        {"t": "What is nori?", "a": ["Japanese rice", "Japanese dried seaweed", "Japanese soy sauce", "Japanese rice vinegar"], "c": 1},
+        {"t": "What is the approximate diameter of Earth?", "a": ["10,000 km", "12,742 km", "15,000 km", "8,500 km"], "c": 1},
+        {"t": "What is the most populous city in the world?", "a": ["Mumbai", "Shanghai", "Tokyo", "Mexico City"], "c": 2},
+        {"t": "Who co-founded Microsoft?", "a": ["Steve Jobs", "Mark Zuckerberg", "Bill Gates and Paul Allen", "Larry Page"], "c": 2},
+        {"t": "Who wrote 'The Alchemist'?", "a": ["Jorge Amado", "José Saramago", "Paulo Coelho", "João Guimarães Rosa"], "c": 2}
+      ]
+    },
+    {
+      "t": "Daily Mix #26",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the powerhouse of the cell?", "a": ["Nucleus", "Ribosome", "Golgi apparatus", "Mitochondria"], "c": 3},
+        {"t": "In which year did the American Civil War begin?", "a": ["1858", "1860", "1861", "1863"], "c": 2},
+        {"t": "What is the capital of Greece?", "a": ["Thessaloniki", "Piraeus", "Sparta", "Athens"], "c": 3},
+        {"t": "What is the square root of 144?", "a": ["11", "12", "13", "14"], "c": 1},
+        {"t": "How many events are in a decathlon?", "a": ["7", "8", "10", "12"], "c": 2},
+        {"t": "From which country does sangria originate?", "a": ["Argentina", "Mexico", "Portugal", "Spain"], "c": 3},
+        {"t": "What is the largest planet in our solar system?", "a": ["Saturn", "Uranus", "Neptune", "Jupiter"], "c": 3},
+        {"t": "What are the three primary colors of light?", "a": ["Red, Yellow, Blue", "Red, Green, Blue", "Red, Orange, Yellow", "Cyan, Magenta, Yellow"], "c": 1},
+        {"t": "What does 'VR' stand for?", "a": ["Virtual Reality", "Visual Reality", "Variable Reality", "Visual Rendering"], "c": 0},
+        {"t": "Who composed 'Swan Lake'?", "a": ["Sergei Rachmaninoff", "Pyotr Tchaikovsky", "Igor Stravinsky", "Nikolai Rimsky-Korsakov"], "c": 1}
+      ]
+    },
+    {
+      "t": "Daily Mix #27",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the most common eye color in the world?", "a": ["Blue", "Green", "Brown", "Hazel"], "c": 2},
+        {"t": "Who improved and popularized the steam engine?", "a": ["George Stephenson", "Richard Trevithick", "James Watt", "Robert Stephenson"], "c": 2},
+        {"t": "What is the capital of Poland?", "a": ["Krakow", "Gdansk", "Wroclaw", "Warsaw"], "c": 3},
+        {"t": "How many sides does an octagon have?", "a": ["6", "7", "8", "9"], "c": 2},
+        {"t": "What is the maximum number of sets in a men's singles Grand Slam tennis match?", "a": ["3", "4", "5", "7"], "c": 2},
+        {"t": "What cuisine is known for dishes like bibimbap and bulgogi?", "a": ["Japanese", "Chinese", "Korean", "Vietnamese"], "c": 2},
+        {"t": "What is the approximate age of the universe?", "a": ["4.5 billion years", "10 billion years", "13.8 billion years", "20 billion years"], "c": 2},
+        {"t": "What is the most spoken Romance language?", "a": ["French", "Italian", "Portuguese", "Spanish"], "c": 3},
+        {"t": "What does 'URL' stand for?", "a": ["Universal Resource Link", "Uniform Resource Locator", "Unified Record Language", "Universal Request Language"], "c": 1},
+        {"t": "Who wrote 'Anna Karenina'?", "a": ["Fyodor Dostoevsky", "Leo Tolstoy", "Ivan Turgenev", "Nikolai Gogol"], "c": 1}
+      ]
+    },
+    {
+      "t": "Daily Mix #28",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the name of the tube connecting the throat to the stomach?", "a": ["Trachea", "Esophagus", "Larynx", "Pharynx"], "c": 1},
+        {"t": "Who was the Roman god of war?", "a": ["Jupiter", "Mars", "Neptune", "Pluto"], "c": 1},
+        {"t": "What is the capital of Ukraine?", "a": ["Lviv", "Kharkiv", "Odessa", "Kyiv"], "c": 3},
+        {"t": "What is 20% of 200?", "a": ["20", "30", "40", "50"], "c": 2},
+        {"t": "What is the fastest bird in the world (in a dive)?", "a": ["Eagle", "Swift", "Peregrine Falcon", "Albatross"], "c": 2},
+        {"t": "What are the main ingredients of a traditional mojito?", "a": ["Rum, lime, sugar, mint, soda", "Vodka, lime, ginger beer", "Tequila, lime, salt", "Gin, tonic, lime"], "c": 0},
+        {"t": "What is the world's largest lake by surface area?", "a": ["Lake Superior", "Lake Baikal", "Caspian Sea", "Lake Victoria"], "c": 2},
+        {"t": "How many planets are in our solar system?", "a": ["7", "8", "9", "10"], "c": 1},
+        {"t": "What does 'VPN' stand for?", "a": ["Virtual Private Network", "Virtual Public Network", "Verified Private Node", "Variable Protocol Network"], "c": 0},
+        {"t": "Who wrote 'The Metamorphosis'?", "a": ["Franz Kafka", "Thomas Mann", "Hermann Hesse", "Stefan Zweig"], "c": 0}
+      ]
+    },
+    {
+      "t": "Daily Mix #29",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the name of the force that keeps planets in orbit?", "a": ["Magnetic force", "Nuclear force", "Gravity", "Electromagnetism"], "c": 2},
+        {"t": "In which country was Mahatma Gandhi born?", "a": ["Bangladesh", "Pakistan", "India", "Sri Lanka"], "c": 2},
+        {"t": "What is the capital of Thailand?", "a": ["Chiang Mai", "Pattaya", "Phuket", "Bangkok"], "c": 3},
+        {"t": "How many letters are in the English alphabet?", "a": ["24", "25", "26", "27"], "c": 2},
+        {"t": "What is the Olympic motto?", "a": ["Win, play fair, compete", "Faster, Higher, Stronger", "Aim for the top", "Unite through sport"], "c": 1},
+        {"t": "Which country is the world's leading producer of olive oil?", "a": ["Greece", "Italy", "Spain", "Morocco"], "c": 2},
+        {"t": "What is the approximate surface temperature of the Sun?", "a": ["2,000°C", "5,500°C", "10,000°C", "15,000°C"], "c": 1},
+        {"t": "What is the highest mountain in the Alps?", "a": ["Matterhorn", "Monte Rosa", "Mont Blanc", "Jungfrau"], "c": 2},
+        {"t": "Who invented the light bulb?", "a": ["Benjamin Franklin", "Nikola Tesla", "Thomas Edison", "Alexander Graham Bell"], "c": 2},
+        {"t": "Who wrote 'Ulysses'?", "a": ["Samuel Beckett", "James Joyce", "Oscar Wilde", "W.B. Yeats"], "c": 1}
+      ]
+    },
+    {
+      "t": "Daily Mix #30",
+      "d": "Science, history, geography, and culture",
+      "tags": ["topic:mixed"],
+      "l": 15,
+      "p": 70,
+      "q": [
+        {"t": "What is the center of an atom called?", "a": ["Electron", "Proton", "Nucleus", "Neutron"], "c": 2},
+        {"t": "In which year did the United States declare independence?", "a": ["1774", "1776", "1778", "1780"], "c": 1},
+        {"t": "What is the capital of Morocco?", "a": ["Casablanca", "Fez", "Marrakech", "Rabat"], "c": 3},
+        {"t": "How many degrees are in a full circle?", "a": ["180", "270", "360", "720"], "c": 2},
+        {"t": "What is the exact distance of a marathon race?", "a": ["40 km", "41.195 km", "42.195 km", "44 km"], "c": 2},
+        {"t": "What is wasabi traditionally made from?", "a": ["Hot peppers", "Horseradish", "Japanese mustard", "Wasabi root"], "c": 3},
+        {"t": "What is the approximate circumference of Earth at the equator?", "a": ["30,000 km", "35,000 km", "40,075 km", "45,000 km"], "c": 2},
+        {"t": "When were euro banknotes and coins first introduced?", "a": ["1999", "2000", "2001", "2002"], "c": 3},
+        {"t": "How many bones does an adult human skull have?", "a": ["12", "18", "22", "28"], "c": 2},
+        {"t": "Who wrote 'Brave New World'?", "a": ["George Orwell", "Aldous Huxley", "H.G. Wells", "Ray Bradbury"], "c": 1}
       ]
     }
   ]
