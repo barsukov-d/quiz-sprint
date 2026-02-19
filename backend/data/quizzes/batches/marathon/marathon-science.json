@@ -1,0 +1,165 @@
+{
+  "batch": {
+    "version": 1,
+    "generated": "2026-02-19T00:00:00Z",
+    "cat": "science",
+    "tags": ["domain:science", "format:marathon"]
+  },
+  "quizzes": [
+    {
+      "t": "Physics Fundamentals",
+      "d": "Core concepts in mechanics, forces, and motion",
+      "cat": "science",
+      "tags": ["topic:physics", "difficulty:mixed"],
+      "l": 600,
+      "p": 70,
+      "q": [
+        {"t": "What unit is used to measure force?", "a": ["Joule", "Newton", "Pascal", "Watt"], "c": 1},
+        {"t": "Which of these is a vector quantity?", "a": ["Speed", "Temperature", "Mass", "Velocity"], "c": 3},
+        {"t": "What does the speedometer in a car measure?", "a": ["Acceleration", "Displacement", "Instantaneous speed", "Average speed"], "c": 2},
+        {"t": "According to Newton's Third Law, when you push against a wall the wall pushes back with what force?", "a": ["Half the force", "Double the force", "An equal and opposite force", "No force at all"], "c": 2},
+        {"t": "What is the SI unit of pressure?", "a": ["Newton", "Pascal", "Bar", "Atmosphere"], "c": 1},
+        {"t": "A car accelerates from 0 to 60 m/s in 10 seconds. What is its acceleration?", "a": ["6 m/s²", "600 m/s²", "0.6 m/s²", "60 m/s²"], "c": 0},
+        {"t": "Which law states that the pressure and volume of a gas are inversely proportional at constant temperature?", "a": ["Charles's Law", "Avogadro's Law", "Boyle's Law", "Gay-Lussac's Law"], "c": 2},
+        {"t": "At what angle must a projectile be launched to achieve maximum range (ignoring air resistance)?", "a": ["30°", "45°", "60°", "90°"], "c": 1},
+        {"t": "What is the escape velocity from Earth's surface approximately?", "a": ["7.9 km/s", "11.2 km/s", "17.0 km/s", "3.0 km/s"], "c": 1},
+        {"t": "In simple harmonic motion, where is the restoring force greatest?", "a": ["At the equilibrium position", "At maximum displacement from equilibrium", "Halfway between equilibrium and maximum displacement", "The force is constant throughout"], "c": 1}
+      ]
+    },
+    {
+      "t": "Electricity and Magnetism",
+      "d": "Explore electric circuits, fields, and magnetic phenomena",
+      "cat": "science",
+      "tags": ["topic:physics", "topic:electricity", "difficulty:mixed"],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {"t": "What is the unit of electrical resistance?", "a": ["Volt", "Ampere", "Ohm", "Watt"], "c": 2},
+        {"t": "In a series circuit, what happens to the total resistance when you add another resistor?", "a": ["It decreases", "It stays the same", "It increases", "It becomes zero"], "c": 2},
+        {"t": "What does an ammeter measure?", "a": ["Voltage", "Current", "Resistance", "Power"], "c": 1},
+        {"t": "What type of current is produced by most power stations and delivered to homes?", "a": ["Direct current (DC)", "Alternating current (AC)", "Pulsed current", "Static current"], "c": 1},
+        {"t": "Ohm's Law states that voltage equals:", "a": ["Current divided by resistance", "Current plus resistance", "Current multiplied by resistance", "Resistance divided by current"], "c": 2},
+        {"t": "What is the relationship between the frequency and wavelength of electromagnetic radiation?", "a": ["They are directly proportional", "They are inversely proportional", "They are equal", "There is no relationship"], "c": 1},
+        {"t": "A transformer steps voltage up by a factor of 10. By what factor does the current change?", "a": ["Increases by 10", "Decreases by 10", "Stays the same", "Decreases by 100"], "c": 1},
+        {"t": "What is the direction of the magnetic force on a positive charge moving to the right in a magnetic field pointing out of the page?", "a": ["Upward", "Downward", "To the left", "Into the page"], "c": 1},
+        {"t": "The Hall effect demonstrates that current in a conductor is carried by:", "a": ["Positive ions only", "Negative ions only", "Charge carriers whose sign can be determined", "Neutral particles"], "c": 2},
+        {"t": "Maxwell's equations unify which two fundamental forces?", "a": ["Gravity and electromagnetism", "Electricity and magnetism", "Strong and weak nuclear forces", "Electromagnetism and the weak force"], "c": 1}
+      ]
+    },
+    {
+      "t": "Chemistry Essentials",
+      "d": "Elements, compounds, reactions, and the periodic table",
+      "cat": "science",
+      "tags": ["topic:chemistry", "difficulty:mixed"],
+      "l": 600,
+      "p": 68,
+      "q": [
+        {"t": "What is the chemical symbol for gold?", "a": ["Go", "Gd", "Au", "Ag"], "c": 2},
+        {"t": "How many elements make up water (H₂O)?", "a": ["1", "2", "3", "4"], "c": 1},
+        {"t": "What is the pH of a neutral solution at 25°C?", "a": ["0", "7", "10", "14"], "c": 1},
+        {"t": "Which gas makes up the largest proportion of Earth's atmosphere?", "a": ["Oxygen", "Carbon dioxide", "Argon", "Nitrogen"], "c": 3},
+        {"t": "What type of bond involves the sharing of electrons between atoms?", "a": ["Ionic bond", "Covalent bond", "Metallic bond", "Hydrogen bond"], "c": 1},
+        {"t": "In the periodic table, elements in the same group (column) share what property?", "a": ["The same number of protons", "The same atomic mass", "The same number of valence electrons", "The same number of neutrons"], "c": 2},
+        {"t": "What is the IUPAC name for the compound with formula CH₃COOH?", "a": ["Methanoic acid", "Propanoic acid", "Ethanoic acid", "Butanoic acid"], "c": 2},
+        {"t": "Which type of reaction involves a substance combining with oxygen to produce heat and light?", "a": ["Reduction", "Hydrolysis", "Combustion", "Electrolysis"], "c": 2},
+        {"t": "What is the hybridization of carbon in methane (CH₄)?", "a": ["sp", "sp²", "sp³", "sp³d"], "c": 2},
+        {"t": "Le Chatelier's principle states that if stress is applied to a system at equilibrium, the system will:", "a": ["Collapse in the direction of the stress", "Shift in a direction that counteracts the stress", "Maintain the original equilibrium", "Increase the rate of both reactions equally"], "c": 1}
+      ]
+    },
+    {
+      "t": "Biology: Cells and Genetics",
+      "d": "Life at the cellular level — DNA, heredity, and cell processes",
+      "cat": "science",
+      "tags": ["topic:biology", "topic:genetics", "difficulty:mixed"],
+      "l": 600,
+      "p": 68,
+      "q": [
+        {"t": "What organelle is known as the powerhouse of the cell?", "a": ["Nucleus", "Ribosome", "Mitochondrion", "Golgi apparatus"], "c": 2},
+        {"t": "What molecule carries genetic information in most organisms?", "a": ["RNA", "DNA", "Protein", "ATP"], "c": 1},
+        {"t": "How many chromosomes does a normal human body cell contain?", "a": ["23", "46", "48", "92"], "c": 1},
+        {"t": "What is the process by which plants convert sunlight into chemical energy?", "a": ["Respiration", "Transpiration", "Photosynthesis", "Fermentation"], "c": 2},
+        {"t": "Which type of cell division produces gametes (sex cells)?", "a": ["Mitosis", "Binary fission", "Meiosis", "Budding"], "c": 2},
+        {"t": "What is the term for a segment of DNA that codes for a specific protein?", "a": ["Chromosome", "Codon", "Gene", "Allele"], "c": 2},
+        {"t": "If a parent has blood type AB and another has type O, what blood types are possible in their offspring?", "a": ["Only AB", "A and B only", "A, B, AB, and O", "Only O"], "c": 1},
+        {"t": "What is the role of tRNA during protein synthesis?", "a": ["Carries the genetic code from nucleus to ribosome", "Brings amino acids to the ribosome", "Catalyzes peptide bond formation", "Unwinds the DNA double helix"], "c": 1},
+        {"t": "In which stage of the cell cycle does DNA replication occur?", "a": ["G1 phase", "S phase", "G2 phase", "M phase"], "c": 1},
+        {"t": "What mutation type causes a frameshift in the reading frame of a gene?", "a": ["Substitution", "Insertion or deletion", "Silent mutation", "Missense mutation"], "c": 1}
+      ]
+    },
+    {
+      "t": "Astronomy and Space",
+      "d": "Planets, stars, galaxies, and the universe beyond",
+      "cat": "science",
+      "tags": ["topic:astronomy", "difficulty:mixed"],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {"t": "Which planet is the largest in our solar system?", "a": ["Saturn", "Neptune", "Jupiter", "Uranus"], "c": 2},
+        {"t": "What is the name of our galaxy?", "a": ["Andromeda", "Milky Way", "Triangulum", "Whirlpool"], "c": 1},
+        {"t": "Approximately how long does light from the Sun take to reach Earth?", "a": ["1 second", "8 minutes", "1 hour", "8 hours"], "c": 1},
+        {"t": "What is a light-year a measurement of?", "a": ["Time", "Mass", "Distance", "Speed"], "c": 2},
+        {"t": "Which mission was the first to land humans on the Moon?", "a": ["Apollo 10", "Apollo 11", "Apollo 13", "Gemini 12"], "c": 1},
+        {"t": "What type of stellar remnant will our Sun eventually become?", "a": ["Neutron star", "Black hole", "Red supergiant", "Red giant, then white dwarf"], "c": 3},
+        {"t": "What does the Hubble constant measure?", "a": ["The age of the universe only", "The rate of expansion of the universe", "The distance to the nearest star", "The mass of the Milky Way"], "c": 1},
+        {"t": "What phenomenon causes the apparent shift in wavelength of light from a receding star?", "a": ["Gravitational lensing", "Parallax", "Redshift", "Diffraction"], "c": 2},
+        {"t": "The Chandrasekhar limit (~1.4 solar masses) is the maximum mass of which type of stellar remnant?", "a": ["Neutron star", "White dwarf", "Black hole", "Brown dwarf"], "c": 1},
+        {"t": "What is the name of the supermassive black hole at the center of the Milky Way?", "a": ["Cygnus X-1", "Sagittarius A*", "M87*", "V404 Cygni"], "c": 1}
+      ]
+    },
+    {
+      "t": "Earth Science",
+      "d": "Geology, atmosphere, weather, and the forces that shape our planet",
+      "cat": "science",
+      "tags": ["topic:earth-science", "difficulty:mixed"],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {"t": "What is the outermost layer of the Earth called?", "a": ["Mantle", "Core", "Crust", "Asthenosphere"], "c": 2},
+        {"t": "What scale is used to measure the magnitude of earthquakes?", "a": ["Beaufort scale", "Mohs scale", "Richter scale", "Kelvin scale"], "c": 2},
+        {"t": "What type of rock is formed from cooled lava or magma?", "a": ["Sedimentary", "Metamorphic", "Igneous", "Fossilized"], "c": 2},
+        {"t": "What gas in the atmosphere primarily absorbs harmful UV radiation from the Sun?", "a": ["Carbon dioxide", "Methane", "Water vapor", "Ozone"], "c": 3},
+        {"t": "What drives plate tectonic movement?", "a": ["Earth's rotation", "Gravitational pull of the Moon", "Convection currents in the mantle", "Solar radiation"], "c": 2},
+        {"t": "What is the name of the supercontinent that existed approximately 300 million years ago?", "a": ["Laurasia", "Gondwana", "Rodinia", "Pangaea"], "c": 3},
+        {"t": "Which type of tectonic boundary involves two plates moving toward each other?", "a": ["Divergent boundary", "Transform boundary", "Convergent boundary", "Passive boundary"], "c": 2},
+        {"t": "What is the process by which rocks are broken down by physical and chemical means at Earth's surface?", "a": ["Sedimentation", "Metamorphism", "Weathering", "Lithification"], "c": 2},
+        {"t": "The Milankovitch cycles describe variations in Earth's orbital parameters that influence what?", "a": ["Volcanic eruptions", "Ocean salinity", "Long-term climate patterns", "Mountain formation"], "c": 2},
+        {"t": "At what depth does the Mohorovičić discontinuity (Moho) typically occur beneath continental crust?", "a": ["1–5 km", "30–50 km", "100–200 km", "500–700 km"], "c": 1}
+      ]
+    },
+    {
+      "t": "Human Body and Health",
+      "d": "Anatomy, physiology, and how the human body works",
+      "cat": "science",
+      "tags": ["topic:biology", "topic:human-body", "difficulty:mixed"],
+      "l": 600,
+      "p": 68,
+      "q": [
+        {"t": "How many bones are in the adult human body?", "a": ["206", "208", "198", "212"], "c": 0},
+        {"t": "What is the largest organ in the human body?", "a": ["Liver", "Brain", "Skin", "Lungs"], "c": 2},
+        {"t": "Which blood type is considered the universal donor for red blood cells?", "a": ["AB+", "O-", "A+", "B-"], "c": 1},
+        {"t": "What is the normal resting heart rate range for a healthy adult?", "a": ["30–50 bpm", "60–100 bpm", "100–120 bpm", "50–60 bpm"], "c": 1},
+        {"t": "Which part of the brain is primarily responsible for balance and coordination?", "a": ["Cerebrum", "Medulla oblongata", "Thalamus", "Cerebellum"], "c": 3},
+        {"t": "What molecule transports oxygen in red blood cells?", "a": ["Myoglobin", "Albumin", "Hemoglobin", "Fibrinogen"], "c": 2},
+        {"t": "In which organ does the majority of nutrient absorption occur during digestion?", "a": ["Stomach", "Large intestine", "Small intestine", "Liver"], "c": 2},
+        {"t": "What is the primary function of the lymphatic system?", "a": ["Pump blood through the body", "Remove waste via the kidneys", "Return interstitial fluid to bloodstream and support immunity", "Produce red blood cells"], "c": 2},
+        {"t": "Which enzyme is responsible for unwinding the DNA double helix during replication?", "a": ["DNA polymerase", "Ligase", "Helicase", "Primase"], "c": 2},
+        {"t": "What is the approximate total length of DNA in a single human cell if fully stretched out?", "a": ["About 1 mm", "About 2 meters", "About 10 cm", "About 100 meters"], "c": 1}
+      ]
+    },
+    {
+      "t": "Famous Scientists and Discoveries",
+      "d": "The people and breakthroughs that changed science forever",
+      "cat": "science",
+      "tags": ["topic:science-history", "difficulty:mixed"],
+      "l": 300,
+      "p": 65,
+      "q": [
+        {"t": "Who developed the theory of general relativity?", "a": ["Isaac Newton", "Niels Bohr", "Albert Einstein", "Max Planck"], "c": 2},
+        {"t": "What did Alexander Fleming discover in 1928?", "a": ["X-rays", "Penicillin", "Insulin", "DNA structure"], "c": 1},
+        {"t": "Who first described the heliocentric model of the solar system in detail in the 16th century?", "a": ["Galileo Galilei", "Tycho Brahe", "Johannes Kepler", "Nicolaus Copernicus"], "c": 3},
+        {"t": "Marie Curie won Nobel Prizes in two different sciences. Which were they?", "a": ["Physics and Chemistry", "Chemistry and Medicine", "Physics and Medicine", "Physics and Biology"], "c": 0},
+        {"t": "Charles Darwin's theory of natural selection was published in which book?", "a": ["The Descent of Man", "On the Origin of Species", "The Expression of Emotions", "Zoology of HMS Beagle"], "c": 1}
+      ]
+    }
+  ]
+}

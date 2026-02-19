@@ -1,0 +1,165 @@
+{
+  "batch": {
+    "version": 1,
+    "generated": "2026-02-19T00:00:00Z",
+    "cat": "general-knowledge",
+    "tags": ["domain:general", "format:marathon"]
+  },
+  "quizzes": [
+    {
+      "t": "Sports & Records",
+      "d": "Olympics, world records and famous athletes",
+      "cat": "general-knowledge",
+      "tags": ["topic:sports", "difficulty:mixed"],
+      "l": 600,
+      "p": 70,
+      "q": [
+        {"t": "How many gold medals did Usain Bolt win at the Olympics?", "a": ["6", "7", "8", "9"], "c": 2},
+        {"t": "In which sport is a 'hat-trick' scored?", "a": ["Basketball", "Tennis", "Football/Soccer", "Rugby"], "c": 2},
+        {"t": "How many players are on a basketball team on the court?", "a": ["4", "5", "6", "7"], "c": 1},
+        {"t": "Which country hosted the 2016 Summer Olympics?", "a": ["China", "UK", "Brazil", "Japan"], "c": 2},
+        {"t": "How many times has Roger Federer won Wimbledon?", "a": ["6", "7", "8", "9"], "c": 2},
+        {"t": "What is the length of an Olympic swimming pool?", "a": ["25 meters", "50 meters", "75 meters", "100 meters"], "c": 1},
+        {"t": "Which country has won the most Rugby World Cup titles?", "a": ["Australia", "South Africa", "New Zealand", "England"], "c": 2},
+        {"t": "What is the world record for the 100m sprint set by Usain Bolt?", "a": ["9.58 seconds", "9.63 seconds", "9.69 seconds", "9.74 seconds"], "c": 0},
+        {"t": "At what height does the high jump world record stand approximately?", "a": ["2.09 m", "2.33 m", "2.45 m", "2.51 m"], "c": 1},
+        {"t": "Which tennis player has won the most Grand Slam singles titles in men's tennis as of 2024?", "a": ["Roger Federer", "Rafael Nadal", "Novak Djokovic", "Pete Sampras"], "c": 2}
+      ]
+    },
+    {
+      "t": "Movies & Entertainment",
+      "d": "Academy Awards, blockbusters and legendary directors",
+      "cat": "general-knowledge",
+      "tags": ["topic:movies", "difficulty:mixed"],
+      "l": 600,
+      "p": 70,
+      "q": [
+        {"t": "Which movie won the first Academy Award for Best Picture?", "a": ["Gone with the Wind", "Wings", "All Quiet on the Western Front", "Casablanca"], "c": 1},
+        {"t": "Who played Iron Man in the Marvel Cinematic Universe?", "a": ["Chris Evans", "Robert Downey Jr.", "Chris Hemsworth", "Mark Ruffalo"], "c": 1},
+        {"t": "What is the highest-grossing film of all time (unadjusted)?", "a": ["Avengers: Endgame", "Avatar", "Titanic", "Star Wars: The Force Awakens"], "c": 1},
+        {"t": "Who directed 'Schindler's List'?", "a": ["Martin Scorsese", "Francis Ford Coppola", "Steven Spielberg", "Stanley Kubrick"], "c": 2},
+        {"t": "How many times has Meryl Streep won an Academy Award for Best Actress?", "a": ["1", "2", "3", "4"], "c": 2},
+        {"t": "Which film features the line 'Here's looking at you, kid'?", "a": ["Gone with the Wind", "Casablanca", "Citizen Kane", "Sunset Boulevard"], "c": 1},
+        {"t": "Who directed the 'Lord of the Rings' trilogy?", "a": ["George Lucas", "Ridley Scott", "Peter Jackson", "James Cameron"], "c": 2},
+        {"t": "In what year was the first 'Star Wars' film released?", "a": ["1975", "1977", "1979", "1981"], "c": 1},
+        {"t": "Which director has won the most Academy Awards for Best Director?", "a": ["Steven Spielberg", "John Ford", "William Wyler", "Martin Scorsese"], "c": 1},
+        {"t": "What was the first feature-length animated film produced by Walt Disney?", "a": ["Pinocchio", "Bambi", "Fantasia", "Snow White and the Seven Dwarfs"], "c": 3}
+      ]
+    },
+    {
+      "t": "Music Legends",
+      "d": "Bands, albums, composers and genres",
+      "cat": "general-knowledge",
+      "tags": ["topic:music", "difficulty:mixed"],
+      "l": 600,
+      "p": 70,
+      "q": [
+        {"t": "Which band released the album 'Thriller'?", "a": ["The Jackson 5", "Michael Jackson", "Prince", "Madonna"], "c": 1},
+        {"t": "How many strings does a standard violin have?", "a": ["3", "4", "5", "6"], "c": 1},
+        {"t": "Which genre of music originated in Jamaica?", "a": ["Blues", "Jazz", "Reggae", "Calypso"], "c": 2},
+        {"t": "What nationality was Ludwig van Beethoven?", "a": ["Austrian", "German", "Czech", "Hungarian"], "c": 1},
+        {"t": "Which band is known for the song 'Bohemian Rhapsody'?", "a": ["The Rolling Stones", "Led Zeppelin", "Queen", "The Who"], "c": 2},
+        {"t": "How many symphonies did Mozart compose?", "a": ["27", "31", "41", "55"], "c": 2},
+        {"t": "What does 'BPM' stand for in music?", "a": ["Beats Per Measure", "Beats Per Minute", "Bass Per Measure", "Bass Per Mix"], "c": 1},
+        {"t": "Which singer is known as the 'Queen of Pop'?", "a": ["Beyoncé", "Mariah Carey", "Madonna", "Whitney Houston"], "c": 2},
+        {"t": "What instrument is Yo-Yo Ma famous for playing?", "a": ["Violin", "Piano", "Cello", "Double bass"], "c": 2},
+        {"t": "Which composer wrote 'The Magic Flute'?", "a": ["Ludwig van Beethoven", "Johann Sebastian Bach", "Wolfgang Amadeus Mozart", "Franz Schubert"], "c": 2}
+      ]
+    },
+    {
+      "t": "Food & Cuisine",
+      "d": "Dishes, ingredients and cooking traditions",
+      "cat": "general-knowledge",
+      "tags": ["topic:food", "difficulty:mixed"],
+      "l": 600,
+      "p": 70,
+      "q": [
+        {"t": "What is the main ingredient in a traditional Caesar salad dressing?", "a": ["Mayonnaise", "Anchovies and egg", "Ranch dressing", "Vinegar and mustard"], "c": 1},
+        {"t": "From which country does sushi originate?", "a": ["China", "Korea", "Japan", "Vietnam"], "c": 2},
+        {"t": "What type of pasta is shaped like small rice grains?", "a": ["Farfalle", "Fusilli", "Orzo", "Penne"], "c": 2},
+        {"t": "What spice gives turmeric its yellow color?", "a": ["Curcumin", "Carotene", "Anthocyanin", "Lycopene"], "c": 0},
+        {"t": "Which country is the birthplace of croissants?", "a": ["France", "Belgium", "Austria", "Switzerland"], "c": 2},
+        {"t": "What is the name for the Japanese fermented soybean dish?", "a": ["Tempeh", "Natto", "Miso", "Edamame"], "c": 1},
+        {"t": "What does 'al dente' mean when cooking pasta?", "a": ["Very soft", "Firm to the bite", "Well done", "Half cooked"], "c": 1},
+        {"t": "Which country produces the most wine in the world?", "a": ["France", "Italy", "Spain", "USA"], "c": 1},
+        {"t": "What is the key ingredient that makes sourdough bread sour?", "a": ["Vinegar", "Lemon juice", "Wild yeast and lactic acid bacteria", "Baking soda"], "c": 2},
+        {"t": "Which city is considered the origin of the hamburger?", "a": ["New York", "Chicago", "Hamburg", "Frankfurt"], "c": 2}
+      ]
+    },
+    {
+      "t": "Technology & Inventions",
+      "d": "Companies, inventors and milestones in tech",
+      "cat": "general-knowledge",
+      "tags": ["topic:technology", "difficulty:mixed"],
+      "l": 600,
+      "p": 70,
+      "q": [
+        {"t": "Who invented the telephone?", "a": ["Thomas Edison", "Nikola Tesla", "Alexander Graham Bell", "Guglielmo Marconi"], "c": 2},
+        {"t": "In what year was Facebook founded?", "a": ["2002", "2003", "2004", "2005"], "c": 2},
+        {"t": "What does 'Wi-Fi' stand for?", "a": ["Wireless Fidelity", "Wide Field", "Wireless Frequency", "Wire First"], "c": 0},
+        {"t": "Who is credited with inventing the World Wide Web?", "a": ["Bill Gates", "Steve Jobs", "Tim Berners-Lee", "Vint Cerf"], "c": 2},
+        {"t": "Which company created the PlayStation gaming console?", "a": ["Nintendo", "Microsoft", "Sega", "Sony"], "c": 3},
+        {"t": "What does 'CPU' stand for?", "a": ["Central Processing Unit", "Computer Power Unit", "Core Processing Unit", "Central Program Unit"], "c": 0},
+        {"t": "In which decade was the first mobile phone call made?", "a": ["1960s", "1970s", "1980s", "1990s"], "c": 1},
+        {"t": "What programming language was created by Guido van Rossum?", "a": ["Java", "Ruby", "Python", "Perl"], "c": 2},
+        {"t": "What year did Amazon launch as an online bookstore?", "a": ["1993", "1994", "1995", "1996"], "c": 2},
+        {"t": "Which company developed the first commercial microprocessor, the Intel 4004?", "a": ["IBM", "Intel", "Motorola", "Texas Instruments"], "c": 1}
+      ]
+    },
+    {
+      "t": "Literature & Authors",
+      "d": "Famous books, writers and fictional characters",
+      "cat": "general-knowledge",
+      "tags": ["topic:literature", "difficulty:mixed"],
+      "l": 600,
+      "p": 70,
+      "q": [
+        {"t": "Who wrote 'To Kill a Mockingbird'?", "a": ["Truman Capote", "Harper Lee", "John Steinbeck", "William Faulkner"], "c": 1},
+        {"t": "In which fictional city does Batman operate?", "a": ["Metropolis", "Star City", "Gotham City", "Central City"], "c": 2},
+        {"t": "What is the name of the whale in 'Moby Dick'?", "a": ["White Shark", "Moby Dick", "Great White", "Leviathan"], "c": 1},
+        {"t": "Who is the author of the 'Game of Thrones' book series?", "a": ["J.R.R. Tolkien", "Terry Pratchett", "George R.R. Martin", "Robert Jordan"], "c": 2},
+        {"t": "Which Dickens novel features the character Ebenezer Scrooge?", "a": ["Oliver Twist", "David Copperfield", "Great Expectations", "A Christmas Carol"], "c": 3},
+        {"t": "In Homer's 'Odyssey', what creature did Odysseus have to sail past whose singing lured sailors to their death?", "a": ["Harpies", "Sirens", "Cyclopes", "Charybdis"], "c": 1},
+        {"t": "What language did Cervantes write 'Don Quixote' in?", "a": ["Portuguese", "Latin", "Catalan", "Spanish"], "c": 3},
+        {"t": "Which Orwell novel features the slogan 'All animals are equal, but some animals are more equal than others'?", "a": ["1984", "Animal Farm", "Homage to Catalonia", "Burmese Days"], "c": 1},
+        {"t": "Who wrote the 'Sherlock Holmes' detective stories?", "a": ["Agatha Christie", "Arthur Conan Doyle", "G.K. Chesterton", "Raymond Chandler"], "c": 1},
+        {"t": "What is the name of the narrator in F. Scott Fitzgerald's 'The Great Gatsby'?", "a": ["Jay Gatsby", "Tom Buchanan", "Nick Carraway", "Jordan Baker"], "c": 2}
+      ]
+    },
+    {
+      "t": "Nature & Animals",
+      "d": "Animal facts, records and behaviors",
+      "cat": "general-knowledge",
+      "tags": ["topic:nature", "difficulty:mixed"],
+      "l": 600,
+      "p": 70,
+      "q": [
+        {"t": "What is the largest animal on Earth?", "a": ["African Elephant", "Sperm Whale", "Blue Whale", "Giant Squid"], "c": 2},
+        {"t": "How many legs does a spider have?", "a": ["6", "8", "10", "12"], "c": 1},
+        {"t": "What is a group of lions called?", "a": ["Pack", "Herd", "Pride", "Colony"], "c": 2},
+        {"t": "Which bird is known for its ability to mimic human speech?", "a": ["Robin", "Parrot", "Canary", "Finch"], "c": 1},
+        {"t": "What is the fastest fish in the ocean?", "a": ["Tuna", "Marlin", "Sailfish", "Mako Shark"], "c": 2},
+        {"t": "How long is an elephant's gestation period approximately?", "a": ["9 months", "12 months", "18 months", "22 months"], "c": 3},
+        {"t": "What is the only continent where penguins live in the wild?", "a": ["Australia", "Antarctica", "South America", "Penguins live on all three"], "c": 3},
+        {"t": "How many hearts does an octopus have?", "a": ["1", "2", "3", "4"], "c": 2},
+        {"t": "What is the scientific name for the domestic cat?", "a": ["Felis domesticus", "Felis silvestris catus", "Felis catus vulgaris", "Felidae parvus"], "c": 1},
+        {"t": "Which animal has the longest lifespan in the wild?", "a": ["Giant Tortoise", "Greenland Shark", "Bowhead Whale", "Koi Fish"], "c": 1}
+      ]
+    },
+    {
+      "t": "Maths & Mixed",
+      "d": "Numbers, logic and a mix of general knowledge",
+      "cat": "general-knowledge",
+      "tags": ["topic:mixed", "difficulty:mixed"],
+      "l": 600,
+      "p": 70,
+      "q": [
+        {"t": "What is pi rounded to two decimal places?", "a": ["3.12", "3.14", "3.16", "3.18"], "c": 1},
+        {"t": "How many sides does a pentagon have?", "a": ["4", "5", "6", "7"], "c": 1},
+        {"t": "What is the only even prime number?", "a": ["1", "2", "4", "6"], "c": 1},
+        {"t": "If a train travels 120 km in 2 hours, what is its average speed?", "a": ["50 km/h", "60 km/h", "70 km/h", "80 km/h"], "c": 1},
+        {"t": "What is the Fibonacci sequence?", "a": ["Each number is doubled", "Each number is the sum of the two before it", "Each number is multiplied by 3", "Each number is squared"], "c": 1}
+      ]
+    }
+  ]
+}
