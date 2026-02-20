@@ -37,6 +37,8 @@ interface MarathonState {
 	gameOverResult: InternalInfrastructureHttpHandlersMarathonGameOverResultDTO | null
 	milestone: InternalInfrastructureHttpHandlersMarathonMilestoneDTO | null
 	hiddenAnswerIds: string[]
+	streakCount: number
+	lifeRestoredSignal: number
 }
 
 /**
@@ -66,6 +68,8 @@ export function useMarathon(playerId: string) {
 		gameOverResult: null,
 		milestone: null,
 		hiddenAnswerIds: [],
+		streakCount: 0,
+		lifeRestoredSignal: 0,
 	})
 
 	// ===========================
@@ -180,6 +184,8 @@ export function useMarathon(playerId: string) {
 			state.value.gameOverResult = null
 			state.value.milestone = null
 			state.value.hiddenAnswerIds = []
+			state.value.streakCount = 0
+			state.value.lifeRestoredSignal = 0
 
 			router.push({ name: 'marathon-play' })
 
@@ -225,6 +231,10 @@ export function useMarathon(playerId: string) {
 			state.value.shieldActive = false // Reset after answer
 			state.value.milestone = answerData.milestone ?? null
 			state.value.hiddenAnswerIds = []
+			state.value.streakCount = answerData.streakCount ?? 0
+			if (answerData.lifeRestored) {
+				state.value.lifeRestoredSignal++
+			}
 
 			// Update lives from server
 			if (state.value.game) {
@@ -333,6 +343,7 @@ export function useMarathon(playerId: string) {
 			state.value.lastAnswerResult = null
 			state.value.gameOverResult = null
 			state.value.hiddenAnswerIds = []
+			state.value.streakCount = 0
 
 			router.push({ name: 'marathon-play' })
 
@@ -434,6 +445,8 @@ export function useMarathon(playerId: string) {
 			gameOverResult: null,
 			milestone: null,
 			hiddenAnswerIds: [],
+			streakCount: 0,
+			lifeRestoredSignal: 0,
 		}
 	}
 
@@ -451,6 +464,9 @@ export function useMarathon(playerId: string) {
 
 		initialized.value = true
 	}
+
+	const streakCount = computed(() => state.value.streakCount)
+	const lifeRestoredSignal = computed(() => state.value.lifeRestoredSignal)
 
 	// ===========================
 	// Return
@@ -475,6 +491,8 @@ export function useMarathon(playerId: string) {
 		canUseFreeze,
 		continueOffer,
 		canContinue,
+		streakCount,
+		lifeRestoredSignal,
 
 		// Actions
 		startGame,
