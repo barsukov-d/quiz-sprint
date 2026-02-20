@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMarathon } from '@/composables/useMarathon'
 import type { BonusType } from '@/composables/useMarathon'
@@ -32,6 +32,8 @@ const {
 	applyAnswerResult,
 	useBonus,
 	initialize,
+	streakCount,
+	lifeRestoredSignal,
 } = useMarathon(playerId)
 
 // ===========================
@@ -43,6 +45,16 @@ const isSubmitting = ref(false)
 const timerRef = ref<InstanceType<typeof GameTimer> | null>(null)
 const questionStartTime = ref(Date.now())
 const activatedBonus = ref<string | null>(null)
+
+const showLifeRestoredAnim = ref(false)
+
+// Trigger ❤️+1 animation when life is restored
+watch(lifeRestoredSignal, () => {
+	showLifeRestoredAnim.value = true
+	setTimeout(() => {
+		showLifeRestoredAnim.value = false
+	}, 1200)
+})
 
 const showFeedback = ref(false)
 const feedbackIsCorrect = ref<boolean | null>(null)
@@ -277,7 +289,7 @@ onUnmounted(() => {
 			<!-- Header: lives + score + timer -->
 			<div class="flex items-center gap-3">
 				<!-- Lives -->
-				<div class="flex gap-0.5 shrink-0">
+				<div class="flex gap-0.5 shrink-0 relative">
 					<UIcon
 						v-for="(filled, index) in livesDisplay"
 						:key="index"
@@ -285,11 +297,28 @@ onUnmounted(() => {
 						:class="filled ? 'text-red-500' : 'text-gray-300 dark:text-gray-600'"
 						class="size-4"
 					/>
+					<!-- ❤️+1 animation when life is restored -->
+					<Transition name="life-restore">
+						<span
+							v-if="showLifeRestoredAnim"
+							class="absolute -top-5 left-0 text-xs font-bold text-green-500 pointer-events-none select-none"
+						>
+							❤️+1
+						</span>
+					</Transition>
 				</div>
 
 				<!-- Score -->
 				<span class="shrink-0 text-sm font-semibold text-primary tabular-nums">
 					{{ state.score }}
+				</span>
+
+				<!-- Streak counter (only show when streak >= 2) -->
+				<span
+					v-if="streakCount >= 2"
+					class="shrink-0 text-xs font-medium text-orange-500 tabular-nums"
+				>
+					🔥 {{ streakCount }}
 				</span>
 
 				<!-- Shield indicator -->
@@ -443,5 +472,16 @@ onUnmounted(() => {
 	25% { transform: scale(1.2); }
 	50% { transform: scale(0.95); }
 	100% { transform: scale(1); }
+}
+
+.life-restore-enter-active {
+	animation: life-restore-pop 1.2s ease-out forwards;
+}
+
+@keyframes life-restore-pop {
+	0%   { opacity: 0; transform: translateY(0); }
+	20%  { opacity: 1; transform: translateY(-8px); }
+	80%  { opacity: 1; transform: translateY(-14px); }
+	100% { opacity: 0; transform: translateY(-20px); }
 }
 </style>
