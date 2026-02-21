@@ -9,10 +9,6 @@ import { useAuth } from './composables/useAuth'
 import { usePostUserRegister } from './api/generated/hooks/userController/usePostUserRegister'
 import BottomTabBar from './components/BottomTabBar.vue'
 
-import { viewport } from '@tma.js/sdk'
-
-viewport.safeAreaInsetTop()
-
 const route = useRoute()
 const router = useRouter()
 

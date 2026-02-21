@@ -2,7 +2,7 @@ import './assets/main.css'
 
 import { createApp } from 'vue'
 import { VueQueryPlugin, type VueQueryPluginOptions } from '@tanstack/vue-query'
-import { init } from '@tma.js/sdk'
+import { init, miniApp } from '@tma.js/sdk'
 import App from './App.vue'
 import router from './router'
 import ui from '@nuxt/ui/vue-plugin'
@@ -46,6 +46,10 @@ async function initializeApp() {
 
 		// 6. Монтируем приложение
 		app.mount('#app')
+
+		// 7. Сообщаем Telegram что приложение готово к отображению
+		// Без этого Android Telegram не скрывает свой loading экран
+		miniApp.ready()
 
 		console.log('Vue app mounted')
 	} catch (error) {
