@@ -660,6 +660,8 @@ type SubmitMarathonAnswerData struct {
 	NextTimeLimit   *int                         `json:"nextTimeLimit,omitempty"`
 	GameOverResult  *MarathonGameOverResultDTO   `json:"gameOverResult,omitempty"`
 	Milestone       *MarathonMilestoneDTO        `json:"milestone,omitempty"`
+	StreakCount     int                          `json:"streakCount" validate:"required"`
+	LifeRestored    bool                         `json:"lifeRestored" validate:"required"`
 }
 
 // @name SubmitMarathonAnswerData

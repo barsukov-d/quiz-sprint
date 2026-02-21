@@ -1,0 +1,165 @@
+{
+  "batch": {
+    "version": 1,
+    "generated": "2026-02-19T00:00:00Z",
+    "cat": "geography",
+    "tags": ["domain:geography", "format:marathon"]
+  },
+  "quizzes": [
+    {
+      "t": "World Capitals",
+      "d": "Test your knowledge of capital cities around the world",
+      "cat": "geography",
+      "tags": ["topic:capitals", "difficulty:mixed"],
+      "l": 600,
+      "p": 70,
+      "q": [
+        {"t": "What is the capital of Brazil?", "a": ["São Paulo", "Rio de Janeiro", "Brasília", "Salvador"], "c": 2},
+        {"t": "What is the capital of Canada?", "a": ["Toronto", "Vancouver", "Montreal", "Ottawa"], "c": 3},
+        {"t": "What is the capital of Australia?", "a": ["Sydney", "Melbourne", "Canberra", "Brisbane"], "c": 2},
+        {"t": "What is the capital of South Africa?", "a": ["Cape Town", "Johannesburg", "Durban", "Pretoria"], "c": 3},
+        {"t": "What is the capital of Indonesia?", "a": ["Surabaya", "Bandung", "Jakarta", "Medan"], "c": 2},
+        {"t": "What is the capital of Argentina?", "a": ["Buenos Aires", "Córdoba", "Rosario", "Mendoza"], "c": 0},
+        {"t": "What is the capital of Egypt?", "a": ["Alexandria", "Luxor", "Cairo", "Giza"], "c": 2},
+        {"t": "What is the capital of Kazakhstan?", "a": ["Almaty", "Shymkent", "Astana", "Aktobe"], "c": 2},
+        {"t": "What is the capital of Myanmar?", "a": ["Yangon", "Mandalay", "Naypyidaw", "Bago"], "c": 2},
+        {"t": "What is the seat of government of Bolivia?", "a": ["Santa Cruz", "Cochabamba", "Sucre", "La Paz"], "c": 3}
+      ]
+    },
+    {
+      "t": "Mountains and Peaks",
+      "d": "Explore the world's highest mountains and mountain ranges",
+      "cat": "geography",
+      "tags": ["topic:mountains", "difficulty:mixed"],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {"t": "What is the highest mountain in the world?", "a": ["K2", "Kangchenjunga", "Mount Everest", "Lhotse"], "c": 2},
+        {"t": "On which continent is Mount Kilimanjaro located?", "a": ["Asia", "South America", "Europe", "Africa"], "c": 3},
+        {"t": "What is the highest peak in the Americas?", "a": ["Denali (Mount McKinley)", "Aconcagua", "Ojos del Salado", "Monte Pissis"], "c": 1},
+        {"t": "Which mountain range runs along the western coast of South America?", "a": ["Appalachians", "Rocky Mountains", "Andes", "Sierra Madre"], "c": 2},
+        {"t": "What is the highest mountain in the Alps?", "a": ["Mont Blanc", "Matterhorn", "Monte Rosa", "Eiger"], "c": 0},
+        {"t": "The Himalayas span across how many countries?", "a": ["3", "5", "7", "9"], "c": 1},
+        {"t": "What is the second-highest mountain in the world?", "a": ["Kangchenjunga", "Lhotse", "K2", "Makalu"], "c": 2},
+        {"t": "Mount Elbrus, the highest peak in the Caucasus, is located in which country?", "a": ["Georgia", "Armenia", "Azerbaijan", "Russia"], "c": 3},
+        {"t": "How many of the world's 14 eight-thousander peaks are located in the Karakoram range?", "a": ["2", "4", "6", "8"], "c": 1},
+        {"t": "Which mountain is known as the 'Savage Mountain' due to its high fatality rate?", "a": ["Annapurna", "Nanga Parbat", "K2", "Kangchenjunga"], "c": 2}
+      ]
+    },
+    {
+      "t": "Rivers, Lakes and Oceans",
+      "d": "Dive into the world's waterways, from great rivers to vast oceans",
+      "cat": "geography",
+      "tags": ["topic:water", "difficulty:mixed"],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {"t": "Which is traditionally considered the longest river in the world?", "a": ["Amazon", "Yangtze", "Mississippi", "Nile"], "c": 3},
+        {"t": "Which is the largest ocean on Earth?", "a": ["Atlantic Ocean", "Indian Ocean", "Arctic Ocean", "Pacific Ocean"], "c": 3},
+        {"t": "What is the largest freshwater lake by surface area?", "a": ["Lake Victoria", "Lake Superior", "Lake Baikal", "Lake Huron"], "c": 1},
+        {"t": "Which river flows through the most countries?", "a": ["Nile", "Amazon", "Danube", "Rhine"], "c": 2},
+        {"t": "What is the deepest lake in the world?", "a": ["Caspian Sea", "Lake Tanganyika", "Lake Baikal", "Lake Superior"], "c": 2},
+        {"t": "The Amazon River empties into which ocean?", "a": ["Pacific Ocean", "Caribbean Sea", "Atlantic Ocean", "Gulf of Mexico"], "c": 2},
+        {"t": "Which is the saltiest sea in the world?", "a": ["Red Sea", "Mediterranean Sea", "Dead Sea", "Caspian Sea"], "c": 2},
+        {"t": "The Volga River flows into which body of water?", "a": ["Black Sea", "Baltic Sea", "Aral Sea", "Caspian Sea"], "c": 3},
+        {"t": "Which African lake is the largest by surface area?", "a": ["Lake Tanganyika", "Lake Malawi", "Lake Chad", "Lake Victoria"], "c": 3},
+        {"t": "What is the name of the underwater mountain range running through the center of the Atlantic Ocean?", "a": ["Mariana Ridge", "Mid-Atlantic Ridge", "Atlantic Seamount Chain", "Azores Ridge"], "c": 1}
+      ]
+    },
+    {
+      "t": "Continents and Regions",
+      "d": "Explore the geography of Earth's continents and major regions",
+      "cat": "geography",
+      "tags": ["topic:continents", "difficulty:mixed"],
+      "l": 600,
+      "p": 70,
+      "q": [
+        {"t": "Which is the largest continent by land area?", "a": ["Africa", "North America", "Asia", "Antarctica"], "c": 2},
+        {"t": "Which continent has no permanent human residents?", "a": ["Arctic", "Antarctica", "Greenland", "Iceland"], "c": 1},
+        {"t": "What is the smallest continent?", "a": ["Europe", "Antarctica", "Australia", "South America"], "c": 2},
+        {"t": "The Sahara Desert spans across approximately how many countries?", "a": ["5", "7", "11", "14"], "c": 2},
+        {"t": "Which region is known as the 'Ring of Fire'?", "a": ["A volcanic belt in Africa", "A chain of volcanoes around the Pacific Ocean", "A desert region in the Middle East", "A coral reef system in the Indian Ocean"], "c": 1},
+        {"t": "Patagonia is a region shared by which two countries?", "a": ["Brazil and Uruguay", "Chile and Argentina", "Peru and Bolivia", "Ecuador and Colombia"], "c": 1},
+        {"t": "The Caucasus region lies between which two seas?", "a": ["Mediterranean and Red", "Black and Caspian", "Caspian and Aral", "Black and Aegean"], "c": 1},
+        {"t": "Which region of Asia is sometimes called 'the Roof of the World'?", "a": ["Mongolian Plateau", "Tibetan Plateau", "Deccan Plateau", "Anatolian Plateau"], "c": 1},
+        {"t": "The Maghreb region of Africa consists primarily of which countries?", "a": ["Egypt, Sudan, Ethiopia", "Nigeria, Ghana, Ivory Coast", "Morocco, Algeria, Tunisia", "Kenya, Tanzania, Mozambique"], "c": 2},
+        {"t": "Which is the only continent located in all four hemispheres?", "a": ["Asia", "Africa", "South America", "Europe"], "c": 1}
+      ]
+    },
+    {
+      "t": "Islands and Archipelagos",
+      "d": "Discover the world's islands, archipelagos and island nations",
+      "cat": "geography",
+      "tags": ["topic:islands", "difficulty:mixed"],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {"t": "What is the largest island in the world?", "a": ["Borneo", "Greenland", "Madagascar", "New Guinea"], "c": 1},
+        {"t": "The Galapagos Islands belong to which country?", "a": ["Peru", "Colombia", "Chile", "Ecuador"], "c": 3},
+        {"t": "The Maldives is located in which ocean?", "a": ["Atlantic Ocean", "Pacific Ocean", "Indian Ocean", "Arctic Ocean"], "c": 2},
+        {"t": "What is the largest island in the Mediterranean Sea?", "a": ["Corsica", "Sardinia", "Cyprus", "Sicily"], "c": 3},
+        {"t": "Hawaii is part of which broader Pacific island group?", "a": ["Polynesia", "Micronesia", "Melanesia", "Australasia"], "c": 0},
+        {"t": "The Azores archipelago belongs to which country?", "a": ["Spain", "France", "Portugal", "United Kingdom"], "c": 2},
+        {"t": "Which island is the largest in the Caribbean Sea?", "a": ["Jamaica", "Hispaniola", "Puerto Rico", "Cuba"], "c": 3},
+        {"t": "The Svalbard archipelago is administered by which country?", "a": ["Denmark", "Iceland", "Finland", "Norway"], "c": 3},
+        {"t": "Which of the following is considered the most remote inhabited island in the world?", "a": ["Easter Island", "Tristan da Cunha", "Pitcairn Island", "Kerguelen Islands"], "c": 1},
+        {"t": "The Canary Islands belong to which country?", "a": ["Portugal", "France", "Spain", "Morocco"], "c": 2}
+      ]
+    },
+    {
+      "t": "Borders and Neighboring Countries",
+      "d": "Test your knowledge of international borders and neighboring nations",
+      "cat": "geography",
+      "tags": ["topic:borders", "difficulty:mixed"],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {"t": "How many countries does Russia border?", "a": ["12", "14", "16", "18"], "c": 1},
+        {"t": "Which landlocked country is completely surrounded by Italy?", "a": ["Monaco", "Andorra", "Vatican City", "San Marino"], "c": 3},
+        {"t": "Brazil shares a border with every South American country except which two?", "a": ["Chile and Ecuador", "Peru and Bolivia", "Colombia and Venezuela", "Uruguay and Paraguay"], "c": 0},
+        {"t": "Which two countries share the longest international border?", "a": ["USA and Mexico", "Russia and China", "USA and Canada", "China and Mongolia"], "c": 2},
+        {"t": "Which country shares the border known as the 'Durand Line' with Afghanistan?", "a": ["Iran", "India", "Pakistan", "Tajikistan"], "c": 2},
+        {"t": "How many countries does China border?", "a": ["10", "12", "14", "16"], "c": 2},
+        {"t": "Which African country is completely surrounded by South Africa?", "a": ["Eswatini (Swaziland)", "Lesotho", "Botswana", "Zimbabwe"], "c": 1},
+        {"t": "The Brenner Pass connects Austria to which country?", "a": ["Switzerland", "Slovenia", "Germany", "Italy"], "c": 3},
+        {"t": "Which two countries share the island of Hispaniola?", "a": ["Cuba and Puerto Rico", "Haiti and Dominican Republic", "Jamaica and Haiti", "Trinidad and Tobago"], "c": 1},
+        {"t": "Which country is completely surrounded by Senegal (except for its coastline)?", "a": ["Guinea-Bissau", "Sierra Leone", "The Gambia", "Mauritania"], "c": 2}
+      ]
+    },
+    {
+      "t": "Natural Wonders and Landmarks",
+      "d": "Explore the Earth's most spectacular natural wonders and geographic landmarks",
+      "cat": "geography",
+      "tags": ["topic:landmarks", "difficulty:mixed"],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {"t": "The Great Barrier Reef is located off the coast of which country?", "a": ["New Zealand", "Papua New Guinea", "Indonesia", "Australia"], "c": 3},
+        {"t": "Victoria Falls is located on the border of which two countries?", "a": ["Kenya and Tanzania", "Ethiopia and Sudan", "Zambia and Zimbabwe", "Mozambique and Malawi"], "c": 2},
+        {"t": "Where is Angel Falls, the world's highest uninterrupted waterfall, located?", "a": ["Brazil", "Colombia", "Venezuela", "Ecuador"], "c": 2},
+        {"t": "What is the largest hot desert in the world?", "a": ["Arabian Desert", "Gobi Desert", "Atacama Desert", "Sahara Desert"], "c": 3},
+        {"t": "The Mariana Trench, the deepest point in the ocean, is located in which ocean?", "a": ["Atlantic Ocean", "Indian Ocean", "Pacific Ocean", "Southern Ocean"], "c": 2},
+        {"t": "In which country is Pamukkale, the famous terraced hot springs, located?", "a": ["Greece", "Iran", "Jordan", "Turkey"], "c": 3},
+        {"t": "The Sundarbans, the world's largest mangrove forest, straddles which two countries?", "a": ["India and Sri Lanka", "Bangladesh and India", "Myanmar and Thailand", "Indonesia and Malaysia"], "c": 1},
+        {"t": "Which African country contains the largest share of the Congo Rainforest?", "a": ["Republic of the Congo", "Cameroon", "Democratic Republic of the Congo", "Gabon"], "c": 2},
+        {"t": "The Eye of the Sahara (Richat Structure) is located in which country?", "a": ["Algeria", "Libya", "Niger", "Mauritania"], "c": 3},
+        {"t": "Where is the world's largest salt flat, Salar de Uyuni, located?", "a": ["Argentina", "Chile", "Bolivia", "Peru"], "c": 2}
+      ]
+    },
+    {
+      "t": "Climate Zones and World Geography",
+      "d": "Test your knowledge of climate, biomes and world geography facts",
+      "cat": "geography",
+      "tags": ["topic:climate", "difficulty:mixed"],
+      "l": 300,
+      "p": 60,
+      "q": [
+        {"t": "What is the driest non-polar desert in the world?", "a": ["Gobi Desert", "Namib Desert", "Atacama Desert", "Arabian Desert"], "c": 2},
+        {"t": "Which of the following cities has a Mediterranean climate?", "a": ["London", "Moscow", "New York", "Athens"], "c": 3},
+        {"t": "The Tropics of Cancer and Capricorn are at approximately which latitude?", "a": ["15°", "23.5°", "30°", "45°"], "c": 1},
+        {"t": "Which country has the most time zones?", "a": ["United States", "Russia", "Canada", "France"], "c": 3},
+        {"t": "The Strait of Malacca separates the Malay Peninsula from which island?", "a": ["Java", "Borneo", "Sulawesi", "Sumatra"], "c": 3}
+      ]
+    }
+  ]
+}

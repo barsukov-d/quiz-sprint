@@ -4,7 +4,7 @@
 
 ### Initial State
 ```
-lives = 3
+lives = 5
 ```
 
 ### Life Loss Rules
@@ -14,7 +14,7 @@ Wrong answer && !shieldActive:
 
 Wrong answer && shieldActive:
     lives -= 0
-    shield consumed
+    shield consumed (was activated before answering)
 ```
 
 ### Game Over Condition
@@ -23,6 +23,21 @@ if lives == 0:
     status = GAME_OVER
     offer_continue()
 ```
+
+### Marathon Momentum (Streak-based Life Regen)
+```
+streakForRegen = 5  // correct answers in a row
+
+On correct answer:
+    streakCount++
+    if streakCount % streakForRegen == 0 && lives < maxLives:
+        lives += 1  // restore 1 life (capped at maxLives)
+
+On wrong answer:
+    streakCount = 0  // always resets, even if shield saved the life
+```
+
+**Example:** 5 correct in a row → +1 life. 10 correct in a row → +2 lives total.
 
 ### Continue Mechanic
 ```go
@@ -113,9 +128,9 @@ func SelectDifficulty(questionIndex int) string {
 
 #### 🛡️ Shield
 ```
-Activation: Before answering (toggle on)
+Activation: Before answering — bonus consumed immediately on activation
 Effect: Next wrong answer doesn't cost life
-Consumption: Only if answer is wrong
+Consumption: On activation (regardless of answer outcome)
 Deactivation: After question ends (correct or wrong), shield deactivates
 Carry-over: NO — shield does NOT carry to next question
 Cooldown: None (can activate again immediately on next question)
@@ -123,19 +138,23 @@ Cooldown: None (can activate again immediately on next question)
 
 **Logic:**
 ```go
-func AnswerQuestion(answerID, isShieldActive bool) {
+func ActivateShield(questionID) {
+    consumeBonus(BonusShield)  // consumed immediately on activation
+    shieldActive = true
+}
+
+func AnswerQuestion(answerID) {
     isCorrect := validate(answerID)
 
-    if !isCorrect && isShieldActive {
-        // Wrong answer but shield saves
-        consumeBonus(BonusShield)
+    if !isCorrect && shieldActive {
+        // Wrong answer but shield saves — bonus already consumed on activation
         // lives unchanged
     } else if !isCorrect {
         // Wrong answer, no shield
         lives -= 1
     }
 
-    // Shield NOT consumed if answer correct
+    shieldActive = false  // deactivates after every question
 }
 ```
 
@@ -198,7 +217,17 @@ func UseFreeze() {
 
 ### Bonus Inventory
 
-**Source:** Earned from Daily Challenge chests.
+**Default allocation at game start:**
+```
+Shield:    2
+50/50:     1
+Skip:      0
+Freeze:    3
+```
+Plus accumulated bonuses from player's wallet (earned from Daily Challenge chests).
+Total = defaults + wallet.
+
+**Source:** Default allocation on every run + earned from Daily Challenge chests.
 
 **Storage:**
 ```sql

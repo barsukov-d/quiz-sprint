@@ -338,6 +338,7 @@ func (r *MarathonRepository) reconstructGame(
 		continueCount,
 		pbScore,
 		make(map[solo_marathon.QuestionID][]solo_marathon.BonusType),
+		0, 0, 0, // streakCount, bestStreak, livesRestored (not yet persisted)
 	)
 
 	return game, nil

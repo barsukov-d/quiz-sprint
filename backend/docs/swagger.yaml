@@ -99,6 +99,51 @@ definitions:
             type: string
         type: object
     type: object
+  internal_infrastructure_http_handlers.AdminListMarathonGamesResponse:
+    properties:
+      data:
+        properties:
+          count:
+            type: integer
+          games:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.AdminMarathonGameInfo'
+            type: array
+          playerId:
+            type: string
+        type: object
+    type: object
+  internal_infrastructure_http_handlers.AdminMarathonGameInfo:
+    properties:
+      bonusFiftyFifty:
+        type: integer
+      bonusFreeze:
+        type: integer
+      bonusShield:
+        type: integer
+      bonusSkip:
+        type: integer
+      continueCount:
+        type: integer
+      currentLives:
+        type: integer
+      difficultyLevel:
+        type: string
+      finishedAt:
+        type: integer
+      id:
+        type: string
+      score:
+        type: integer
+      shieldActive:
+        type: boolean
+      startedAt:
+        type: integer
+      status:
+        type: string
+      totalQuestions:
+        type: integer
+    type: object
   internal_infrastructure_http_handlers.AdminResetPlayerResponse:
     properties:
       data:
@@ -144,6 +189,71 @@ definitions:
             type: string
           streakBuilt:
             type: integer
+        type: object
+    type: object
+  internal_infrastructure_http_handlers.AdminUpdateMarathonRequest:
+    properties:
+      addFiftyFifty:
+        description: +/- bonus_fifty_fifty
+        type: integer
+      addFreeze:
+        description: +/- bonus_freeze
+        type: integer
+      addLives:
+        description: +/- lives
+        type: integer
+      addShield:
+        description: +/- bonus_shield
+        type: integer
+      addSkip:
+        description: +/- bonus_skip
+        type: integer
+      fiftyFifty:
+        description: set bonus_fifty_fifty
+        type: integer
+      freeze:
+        description: set bonus_freeze
+        type: integer
+      gameId:
+        description: if empty — find active game
+        type: string
+      lives:
+        description: set current_lives (0-3)
+        type: integer
+      playerId:
+        type: string
+      shield:
+        description: set bonus_shield
+        type: integer
+      skip:
+        description: set bonus_skip
+        type: integer
+    required:
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.AdminUpdateMarathonResponse:
+    properties:
+      data:
+        properties:
+          bonuses:
+            properties:
+              fiftyFifty:
+                type: integer
+              freeze:
+                type: integer
+              shield:
+                type: integer
+              skip:
+                type: integer
+            type: object
+          gameId:
+            type: string
+          lives:
+            type: integer
+          playerId:
+            type: string
+          shieldActive:
+            type: boolean
         type: object
     type: object
   internal_infrastructure_http_handlers.AdminUpdateStreakRequest:
@@ -1717,6 +1827,8 @@ definitions:
         type: boolean
       lifeLost:
         type: boolean
+      lifeRestored:
+        type: boolean
       lives:
         $ref: '#/definitions/internal_infrastructure_http_handlers.MarathonLivesDTO'
       milestone:
@@ -1729,6 +1841,8 @@ definitions:
         type: integer
       shieldConsumed:
         type: boolean
+      streakCount:
+        type: integer
       timeTaken:
         type: integer
       totalQuestions:
@@ -1740,9 +1854,11 @@ definitions:
     - isCorrect
     - isGameOver
     - lifeLost
+    - lifeRestored
     - lives
     - score
     - shieldConsumed
+    - streakCount
     - timeTaken
     - totalQuestions
     type: object
@@ -2000,6 +2116,100 @@ paths:
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Update player streak
+      tags:
+      - admin
+  /admin/marathon/game:
+    patch:
+      consumes:
+      - application/json
+      description: Set lives and bonus values for an active marathon game (for testing)
+      parameters:
+      - description: Admin API key
+        in: header
+        name: X-Admin-Key
+        required: true
+        type: string
+      - description: Marathon game update
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.AdminUpdateMarathonRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Updated
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.AdminUpdateMarathonResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: No game found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Update marathon game state
+      tags:
+      - admin
+  /admin/marathon/games:
+    delete:
+      description: Delete all marathon games for a player
+      parameters:
+      - description: Admin API key
+        in: header
+        name: X-Admin-Key
+        required: true
+        type: string
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Deleted
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.AdminDeleteGamesResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Delete marathon games
+      tags:
+      - admin
+    get:
+      description: List all marathon games for a player (debug view)
+      parameters:
+      - description: Admin API key
+        in: header
+        name: X-Admin-Key
+        required: true
+        type: string
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      - description: Limit (default 20)
+        in: query
+        name: limit
+        type: integer
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Games list
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.AdminListMarathonGamesResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: List marathon games
       tags:
       - admin
   /admin/player/reset:

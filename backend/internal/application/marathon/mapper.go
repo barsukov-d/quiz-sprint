@@ -99,11 +99,12 @@ func ToCategoryDTO(category solo_marathon.MarathonCategory) CategoryDTO {
 }
 
 // ToLivesDTO converts LivesSystem to DTO
+// TimeToNextLife is always 0 — no time-gate between runs (instant restart available)
 func ToLivesDTO(lives solo_marathon.LivesSystem, now int64) LivesDTO {
 	return LivesDTO{
 		CurrentLives:   lives.CurrentLives(),
 		MaxLives:       lives.MaxLives(),
-		TimeToNextLife: lives.TimeToNextLife(now),
+		TimeToNextLife: 0,
 		Label:          lives.Label(),
 	}
 }

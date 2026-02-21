@@ -103,6 +103,8 @@ func (uc *SubmitMarathonAnswerUseCase) Execute(input SubmitMarathonAnswerInput) 
 		BonusInventory:  ToBonusInventoryDTO(game.BonusInventory()),
 		IsGameOver:      result.IsGameOver,
 		Milestone:       ToMilestoneDTO(result.Score),
+		StreakCount:     result.StreakCount,   // NEW
+		LifeRestored:    result.LifeRestored, // NEW
 	}
 
 	// 7. Handle game over scenario (intermediate — continue offered)

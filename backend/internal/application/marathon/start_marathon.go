@@ -48,7 +48,19 @@ func (uc *StartMarathonUseCase) Execute(input StartMarathonInput) (StartMarathon
 	// 2. Check if player already has an active game
 	existingGame, err := uc.marathonRepo.FindActiveByPlayer(playerID)
 	if err == nil && existingGame != nil {
-		return StartMarathonOutput{}, solo_marathon.ErrActiveGameExists
+		if existingGame.IsWaitingForContinue() {
+			// game_over is an intermediate state — auto-complete it so a new run can start immediately
+			now := time.Now().Unix()
+			if err := existingGame.CompleteGame(now); err != nil {
+				return StartMarathonOutput{}, err
+			}
+			if err := uc.marathonRepo.Save(existingGame); err != nil {
+				return StartMarathonOutput{}, err
+			}
+		} else {
+			// in_progress — player still has an active game
+			return StartMarathonOutput{}, solo_marathon.ErrActiveGameExists
+		}
 	}
 
 	// 3. Determine category

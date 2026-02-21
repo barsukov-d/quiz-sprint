@@ -36,8 +36,8 @@ func TestStartMarathon_Success_AllCategories(t *testing.T) {
 	if output.Game.CurrentQuestion == nil {
 		t.Error("Expected current question after start")
 	}
-	if output.Game.Lives.CurrentLives != 3 {
-		t.Errorf("Lives = %d, want 3", output.Game.Lives.CurrentLives)
+	if output.Game.Lives.CurrentLives != 5 {
+		t.Errorf("Lives = %d, want 5", output.Game.Lives.CurrentLives)
 	}
 	if output.Game.Score != 0 {
 		t.Errorf("Score = %d, want 0", output.Game.Score)
@@ -118,6 +118,36 @@ func TestStartMarathon_ActiveGameExists(t *testing.T) {
 	}
 }
 
+func TestStartMarathon_AfterGameOver_AllowsNewRun(t *testing.T) {
+	f := setupFixture(t)
+
+	// Start a game and lose all 5 lives → game_over
+	startOutput := f.startGameForPlayer(t, testPlayerID)
+	gameID := startOutput.Game.ID
+	for i := 0; i < 5; i++ {
+		f.answerCurrentQuestion(t, gameID, testPlayerID, false)
+	}
+
+	// Confirm game is in game_over state
+	game, _ := f.marathonRepo.FindByID(solo_marathon.NewGameIDFromString(gameID))
+	if !game.IsWaitingForContinue() {
+		t.Fatalf("Expected game_over status after 5 wrong answers, got %v", game.Status())
+	}
+
+	// Starting a new game should succeed (instant restart, no 409)
+	uc := f.newStartUC()
+	_, err := uc.Execute(StartMarathonInput{PlayerID: testPlayerID})
+	if err != nil {
+		t.Errorf("Expected new game to start after game_over, got error: %v", err)
+	}
+
+	// Old game should be auto-completed, not blocking
+	oldGame, _ := f.marathonRepo.FindByID(solo_marathon.NewGameIDFromString(gameID))
+	if oldGame.Status() != solo_marathon.GameStatusCompleted {
+		t.Errorf("Expected old game to be completed, got %v", oldGame.Status())
+	}
+}
+
 func TestStartMarathon_InvalidPlayerID(t *testing.T) {
 	f := setupFixture(t)
 	uc := f.newStartUC()
@@ -171,8 +201,8 @@ func TestSubmitAnswer_Correct(t *testing.T) {
 	if output.NextQuestion == nil {
 		t.Error("Expected next question")
 	}
-	if output.Lives.CurrentLives != 3 {
-		t.Errorf("Lives = %d, want 3 (no life lost)", output.Lives.CurrentLives)
+	if output.Lives.CurrentLives != 5 {
+		t.Errorf("Lives = %d, want 5 (no life lost)", output.Lives.CurrentLives)
 	}
 	if output.LifeLost {
 		t.Error("No life should be lost on correct answer")
@@ -191,26 +221,28 @@ func TestSubmitAnswer_Wrong_LosesLife(t *testing.T) {
 	if !output.LifeLost {
 		t.Error("Expected life to be lost")
 	}
-	if output.Lives.CurrentLives != 2 {
-		t.Errorf("Lives = %d, want 2", output.Lives.CurrentLives)
+	if output.Lives.CurrentLives != 4 {
+		t.Errorf("Lives = %d, want 4", output.Lives.CurrentLives)
 	}
 	if output.IsGameOver {
-		t.Error("Game should not be over with 2 lives remaining")
+		t.Error("Game should not be over with 4 lives remaining")
 	}
 }
 
-func TestSubmitAnswer_ThreeWrong_GameOver(t *testing.T) {
+func TestSubmitAnswer_FiveWrong_GameOver(t *testing.T) {
 	f := setupFixture(t)
 	startOutput := f.startGameForPlayer(t, testPlayerID)
 	gameID := startOutput.Game.ID
 
-	// Answer wrong 3 times (lose all 3 lives)
+	// Answer wrong 5 times (lose all 5 lives)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false) // 5→4 lives
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false) // 4→3 lives
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false) // 3→2 lives
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false) // 2→1 lives
 	output := f.answerCurrentQuestion(t, gameID, testPlayerID, false) // 1→0 lives
 
 	if !output.IsGameOver {
-		t.Error("Expected game over after 3 wrong answers")
+		t.Error("Expected game over after 5 wrong answers")
 	}
 	if output.Lives.CurrentLives != 0 {
 		t.Errorf("Lives = %d, want 0", output.Lives.CurrentLives)
@@ -301,8 +333,8 @@ func TestSubmitAnswer_ShieldAbsorbsWrongAnswer(t *testing.T) {
 	if output.LifeLost {
 		t.Error("Shield should prevent life loss")
 	}
-	if output.Lives.CurrentLives != 3 {
-		t.Errorf("Lives = %d, want 3 (shield absorbed)", output.Lives.CurrentLives)
+	if output.Lives.CurrentLives != 5 {
+		t.Errorf("Lives = %d, want 5 (shield absorbed)", output.Lives.CurrentLives)
 	}
 }
 
@@ -560,7 +592,9 @@ func TestContinue_WithCoins(t *testing.T) {
 	startOutput := f.startGameForPlayer(t, testPlayerID)
 	gameID := startOutput.Game.ID
 
-	// Lose all lives
+	// Lose all lives (5 wrong answers with MaxLives=5)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
@@ -598,7 +632,9 @@ func TestContinue_WithAd(t *testing.T) {
 	startOutput := f.startGameForPlayer(t, testPlayerID)
 	gameID := startOutput.Game.ID
 
-	// Lose all lives
+	// Lose all lives (5 wrong answers with MaxLives=5)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
@@ -623,7 +659,9 @@ func TestContinue_InvalidPaymentMethod(t *testing.T) {
 	startOutput := f.startGameForPlayer(t, testPlayerID)
 	gameID := startOutput.Game.ID
 
-	// Lose all lives
+	// Lose all lives (5 wrong answers with MaxLives=5)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
@@ -662,7 +700,9 @@ func TestContinue_CostIncreases(t *testing.T) {
 	startOutput := f.startGameForPlayer(t, testPlayerID)
 	gameID := startOutput.Game.ID
 
-	// First game over + continue
+	// First game over + continue (5 wrong answers with MaxLives=5)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
@@ -764,7 +804,9 @@ func TestAbandon_FromGameOverState(t *testing.T) {
 	startOutput := f.startGameForPlayer(t, testPlayerID)
 	gameID := startOutput.Game.ID
 
-	// Get to game_over state
+	// Get to game_over state (5 wrong answers with MaxLives=5)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
@@ -1020,7 +1062,9 @@ func TestFullGameFlow_Start_Answer_GameOver_Continue_Abandon(t *testing.T) {
 		}
 	}
 
-	// 3. Answer wrong 3 times → game over
+	// 3. Answer wrong 5 times → game over (MaxLives=5)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
+	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	f.answerCurrentQuestion(t, gameID, testPlayerID, false)
 	gameOverOutput := f.answerCurrentQuestion(t, gameID, testPlayerID, false)

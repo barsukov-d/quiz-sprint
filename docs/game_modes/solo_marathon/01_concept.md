@@ -16,12 +16,13 @@ Endless PvE mode where player answers questions until losing 3 lives.
 
 | Parameter | Value |
 |-----------|-------|
-| Questions | Endless (until game over) |
-| Starting lives | 3 |
+| Questions | Endless (until energy runs out) |
+| Starting energy | 5 ⚡ |
 | Time per question | 15s → 8s (adaptive) |
-| Wrong answer penalty | -1 life |
-| Game over | 0 lives |
-| Score | Correct answers count |
+| Wrong answer penalty | −1 ⚡ |
+| Energy regen | +1 ⚡ every 5 correct in a row (Marathon Momentum) |
+| Run over | 0 ⚡ → Continue (coins/ad) OR instant new run |
+| Score | Correct answers count (best run per week) |
 
 ## Core Loop
 ```
@@ -30,11 +31,12 @@ Daily Challenge → Earn Bonuses → Use in Marathon → Set Record → Compete 
 
 ## Unique Features
 
-### 1. Lives System
-- Start with 3 ❤️❤️❤️
-- Wrong answer = -1 life
-- 0 lives = game over
-- **NO life regeneration** (except continue)
+### 1. Energy System
+- Start with 5 ⚡⚡⚡⚡⚡
+- Wrong answer = −1 ⚡
+- 5 correct in a row = +1 ⚡ (Marathon Momentum)
+- 0 ⚡ = run over → instant free restart OR pay to continue
+- **NO waiting** between runs
 
 ### 2. Strategic Bonuses (from Daily Challenge)
 
@@ -53,10 +55,10 @@ Questions get harder over time:
 - Topics become narrower
 - Questions become more complex
 
-### 4. Continue Mechanic (Monetization)
-At game over:
-- **1 continue:** 200 coins OR Rewarded Ad → lives reset to 1
-- Multiple continues possible (escalating cost)
+### 4. Continue Mechanic (optional monetization)
+At 0 energy:
+- **Continue:** 200 coins OR Rewarded Ad → energy resets to 1 ⚡ (resume same run)
+- **New run:** Free → 5 ⚡ fresh start (best run per week goes to leaderboard)
 
 ## Leaderboards
 

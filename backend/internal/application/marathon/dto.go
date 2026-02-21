@@ -142,6 +142,8 @@ type SubmitMarathonAnswerOutput struct {
 	NextTimeLimit   *int              `json:"nextTimeLimit,omitempty"` // Time limit for next question
 	GameOverResult  *GameOverResultDTO `json:"gameOverResult,omitempty"`
 	Milestone       *MilestoneDTO     `json:"milestone,omitempty"` // Next milestone progress
+	StreakCount     int               `json:"streakCount"`   // current streak after this answer
+	LifeRestored    bool              `json:"lifeRestored"`  // true if streak triggered life regen
 }
 
 // GameOverResultDTO contains game over statistics

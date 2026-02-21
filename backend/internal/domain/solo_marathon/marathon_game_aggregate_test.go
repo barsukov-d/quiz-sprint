@@ -226,8 +226,8 @@ func TestMarathonGame_AnswerQuestion_Correct(t *testing.T) {
 	if result.LifeLost {
 		t.Error("Should not lose life on correct answer")
 	}
-	if result.RemainingLives != 3 {
-		t.Errorf("Expected 3 lives, got %d", result.RemainingLives)
+	if result.RemainingLives != MaxLives {
+		t.Errorf("Expected %d lives, got %d", MaxLives, result.RemainingLives)
 	}
 	if result.IsGameOver {
 		t.Error("Game should not be over")
@@ -287,11 +287,11 @@ func TestMarathonGame_AnswerQuestion_Incorrect(t *testing.T) {
 	if !result.LifeLost {
 		t.Error("Should lose life on incorrect answer")
 	}
-	if result.RemainingLives != 2 {
-		t.Errorf("Expected 2 lives remaining, got %d", result.RemainingLives)
+	if result.RemainingLives != MaxLives-1 {
+		t.Errorf("Expected %d lives remaining, got %d", MaxLives-1, result.RemainingLives)
 	}
 	if result.IsGameOver {
-		t.Error("Game should not be over with 2 lives")
+		t.Errorf("Game should not be over with %d lives", MaxLives-1)
 	}
 
 	// Check events (QuestionAnswered + LifeLost)

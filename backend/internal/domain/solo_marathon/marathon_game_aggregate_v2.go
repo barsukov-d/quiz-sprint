@@ -43,6 +43,11 @@ type MarathonGameV2 struct {
 
 	// Domain events
 	events []Event
+
+	// Streak-based life regen (Marathon Momentum)
+	streakCount   int // Current consecutive correct answers
+	bestStreak    int // Best streak this session
+	livesRestored int // Total times life was restored via streak
 }
 
 // NewMarathonGameV2 creates a new marathon game session
@@ -94,6 +99,10 @@ func NewMarathonGameV2(
 		personalBestScore:   personalBestScore,
 		usedBonuses:         make(map[QuestionID][]BonusType),
 		events:              make([]Event, 0),
+		// Streak
+		streakCount:   0,
+		bestStreak:    0,
+		livesRestored: 0,
 	}
 
 	// Publish MarathonGameStarted event
@@ -156,6 +165,8 @@ type AnswerQuestionResultV2 struct {
 	ShieldConsumed  bool
 	RemainingLives  int
 	IsGameOver      bool
+	StreakCount     int  // Current streak after this answer
+	LifeRestored    bool // True if a life was restored by this answer's streak
 	// Filled when IsGameOver = true
 	GameOverData *GameOverData
 }
@@ -271,8 +282,24 @@ func (mg *MarathonGameV2) AnswerQuestion(
 
 		result.DifficultyLevel = mg.difficulty.Level()
 
+		// d. Streak: increment counter
+		mg.streakCount++
+		if mg.streakCount > mg.bestStreak {
+			mg.bestStreak = mg.streakCount
+		}
+
+		// e. Check for life regen (every MarathonStreakForRegen correct answers)
+		if mg.streakCount%MarathonStreakForRegen == 0 && mg.lives.CurrentLives() < mg.lives.MaxLives() {
+			mg.lives = mg.lives.AddLives(1, answeredAt)
+			mg.livesRestored++
+			result.LifeRestored = true
+		}
+
 	} else {
 		// === INCORRECT ANSWER ===
+
+		// Streak always resets on wrong answer (even if shield protects life)
+		mg.streakCount = 0
 
 		if wasShieldActive {
 			// Shield protects from life loss
@@ -356,6 +383,9 @@ func (mg *MarathonGameV2) AnswerQuestion(
 		mg.difficulty.Level(),
 		answeredAt,
 	))
+
+	result.RemainingLives = mg.lives.CurrentLives()
+	result.StreakCount = mg.streakCount
 
 	return result, nil
 }
@@ -665,6 +695,9 @@ func ReconstructMarathonGameV2(
 	continueCount int,
 	personalBestScore *int,
 	usedBonuses map[QuestionID][]BonusType,
+	streakCount int,
+	bestStreak int,
+	livesRestored int,
 ) *MarathonGameV2 {
 	return &MarathonGameV2{
 		id:                  id,
@@ -685,6 +718,9 @@ func ReconstructMarathonGameV2(
 		continueCount:       continueCount,
 		personalBestScore:   personalBestScore,
 		usedBonuses:         usedBonuses,
+		streakCount:         streakCount,
+		bestStreak:          bestStreak,
+		livesRestored:       livesRestored,
 		events:              make([]Event, 0), // Don't replay events from DB
 	}
 }

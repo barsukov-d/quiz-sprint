@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, onBeforeUnmount } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMarathon } from '@/composables/useMarathon'
 
@@ -10,87 +10,44 @@ interface Props {
 const props = defineProps<Props>()
 const router = useRouter()
 
-const {
-	state,
-	isPlaying,
-	isGameOver,
-	isLoading,
-	lives,
-	progressToRecord,
-	checkStatus,
-	initialize,
-} = useMarathon(props.playerId)
+const { state, isPlaying, isGameOver, isLoading, progressToRecord, initialize } = useMarathon(
+	props.playerId,
+)
 
 // ===========================
 // Bonus Display Config
 // ===========================
 
 const bonusList = [
-	{ key: 'shield' as const, label: 'Shield', icon: 'i-heroicons-shield-check', color: 'text-blue-500', description: 'Absorbs 1 wrong answer' },
-	{ key: 'fiftyFifty' as const, label: '50/50', icon: 'i-heroicons-scissors', color: 'text-yellow-500', description: 'Removes 2 wrong answers' },
-	{ key: 'skip' as const, label: 'Skip', icon: 'i-heroicons-forward', color: 'text-green-500', description: 'Skip without penalty' },
-	{ key: 'freeze' as const, label: 'Freeze', icon: 'i-heroicons-clock', color: 'text-cyan-500', description: '+5 seconds to timer' },
+	{
+		key: 'shield' as const,
+		label: 'Shield',
+		icon: 'i-heroicons-shield-check',
+		color: 'text-blue-500',
+		description: 'Absorbs 1 wrong answer',
+	},
+	{
+		key: 'fiftyFifty' as const,
+		label: '50/50',
+		icon: 'i-heroicons-scissors',
+		color: 'text-yellow-500',
+		description: 'Removes 2 wrong answers',
+	},
+	{
+		key: 'skip' as const,
+		label: 'Skip',
+		icon: 'i-heroicons-forward',
+		color: 'text-green-500',
+		description: 'Skip without penalty',
+	},
+	{
+		key: 'freeze' as const,
+		label: 'Freeze',
+		icon: 'i-heroicons-clock',
+		color: 'text-cyan-500',
+		description: '+5 seconds to timer',
+	},
 ]
-
-// ===========================
-// Life Restore Timer
-// ===========================
-
-const timerInterval = ref<number | null>(null)
-const timeToLifeRestore = ref(0)
-
-const timeToLifeRestoreFormatted = computed(() => {
-	const seconds = timeToLifeRestore.value
-	const hours = Math.floor(seconds / 3600)
-	const minutes = Math.floor((seconds % 3600) / 60)
-	const secs = seconds % 60
-
-	if (hours > 0) {
-		return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-	}
-	return `${minutes}:${secs.toString().padStart(2, '0')}`
-})
-
-const startTimer = () => {
-	if (timerInterval.value) return
-	timeToLifeRestore.value = lives.value.timeToNextLife
-
-	timerInterval.value = window.setInterval(() => {
-		if (timeToLifeRestore.value > 0) {
-			timeToLifeRestore.value--
-		} else {
-			checkStatus()
-			if (timerInterval.value) {
-				clearInterval(timerInterval.value)
-				timerInterval.value = null
-			}
-		}
-	}, 1000)
-}
-
-const stopTimer = () => {
-	if (timerInterval.value) {
-		clearInterval(timerInterval.value)
-		timerInterval.value = null
-	}
-}
-
-// ===========================
-// Computed
-// ===========================
-
-const livesLabel = computed(() => {
-	// Active or game over: show actual lives from server
-	if (isPlaying.value || isGameOver.value) {
-		return lives.value.label || '❤️'.repeat(lives.value.maxLives)
-	}
-	// Idle: show full lives (new game always starts with 3)
-	return '❤️'.repeat(lives.value.maxLives)
-})
-
-const showLifeTimer = computed(
-	() => lives.value.currentLives < lives.value.maxLives && timeToLifeRestore.value > 0,
-)
 
 // ===========================
 // Actions
@@ -117,11 +74,6 @@ const handleViewGameOver = () => {
 
 onMounted(async () => {
 	await initialize()
-	startTimer()
-})
-
-onBeforeUnmount(() => {
-	stopTimer()
 })
 </script>
 
@@ -134,9 +86,6 @@ onBeforeUnmount(() => {
 					<span class="text-2xl">🏃</span>
 					<h3 class="text-lg font-bold">Marathon</h3>
 				</div>
-				<span class="text-lg" :title="`${lives.currentLives}/${lives.maxLives} lives`">
-					{{ livesLabel }}
-				</span>
 			</div>
 		</template>
 
@@ -166,9 +115,11 @@ onBeforeUnmount(() => {
 						{{ state.score }}/{{ state.personalBest }} record
 					</span>
 					<span
-						:class="progressToRecord >= 100
-							? 'text-green-500 font-semibold'
-							: 'text-gray-500 dark:text-gray-400'"
+						:class="
+							progressToRecord >= 100
+								? 'text-green-500 font-semibold'
+								: 'text-gray-500 dark:text-gray-400'
+						"
 					>
 						{{ progressToRecord }}%
 					</span>
@@ -186,9 +137,11 @@ onBeforeUnmount(() => {
 					v-for="b in bonusList"
 					:key="b.key"
 					class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs"
-					:class="state.bonusInventory[b.key] > 0
-						? 'bg-gray-50 dark:bg-gray-800'
-						: 'bg-gray-50/50 dark:bg-gray-800/50 opacity-40'"
+					:class="
+						state.bonusInventory[b.key] > 0
+							? 'bg-gray-50 dark:bg-gray-800'
+							: 'bg-gray-50/50 dark:bg-gray-800/50 opacity-40'
+					"
 					:title="b.label"
 				>
 					<UIcon :name="b.icon" :class="b.color" class="w-4 h-4" />
@@ -222,9 +175,7 @@ onBeforeUnmount(() => {
 				class="flex items-center justify-between"
 			>
 				<span class="text-sm text-gray-500 dark:text-gray-400">Record</span>
-				<span class="font-bold text-yellow-500">
-					🏆 {{ state.personalBest }}
-				</span>
+				<span class="font-bold text-yellow-500"> 🏆 {{ state.personalBest }} </span>
 			</div>
 
 			<!-- Bonuses available -->
@@ -235,9 +186,11 @@ onBeforeUnmount(() => {
 						v-for="b in bonusList"
 						:key="b.key"
 						class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
-						:class="state.bonusInventory[b.key] > 0
-							? 'bg-gray-50 dark:bg-gray-800'
-							: 'bg-gray-50/50 dark:bg-gray-800/50 opacity-40'"
+						:class="
+							state.bonusInventory[b.key] > 0
+								? 'bg-gray-50 dark:bg-gray-800'
+								: 'bg-gray-50/50 dark:bg-gray-800/50 opacity-40'
+						"
 						:title="b.description"
 					>
 						<UIcon :name="b.icon" :class="b.color" class="w-4 h-4" />
@@ -248,23 +201,14 @@ onBeforeUnmount(() => {
 				</div>
 			</div>
 
-			<!-- Life restore timer -->
-			<div
-				v-if="showLifeTimer"
-				class="flex items-center gap-2 text-sm text-blue-500 dark:text-blue-400"
-			>
-				<UIcon name="i-heroicons-clock" class="size-4" />
-				<span>Next life in <strong class="font-mono">{{ timeToLifeRestoreFormatted }}</strong></span>
-			</div>
-
 			<!-- Rules hint (only when no personal best = likely new player) -->
 			<div
 				v-if="state.personalBest === null || state.personalBest === 0"
 				class="text-xs text-gray-500 dark:text-gray-400 space-y-1"
 			>
-				<p>3 lives, wrong answer = -1 life</p>
-				<p>Difficulty increases over time</p>
-				<p>Use bonuses strategically</p>
+				<p>5 энергии, ошибка = −1 ⚡</p>
+				<p>5 правильных подряд = +1 ⚡</p>
+				<p>Сложность растёт со временем</p>
 			</div>
 		</div>
 
@@ -283,18 +227,30 @@ onBeforeUnmount(() => {
 				Continue Marathon
 			</UButton>
 
-			<!-- Game over: view results -->
-			<UButton
-				v-else-if="isGameOver"
-				icon="i-heroicons-flag"
-				color="red"
-				:loading="isLoading"
-				block
-				size="lg"
-				@click="handleViewGameOver"
-			>
-				View Results
-			</UButton>
+			<!-- Game over: new run (primary) + view results (secondary) -->
+			<div v-else-if="isGameOver" class="flex flex-col gap-2">
+				<UButton
+					icon="i-heroicons-arrow-path"
+					color="primary"
+					:loading="isLoading"
+					block
+					size="lg"
+					@click="handleStart"
+				>
+					Новый забег
+				</UButton>
+				<UButton
+					icon="i-heroicons-flag"
+					color="neutral"
+					variant="ghost"
+					:loading="isLoading"
+					block
+					size="sm"
+					@click="handleViewGameOver"
+				>
+					View Results
+				</UButton>
+			</div>
 
 			<!-- Ready: start button (new game always starts with 3 lives) -->
 			<UButton

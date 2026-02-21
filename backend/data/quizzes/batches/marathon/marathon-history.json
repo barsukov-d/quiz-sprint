@@ -1,0 +1,883 @@
+{
+  "batch": {
+    "version": 1,
+    "generated": "2026-02-19T00:00:00Z",
+    "cat": "history",
+    "tags": [
+      "domain:history",
+      "format:marathon"
+    ]
+  },
+  "quizzes": [
+    {
+      "t": "Ancient Egypt and Mesopotamia",
+      "d": "Explore the cradle of civilization — the Nile valley and the Fertile Crescent",
+      "cat": "history",
+      "tags": [
+        "topic:ancient-history",
+        "topic:egypt",
+        "topic:mesopotamia",
+        "difficulty:mixed"
+      ],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {
+          "t": "Which ancient wonder was a statue of the sun god Helios located on the Greek island of Rhodes?",
+          "a": [
+            "The Lighthouse of Alexandria",
+            "The Colossus of Rhodes",
+            "The Statue of Zeus at Olympia",
+            "The Mausoleum at Halicarnassus"
+          ],
+          "c": 1
+        },
+        {
+          "t": "What river was central to the development of ancient Egyptian civilization?",
+          "a": [
+            "The Tigris",
+            "The Euphrates",
+            "The Nile",
+            "The Indus"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Who was the ancient Egyptian god of the afterlife and judge of the dead?",
+          "a": [
+            "Ra",
+            "Horus",
+            "Anubis",
+            "Osiris"
+          ],
+          "c": 3
+        },
+        {
+          "t": "What ancient structure was built as a tomb for Pharaoh Khufu?",
+          "a": [
+            "The Sphinx",
+            "The Great Pyramid of Giza",
+            "The Temple of Karnak",
+            "The Valley of the Kings"
+          ],
+          "c": 1
+        },
+        {
+          "t": "The ancient Mesopotamian city-state of Ur was located in which modern-day country?",
+          "a": [
+            "Iran",
+            "Syria",
+            "Egypt",
+            "Iraq"
+          ],
+          "c": 3
+        },
+        {
+          "t": "Which Mesopotamian ruler created one of the earliest known law codes, around 1754 BC?",
+          "a": [
+            "Sargon of Akkad",
+            "Nebuchadnezzar II",
+            "Hammurabi",
+            "Gilgamesh"
+          ],
+          "c": 2
+        },
+        {
+          "t": "What writing system was developed by the Sumerians, making it one of the earliest writing systems in the world?",
+          "a": [
+            "Hieroglyphics",
+            "Cuneiform",
+            "Linear A",
+            "Proto-Sinaitic"
+          ],
+          "c": 1
+        },
+        {
+          "t": "Which Egyptian pharaoh is associated with the monotheistic religious revolution centered on the sun disk Aten?",
+          "a": [
+            "Ramesses II",
+            "Tutankhamun",
+            "Amenhotep III",
+            "Akhenaten"
+          ],
+          "c": 3
+        },
+        {
+          "t": "The Rosetta Stone, key to deciphering Egyptian hieroglyphics, was written in how many scripts?",
+          "a": [
+            "Two",
+            "Three",
+            "Four",
+            "Five"
+          ],
+          "c": 1
+        },
+        {
+          "t": "What material did the ancient Egyptians use to make paper-like sheets for writing?",
+          "a": [
+            "Papyrus",
+            "Parchment",
+            "Clay tablets",
+            "Silk"
+          ],
+          "c": 0
+        }
+      ]
+    },
+    {
+      "t": "Ancient Greece and Rome",
+      "d": "From the Athenian democracy to the fall of the Roman Empire",
+      "cat": "history",
+      "tags": [
+        "topic:ancient-history",
+        "topic:greece",
+        "topic:rome",
+        "difficulty:mixed"
+      ],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {
+          "t": "Which ancient Greek city-state is credited with developing the first democracy?",
+          "a": [
+            "Sparta",
+            "Corinth",
+            "Athens",
+            "Thebes"
+          ],
+          "c": 2
+        },
+        {
+          "t": "In what year was Julius Caesar assassinated?",
+          "a": [
+            "23 BC",
+            "44 BC",
+            "63 BC",
+            "15 BC"
+          ],
+          "c": 1
+        },
+        {
+          "t": "Who was the Greek god of the sea?",
+          "a": [
+            "Zeus",
+            "Apollo",
+            "Ares",
+            "Poseidon"
+          ],
+          "c": 3
+        },
+        {
+          "t": "What was the name of the series of wars fought between Rome and Carthage?",
+          "a": [
+            "Gallic Wars",
+            "Peloponnesian Wars",
+            "Punic Wars",
+            "Macedonian Wars"
+          ],
+          "c": 2
+        },
+        {
+          "t": "The Battle of Marathon in 490 BC was fought between the Greeks and which invading force?",
+          "a": [
+            "The Macedonians",
+            "The Persians",
+            "The Carthaginians",
+            "The Spartans"
+          ],
+          "c": 1
+        },
+        {
+          "t": "Which Roman emperor issued the Edict of Milan in 313 AD, granting religious tolerance throughout the empire?",
+          "a": [
+            "Augustus",
+            "Nero",
+            "Constantine I",
+            "Diocletian"
+          ],
+          "c": 2
+        },
+        {
+          "t": "What Greek philosopher was sentenced to death by drinking hemlock in 399 BC?",
+          "a": [
+            "Plato",
+            "Aristotle",
+            "Socrates",
+            "Pythagoras"
+          ],
+          "c": 2
+        },
+        {
+          "t": "In which year did the Western Roman Empire traditionally fall?",
+          "a": [
+            "410 AD",
+            "455 AD",
+            "476 AD",
+            "527 AD"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Who was the Macedonian king who conquered much of the known world between 336 and 323 BC?",
+          "a": [
+            "Philip II",
+            "Alexander the Great",
+            "Ptolemy I",
+            "Antigonus"
+          ],
+          "c": 1
+        },
+        {
+          "t": "Which Spartan king led the famous defense at Thermopylae in 480 BC?",
+          "a": [
+            "Leonidas I",
+            "Cleomenes I",
+            "Agis II",
+            "Pausanias"
+          ],
+          "c": 0
+        }
+      ]
+    },
+    {
+      "t": "Medieval Europe and the Crusades",
+      "d": "Knights, feudalism, plague, and the holy wars of the Middle Ages",
+      "cat": "history",
+      "tags": [
+        "topic:medieval-history",
+        "topic:crusades",
+        "topic:europe",
+        "difficulty:mixed"
+      ],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {
+          "t": "What year did William the Conqueror defeat King Harold II at the Battle of Hastings?",
+          "a": [
+            "1042",
+            "1066",
+            "1071",
+            "1088"
+          ],
+          "c": 1
+        },
+        {
+          "t": "The Black Death that devastated Europe in the mid-14th century was caused by which bacterium?",
+          "a": [
+            "Streptococcus pneumoniae",
+            "Mycobacterium tuberculosis",
+            "Yersinia pestis",
+            "Staphylococcus aureus"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Which city was the primary objective of the First Crusade, captured by Crusaders in 1099?",
+          "a": [
+            "Constantinople",
+            "Antioch",
+            "Damascus",
+            "Jerusalem"
+          ],
+          "c": 3
+        },
+        {
+          "t": "What was the Magna Carta, signed in 1215?",
+          "a": [
+            "A declaration of war against France",
+            "A document limiting the powers of the English king",
+            "A treaty establishing the Holy Roman Empire",
+            "A papal bull authorizing the Crusades"
+          ],
+          "c": 1
+        },
+        {
+          "t": "Who was the Muslim military commander who recaptured Jerusalem from the Crusaders in 1187?",
+          "a": [
+            "Nur ad-Din",
+            "Saladin",
+            "Baybars",
+            "Al-Kamil"
+          ],
+          "c": 1
+        },
+        {
+          "t": "In the feudal system, what term described the land granted by a lord to a vassal in exchange for military service?",
+          "a": [
+            "Serf",
+            "Fief",
+            "Manor",
+            "Tithe"
+          ],
+          "c": 1
+        },
+        {
+          "t": "The Hundred Years' War was fought primarily between which two kingdoms?",
+          "a": [
+            "England and Spain",
+            "France and the Holy Roman Empire",
+            "England and France",
+            "Spain and Portugal"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Which French military leader, claiming divine visions, helped turn the tide of the Hundred Years' War for France?",
+          "a": [
+            "Eleanor of Aquitaine",
+            "Catherine de Medici",
+            "Joan of Arc",
+            "Margaret of Anjou"
+          ],
+          "c": 2
+        },
+        {
+          "t": "The Great Schism of 1054 permanently divided Christianity into which two main branches?",
+          "a": [
+            "Catholicism and Protestantism",
+            "Roman Catholicism and Eastern Orthodoxy",
+            "Anglicanism and Lutheranism",
+            "Orthodoxy and Protestantism"
+          ],
+          "c": 1
+        },
+        {
+          "t": "Which Mongol ruler founded the largest contiguous land empire in history in the early 13th century?",
+          "a": [
+            "Timur (Tamerlane)",
+            "Kublai Khan",
+            "Ögedei Khan",
+            "Genghis Khan"
+          ],
+          "c": 3
+        }
+      ]
+    },
+    {
+      "t": "Age of Exploration and Colonization",
+      "d": "European voyages that connected the world and reshaped civilizations",
+      "cat": "history",
+      "tags": [
+        "topic:exploration",
+        "topic:colonization",
+        "difficulty:mixed"
+      ],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {
+          "t": "In what year did Christopher Columbus first reach the Americas?",
+          "a": [
+            "1487",
+            "1492",
+            "1498",
+            "1502"
+          ],
+          "c": 1
+        },
+        {
+          "t": "Which explorer was the first to circumnavigate the globe, completing the voyage in 1522?",
+          "a": [
+            "Christopher Columbus",
+            "Vasco da Gama",
+            "Ferdinand Magellan's expedition",
+            "John Cabot"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Vasco da Gama's 1498 voyage established the first direct sea route from Europe to which region?",
+          "a": [
+            "The Americas",
+            "West Africa",
+            "India",
+            "China"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Which Spanish conquistador conquered the Aztec Empire in the early 16th century?",
+          "a": [
+            "Francisco Pizarro",
+            "Hernán Cortés",
+            "Vasco Núñez de Balboa",
+            "Juan Ponce de León"
+          ],
+          "c": 1
+        },
+        {
+          "t": "The Treaty of Tordesillas in 1494 divided newly discovered lands between which two countries?",
+          "a": [
+            "England and France",
+            "Spain and Portugal",
+            "Spain and the Netherlands",
+            "Portugal and France"
+          ],
+          "c": 1
+        },
+        {
+          "t": "Which explorer was the first European to reach the southern tip of Africa, calling it the Cape of Storms?",
+          "a": [
+            "Henry the Navigator",
+            "Bartolomeu Dias",
+            "Vasco da Gama",
+            "Ferdinand Magellan"
+          ],
+          "c": 1
+        },
+        {
+          "t": "The Columbian Exchange refers to the transfer of plants, animals, and diseases between which two regions?",
+          "a": [
+            "Europe and Asia",
+            "Africa and Asia",
+            "The Americas and Europe/Africa/Asia",
+            "Asia and Australia"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Which English sea captain completed the second circumnavigation of the globe between 1577 and 1580?",
+          "a": [
+            "Walter Raleigh",
+            "John Hawkins",
+            "Francis Drake",
+            "Martin Frobisher"
+          ],
+          "c": 2
+        },
+        {
+          "t": "What did Francisco Pizarro conquer on behalf of Spain in the 1530s?",
+          "a": [
+            "The Maya Empire",
+            "The Aztec Empire",
+            "The Inca Empire",
+            "The Mapuche Confederation"
+          ],
+          "c": 2
+        },
+        {
+          "t": "The Northwest Passage, sought by many explorers, was a route connecting which two oceans?",
+          "a": [
+            "Atlantic and Indian",
+            "Pacific and Indian",
+            "Atlantic and Pacific",
+            "Arctic and Atlantic"
+          ],
+          "c": 2
+        }
+      ]
+    },
+    {
+      "t": "World War I and World War II",
+      "d": "The two global conflicts that defined the 20th century",
+      "cat": "history",
+      "tags": [
+        "topic:world-wars",
+        "topic:wwi",
+        "topic:wwii",
+        "difficulty:mixed"
+      ],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {
+          "t": "The assassination of which Austro-Hungarian archduke in 1914 triggered World War I?",
+          "a": [
+            "Archduke Karl",
+            "Archduke Franz Ferdinand",
+            "Archduke Rudolf",
+            "Archduke Maximilian"
+          ],
+          "c": 1
+        },
+        {
+          "t": "In what year did World War II end?",
+          "a": [
+            "1943",
+            "1944",
+            "1945",
+            "1946"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Operation Overlord, the Allied invasion of Nazi-occupied France, took place on which date?",
+          "a": [
+            "July 4, 1944",
+            "June 6, 1944",
+            "May 8, 1945",
+            "September 2, 1944"
+          ],
+          "c": 1
+        },
+        {
+          "t": "Which treaty formally ended World War I in 1919?",
+          "a": [
+            "The Treaty of Paris",
+            "The Treaty of Versailles",
+            "The Treaty of Brest-Litovsk",
+            "The Treaty of Lausanne"
+          ],
+          "c": 1
+        },
+        {
+          "t": "Adolf Hitler became Chancellor of Germany in which year?",
+          "a": [
+            "1930",
+            "1931",
+            "1932",
+            "1933"
+          ],
+          "c": 3
+        },
+        {
+          "t": "The Battle of Stalingrad, a turning point on the Eastern Front, ended with the surrender of which German army group?",
+          "a": [
+            "Army Group North",
+            "Army Group Centre",
+            "The 6th Army under Paulus",
+            "Army Group South"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Which two Japanese cities were targeted by American atomic bombs in August 1945?",
+          "a": [
+            "Tokyo and Osaka",
+            "Kyoto and Nagasaki",
+            "Hiroshima and Nagasaki",
+            "Hiroshima and Tokyo"
+          ],
+          "c": 2
+        },
+        {
+          "t": "What name was given to the German strategy of rapid, overwhelming military attack used at the start of WWII?",
+          "a": [
+            "Blitzkrieg",
+            "Lebensraum",
+            "Anschluss",
+            "Wehrmacht"
+          ],
+          "c": 0
+        },
+        {
+          "t": "The Zimmermann Telegram of 1917, which helped bring the US into WWI, proposed a military alliance between Germany and which country?",
+          "a": [
+            "Austria-Hungary",
+            "The Ottoman Empire",
+            "Mexico",
+            "Japan"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Which international military alliance, led by the United States, was created in 1949 as a collective defense pact against the Soviet Union?",
+          "a": [
+            "The League of Nations",
+            "NATO",
+            "The Warsaw Pact",
+            "SEATO"
+          ],
+          "c": 1
+        }
+      ]
+    },
+    {
+      "t": "American History: Revolution to Civil War",
+      "d": "From colonial independence to the struggle over slavery and union",
+      "cat": "history",
+      "tags": [
+        "topic:american-history",
+        "topic:revolution",
+        "topic:civil-war",
+        "difficulty:mixed"
+      ],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {
+          "t": "In what year did the United States declare independence from Britain?",
+          "a": [
+            "1774",
+            "1775",
+            "1776",
+            "1783"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Who was the first President of the United States?",
+          "a": [
+            "John Adams",
+            "Thomas Jefferson",
+            "Benjamin Franklin",
+            "George Washington"
+          ],
+          "c": 3
+        },
+        {
+          "t": "The American Civil War began in 1861 with the Confederate attack on which Union military installation?",
+          "a": [
+            "Fort Sumter",
+            "Fort McHenry",
+            "Fort Ticonderoga",
+            "Fort Moultrie"
+          ],
+          "c": 0
+        },
+        {
+          "t": "Which president issued the Emancipation Proclamation in 1863?",
+          "a": [
+            "Ulysses S. Grant",
+            "Abraham Lincoln",
+            "Andrew Johnson",
+            "James Buchanan"
+          ],
+          "c": 1
+        },
+        {
+          "t": "The Boston Tea Party in 1773 was a protest against taxation imposed by which country?",
+          "a": [
+            "France",
+            "Spain",
+            "Great Britain",
+            "The Netherlands"
+          ],
+          "c": 2
+        },
+        {
+          "t": "What was the name of the defining 1863 Civil War battle fought in Pennsylvania that turned the tide against the Confederacy?",
+          "a": [
+            "Antietam",
+            "Bull Run",
+            "Gettysburg",
+            "Chancellorsville"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Which document, ratified in 1788, established the framework for the US federal government?",
+          "a": [
+            "The Declaration of Independence",
+            "The Articles of Confederation",
+            "The Bill of Rights",
+            "The US Constitution"
+          ],
+          "c": 3
+        },
+        {
+          "t": "Who led the Confederate Army of Northern Virginia throughout most of the Civil War?",
+          "a": [
+            "Stonewall Jackson",
+            "Jefferson Davis",
+            "Robert E. Lee",
+            "J.E.B. Stuart"
+          ],
+          "c": 2
+        },
+        {
+          "t": "The Louisiana Purchase of 1803, which doubled the size of the US, was bought from which country?",
+          "a": [
+            "Spain",
+            "France",
+            "Britain",
+            "Mexico"
+          ],
+          "c": 1
+        },
+        {
+          "t": "In which year did the American Civil War end with the surrender at Appomattox Court House?",
+          "a": [
+            "1863",
+            "1864",
+            "1865",
+            "1866"
+          ],
+          "c": 2
+        }
+      ]
+    },
+    {
+      "t": "Asian Empires and Dynasties",
+      "d": "Imperial China, feudal Japan, the Mughal Empire, and more",
+      "cat": "history",
+      "tags": [
+        "topic:asian-history",
+        "topic:china",
+        "topic:japan",
+        "topic:india",
+        "difficulty:mixed"
+      ],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {
+          "t": "The Great Wall of China was primarily built to protect against invasions from which direction?",
+          "a": [
+            "The south",
+            "The east",
+            "The west",
+            "The north"
+          ],
+          "c": 3
+        },
+        {
+          "t": "Who was the founder of the Mughal Empire in India, who won the First Battle of Panipat in 1526?",
+          "a": [
+            "Akbar",
+            "Babur",
+            "Humayun",
+            "Shah Jahan"
+          ],
+          "c": 1
+        },
+        {
+          "t": "Japan's feudal period was dominated by warrior lords called what?",
+          "a": [
+            "Samurai",
+            "Shogun",
+            "Daimyo",
+            "Ronin"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Which Chinese dynasty built the first version of the Great Wall and standardized weights, measures, and the writing system?",
+          "a": [
+            "Han Dynasty",
+            "Tang Dynasty",
+            "Qin Dynasty",
+            "Ming Dynasty"
+          ],
+          "c": 2
+        },
+        {
+          "t": "The Silk Road connected China with which distant civilization, facilitating trade for centuries?",
+          "a": [
+            "Rome and the Mediterranean world",
+            "Sub-Saharan Africa",
+            "Australia",
+            "The Americas"
+          ],
+          "c": 0
+        },
+        {
+          "t": "Which Mughal emperor commissioned the Taj Mahal as a mausoleum for his wife?",
+          "a": [
+            "Akbar",
+            "Aurangzeb",
+            "Jahangir",
+            "Shah Jahan"
+          ],
+          "c": 3
+        },
+        {
+          "t": "Japan's Meiji Restoration began in 1868 and involved the restoration of power from the shogunate to which figure?",
+          "a": [
+            "The Prime Minister",
+            "The Emperor",
+            "The Daimyo council",
+            "The military generals"
+          ],
+          "c": 1
+        },
+        {
+          "t": "The Tang Dynasty of China (618–907 AD) is notable for reaching its cultural peak under which emperor?",
+          "a": [
+            "Emperor Gaozu",
+            "Emperor Taizong",
+            "Emperor Xuanzong",
+            "Empress Wu Zetian"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Which Indian emperor of the Maurya dynasty converted to Buddhism after the bloody Battle of Kalinga?",
+          "a": [
+            "Chandragupta Maurya",
+            "Bindusara",
+            "Ashoka",
+            "Brihadratha"
+          ],
+          "c": 2
+        },
+        {
+          "t": "The Opium Wars of the 19th century were fought between China and which Western power?",
+          "a": [
+            "France",
+            "Germany",
+            "Britain",
+            "Russia"
+          ],
+          "c": 2
+        }
+      ]
+    },
+    {
+      "t": "Modern History: Revolutions and Independence",
+      "d": "The French Revolution, Napoleon, the Cold War, and 20th-century independence movements",
+      "cat": "history",
+      "tags": [
+        "topic:modern-history",
+        "topic:french-revolution",
+        "topic:cold-war",
+        "difficulty:mixed"
+      ],
+      "l": 600,
+      "p": 65,
+      "q": [
+        {
+          "t": "The French Revolution began in 1789 with the storming of which famous Parisian fortress?",
+          "a": [
+            "The Louvre",
+            "Versailles",
+            "The Bastille",
+            "Notre-Dame Cathedral"
+          ],
+          "c": 2
+        },
+        {
+          "t": "In what year did the Berlin Wall fall, symbolizing the end of the Cold War division of Europe?",
+          "a": [
+            "1987",
+            "1988",
+            "1989",
+            "1991"
+          ],
+          "c": 2
+        },
+        {
+          "t": "Who led the Indian independence movement using nonviolent civil disobedience against British rule?",
+          "a": [
+            "Jawaharlal Nehru",
+            "Subhas Chandra Bose",
+            "Bal Gangadhar Tilak",
+            "Mahatma Gandhi"
+          ],
+          "c": 3
+        },
+        {
+          "t": "Napoleon Bonaparte was finally defeated at which battle in 1815, ending his rule for good?",
+          "a": [
+            "The Battle of Leipzig",
+            "The Battle of Austerlitz",
+            "The Battle of Waterloo",
+            "The Battle of Trafalgar"
+          ],
+          "c": 2
+        },
+        {
+          "t": "The Cuban Missile Crisis of 1962 brought the US and USSR closest to nuclear war. It was resolved when the USSR agreed to remove missiles from Cuba in exchange for what US concession?",
+          "a": [
+            "The US would withdraw from South Vietnam",
+            "The US would remove missiles from Turkey and pledge not to invade Cuba",
+            "The US would lift its trade embargo on Cuba",
+            "The US would recognize the Cuban government"
+          ],
+          "c": 1
+        }
+      ]
+    }
+  ]
+}

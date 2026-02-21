@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { ref, computed, onMounted, onUnmounted, nextTick } from 'vue'
+import { ref, computed, onMounted, onUnmounted, nextTick, watch } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMarathon } from '@/composables/useMarathon'
 import type { BonusType } from '@/composables/useMarathon'
@@ -32,6 +32,8 @@ const {
 	applyAnswerResult,
 	useBonus,
 	initialize,
+	streakCount,
+	lifeRestoredSignal,
 } = useMarathon(playerId)
 
 // ===========================
@@ -43,6 +45,16 @@ const isSubmitting = ref(false)
 const timerRef = ref<InstanceType<typeof GameTimer> | null>(null)
 const questionStartTime = ref(Date.now())
 const activatedBonus = ref<string | null>(null)
+
+const showLifeRestoredAnim = ref(false)
+
+// Trigger ❤️+1 animation when life is restored
+watch(lifeRestoredSignal, () => {
+	showLifeRestoredAnim.value = true
+	setTimeout(() => {
+		showLifeRestoredAnim.value = false
+	}, 1200)
+})
 
 const showFeedback = ref(false)
 const feedbackIsCorrect = ref<boolean | null>(null)
@@ -274,23 +286,41 @@ onUnmounted(() => {
 
 		<!-- Game View -->
 		<div v-else class="flex flex-col gap-4">
-			<!-- Header: lives + score + timer -->
+			<!-- Header: energy + score + timer -->
 			<div class="flex items-center gap-3">
-				<!-- Lives -->
-				<div class="flex gap-0.5 shrink-0">
-					<UIcon
-						v-for="(filled, index) in livesDisplay"
-						:key="index"
-						:name="filled ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'"
-						:class="filled ? 'text-red-500' : 'text-gray-300 dark:text-gray-600'"
-						class="size-4"
-					/>
+				<!-- Energy bar -->
+				<div class="flex items-center gap-1.5 shrink-0 relative">
+					<span class="text-xs text-amber-400 leading-none">⚡</span>
+					<div class="flex gap-[3px]">
+						<div
+							v-for="(filled, index) in livesDisplay"
+							:key="index"
+							class="h-[10px] w-[14px] rounded-[3px] transition-all duration-300"
+							:class="filled
+								? 'bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.55)]'
+								: 'bg-gray-700'"
+						/>
+					</div>
+					<!-- +1 animation -->
+					<Transition name="life-restore">
+						<span
+							v-if="showLifeRestoredAnim"
+							class="absolute -top-5 left-0 text-xs font-bold text-amber-400 pointer-events-none select-none"
+						>+1⚡</span>
+					</Transition>
 				</div>
 
-				<!-- Score -->
-				<span class="shrink-0 text-sm font-semibold text-primary tabular-nums">
-					{{ state.score }}
-				</span>
+				<!-- Score (hidden when 0) -->
+				<span
+					v-if="state.score > 0"
+					class="shrink-0 text-sm font-semibold text-primary tabular-nums"
+				>{{ state.score }}</span>
+
+				<!-- Streak counter (only show when streak >= 2) -->
+				<span
+					v-if="streakCount >= 2"
+					class="shrink-0 text-xs font-medium text-orange-500 tabular-nums"
+				>🔥 {{ streakCount }}</span>
 
 				<!-- Shield indicator -->
 				<UIcon
@@ -443,5 +473,16 @@ onUnmounted(() => {
 	25% { transform: scale(1.2); }
 	50% { transform: scale(0.95); }
 	100% { transform: scale(1); }
+}
+
+.life-restore-enter-active {
+	animation: life-restore-pop 1.2s ease-out forwards;
+}
+
+@keyframes life-restore-pop {
+	0%   { opacity: 0; transform: translateY(0); }
+	20%  { opacity: 1; transform: translateY(-8px); }
+	80%  { opacity: 1; transform: translateY(-14px); }
+	100% { opacity: 0; transform: translateY(-20px); }
 }
 </style>
