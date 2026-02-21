@@ -1,10 +1,22 @@
 -- ==========================================
--- Seed Categories (idempotent)
+-- Fix Categories Schema + Seed (idempotent)
 -- ==========================================
--- This migration ensures categories exist regardless of
--- whether the seed data in 003_create_categories_table.sql
--- was applied (it may have been missing in earlier deploys).
+-- Handles DBs where 003 was applied without slug/description/etc columns
+-- (migration 003 was modified after being applied on some environments)
 
+-- Step 1: Add missing columns
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS slug VARCHAR(100);
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS description TEXT;
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS icon_url VARCHAR(255);
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS color VARCHAR(7);
+ALTER TABLE categories ADD COLUMN IF NOT EXISTS display_order INTEGER NOT NULL DEFAULT 0;
+
+-- Step 2: Add indexes
+CREATE INDEX IF NOT EXISTS idx_categories_slug ON categories(slug);
+CREATE INDEX IF NOT EXISTS idx_categories_is_active ON categories(is_active);
+CREATE INDEX IF NOT EXISTS idx_categories_display_order ON categories(display_order);
+
+-- Step 3: Upsert seed data
 INSERT INTO categories (id, name, slug, description, icon_url, color, display_order) VALUES
     (
         '11111111-1111-1111-1111-111111111111',
@@ -60,4 +72,9 @@ INSERT INTO categories (id, name, slug, description, icon_url, color, display_or
         '#F97316',
         6
     )
-ON CONFLICT (id) DO NOTHING;
+ON CONFLICT (id) DO UPDATE SET
+    slug          = EXCLUDED.slug,
+    description   = EXCLUDED.description,
+    icon_url      = EXCLUDED.icon_url,
+    color         = EXCLUDED.color,
+    display_order = EXCLUDED.display_order;
