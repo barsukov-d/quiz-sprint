@@ -118,6 +118,36 @@ func TestStartMarathon_ActiveGameExists(t *testing.T) {
 	}
 }
 
+func TestStartMarathon_AfterGameOver_AllowsNewRun(t *testing.T) {
+	f := setupFixture(t)
+
+	// Start a game and lose all 5 lives → game_over
+	startOutput := f.startGameForPlayer(t, testPlayerID)
+	gameID := startOutput.Game.ID
+	for i := 0; i < 5; i++ {
+		f.answerCurrentQuestion(t, gameID, testPlayerID, false)
+	}
+
+	// Confirm game is in game_over state
+	game, _ := f.marathonRepo.FindByID(solo_marathon.NewGameIDFromString(gameID))
+	if !game.IsWaitingForContinue() {
+		t.Fatalf("Expected game_over status after 5 wrong answers, got %v", game.Status())
+	}
+
+	// Starting a new game should succeed (instant restart, no 409)
+	uc := f.newStartUC()
+	_, err := uc.Execute(StartMarathonInput{PlayerID: testPlayerID})
+	if err != nil {
+		t.Errorf("Expected new game to start after game_over, got error: %v", err)
+	}
+
+	// Old game should be auto-completed, not blocking
+	oldGame, _ := f.marathonRepo.FindByID(solo_marathon.NewGameIDFromString(gameID))
+	if oldGame.Status() != solo_marathon.GameStatusCompleted {
+		t.Errorf("Expected old game to be completed, got %v", oldGame.Status())
+	}
+}
+
 func TestStartMarathon_InvalidPlayerID(t *testing.T) {
 	f := setupFixture(t)
 	uc := f.newStartUC()

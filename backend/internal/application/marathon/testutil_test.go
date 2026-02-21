@@ -44,7 +44,8 @@ func (m *mockMarathonRepo) FindByID(id solo_marathon.GameID) (*solo_marathon.Mar
 
 func (m *mockMarathonRepo) FindActiveByPlayer(playerID solo_marathon.UserID) (*solo_marathon.MarathonGameV2, error) {
 	for _, g := range m.games {
-		if g.PlayerID().Equals(playerID) && g.Status() == solo_marathon.GameStatusInProgress {
+		if g.PlayerID().Equals(playerID) &&
+			(g.Status() == solo_marathon.GameStatusInProgress || g.Status() == solo_marathon.GameStatusGameOver) {
 			return g, nil
 		}
 	}

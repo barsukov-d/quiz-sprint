@@ -221,18 +221,30 @@ onMounted(async () => {
 				Continue Marathon
 			</UButton>
 
-			<!-- Game over: view results -->
-			<UButton
-				v-else-if="isGameOver"
-				icon="i-heroicons-flag"
-				color="red"
-				:loading="isLoading"
-				block
-				size="lg"
-				@click="handleViewGameOver"
-			>
-				View Results
-			</UButton>
+			<!-- Game over: new run (primary) + view results (secondary) -->
+			<div v-else-if="isGameOver" class="flex flex-col gap-2">
+				<UButton
+					icon="i-heroicons-arrow-path"
+					color="primary"
+					:loading="isLoading"
+					block
+					size="lg"
+					@click="handleStart"
+				>
+					Новый забег
+				</UButton>
+				<UButton
+					icon="i-heroicons-flag"
+					color="neutral"
+					variant="ghost"
+					:loading="isLoading"
+					block
+					size="sm"
+					@click="handleViewGameOver"
+				>
+					View Results
+				</UButton>
+			</div>
 
 			<!-- Ready: start button (new game always starts with 3 lives) -->
 			<UButton
