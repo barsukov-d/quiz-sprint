@@ -24,9 +24,9 @@ Home → "Марафон" → Shows:
 │  🛡️ × 2   🔀 × 1   ❄️ × 3          │
 │                                     │
 │  Правила:                           │
-│  • 3 жизни, ошибка = -1 жизнь       │
+│  • 5 ⚡ энергии, ошибка = −1 ⚡      │
+│  • 5 правильных подряд = +1 ⚡       │
 │  • Сложность растёт со временем     │
-│  • Используй бонусы стратегически   │
 │  💡 Continue: от 200💰               │
 │                                     │
 │  [      НАЧАТЬ МАРАФОН      ]       │
@@ -41,7 +41,7 @@ Home → "Марафон" → Shows:
 ```
 ┌─────────────────────────────────────┐
 │  🏃 Марафон                         │
-│  ❤️❤️❤️    ✅ 23    Вопрос 24  ⏱️ 11 │
+│  ⚡⚡⚡⚡⚡    ✅ 23    Вопрос 24  ⏱️ 11 │
 │─────────────────────────────────────│
 │                                     │
 │  В каком году был основан Рим?      │
@@ -63,7 +63,7 @@ Home → "Марафон" → Shows:
 **UI Elements:**
 - **Score:** `✅ 23` — count of correct answers (primary metric)
 - **Question number:** `Вопрос 24` — current question index
-- **Lives:** Visual hearts (❤️ = active, 🖤 = lost)
+- **Energy:** Visual lightning bolts (⚡ = active, depleted = lost)
 - **Timer:** Countdown (color changes: green → yellow → red)
 - **Milestone:** Progress toward next milestone (25, 50, 100, 200, 500)
 - **Bonuses:** Active buttons (grayed if 0 quantity, long-press for tooltip)
@@ -191,6 +191,29 @@ If continued:
 
 ---
 
+### 5b. Between-Run Screen (after declining Continue)
+```
+┌─────────────────────────────────────┐
+│  🏁 Забег завершён                  │
+│                                     │
+│  ✅ 47 правильных                   │
+│  🔥 Лучшая серия: 12                │
+│                                     │
+│  Эта сессия:                        │
+│  Забег #2 | Лучший: 47              │
+│                                     │
+│  До рекорда 40 ответов. Ещё один?  │
+│                                     │
+│  [ ⚡ Новый забег    ]              │
+│  [ 📊 Лидерборд     ]              │
+│  [ 🚪 На главную    ]              │
+└─────────────────────────────────────┘
+```
+
+"Новый забег" — мгновенный старт с 5 ⚡, без ожидания, без монет.
+
+---
+
 ### 6. Results Screen (Final)
 ```
 ┌─────────────────────────────────────┐
@@ -249,7 +272,7 @@ IN_PROGRESS → GAME_OVER → COMPLETED (declined continue / final game over)
 
 **State stored on backend:**
 - Current question index
-- Lives remaining (0-3)
+- Energy remaining (0-5)
 - Correct answers count
 - Bonus inventory state
 - Continue count
