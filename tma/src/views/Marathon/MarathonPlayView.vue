@@ -286,38 +286,41 @@ onUnmounted(() => {
 
 		<!-- Game View -->
 		<div v-else class="flex flex-col gap-4">
-			<!-- Header: lives + score + timer -->
+			<!-- Header: energy + score + timer -->
 			<div class="flex items-center gap-3">
-				<!-- Lives (энергия) -->
-				<div class="flex gap-0.5 shrink-0 relative" title="энергия">
-					<span
-						v-for="(filled, index) in livesDisplay"
-						:key="index"
-						class="text-sm leading-none"
-					>{{ filled ? '⚡' : '○' }}</span>
-					<!-- ⚡+1 animation when life is restored -->
+				<!-- Energy bar -->
+				<div class="flex items-center gap-1.5 shrink-0 relative">
+					<span class="text-xs text-amber-400 leading-none">⚡</span>
+					<div class="flex gap-[3px]">
+						<div
+							v-for="(filled, index) in livesDisplay"
+							:key="index"
+							class="h-[10px] w-[14px] rounded-[3px] transition-all duration-300"
+							:class="filled
+								? 'bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.55)]'
+								: 'bg-gray-700'"
+						/>
+					</div>
+					<!-- +1 animation -->
 					<Transition name="life-restore">
 						<span
 							v-if="showLifeRestoredAnim"
-							class="absolute -top-5 left-0 text-xs font-bold text-green-500 pointer-events-none select-none"
-						>
-							⚡+1
-						</span>
+							class="absolute -top-5 left-0 text-xs font-bold text-amber-400 pointer-events-none select-none"
+						>+1⚡</span>
 					</Transition>
 				</div>
 
-				<!-- Score -->
-				<span class="shrink-0 text-sm font-semibold text-primary tabular-nums">
-					{{ state.score }}
-				</span>
+				<!-- Score (hidden when 0) -->
+				<span
+					v-if="state.score > 0"
+					class="shrink-0 text-sm font-semibold text-primary tabular-nums"
+				>{{ state.score }}</span>
 
 				<!-- Streak counter (only show when streak >= 2) -->
 				<span
 					v-if="streakCount >= 2"
 					class="shrink-0 text-xs font-medium text-orange-500 tabular-nums"
-				>
-					🔥 {{ streakCount }}
-				</span>
+				>🔥 {{ streakCount }}</span>
 
 				<!-- Shield indicator -->
 				<UIcon
