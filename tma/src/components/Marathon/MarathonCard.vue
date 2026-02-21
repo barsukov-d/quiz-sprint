@@ -35,13 +35,12 @@ const bonusList = [
 // Computed
 // ===========================
 
-const livesLabel = computed(() => {
-	if (isPlaying.value || isGameOver.value) {
-		return lives.value.label
-			.replace(/❤️/g, '⚡')
-			.replace(/🖤/g, '○')
+const livesDisplay = computed(() => {
+	const segments = []
+	for (let i = 0; i < lives.value.maxLives; i++) {
+		segments.push(i < lives.value.currentLives)
 	}
-	return '⚡'.repeat(lives.value.maxLives)
+	return segments
 })
 
 // ===========================
@@ -81,9 +80,19 @@ onMounted(async () => {
 					<span class="text-2xl">🏃</span>
 					<h3 class="text-lg font-bold">Marathon</h3>
 				</div>
-				<span class="text-lg" :title="`${lives.currentLives}/${lives.maxLives} энергии`">
-					{{ livesLabel }}
-				</span>
+				<div class="flex items-center gap-1.5" :title="`${lives.currentLives}/${lives.maxLives} энергии`">
+					<span class="text-xs text-amber-400 leading-none">⚡</span>
+					<div class="flex gap-[3px]">
+						<div
+							v-for="(filled, index) in livesDisplay"
+							:key="index"
+							class="h-[10px] w-[14px] rounded-[3px] transition-all duration-300"
+							:class="filled
+								? 'bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.55)]'
+								: 'bg-gray-700'"
+						/>
+					</div>
+				</div>
 			</div>
 		</template>
 
