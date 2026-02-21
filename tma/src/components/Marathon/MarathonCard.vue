@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, onBeforeUnmount } from 'vue'
+import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMarathon } from '@/composables/useMarathon'
 
@@ -17,7 +17,6 @@ const {
 	isLoading,
 	lives,
 	progressToRecord,
-	checkStatus,
 	initialize,
 } = useMarathon(props.playerId)
 
@@ -33,64 +32,17 @@ const bonusList = [
 ]
 
 // ===========================
-// Life Restore Timer
-// ===========================
-
-const timerInterval = ref<number | null>(null)
-const timeToLifeRestore = ref(0)
-
-const timeToLifeRestoreFormatted = computed(() => {
-	const seconds = timeToLifeRestore.value
-	const hours = Math.floor(seconds / 3600)
-	const minutes = Math.floor((seconds % 3600) / 60)
-	const secs = seconds % 60
-
-	if (hours > 0) {
-		return `${hours}:${minutes.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`
-	}
-	return `${minutes}:${secs.toString().padStart(2, '0')}`
-})
-
-const startTimer = () => {
-	if (timerInterval.value) return
-	timeToLifeRestore.value = lives.value.timeToNextLife
-
-	timerInterval.value = window.setInterval(() => {
-		if (timeToLifeRestore.value > 0) {
-			timeToLifeRestore.value--
-		} else {
-			checkStatus()
-			if (timerInterval.value) {
-				clearInterval(timerInterval.value)
-				timerInterval.value = null
-			}
-		}
-	}, 1000)
-}
-
-const stopTimer = () => {
-	if (timerInterval.value) {
-		clearInterval(timerInterval.value)
-		timerInterval.value = null
-	}
-}
-
-// ===========================
 // Computed
 // ===========================
 
 const livesLabel = computed(() => {
-	// Active or game over: show actual lives from server
 	if (isPlaying.value || isGameOver.value) {
-		return lives.value.label || '❤️'.repeat(lives.value.maxLives)
+		return lives.value.label
+			.replace(/❤️/g, '⚡')
+			.replace(/🖤/g, '○')
 	}
-	// Idle: show full lives (new game always starts with 3)
-	return '❤️'.repeat(lives.value.maxLives)
+	return '⚡'.repeat(lives.value.maxLives)
 })
-
-const showLifeTimer = computed(
-	() => lives.value.currentLives < lives.value.maxLives && timeToLifeRestore.value > 0,
-)
 
 // ===========================
 // Actions
@@ -117,11 +69,6 @@ const handleViewGameOver = () => {
 
 onMounted(async () => {
 	await initialize()
-	startTimer()
-})
-
-onBeforeUnmount(() => {
-	stopTimer()
 })
 </script>
 
@@ -134,7 +81,7 @@ onBeforeUnmount(() => {
 					<span class="text-2xl">🏃</span>
 					<h3 class="text-lg font-bold">Marathon</h3>
 				</div>
-				<span class="text-lg" :title="`${lives.currentLives}/${lives.maxLives} lives`">
+				<span class="text-lg" :title="`${lives.currentLives}/${lives.maxLives} энергии`">
 					{{ livesLabel }}
 				</span>
 			</div>
@@ -248,23 +195,14 @@ onBeforeUnmount(() => {
 				</div>
 			</div>
 
-			<!-- Life restore timer -->
-			<div
-				v-if="showLifeTimer"
-				class="flex items-center gap-2 text-sm text-blue-500 dark:text-blue-400"
-			>
-				<UIcon name="i-heroicons-clock" class="size-4" />
-				<span>Next life in <strong class="font-mono">{{ timeToLifeRestoreFormatted }}</strong></span>
-			</div>
-
 			<!-- Rules hint (only when no personal best = likely new player) -->
 			<div
 				v-if="state.personalBest === null || state.personalBest === 0"
 				class="text-xs text-gray-500 dark:text-gray-400 space-y-1"
 			>
-				<p>3 lives, wrong answer = -1 life</p>
-				<p>Difficulty increases over time</p>
-				<p>Use bonuses strategically</p>
+				<p>5 энергии, ошибка = −1 ⚡</p>
+				<p>5 правильных подряд = +1 ⚡</p>
+				<p>Сложность растёт со временем</p>
 			</div>
 		</div>
 

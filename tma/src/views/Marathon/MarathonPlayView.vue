@@ -288,22 +288,20 @@ onUnmounted(() => {
 		<div v-else class="flex flex-col gap-4">
 			<!-- Header: lives + score + timer -->
 			<div class="flex items-center gap-3">
-				<!-- Lives -->
-				<div class="flex gap-0.5 shrink-0 relative">
-					<UIcon
+				<!-- Lives (энергия) -->
+				<div class="flex gap-0.5 shrink-0 relative" title="энергия">
+					<span
 						v-for="(filled, index) in livesDisplay"
 						:key="index"
-						:name="filled ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'"
-						:class="filled ? 'text-red-500' : 'text-gray-300 dark:text-gray-600'"
-						class="size-4"
-					/>
-					<!-- ❤️+1 animation when life is restored -->
+						class="text-sm leading-none"
+					>{{ filled ? '⚡' : '○' }}</span>
+					<!-- ⚡+1 animation when life is restored -->
 					<Transition name="life-restore">
 						<span
 							v-if="showLifeRestoredAnim"
 							class="absolute -top-5 left-0 text-xs font-bold text-green-500 pointer-events-none select-none"
 						>
-							❤️+1
+							⚡+1
 						</span>
 					</Transition>
 				</div>
