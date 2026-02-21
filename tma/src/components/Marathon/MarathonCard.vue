@@ -10,25 +10,42 @@ interface Props {
 const props = defineProps<Props>()
 const router = useRouter()
 
-const {
-	state,
-	isPlaying,
-	isGameOver,
-	isLoading,
-	lives,
-	progressToRecord,
-	initialize,
-} = useMarathon(props.playerId)
+const { state, isPlaying, isGameOver, isLoading, lives, progressToRecord, initialize } =
+	useMarathon(props.playerId)
 
 // ===========================
 // Bonus Display Config
 // ===========================
 
 const bonusList = [
-	{ key: 'shield' as const, label: 'Shield', icon: 'i-heroicons-shield-check', color: 'text-blue-500', description: 'Absorbs 1 wrong answer' },
-	{ key: 'fiftyFifty' as const, label: '50/50', icon: 'i-heroicons-scissors', color: 'text-yellow-500', description: 'Removes 2 wrong answers' },
-	{ key: 'skip' as const, label: 'Skip', icon: 'i-heroicons-forward', color: 'text-green-500', description: 'Skip without penalty' },
-	{ key: 'freeze' as const, label: 'Freeze', icon: 'i-heroicons-clock', color: 'text-cyan-500', description: '+5 seconds to timer' },
+	{
+		key: 'shield' as const,
+		label: 'Shield',
+		icon: 'i-heroicons-shield-check',
+		color: 'text-blue-500',
+		description: 'Absorbs 1 wrong answer',
+	},
+	{
+		key: 'fiftyFifty' as const,
+		label: '50/50',
+		icon: 'i-heroicons-scissors',
+		color: 'text-yellow-500',
+		description: 'Removes 2 wrong answers',
+	},
+	{
+		key: 'skip' as const,
+		label: 'Skip',
+		icon: 'i-heroicons-forward',
+		color: 'text-green-500',
+		description: 'Skip without penalty',
+	},
+	{
+		key: 'freeze' as const,
+		label: 'Freeze',
+		icon: 'i-heroicons-clock',
+		color: 'text-cyan-500',
+		description: '+5 seconds to timer',
+	},
 ]
 
 // ===========================
@@ -80,19 +97,6 @@ onMounted(async () => {
 					<span class="text-2xl">🏃</span>
 					<h3 class="text-lg font-bold">Marathon</h3>
 				</div>
-				<div class="flex items-center gap-1.5" :title="`${lives.currentLives}/${lives.maxLives} энергии`">
-					<span class="text-xs text-amber-400 leading-none">⚡</span>
-					<div class="flex gap-[3px]">
-						<div
-							v-for="(filled, index) in livesDisplay"
-							:key="index"
-							class="h-[10px] w-[14px] rounded-[3px] transition-all duration-300"
-							:class="filled
-								? 'bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.55)]'
-								: 'bg-gray-700'"
-						/>
-					</div>
-				</div>
 			</div>
 		</template>
 
@@ -122,9 +126,11 @@ onMounted(async () => {
 						{{ state.score }}/{{ state.personalBest }} record
 					</span>
 					<span
-						:class="progressToRecord >= 100
-							? 'text-green-500 font-semibold'
-							: 'text-gray-500 dark:text-gray-400'"
+						:class="
+							progressToRecord >= 100
+								? 'text-green-500 font-semibold'
+								: 'text-gray-500 dark:text-gray-400'
+						"
 					>
 						{{ progressToRecord }}%
 					</span>
@@ -142,9 +148,11 @@ onMounted(async () => {
 					v-for="b in bonusList"
 					:key="b.key"
 					class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs"
-					:class="state.bonusInventory[b.key] > 0
-						? 'bg-gray-50 dark:bg-gray-800'
-						: 'bg-gray-50/50 dark:bg-gray-800/50 opacity-40'"
+					:class="
+						state.bonusInventory[b.key] > 0
+							? 'bg-gray-50 dark:bg-gray-800'
+							: 'bg-gray-50/50 dark:bg-gray-800/50 opacity-40'
+					"
 					:title="b.label"
 				>
 					<UIcon :name="b.icon" :class="b.color" class="w-4 h-4" />
@@ -178,9 +186,7 @@ onMounted(async () => {
 				class="flex items-center justify-between"
 			>
 				<span class="text-sm text-gray-500 dark:text-gray-400">Record</span>
-				<span class="font-bold text-yellow-500">
-					🏆 {{ state.personalBest }}
-				</span>
+				<span class="font-bold text-yellow-500"> 🏆 {{ state.personalBest }} </span>
 			</div>
 
 			<!-- Bonuses available -->
@@ -191,9 +197,11 @@ onMounted(async () => {
 						v-for="b in bonusList"
 						:key="b.key"
 						class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
-						:class="state.bonusInventory[b.key] > 0
-							? 'bg-gray-50 dark:bg-gray-800'
-							: 'bg-gray-50/50 dark:bg-gray-800/50 opacity-40'"
+						:class="
+							state.bonusInventory[b.key] > 0
+								? 'bg-gray-50 dark:bg-gray-800'
+								: 'bg-gray-50/50 dark:bg-gray-800/50 opacity-40'
+						"
 						:title="b.description"
 					>
 						<UIcon :name="b.icon" :class="b.color" class="w-4 h-4" />
