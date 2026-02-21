@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted } from 'vue'
+import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMarathon } from '@/composables/useMarathon'
 
@@ -10,8 +10,9 @@ interface Props {
 const props = defineProps<Props>()
 const router = useRouter()
 
-const { state, isPlaying, isGameOver, isLoading, lives, progressToRecord, initialize } =
-	useMarathon(props.playerId)
+const { state, isPlaying, isGameOver, isLoading, progressToRecord, initialize } = useMarathon(
+	props.playerId,
+)
 
 // ===========================
 // Bonus Display Config
@@ -47,18 +48,6 @@ const bonusList = [
 		description: '+5 seconds to timer',
 	},
 ]
-
-// ===========================
-// Computed
-// ===========================
-
-const livesDisplay = computed(() => {
-	const segments = []
-	for (let i = 0; i < lives.value.maxLives; i++) {
-		segments.push(i < lives.value.currentLives)
-	}
-	return segments
-})
 
 // ===========================
 // Actions
