@@ -208,9 +208,16 @@ func (m *mockQuestionRepo) FindByFilter(_ quiz.QuestionFilter) ([]*quiz.Question
 	return result, nil
 }
 
-func (m *mockQuestionRepo) FindRandomQuestions(_ quiz.QuestionFilter, limit int) ([]*quiz.Question, error) {
+func (m *mockQuestionRepo) FindRandomQuestions(f quiz.QuestionFilter, limit int) ([]*quiz.Question, error) {
+	excluded := make(map[string]bool, len(f.ExcludeIDs))
+	for _, id := range f.ExcludeIDs {
+		excluded[id.String()] = true
+	}
 	var result []*quiz.Question
 	for _, q := range m.questions {
+		if excluded[q.ID().String()] {
+			continue
+		}
 		result = append(result, q)
 		if len(result) >= limit {
 			break

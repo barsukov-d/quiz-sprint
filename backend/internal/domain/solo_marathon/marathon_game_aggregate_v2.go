@@ -491,6 +491,11 @@ func (mg *MarathonGameV2) UseBonus(questionID QuestionID, bonusType BonusType, u
 	if bonusType == BonusSkip {
 		mg.totalQuestions++ // Skipped questions count toward total
 		mg.answeredQuestionIDs = append(mg.answeredQuestionIDs, questionID)
+		// Add to recent so LoadNextQuestion won't select the same question again
+		mg.recentQuestionIDs = append(mg.recentQuestionIDs, questionID)
+		if len(mg.recentQuestionIDs) > 20 {
+			mg.recentQuestionIDs = mg.recentQuestionIDs[1:]
+		}
 		mg.currentQuestion = nil
 		mg.shieldActive = false // Shield does NOT carry to next question
 	}
