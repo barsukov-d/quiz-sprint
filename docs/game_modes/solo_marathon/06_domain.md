@@ -9,71 +9,96 @@
 
 ### MarathonGame (Root)
 
-**Purpose:** Player's marathon run with lives and bonus management.
+**Purpose:** Player's marathon run with lives, bonuses, adaptive difficulty and streak tracking.
+
+> **Note:** Implementation is `MarathonGameV2` — no longer uses `kernel.QuizGameplaySession`.
+> Questions are loaded dynamically via `QuestionSelector` domain service.
 
 ```go
-type MarathonGame struct {
-    id              GameID
-    playerID        UserID
-    status          GameStatus          // in_progress, game_over, completed
+type MarathonGameV2 struct {
+    id       GameID
+    playerID UserID
+    category MarathonCategory
+    status   GameStatus  // in_progress, game_over, completed, abandoned
 
-    session         *kernel.QuizGameplaySession  // Question flow
-    livesSystem     LivesSystem         // 3 lives management
-    bonusInventory  BonusInventory      // Available bonuses
+    // Question flow (dynamic, not from fixed quiz)
+    currentQuestion     *quiz.Question
+    answeredQuestionIDs []QuestionID  // full history
+    recentQuestionIDs   []QuestionID  // last 20 (for exclusion)
 
-    continueCount   int                 // Times continued
-    personalBest    int                 // Player's record
+    // Scoring
+    score          int  // correct answers count
+    totalQuestions int  // answered + skipped
 
-    events          []Event
+    // Marathon mechanics
+    lives          LivesSystem          // max 5
+    bonusInventory BonusInventory
+    difficulty     DifficultyProgression
+    shieldActive   bool  // active for current question only
+
+    // Continue mechanic
+    continueCount int
+
+    // Personal best
+    personalBestScore *int
+
+    // Bonus usage per question
+    usedBonuses map[QuestionID][]BonusType
+
+    // Marathon Momentum (streak-based life regen)
+    streakCount   int  // current consecutive correct answers
+    bestStreak    int  // best streak this session
+    livesRestored int  // total lives restored via streak
+
+    events []Event
 }
 ```
 
 **Invariants:**
-- ✅ Lives: 0 ≤ lives ≤ 3
+- ✅ Lives: 0 ≤ lives ≤ 5
 - ✅ Game over when lives == 0
 - ✅ Cannot use bonus if inventory == 0
 - ✅ Score = correct answers count
+- ✅ Shield activates before answering; deactivates after every question
+- ✅ Streak resets on any wrong answer (even if shield saved the life)
 
 **Factory:**
 ```go
-func NewMarathonGame(
+func NewMarathonGameV2(
     playerID UserID,
-    personalBest int,
+    category MarathonCategory,
+    personalBest *PersonalBest,
     bonuses BonusInventory,
-    questions *quiz.Quiz,
     startedAt int64,
-) (*MarathonGame, error)
+) (*MarathonGameV2, error)
+// NOTE: Call LoadNextQuestion() after creation to get first question
 ```
 
 **Key Methods:**
 ```go
-func (mg *MarathonGame) AnswerQuestion(
+func (mg *MarathonGameV2) LoadNextQuestion(questionSelector *QuestionSelector) error
+
+func (mg *MarathonGameV2) AnswerQuestion(
     questionID QuestionID,
     answerID AnswerID,
     timeTaken int64,
-    shieldActive bool,
     answeredAt int64,
-) (*AnswerResult, error)
+) (*AnswerQuestionResultV2, error)
 
-func (mg *MarathonGame) UseBonus(
-    bonusType BonusType,
-    questionID QuestionID,
-) error
+func (mg *MarathonGameV2) UseBonus(questionID QuestionID, bonusType BonusType, usedAt int64) error
+func (mg *MarathonGameV2) ActivateShield(questionID QuestionID, usedAt int64) error
 
-func (mg *MarathonGame) Continue(
-    paymentMethod PaymentMethod,
-) error
-
-func (mg *MarathonGame) IsGameOver() bool
-func (mg *MarathonGame) GetScore() int
+func (mg *MarathonGameV2) Continue(paymentMethod PaymentMethod, costCoins int, continuedAt int64) error
+func (mg *MarathonGameV2) CompleteGame(completedAt int64) error
+func (mg *MarathonGameV2) Abandon(abandonedAt int64) error
 ```
 
 **Repository:**
 ```go
-type MarathonGameRepository interface {
-    GetByID(id GameID) (*MarathonGame, error)
-    GetActiveByPlayer(playerID UserID) (*MarathonGame, error)
-    Save(mg *MarathonGame) error
+type Repository interface {
+    FindByID(id GameID) (*MarathonGameV2, error)
+    FindActiveByPlayer(playerID UserID) (*MarathonGameV2, error)
+    Save(game *MarathonGameV2) error
 }
 ```
 
@@ -85,38 +110,24 @@ type MarathonGameRepository interface {
 
 ```go
 type LivesSystem struct {
-    current int  // 0-3
-    max     int  // Always 3
+    maxLives      int    // Always 5
+    currentLives  int    // 0-5
+    regenInterval int64  // 4 hours in seconds (time-based regen)
+    lastUpdate    int64
 }
 
-func NewLivesSystem() LivesSystem {
-    return LivesSystem{current: 3, max: 3}
+// MaxLives = 5
+// LifeRegenInterval = 4 * 60 * 60 (4 hours)
+// MarathonStreakForRegen = 5 (streak-based regen threshold)
+
+func NewLivesSystem(now int64) LivesSystem {
+    return LivesSystem{maxLives: 5, currentLives: 5, ...}
 }
 
-func (ls LivesSystem) LoseLife() LivesSystem {
-    if ls.current > 0 {
-        return LivesSystem{current: ls.current - 1, max: ls.max}
-    }
-    return ls
-}
-
-func (ls LivesSystem) Reset() LivesSystem {
-    return LivesSystem{current: 1, max: ls.max}  // Continue gives 1 life
-}
-
-func (ls LivesSystem) IsGameOver() bool {
-    return ls.current == 0
-}
-
-func (ls LivesSystem) Current() int {
-    return ls.current
-}
-
-func (ls LivesSystem) Label() string {
-    hearts := strings.Repeat("❤️", ls.current)
-    lost := strings.Repeat("🖤", ls.max - ls.current)
-    return hearts + lost
-}
+func (ls LivesSystem) LoseLife(now int64) LivesSystem     // currentLives - 1
+func (ls LivesSystem) AddLives(amount int, now int64) LivesSystem  // capped at maxLives
+func (ls LivesSystem) ResetForContinue(now int64) LivesSystem  // currentLives = 1
+func (ls LivesSystem) RegenerateLives(now int64) LivesSystem   // time-based regen
 ```
 
 **Immutable:** All methods return NEW instance.
