@@ -37,6 +37,9 @@ CMD ["air", "-c", ".air.toml"]
 # ==========================================
 FROM base AS builder
 
+# Cache bust arg to ensure source code changes invalidate cache
+ARG CACHE_BUST=unknown
+
 # Copy source code
 COPY . .
 
