@@ -14,9 +14,9 @@ This file provides guidance to Claude Code when working with code in this reposi
 ## Project Overview
 
 Quiz Sprint TMA - Telegram Mini App for quizzes:
-- **Frontend**: Vue 3 + TypeScript + Vite (`tma/`)
-- **Backend**: Go + Fiber + DDD architecture (`backend/`)
-- **Infrastructure**: Docker, PostgreSQL, Redis, nginx
+- **Frontend**: Vue 3 + TypeScript + Vite (`tma/`) → Cloudflare Pages
+- **Backend**: Go + Fiber + DDD architecture (`backend/`) → VPS (Docker)
+- **Infrastructure**: Docker, PostgreSQL, Redis, Cloudflare Pages, Cloudflare Tunnel
 
 ## Quick Start
 
@@ -56,10 +56,9 @@ make import-all-quizzes
 ### Monorepo Structure
 ```
 quiz-sprint/
-├── tma/                    # Vue 3 frontend
-├── backend/                # Go backend (DDD)
+├── tma/                    # Vue 3 frontend (→ Cloudflare Pages)
+├── backend/                # Go backend (DDD, → VPS Docker)
 ├── infrastructure/         # VPS configs (nginx, systemd)
-├── dev-tunnel/             # SSH tunnels for HTTPS dev
 └── docs/                   # Domain docs (DOMAIN.md, USER_FLOW.md)
 ```
 
@@ -206,26 +205,35 @@ Go Handlers (@annotations) → swag → swagger.json → kubb → TypeScript typ
 
 ## Environments
 
-| Environment | URL | API Port | Database |
-|-------------|-----|----------|----------|
-| Development | `dev.quiz-sprint-tma.online` | 3000 (local) | PostgreSQL (Docker) |
-| Staging | `staging.quiz-sprint-tma.online` | 3001 (Docker) | PostgreSQL (Docker) |
-| Production | `quiz-sprint-tma.online` | 3000 (Docker) | PostgreSQL (Docker) |
+| Environment | Frontend | Backend API | Database |
+|-------------|----------|-------------|----------|
+| Development | `dev.quiz-sprint-tma.online` → CF Tunnel → localhost:5173 | `api-dev.quiz-sprint-tma.online` → CF Tunnel → localhost:3000 | PostgreSQL (Docker local) |
+| Staging | `staging.quiz-sprint-tma.online` → CF Pages | `staging.quiz-sprint-tma.online/api` → VPS:3001 | PostgreSQL (Docker VPS) |
+| Production | `quiz-sprint-tma.online` → CF Pages | `quiz-sprint-tma.online/api` → VPS:3000 | PostgreSQL (Docker VPS) |
 
-**API Endpoints**: `https://<domain>/api/v1/*`, WebSocket: `wss://<domain>/ws/leaderboard/:id`
+**API Endpoints**: `https://<api-domain>/api/v1/*`, WebSocket: `wss://<domain>/ws/leaderboard/:id`
 
 ## Development with HTTPS (Telegram requires it)
 
-1. Start backend: `cd backend && docker compose -f docker-compose.dev.yml up`
-2. Start frontend: `cd tma && pnpm dev`
-3. Start tunnels:
-   ```bash
-   ./dev-tunnel/start-backend-tunnel.sh   # localhost:3000 → VPS:3000
-   ./dev-tunnel/start-frontend-tunnel.sh  # localhost:5173 → VPS:5173
-   ```
-4. Access: `https://dev.quiz-sprint-tma.online`
+```bash
+# Терминал 1 — бэкенд
+cd backend && docker compose -f docker-compose.dev.yml up
 
-**How it works**: nginx on VPS proxies `/api/*` → localhost:3000, `/` → localhost:5173. Frontend detects hostname at runtime (`window.location.hostname`).
+# Терминал 2 — Cloudflare Tunnel (постоянный, не требует VPS)
+cloudflared tunnel run quiz-sprint-dev
+
+# Терминал 3 — фронт
+cd tma && pnpm dev
+```
+
+**Access**: `https://dev.quiz-sprint-tma.online`
+
+**How it works**:
+- `dev.quiz-sprint-tma.online` → CF Tunnel → localhost:5173 (фронт)
+- `api-dev.quiz-sprint-tma.online` → CF Tunnel → localhost:3000 (бэкенд)
+- Frontend детектирует hostname → выбирает API URL автоматически (`api/client.ts`)
+
+**Tunnel config**: `~/.cloudflared/config.yml` (tunnel: `quiz-sprint-dev`)
 
 ## Database
 
@@ -330,9 +338,9 @@ POST /api/v1/daily-challenge/start
 
 ## Deployment
 
-**Frontend**: GitHub Actions → Build → Deploy to VPS
+**Frontend**: GitHub Actions (`build.yml` → `deploy.yml`) → `wrangler pages deploy` → Cloudflare Pages
 
-**Backend**: GitHub Actions → Docker build → Push to GHCR → Deploy via docker-compose
+**Backend**: GitHub Actions → Docker build → Push to GHCR → Deploy via docker-compose on VPS
 
 **Manual restart** (on VPS):
 ```bash
