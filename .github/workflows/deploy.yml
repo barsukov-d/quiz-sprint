@@ -109,7 +109,7 @@ jobs:
       - name: Health check
         run: |
           sleep 5
-          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://staging.quiz-sprint-tma.online)
+          RESPONSE=$(curl -s -o /dev/null -w "%{http_code}" https://staging.quiz-sprint.pages.dev)
           if [ "$RESPONSE" = "200" ]; then
             echo "✅ Staging health check passed"
           else
