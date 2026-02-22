@@ -29,10 +29,9 @@ export default defineConfig({
 		port: 5173,
 		strictPort: true,
 		allowedHosts: [
-			'.trycloudflare.com',
 			'localhost',
-			'dev.quiz-sprint-tma.online', // Development subdomain
-			'quiz-sprint-tma.online', // Production domain
+			'dev.quiz-sprint-tma.online',
+			'quiz-sprint-tma.online',
 		],
 		// HMR configuration for Caddy reverse proxy
 	},

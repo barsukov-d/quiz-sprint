@@ -5,7 +5,7 @@ const getBaseURL = () => {
 	const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
 
 	if (hostname === 'dev.quiz-sprint-tma.online') {
-		return 'https://dev.quiz-sprint-tma.online/api/v1'
+		return 'https://api-dev.quiz-sprint-tma.online/api/v1'
 	}
 	if (hostname === 'staging.quiz-sprint-tma.online') {
 		return 'https://staging.quiz-sprint-tma.online/api/v1'
