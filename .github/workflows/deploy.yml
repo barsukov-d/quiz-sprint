@@ -101,7 +101,9 @@ jobs:
           path: dist/
 
       - name: Deploy to Cloudflare Pages (staging)
-        run: npx wrangler pages deploy dist/ --project-name=quiz-sprint-staging
+        run: |
+          npx wrangler pages project create quiz-sprint-staging --production-branch=main 2>/dev/null || true
+          npx wrangler pages deploy dist/ --project-name=quiz-sprint-staging
         env:
           CLOUDFLARE_API_TOKEN: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           CLOUDFLARE_ACCOUNT_ID: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
