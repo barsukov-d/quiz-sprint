@@ -8,10 +8,10 @@ const getBaseURL = () => {
 		return 'https://api-dev.quiz-sprint-tma.online/api/v1'
 	}
 	if (hostname === 'staging.quiz-sprint-tma.online') {
-		return 'https://staging.quiz-sprint-tma.online/api/v1'
+		return 'https://api-staging.quiz-sprint-tma.online/api/v1'
 	}
 	if (hostname === 'quiz-sprint-tma.online') {
-		return 'https://quiz-sprint-tma.online/api/v1'
+		return 'https://api.quiz-sprint-tma.online/api/v1'
 	}
 
 	// Fallback to env variable or localhost
