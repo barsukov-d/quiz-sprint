@@ -673,6 +673,9 @@ type StartGameUseCase struct {
 // QuestionRepository interface for getting questions
 type QuestionRepository interface {
 	FindRandomByDifficulty(count int, difficulty string) ([]QuestionData, error)
+	// FindByID retrieves a single question with all answers by its ID.
+	// Used by SubmitDuelAnswerUseCase to validate answer correctness.
+	FindByID(questionID quiz.QuestionID) (*quiz.Question, error)
 }
 
 // QuestionData represents question data for duels
@@ -861,6 +864,10 @@ func NewSubmitDuelAnswerUseCase(
 }
 
 func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*SubmitDuelAnswerOutput, error) {
+	if uc.questionRepo == nil {
+		return nil, fmt.Errorf("submit duel answer: question repository not configured")
+	}
+
 	now := time.Now().UTC().Unix()
 
 	gameID := quick_duel.NewGameIDFromString(input.GameID)
@@ -881,21 +888,53 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 		return nil, quick_duel.ErrGameNotFound
 	}
 
-	// Get the correct answer (in real implementation, look up from question repo)
-	// For now, simulate answer validation
-	isCorrect := true // Placeholder - would check against actual correct answer
-	correctAnswerID := input.AnswerID // Placeholder
+	// Determine the current round's question ID and look it up
+	currentRound := game.CurrentRound()
+	questionIDs := game.QuestionIDs()
+	if currentRound < 1 || currentRound > len(questionIDs) {
+		return nil, fmt.Errorf("submit duel answer: invalid round %d", currentRound)
+	}
+	currentQuestionID := questionIDs[currentRound-1]
 
-	// Calculate points based on correctness and time
-	points := 0
-	if isCorrect {
-		// Base 100 points + time bonus (max 100 for instant answer)
-		timeBonus := max(0, 100-(input.TimeTaken/100)) // 100ms per point deduction
-		points = 100 + timeBonus
+	question, err := uc.questionRepo.FindByID(currentQuestionID)
+	if err != nil {
+		return nil, fmt.Errorf("submit duel answer: load question: %w", err)
+	}
+
+	// Parse player and answer IDs
+	playerID, err := shared.NewUserID(input.PlayerID)
+	if err != nil {
+		return nil, err
+	}
+	answerID, err := quiz.NewAnswerIDFromString(input.AnswerID)
+	if err != nil {
+		return nil, err
+	}
+
+	// Delegate correctness check and scoring to the domain aggregate
+	result, err := game.SubmitAnswer(playerID, answerID, int64(input.TimeTaken), question, now)
+	if err != nil {
+		return nil, err
+	}
+
+	isCorrect := result.IsCorrect
+	points := result.PointsEarned
+
+	// Determine the correct answer ID to return to the client
+	var correctAnswerID string
+	for _, a := range question.Answers() {
+		if a.IsCorrect() {
+			correctAnswerID = a.ID().String()
+			break
+		}
+	}
+
+	// Save the updated game state (scores advanced by domain)
+	if err := uc.duelGameRepo.Save(game); err != nil {
+		return nil, fmt.Errorf("submit duel answer: save game: %w", err)
 	}
 
 	// Track this answer in the distributed cache
-	currentRound := game.CurrentRound()
 	if err := uc.roundCache.AddAnswer(input.GameID, currentRound, playerAnswer{
 		PlayerID:  input.PlayerID,
 		AnswerID:  input.AnswerID,
@@ -913,20 +952,12 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 	}
 	roundComplete := len(roundAnswers) >= 2
 
-	// Calculate current scores
+	// Scores are already maintained by the domain aggregate
 	player1Score := game.Player1().Score()
 	player2Score := game.Player2().Score()
 
-	for _, ans := range roundAnswers {
-		if ans.PlayerID == game.Player1().UserID().String() {
-			player1Score += ans.Points
-		} else {
-			player2Score += ans.Points
-		}
-	}
-
-	// Check if game is complete
-	gameComplete := roundComplete && currentRound >= quick_duel.QuestionsPerDuel
+	// Game is complete when the domain aggregate reports so (last round, both answered)
+	gameComplete := result.IsGameFinished
 
 	output := &SubmitDuelAnswerOutput{
 		IsCorrect:       isCorrect,

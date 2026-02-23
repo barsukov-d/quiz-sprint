@@ -565,20 +565,21 @@ func TestSubmitDuelAnswer_Success(t *testing.T) {
 	f := setupFixture(t)
 
 	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
-	game, _ := f.duelGameRepo.FindByID(quick_duel.NewGameIDFromString(gameOutput.GameID))
 
 	uc := f.newSubmitDuelAnswerUC()
 	output, err := uc.Execute(SubmitDuelAnswerInput{
-		PlayerID:   testPlayer1ID,
-		GameID:     gameOutput.GameID,
-		QuestionID: game.QuestionIDs()[0].String(),
-		AnswerID:   "answer1",
-		TimeTaken:  2000,
+		PlayerID:  testPlayer1ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.correctAnswerID(0),
+		TimeTaken: 2000,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
+	if !output.IsCorrect {
+		t.Error("IsCorrect should be true for correct answer")
+	}
 	if output.PointsEarned == 0 {
 		t.Error("PointsEarned should not be 0 for correct answer")
 	}
@@ -594,29 +595,26 @@ func TestSubmitDuelAnswer_RoundComplete(t *testing.T) {
 	f := setupFixture(t)
 
 	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
-	game, _ := f.duelGameRepo.FindByID(quick_duel.NewGameIDFromString(gameOutput.GameID))
 
 	uc := f.newSubmitDuelAnswerUC()
 
-	// Player1 answers
+	// Player1 answers correctly
 	_, err := uc.Execute(SubmitDuelAnswerInput{
-		PlayerID:   testPlayer1ID,
-		GameID:     gameOutput.GameID,
-		QuestionID: game.QuestionIDs()[0].String(),
-		AnswerID:   "answer1",
-		TimeTaken:  2000,
+		PlayerID:  testPlayer1ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.correctAnswerID(0),
+		TimeTaken: 2000,
 	})
 	if err != nil {
 		t.Fatalf("player1 answer error: %v", err)
 	}
 
-	// Player2 answers
+	// Player2 answers (wrong)
 	output, err := uc.Execute(SubmitDuelAnswerInput{
-		PlayerID:   testPlayer2ID,
-		GameID:     gameOutput.GameID,
-		QuestionID: game.QuestionIDs()[0].String(),
-		AnswerID:   "answer2",
-		TimeTaken:  3000,
+		PlayerID:  testPlayer2ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.wrongAnswerID(0),
+		TimeTaken: 3000,
 	})
 	if err != nil {
 		t.Fatalf("player2 answer error: %v", err)
@@ -647,15 +645,13 @@ func TestSubmitDuelAnswer_PlayerNotInGame(t *testing.T) {
 	f := setupFixture(t)
 
 	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
-	game, _ := f.duelGameRepo.FindByID(quick_duel.NewGameIDFromString(gameOutput.GameID))
 
 	uc := f.newSubmitDuelAnswerUC()
 	_, err := uc.Execute(SubmitDuelAnswerInput{
-		PlayerID:   testPlayer3ID,
-		GameID:     gameOutput.GameID,
-		QuestionID: game.QuestionIDs()[0].String(),
-		AnswerID:   "answer1",
-		TimeTaken:  2000,
+		PlayerID:  testPlayer3ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.correctAnswerID(0),
+		TimeTaken: 2000,
 	})
 	if err != quick_duel.ErrGameNotFound {
 		t.Errorf("expected ErrGameNotFound, got %v", err)
@@ -663,27 +659,18 @@ func TestSubmitDuelAnswer_PlayerNotInGame(t *testing.T) {
 }
 
 func TestSubmitDuelAnswer_BothPlayersAnswer(t *testing.T) {
-	// NOTE: The use case tracks rounds in its own map (uc.roundAnswers) but
-	// game.CurrentRound() doesn't advance because the use case doesn't call
-	// the domain's SubmitAnswer. This means all answers go to round 1 and
-	// gameComplete triggers when roundAnswers >= 2 on the last round tracked.
-	// This test verifies current behavior; full game completion would require
-	// the domain integration path.
 	f := setupFixture(t)
 
 	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
-	game, _ := f.duelGameRepo.FindByID(quick_duel.NewGameIDFromString(gameOutput.GameID))
 
 	uc := f.newSubmitDuelAnswerUC()
-	qID := game.QuestionIDs()[0].String()
 
-	// Player1 answers
+	// Player1 answers correctly
 	out1, err := uc.Execute(SubmitDuelAnswerInput{
-		PlayerID:   testPlayer1ID,
-		GameID:     gameOutput.GameID,
-		QuestionID: qID,
-		AnswerID:   "answer1",
-		TimeTaken:  2000,
+		PlayerID:  testPlayer1ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.correctAnswerID(0),
+		TimeTaken: 2000,
 	})
 	if err != nil {
 		t.Fatalf("player1 error: %v", err)
@@ -692,13 +679,12 @@ func TestSubmitDuelAnswer_BothPlayersAnswer(t *testing.T) {
 		t.Error("RoundComplete should be false after one player answers")
 	}
 
-	// Player2 answers
+	// Player2 answers (wrong)
 	out2, err := uc.Execute(SubmitDuelAnswerInput{
-		PlayerID:   testPlayer2ID,
-		GameID:     gameOutput.GameID,
-		QuestionID: qID,
-		AnswerID:   "answer2",
-		TimeTaken:  3000,
+		PlayerID:  testPlayer2ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.wrongAnswerID(0),
+		TimeTaken: 3000,
 	})
 	if err != nil {
 		t.Fatalf("player2 error: %v", err)
@@ -707,9 +693,43 @@ func TestSubmitDuelAnswer_BothPlayersAnswer(t *testing.T) {
 		t.Error("RoundComplete should be true after both players answer")
 	}
 
-	// Both scores should be aggregated
-	if out2.Player1Score == 0 && out2.Player2Score == 0 {
-		t.Error("scores should not both be 0 after answers")
+	// Player1 answered correctly so score > 0; player2 answered wrong so 0
+	if out2.Player1Score == 0 {
+		t.Error("Player1Score should be > 0 after a correct answer")
+	}
+	if out2.Player2Score != 0 {
+		t.Error("Player2Score should be 0 after a wrong answer")
+	}
+}
+
+// ========================================
+func TestSubmitDuelAnswer_WrongAnswer(t *testing.T) {
+	f := setupFixture(t)
+
+	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
+
+	uc := f.newSubmitDuelAnswerUC()
+	output, err := uc.Execute(SubmitDuelAnswerInput{
+		PlayerID:  testPlayer1ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.wrongAnswerID(0),
+		TimeTaken: 2000,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if output.IsCorrect {
+		t.Error("IsCorrect should be false for a wrong answer")
+	}
+	if output.PointsEarned != 0 {
+		t.Errorf("PointsEarned should be 0 for a wrong answer, got %d", output.PointsEarned)
+	}
+	if output.CorrectAnswerID == "" {
+		t.Error("CorrectAnswerID should be non-empty so client can show the correct answer")
+	}
+	if output.CorrectAnswerID == f.wrongAnswerID(0) {
+		t.Error("CorrectAnswerID should differ from the submitted wrong answer ID")
 	}
 }
 
@@ -1149,30 +1169,25 @@ func TestFullFlow_ChallengeAcceptAndPlay(t *testing.T) {
 		t.Fatalf("start game error: %v", err)
 	}
 
-	// 5. Play all rounds
-	game, _ := f.duelGameRepo.FindByID(quick_duel.NewGameIDFromString(gameOutput.GameID))
+	// 5. Play all rounds - use real answer IDs from mock repo
 	answerUC := f.newSubmitDuelAnswerUC()
 
 	for round := 0; round < quick_duel.QuestionsPerDuel; round++ {
-		qID := game.QuestionIDs()[round].String()
-
 		_, err := answerUC.Execute(SubmitDuelAnswerInput{
-			PlayerID:   testPlayer1ID,
-			GameID:     gameOutput.GameID,
-			QuestionID: qID,
-			AnswerID:   "a1",
-			TimeTaken:  2000,
+			PlayerID:  testPlayer1ID,
+			GameID:    gameOutput.GameID,
+			AnswerID:  f.correctAnswerID(round),
+			TimeTaken: 2000,
 		})
 		if err != nil {
 			t.Fatalf("round %d p1 error: %v", round+1, err)
 		}
 
 		_, err = answerUC.Execute(SubmitDuelAnswerInput{
-			PlayerID:   testPlayer2ID,
-			GameID:     gameOutput.GameID,
-			QuestionID: qID,
-			AnswerID:   "a2",
-			TimeTaken:  3000,
+			PlayerID:  testPlayer2ID,
+			GameID:    gameOutput.GameID,
+			AnswerID:  f.wrongAnswerID(round),
+			TimeTaken: 3000,
 		})
 		if err != nil {
 			t.Fatalf("round %d p2 error: %v", round+1, err)

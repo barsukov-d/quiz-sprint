@@ -510,6 +510,35 @@ func (m *mockQuestionRepo) FindRandomByDifficulty(count int, _ string) ([]Questi
 	return m.questions[:count], nil
 }
 
+func (m *mockQuestionRepo) FindByID(questionID quiz.QuestionID) (*quiz.Question, error) {
+	for _, qd := range m.questions {
+		if qd.ID == questionID.String() {
+			qText, _ := quiz.NewQuestionText(qd.Text)
+			pts, _ := quiz.NewPoints(100)
+			q, err := quiz.NewQuestion(questionID, qText, pts, 0)
+			if err != nil {
+				return nil, err
+			}
+			for i, ad := range qd.Answers {
+				aID, err := quiz.NewAnswerIDFromString(ad.ID)
+				if err != nil {
+					return nil, err
+				}
+				aText, _ := quiz.NewAnswerText(ad.Text)
+				ans, err := quiz.NewAnswer(aID, aText, ad.IsCorrect, i)
+				if err != nil {
+					return nil, err
+				}
+				if err := q.AddAnswer(*ans); err != nil {
+					return nil, err
+				}
+			}
+			return q, nil
+		}
+	}
+	return nil, fmt.Errorf("question not found: %s", questionID.String())
+}
+
 // mockUserRepo for user lookups
 type mockUserRepo struct {
 	users map[string]*domainUser.User
@@ -687,6 +716,26 @@ func (f *duelFixture) newRequestRematchUC() *RequestRematchUseCase {
 
 func (f *duelFixture) newGetOnlineFriendsUC() *GetOnlineFriendsUseCase {
 	return NewGetOnlineFriendsUseCase(f.onlineTracker, f.userRepo)
+}
+
+// correctAnswerID returns the correct answer ID for the question at the given index.
+func (f *duelFixture) correctAnswerID(questionIdx int) string {
+	for _, a := range f.questionRepo.questions[questionIdx].Answers {
+		if a.IsCorrect {
+			return a.ID
+		}
+	}
+	panic("no correct answer found")
+}
+
+// wrongAnswerID returns a wrong (incorrect) answer ID for the question at the given index.
+func (f *duelFixture) wrongAnswerID(questionIdx int) string {
+	for _, a := range f.questionRepo.questions[questionIdx].Answers {
+		if !a.IsCorrect {
+			return a.ID
+		}
+	}
+	panic("no wrong answer found")
 }
 
 // questionIDs returns QuestionIDs from the mock question repo for building test games
