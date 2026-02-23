@@ -543,7 +543,7 @@ GET /api/v1/duel/referrals
         "reward": {
           "tickets": 10,
           "coins": 500,
-          "badge": "Наставник"
+          "badge": "Гуру"
         },
         "claimable": true
       }
@@ -587,7 +587,7 @@ POST /api/v1/duel/referrals/:friendId/claim
     "rewards": {
       "tickets": 10,
       "coins": 500,
-      "badge": "Наставник"
+      "badge": "Гуру"
     },
     "newTicketBalance": 15,
     "newCoinBalance": 2500

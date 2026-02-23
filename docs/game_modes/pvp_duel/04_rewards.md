@@ -42,7 +42,7 @@ Season 2: February 2026
 |------------------|----------------|----------------|
 | **Registers** | 3 🎟️ + 100 coins | 3 🎟️ + 100 coins |
 | **Plays 5 duels** | 5 🎟️ + 300 coins | 200 coins |
-| **Reaches Silver** | 10 🎟️ + 500 coins + 🏷️ "Наставник" badge | 300 coins |
+| **Reaches Silver** | 10 🎟️ + 500 coins + 🏷️ "Гуру" badge | 300 coins |
 | **Reaches Gold** | 20 🎟️ + 1,000 coins + Exclusive avatar | 500 coins |
 | **Reaches Platinum** | 50 🎟️ + 3,000 coins + Legendary title | 1,000 coins |
 

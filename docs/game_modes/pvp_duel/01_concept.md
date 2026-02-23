@@ -126,7 +126,7 @@ Player A → "Вызвать друга" → Share link → Friend opens → Ins
 |-----------|-------------------|-------------------|
 | Friend registers | 3 🎟️ + 100 coins | 3 🎟️ + 100 coins |
 | Friend plays 5 duels | 5 🎟️ + 300 coins | 200 coins |
-| Friend reaches Silver | 10 🎟️ + 500 coins + 🏷️ "Наставник" | 300 coins |
+| Friend reaches Silver | 10 🎟️ + 500 coins + 🏷️ "Гуру" badge | 300 coins |
 | Friend reaches Gold | 20 🎟️ + 1,000 coins + Exclusive avatar | 500 coins |
 | Friend reaches Platinum | 50 🎟️ + 3,000 coins + Legendary title | 1,000 coins |
 
