@@ -37,7 +37,7 @@ func CalculateMMRChange(winnerMMR, loserMMR int, result GameResult) (winnerDelta
 | 1500 | 1500 | +16 | -16 |
 | 1500 | 1700 | +24 | -24 |
 | 1700 | 1500 | +10 | -10 |
-| 1500 | 2000 | +28 | -28 |
+| 1500 | 2000 | +30 | -30 |
 | 2000 | 1500 | +10 | -10 |
 
 ### Initial MMR
