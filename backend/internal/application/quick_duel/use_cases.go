@@ -1104,6 +1104,109 @@ func (uc *SubmitDuelAnswerUseCase) TimeoutRound(gameIDStr string, roundNum int) 
 	return output, nil
 }
 
+// ========================================
+// GetGameResult Use Case
+// ========================================
+
+type GetGameResultUseCase struct {
+	duelGameRepo     quick_duel.DuelGameRepository
+	playerRatingRepo quick_duel.PlayerRatingRepository
+	seasonRepo       quick_duel.SeasonRepository
+	userRepo         domainUser.UserRepository
+}
+
+func NewGetGameResultUseCase(
+	duelGameRepo quick_duel.DuelGameRepository,
+	playerRatingRepo quick_duel.PlayerRatingRepository,
+	seasonRepo quick_duel.SeasonRepository,
+	userRepo domainUser.UserRepository,
+) *GetGameResultUseCase {
+	return &GetGameResultUseCase{
+		duelGameRepo:     duelGameRepo,
+		playerRatingRepo: playerRatingRepo,
+		seasonRepo:       seasonRepo,
+		userRepo:         userRepo,
+	}
+}
+
+func (uc *GetGameResultUseCase) Execute(input GetGameResultInput) (*GetGameResultOutput, error) {
+	now := time.Now().UTC().Unix()
+
+	playerID, err := shared.NewUserID(input.PlayerID)
+	if err != nil {
+		return nil, err
+	}
+
+	gameID := quick_duel.NewGameIDFromString(input.GameID)
+	game, err := uc.duelGameRepo.FindByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	isPlayer1 := game.Player1().UserID().String() == input.PlayerID
+	isPlayer2 := game.Player2().UserID().String() == input.PlayerID
+	if !isPlayer1 && !isPlayer2 {
+		return nil, quick_duel.ErrGameNotFound
+	}
+
+	var playerScore, opponentScore, mmrBefore int
+	var opponentPlayer quick_duel.DuelPlayer
+	if isPlayer1 {
+		playerScore = game.Player1().Score()
+		opponentScore = game.Player2().Score()
+		mmrBefore = game.Player1().Elo().Rating()
+		opponentPlayer = game.Player2()
+	} else {
+		playerScore = game.Player2().Score()
+		opponentScore = game.Player1().Score()
+		mmrBefore = game.Player2().Elo().Rating()
+		opponentPlayer = game.Player1()
+	}
+
+	var result string
+	switch {
+	case playerScore > opponentScore:
+		result = "win"
+	case playerScore < opponentScore:
+		result = "loss"
+	default:
+		result = "draw"
+	}
+
+	seasonID, _ := uc.seasonRepo.GetCurrentSeason()
+	rating, err := uc.playerRatingRepo.FindOrCreate(playerID, seasonID, now)
+	if err != nil {
+		return nil, err
+	}
+
+	mmrChange := rating.MMR() - mmrBefore
+
+	// Get opponent info
+	opponentUsername := opponentPlayer.Username()
+	if user, err := uc.userRepo.FindByID(opponentPlayer.UserID()); err == nil && user != nil {
+		opponentUsername = user.Username().String()
+	}
+
+	opponentRating, _ := uc.playerRatingRepo.FindOrCreate(opponentPlayer.UserID(), seasonID, now)
+	opponentDTO := ToDuelPlayerDTO(opponentPlayer, opponentRating)
+	opponentDTO.Username = opponentUsername
+
+	return &GetGameResultOutput{
+		GameID:           input.GameID,
+		Result:           result,
+		PlayerScore:      playerScore,
+		OpponentScore:    opponentScore,
+		MMRChange:        mmrChange,
+		NewMMR:           rating.MMR(),
+		NewLeague:        rating.League().String(),
+		NewDivision:      rating.Division().Value(),
+		Opponent:         opponentDTO,
+		Questions:        []GameQuestionResultDTO{},
+		CanRematch:       true,
+		RematchExpiresIn: nil,
+	}, nil
+}
+
 // isErr reports whether err or any of its unwrapped causes equals target.
 func isErr(err, target error) bool {
 	if err == target {

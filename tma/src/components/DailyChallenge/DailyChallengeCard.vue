@@ -168,7 +168,9 @@ onBeforeUnmount(() => {
 
 			<!-- Not Played State: Info + Streak -->
 			<div v-else class="space-y-2 py-1">
-				<p class="text-sm text-gray-700 dark:text-gray-300">{{ t('daily.questionsInfo') }}</p>
+				<p class="text-sm text-gray-700 dark:text-gray-300">
+					{{ t('daily.questionsInfo') }}
+				</p>
 				<p v-if="streak" class="text-sm font-medium text-gray-700 dark:text-gray-300">
 					{{ streaks.formattedStreak.value }}
 				</p>
@@ -177,7 +179,9 @@ onBeforeUnmount(() => {
 			<!-- Meta Info (always shown) -->
 			<div class="grid grid-cols-2 gap-4 pt-3 border-t border-gray-200 dark:border-gray-700">
 				<div class="text-center">
-					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{{ t('daily.resetsIn') }}</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+						{{ t('daily.resetsIn') }}
+					</p>
 					<p class="text-sm font-mono font-semibold tabular-nums">
 						<UIcon name="i-heroicons-clock" class="inline size-3.5" />
 						{{ timeToExpireFormatted }}
@@ -185,7 +189,9 @@ onBeforeUnmount(() => {
 				</div>
 
 				<div class="text-center">
-					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{{ t('daily.playersToday') }}</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+						{{ t('daily.playersToday') }}
+					</p>
 					<p class="text-sm font-semibold">
 						<UIcon name="i-heroicons-user-group" class="inline size-3.5" />
 						{{ totalPlayers }}

@@ -58,7 +58,9 @@ const handleBack = () => {
 			class="flex flex-col items-center justify-center min-h-[30vh]"
 		>
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('marathon.loadingCategories') }}</p>
+			<p class="text-gray-500 dark:text-gray-400 mt-4">
+				{{ t('marathon.loadingCategories') }}
+			</p>
 		</div>
 
 		<!-- Category List -->
@@ -67,7 +69,9 @@ const handleBack = () => {
 			<UCard
 				:class="[
 					'cursor-pointer transition-all',
-					selectedCategory === 'all' ? 'ring-2 ring-primary' : 'hover:ring-1 hover:ring-gray-300',
+					selectedCategory === 'all'
+						? 'ring-2 ring-primary'
+						: 'hover:ring-1 hover:ring-gray-300',
 				]"
 				@click="handleSelectCategory('all')"
 			>
@@ -94,7 +98,9 @@ const handleBack = () => {
 				:key="category.id"
 				:class="[
 					'cursor-pointer transition-all',
-					selectedCategory === category.id ? 'ring-2 ring-primary' : 'hover:ring-1 hover:ring-gray-300',
+					selectedCategory === category.id
+						? 'ring-2 ring-primary'
+						: 'hover:ring-1 hover:ring-gray-300',
 				]"
 				@click="handleSelectCategory(category.id)"
 			>

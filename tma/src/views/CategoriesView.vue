@@ -81,7 +81,9 @@ const getCategoryIcon = (categoryName: string): string => {
 				:title="t('categories.loadError')"
 				:description="error?.error.message || t('categories.loadFailed')"
 			/>
-			<UButton color="red" class="mt-2" @click="refetch()"> {{ t('categories.tryAgain') }} </UButton>
+			<UButton color="red" class="mt-2" @click="refetch()">
+				{{ t('categories.tryAgain') }}
+			</UButton>
 		</div>
 
 		<!-- Success state with data -->
@@ -101,7 +103,11 @@ const getCategoryIcon = (categoryName: string): string => {
 						<div class="flex-1">
 							<h3 class="text-lg font-semibold mb-1">{{ category.name }}</h3>
 							<p class="text-sm text-gray-500">
-								{{ t('categories.exploreDesc', { name: category.name.toLowerCase() }) }}
+								{{
+									t('categories.exploreDesc', {
+										name: category.name.toLowerCase(),
+									})
+								}}
 							</p>
 						</div>
 					</div>

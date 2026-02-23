@@ -365,6 +365,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		requestRematchUC       *appDuel.RequestRematchUseCase
 		startGameUC            *appDuel.StartGameUseCase
 		submitDuelAnswerUC     *appDuel.SubmitDuelAnswerUseCase
+		getGameResultUC        *appDuel.GetGameResultUseCase
 	)
 
 	if duelGameRepo != nil && playerRatingRepo != nil && challengeRepo != nil && referralRepo != nil && seasonRepo != nil && userRepo != nil {
@@ -425,6 +426,12 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			duelGameRepo,
 			challengeRepo,
 			duelEventBus,
+		)
+		getGameResultUC = appDuel.NewGetGameResultUseCase(
+			duelGameRepo,
+			playerRatingRepo,
+			seasonRepo,
+			userRepo,
 		)
 
 		// submitDuelAnswerUC requires a duel-specific QuestionRepository adapter.
@@ -521,6 +528,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			getGameHistoryUC,
 			getDuelLeaderboardUC,
 			requestRematchUC,
+			getGameResultUC,
 		)
 	}
 
@@ -637,6 +645,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		duel.Post("/challenge/:challengeId/respond", duelHandler.RespondChallenge)
 		duel.Get("/history", duelHandler.GetGameHistory)
 		duel.Get("/leaderboard", duelHandler.GetDuelLeaderboard)
+		duel.Get("/game/:gameId", duelHandler.GetGameResult)
 		duel.Post("/game/:gameId/rematch", duelHandler.RequestRematch)
 	}
 

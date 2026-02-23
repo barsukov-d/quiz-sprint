@@ -121,7 +121,15 @@ export function useMarathon(playerId: string) {
 			isLoadingStatus.value,
 	)
 
-	const lives = computed(() => state.value.game?.lives ?? { currentLives: 0, maxLives: 3, label: '', timeToNextLife: 0 })
+	const lives = computed(
+		() =>
+			state.value.game?.lives ?? {
+				currentLives: 0,
+				maxLives: 3,
+				label: '',
+				timeToNextLife: 0,
+			},
+	)
 	const hasLives = computed(() => lives.value.currentLives > 0)
 	const canPlay = computed(() => state.value.status !== 'playing')
 
@@ -137,7 +145,9 @@ export function useMarathon(playerId: string) {
 
 	// Bonus availability
 	const canUseShield = computed(() => state.value.bonusInventory.shield > 0 && isPlaying.value)
-	const canUseFiftyFifty = computed(() => state.value.bonusInventory.fiftyFifty > 0 && isPlaying.value)
+	const canUseFiftyFifty = computed(
+		() => state.value.bonusInventory.fiftyFifty > 0 && isPlaying.value,
+	)
 	const canUseSkip = computed(() => state.value.bonusInventory.skip > 0 && isPlaying.value)
 	const canUseFreeze = computed(() => state.value.bonusInventory.freeze > 0 && isPlaying.value)
 

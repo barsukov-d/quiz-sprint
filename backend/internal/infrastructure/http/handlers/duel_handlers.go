@@ -22,6 +22,7 @@ type DuelHandler struct {
 	getHistoryUC         *appDuel.GetGameHistoryUseCase
 	getLeaderboardUC     *appDuel.GetLeaderboardUseCase
 	requestRematchUC     *appDuel.RequestRematchUseCase
+	getGameResultUC      *appDuel.GetGameResultUseCase
 }
 
 func NewDuelHandler(
@@ -35,6 +36,7 @@ func NewDuelHandler(
 	getHistoryUC *appDuel.GetGameHistoryUseCase,
 	getLeaderboardUC *appDuel.GetLeaderboardUseCase,
 	requestRematchUC *appDuel.RequestRematchUseCase,
+	getGameResultUC *appDuel.GetGameResultUseCase,
 ) *DuelHandler {
 	return &DuelHandler{
 		getStatusUC:          getStatusUC,
@@ -47,6 +49,7 @@ func NewDuelHandler(
 		getHistoryUC:         getHistoryUC,
 		getLeaderboardUC:     getLeaderboardUC,
 		requestRematchUC:     requestRematchUC,
+		getGameResultUC:      getGameResultUC,
 	}
 }
 
@@ -400,6 +403,41 @@ func (h *DuelHandler) RequestRematch(c fiber.Ctx) error {
 
 	output, err := h.requestRematchUC.Execute(appDuel.RequestRematchInput{
 		PlayerID: req.PlayerID,
+		GameID:   gameID,
+	})
+	if err != nil {
+		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
+}
+
+// GetGameResult handles GET /api/v1/duel/game/:gameId
+// @Summary Get game result
+// @Description Get full result of a finished duel game
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Param gameId path string true "Game ID"
+// @Param playerId query string true "Player ID"
+// @Success 200 {object} GetGameResultResponse "Game result"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 404 {object} ErrorResponse "Game not found"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /duel/game/{gameId} [get]
+func (h *DuelHandler) GetGameResult(c fiber.Ctx) error {
+	gameID := c.Params("gameId")
+	if _, err := uuid.Parse(gameID); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid game ID format")
+	}
+
+	playerID := c.Query("playerId")
+	if playerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+
+	output, err := h.getGameResultUC.Execute(appDuel.GetGameResultInput{
+		PlayerID: playerID,
 		GameID:   gameID,
 	})
 	if err != nil {

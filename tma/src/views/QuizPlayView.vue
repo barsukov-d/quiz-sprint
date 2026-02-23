@@ -360,9 +360,12 @@ const getAnswerButtonClass = (answerId: string) => {
 			<!-- Header with progress -->
 			<div class="mb-6">
 				<div class="flex justify-between items-center mb-2">
-					<span class="text-sm font-semibold text-gray-600"
-						>{{ t('quiz.questionOf', { current: currentQuestionIndex, total: totalQuestions }) }}</span
-					>
+					<span class="text-sm font-semibold text-gray-600">{{
+						t('quiz.questionOf', {
+							current: currentQuestionIndex,
+							total: totalQuestions,
+						})
+					}}</span>
 					<div class="flex items-center gap-4">
 						<!-- Timer -->
 						<div
@@ -379,9 +382,9 @@ const getAnswerButtonClass = (answerId: string) => {
 							<span class="text-sm font-semibold">{{ timeRemaining }}s</span>
 						</div>
 						<!-- Score -->
-						<span class="text-sm font-semibold text-gray-600"
-							>{{ t('quiz.score', { score: session.score }) }}</span
-						>
+						<span class="text-sm font-semibold text-gray-600">{{
+							t('quiz.score', { score: session.score })
+						}}</span>
 					</div>
 				</div>
 				<UProgress v-model="progress" color="primary" />
@@ -447,12 +450,16 @@ const getAnswerButtonClass = (answerId: string) => {
 								{{ t('quiz.pointsEarned', { points: answerResult.pointsEarned }) }}
 							</div>
 							<div class="text-sm mt-2 space-y-1">
-								<div>{{ t('quiz.basePoints', { points: answerResult.basePoints }) }}</div>
+								<div>
+									{{ t('quiz.basePoints', { points: answerResult.basePoints }) }}
+								</div>
 								<div v-if="answerResult.timeBonus > 0" class="text-green-700">
 									{{ t('quiz.speedBonus', { points: answerResult.timeBonus }) }}
 								</div>
 								<div v-if="answerResult.streakBonus > 0" class="text-orange-700">
-									{{ t('quiz.streakBonus', { points: answerResult.streakBonus }) }}
+									{{
+										t('quiz.streakBonus', { points: answerResult.streakBonus })
+									}}
 								</div>
 							</div>
 						</div>
@@ -461,9 +468,18 @@ const getAnswerButtonClass = (answerId: string) => {
 				</UAlert>
 
 				<!-- Streak achievement notification -->
-				<UAlert v-if="answerResult.streakBonus > 0" color="orange" :title="t('quiz.streakBonusTitle')">
+				<UAlert
+					v-if="answerResult.streakBonus > 0"
+					color="orange"
+					:title="t('quiz.streakBonusTitle')"
+				>
 					<template #description>
-						{{ t('quiz.streakBonusDesc', { count: answerResult.currentStreak, bonus: answerResult.streakBonus }) }}
+						{{
+							t('quiz.streakBonusDesc', {
+								count: answerResult.currentStreak,
+								bonus: answerResult.streakBonus,
+							})
+						}}
 					</template>
 				</UAlert>
 			</div>

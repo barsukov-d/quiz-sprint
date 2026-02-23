@@ -13,7 +13,7 @@ import * as nuxtLocales from '@nuxt/ui/locale'
 
 const { t, locale } = useI18n()
 const nuxtLocale = computed(
-  () => nuxtLocales[locale.value as keyof typeof nuxtLocales] ?? nuxtLocales.en,
+	() => nuxtLocales[locale.value as keyof typeof nuxtLocales] ?? nuxtLocales.en,
 )
 
 const route = useRoute()

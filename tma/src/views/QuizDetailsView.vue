@@ -134,7 +134,9 @@ const formatTime = (seconds: number) => {
 								{{ index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉' }}
 							</span>
 							<div>
-								<div class="font-semibold">{{ entry.username || t('quiz.anonymous') }}</div>
+								<div class="font-semibold">
+									{{ entry.username || t('quiz.anonymous') }}
+								</div>
 								<div class="text-sm text-gray-500">
 									{{ new Date(entry.completedAt * 1000).toLocaleDateString() }}
 								</div>

@@ -1433,3 +1433,33 @@ type RequestRematchResponse struct {
 }
 
 // @name RequestRematchResponse
+
+// GetGameResultPlayerDTO represents a player in the game result response
+type GetGameResultPlayerDTO struct {
+	ID         string `json:"id"`
+	Username   string `json:"username"`
+	MMR        int    `json:"mmr"`
+	League     string `json:"league"`
+	LeagueIcon string `json:"leagueIcon"`
+	Score      int    `json:"score"`
+}
+
+// @name GetGameResultPlayerDTO
+
+// GetGameResultResponse wraps the game result response
+type GetGameResultResponse struct {
+	Data struct {
+		GameID        string                 `json:"gameId"`
+		Result        string                 `json:"result"` // "win", "loss", "draw"
+		PlayerScore   int                    `json:"playerScore"`
+		OpponentScore int                    `json:"opponentScore"`
+		MMRChange     int                    `json:"mmrChange"`
+		NewMMR        int                    `json:"newMmr"`
+		NewLeague     string                 `json:"newLeague"`
+		NewDivision   int                    `json:"newDivision"`
+		Opponent      GetGameResultPlayerDTO `json:"opponent"`
+		CanRematch    bool                   `json:"canRematch"`
+	} `json:"data"`
+}
+
+// @name GetGameResultResponse

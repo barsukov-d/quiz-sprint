@@ -74,7 +74,9 @@ const handleClick = () => {
 						:class="i <= lives ? 'text-red-500' : 'text-gray-300 dark:text-gray-600'"
 						class="size-4"
 					/>
-					<span class="text-xs text-gray-500 ml-1">{{ t('marathon.lives', { count: lives }) }}</span>
+					<span class="text-xs text-gray-500 ml-1">{{
+						t('marathon.lives', { count: lives })
+					}}</span>
 				</div>
 			</div>
 

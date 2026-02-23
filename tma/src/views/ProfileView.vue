@@ -7,12 +7,12 @@ const { currentUser, isAuthenticated } = useAuth()
 const { t, locale } = useI18n()
 
 const localeOptions = [
-  { label: 'English', value: 'en' },
-  { label: 'Русский', value: 'ru' },
+	{ label: 'English', value: 'en' },
+	{ label: 'Русский', value: 'ru' },
 ]
 
 function handleLocaleChange(val: string) {
-  setLocale(val as Locale)
+	setLocale(val as Locale)
 }
 </script>
 
@@ -44,7 +44,9 @@ function handleLocaleChange(val: string) {
 					<div class="grid grid-cols-2 gap-4">
 						<div>
 							<p class="text-sm text-gray-600">{{ t('profile.email') }}</p>
-							<p class="font-medium">{{ currentUser.email || t('profile.notSet') }}</p>
+							<p class="font-medium">
+								{{ currentUser.email || t('profile.notSet') }}
+							</p>
 						</div>
 						<div>
 							<p class="text-sm text-gray-600">{{ t('profile.language') }}</p>
@@ -65,7 +67,9 @@ function handleLocaleChange(val: string) {
 				<div class="grid grid-cols-2 gap-4">
 					<div class="text-center p-4 bg-gray-50 rounded-lg">
 						<div class="text-3xl font-bold text-blue-600">-</div>
-						<div class="text-sm text-gray-600 mt-1">{{ t('profile.quizzesCompleted') }}</div>
+						<div class="text-sm text-gray-600 mt-1">
+							{{ t('profile.quizzesCompleted') }}
+						</div>
 					</div>
 					<div class="text-center p-4 bg-gray-50 rounded-lg">
 						<div class="text-3xl font-bold text-green-600">-</div>
@@ -73,7 +77,9 @@ function handleLocaleChange(val: string) {
 					</div>
 					<div class="text-center p-4 bg-gray-50 rounded-lg">
 						<div class="text-3xl font-bold text-purple-600">-</div>
-						<div class="text-sm text-gray-600 mt-1">{{ t('profile.averageScore') }}</div>
+						<div class="text-sm text-gray-600 mt-1">
+							{{ t('profile.averageScore') }}
+						</div>
 					</div>
 					<div class="text-center p-4 bg-gray-50 rounded-lg">
 						<div class="text-3xl font-bold text-orange-600">-</div>
