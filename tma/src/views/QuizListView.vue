@@ -2,9 +2,11 @@
 import { useGetQuiz } from '@/api'
 import { useRoute, useRouter } from 'vue-router'
 import { computed } from 'vue'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 // Получаем categoryId из query параметров
 const categoryId = computed(() => route.query.categoryId as string | undefined)
@@ -44,15 +46,15 @@ const goToQuizDetails = (quizId: string) => {
 				@click="goBackToCategories"
 			/>
 			<div>
-				<h1 class="text-3xl font-bold">Квизы</h1>
-				<p v-if="categoryId" class="text-sm text-gray-500">Категория: {{ categoryName }}</p>
+				<h1 class="text-3xl font-bold">{{ t('quiz.title') }}</h1>
+				<p v-if="categoryId" class="text-sm text-gray-500">{{ t('quiz.category', { name: categoryName }) }}</p>
 			</div>
 		</div>
 
 		<!-- Loading state -->
 		<div v-if="isLoading" class="flex justify-center items-center py-12">
 			<UProgress animation="carousel" />
-			<span class="ml-4">Загрузка квизов...</span>
+			<span class="ml-4">{{ t('quiz.loading') }}</span>
 		</div>
 
 		<!-- Error state -->
@@ -60,10 +62,10 @@ const goToQuizDetails = (quizId: string) => {
 			<UAlert
 				color="red"
 				variant="soft"
-				title="Ошибка загрузки"
-				:description="error?.error.message || 'Не удалось загрузить квизы'"
+				:title="t('quiz.loadError')"
+				:description="error?.error.message || t('quiz.loadFailed')"
 			/>
-			<UButton color="red" class="mt-2" @click="refetch()"> Попробовать снова </UButton>
+			<UButton color="red" class="mt-2" @click="refetch()"> {{ t('quiz.tryAgain') }} </UButton>
 		</div>
 
 		<!-- Success state with data -->
@@ -77,28 +79,28 @@ const goToQuizDetails = (quizId: string) => {
 				class="hover:shadow-lg transition-shadow"
 			>
 				<template #header>
-					<h3 class="text-xl font-semibold">{{ quiz.title || 'Unnamed Quiz' }}</h3>
+					<h3 class="text-xl font-semibold">{{ quiz.title || t('quiz.unnamed') }}</h3>
 				</template>
 
-				<p class="text-gray-600 text-sm mb-4">{{ quiz.description || 'No description' }}</p>
+				<p class="text-gray-600 text-sm mb-4">{{ quiz.description || t('quiz.noDescription') }}</p>
 
 				<div class="flex items-center justify-between text-sm text-gray-500 mb-4">
-					<span>📝 {{ quiz.questionsCount || 0 }} вопросов</span>
+					<span>📝 {{ t('quiz.questionsCount', { count: quiz.questionsCount || 0 }) }}</span>
 					<span
 						>⏱️
 						{{
-							quiz.timeLimit ? `${Math.floor(quiz.timeLimit / 60)} мин` : 'N/A'
+							quiz.timeLimit ? t('quiz.timeLimit', { min: Math.floor(quiz.timeLimit / 60) }) : 'N/A'
 						}}</span
 					>
 				</div>
 
 				<div class="flex items-center text-sm text-gray-500 mb-4">
-					<span>✅ Проходной балл: {{ quiz.passingScore || 0 }}%</span>
+					<span>{{ t('quiz.passingScore', { score: quiz.passingScore || 0 }) }}</span>
 				</div>
 
 				<template #footer>
 					<UButton block color="primary" @click="goToQuizDetails(quiz.id)">
-						View Quiz
+						{{ t('quiz.viewQuiz') }}
 					</UButton>
 				</template>
 			</UCard>
@@ -107,9 +109,9 @@ const goToQuizDetails = (quizId: string) => {
 		<!-- Empty state -->
 		<div v-else class="text-center py-12 text-gray-500">
 			<div class="text-6xl mb-4">📋</div>
-			<p class="text-lg font-semibold mb-2">Квизы не найдены</p>
-			<p class="text-sm mb-4">В этой категории пока нет квизов</p>
-			<UButton @click="goBackToCategories"> Вернуться к категориям </UButton>
+			<p class="text-lg font-semibold mb-2">{{ t('quiz.notFound') }}</p>
+			<p class="text-sm mb-4">{{ t('quiz.notFoundDesc') }}</p>
+			<UButton @click="goBackToCategories"> {{ t('quiz.backToCategories') }} </UButton>
 		</div>
 	</div>
 </template>
