@@ -18,8 +18,8 @@
 
 ## Quick Navigation
 
-- **Domain**: `backend/internal/domain/quick_duel/`
-- **Application**: `backend/internal/application/quick_duel/`
+- **Domain**: `backend/internal/domain/pvp_duel/`
+- **Application**: `backend/internal/application/pvp_duel/`
 - **Handlers**: `backend/internal/infrastructure/http/handlers/duel_handlers.go`
 - **Repositories**: `backend/internal/infrastructure/persistence/postgres/*_repository.go`
 - **Redis Queue**: `backend/internal/infrastructure/persistence/redis/matchmaking_queue.go`
@@ -28,7 +28,7 @@
 - **Components**: `tma/src/components/Duel/DuelCard.vue`
 - **Composables**: `tma/src/composables/usePvPDuel.ts`, `tma/src/composables/useDuelWebSocket.ts`
 - **API**: `/api/v1/duel/*`
-- **WebSocket**: `/ws/duel` (TBD)
+- **WebSocket**: `/ws/duel/:gameId` (spec in 05_api.md)
 
 ---
 
