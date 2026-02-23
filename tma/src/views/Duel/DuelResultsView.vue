@@ -3,6 +3,7 @@ import { computed, onMounted, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePvPDuel } from '@/composables/usePvPDuel'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
@@ -10,6 +11,7 @@ const { currentUser } = useAuth()
 
 const duelId = computed(() => route.params.duelId as string)
 const playerId = computed(() => currentUser.value?.id ?? '')
+const { t } = useI18n()
 
 const {
   gameHistory,
@@ -48,8 +50,8 @@ const resultColor = computed(() => {
 })
 
 const resultText = computed(() => {
-  if (isDraw.value) return 'Draw!'
-  return didWin.value ? 'Victory!' : 'Defeat'
+  if (isDraw.value) return t('duel.draw')
+  return didWin.value ? t('duel.victory') : t('duel.defeat')
 })
 
 const mmrChange = computed(() => gameData.value?.mmrChange ?? 0)
@@ -117,7 +119,7 @@ onMounted(async () => {
       <button class="p-2 -ml-2" @click="handleHome">
         <UIcon name="i-heroicons-x-mark" class="size-6" />
       </button>
-      <h1 class="text-lg font-semibold">Game Result</h1>
+      <h1 class="text-lg font-semibold">{{ t('duel.gameResult') }}</h1>
       <div class="w-10" />
     </div>
 
@@ -134,7 +136,7 @@ onMounted(async () => {
       <!-- Score -->
       <div class="flex items-center gap-6 mb-6">
         <div class="text-center">
-          <p class="text-sm text-gray-500 dark:text-gray-400">You</p>
+          <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('duel.you') }}</p>
           <p class="text-5xl font-bold text-primary">
             {{ gameData?.playerScore ?? 0 }}
           </p>
@@ -142,7 +144,7 @@ onMounted(async () => {
         <span class="text-2xl text-gray-400">-</span>
         <div class="text-center">
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            {{ gameData?.opponent ?? 'Opponent' }}
+            {{ gameData?.opponent ?? t('duel.opponent') }}
           </p>
           <p class="text-5xl font-bold text-orange-500">
             {{ gameData?.opponentScore ?? 0 }}
@@ -153,7 +155,7 @@ onMounted(async () => {
       <!-- MMR Change -->
       <div class="mb-8">
         <p :class="mmrChangeColor" class="text-2xl font-bold">
-          {{ mmrChange >= 0 ? '+' : '' }}{{ mmrChange }} MMR
+          {{ t('duel.mmrChange', { sign: mmrChange >= 0 ? '+' : '', amount: mmrChange }) }}
         </p>
       </div>
 
@@ -165,7 +167,7 @@ onMounted(async () => {
         size="lg"
         class="mb-6"
       >
-        Friend Game
+        {{ t('duel.friendGame') }}
       </UBadge>
     </div>
 
@@ -181,7 +183,7 @@ onMounted(async () => {
         :loading="isLoading"
         @click="handleRematch"
       >
-        Request Rematch
+        {{ t('duel.requestRematch') }}
       </UButton>
 
       <UButton
@@ -193,7 +195,7 @@ onMounted(async () => {
         block
         disabled
       >
-        Waiting for opponent...
+        {{ t('duel.waitingOpponent') }}
       </UButton>
 
       <UAlert
@@ -214,7 +216,7 @@ onMounted(async () => {
         block
         @click="handleShare"
       >
-        Share Result
+        {{ t('duel.shareResult') }}
       </UButton>
 
       <!-- Back to Lobby -->
@@ -226,7 +228,7 @@ onMounted(async () => {
         block
         @click="handleBackToLobby"
       >
-        Back to Lobby
+        {{ t('duel.backToLobby') }}
       </UButton>
     </div>
   </div>

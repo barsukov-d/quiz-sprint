@@ -2,6 +2,7 @@
 import { computed, onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { usePvPDuel } from '@/composables/usePvPDuel'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
   playerId: string
@@ -9,6 +10,7 @@ interface Props {
 
 const props = defineProps<Props>()
 const router = useRouter()
+const { t } = useI18n()
 
 // ===========================
 // Composables
@@ -35,9 +37,9 @@ const {
 // ===========================
 
 const buttonText = computed(() => {
-  if (hasActiveDuel.value) return 'Continue Duel'
-  if (pendingChallenges.value.length > 0) return `Challenges (${pendingChallenges.value.length})`
-  return 'Find Opponent'
+  if (hasActiveDuel.value) return t('duel.continueDuel')
+  if (pendingChallenges.value.length > 0) return t('duel.challengesCount', { count: pendingChallenges.value.length })
+  return t('duel.findOpponent')
 })
 
 const buttonIcon = computed(() => {
@@ -90,10 +92,10 @@ onMounted(async () => {
       <div class="flex items-center justify-between">
         <div class="flex items-center gap-2.5">
           <UIcon name="i-heroicons-bolt" class="size-5 text-orange-500" />
-          <h3 class="text-base font-semibold">PvP Duel</h3>
+          <h3 class="text-base font-semibold">{{ t('duel.title') }}</h3>
         </div>
         <UBadge v-if="pendingChallenges.length > 0" color="orange" variant="soft" size="sm">
-          {{ pendingChallenges.length }} challenges
+          {{ t('duel.pendingCount', { count: pendingChallenges.length }) }}
         </UBadge>
       </div>
     </template>
@@ -106,23 +108,23 @@ onMounted(async () => {
           <span class="text-2xl">{{ leagueIcon }}</span>
           <div>
             <p class="font-semibold">{{ leagueLabel }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ mmr }} MMR</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('duel.mmrValue', { mmr }) }}</p>
           </div>
         </div>
         <div class="text-right">
           <p class="text-sm font-medium">
-            <span class="text-green-600 dark:text-green-400">{{ seasonWins }}W</span>
+            <span class="text-green-600 dark:text-green-400">{{ seasonWins }}{{ t('duel.wIndicator') }}</span>
             <span class="text-gray-400 mx-1">/</span>
-            <span class="text-red-600 dark:text-red-400">{{ seasonLosses }}L</span>
+            <span class="text-red-600 dark:text-red-400">{{ seasonLosses }}{{ t('duel.lIndicator') }}</span>
           </p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">{{ winRateFormatted }} win rate</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ winRateFormatted }} {{ t('duel.winRate') }}</p>
         </div>
       </div>
 
       <!-- Meta Info -->
       <div class="grid grid-cols-2 gap-4 pt-3 border-t border-gray-200 dark:border-gray-700">
         <div class="text-center">
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Tickets</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{{ t('duel.tickets') }}</p>
           <p class="text-sm font-semibold">
             <UIcon name="i-heroicons-ticket" class="inline size-3.5 text-primary" />
             {{ tickets }}
@@ -130,10 +132,10 @@ onMounted(async () => {
         </div>
 
         <div class="text-center">
-          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">This Season</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{{ t('duel.thisSeason') }}</p>
           <p class="text-sm font-semibold">
             <UIcon name="i-heroicons-trophy" class="inline size-3.5 text-yellow-500" />
-            {{ totalGames }} games
+            {{ t('duel.totalGames', { count: totalGames }) }}
           </p>
         </div>
       </div>
