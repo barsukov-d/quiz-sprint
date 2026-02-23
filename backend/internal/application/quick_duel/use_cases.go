@@ -841,10 +841,6 @@ type PlayerAnswer struct {
 	Points    int    `json:"points"`
 }
 
-// playerAnswer is a backward-compatible alias kept to minimise diff in this file.
-// All new code should use PlayerAnswer directly.
-type playerAnswer = PlayerAnswer
-
 func NewSubmitDuelAnswerUseCase(
 	duelGameRepo quick_duel.DuelGameRepository,
 	playerRatingRepo quick_duel.PlayerRatingRepository,
@@ -866,6 +862,9 @@ func NewSubmitDuelAnswerUseCase(
 func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*SubmitDuelAnswerOutput, error) {
 	if uc.questionRepo == nil {
 		return nil, fmt.Errorf("submit duel answer: question repository not configured")
+	}
+	if uc.roundCache == nil {
+		return nil, fmt.Errorf("submit duel answer: round cache not configured")
 	}
 
 	now := time.Now().UTC().Unix()
@@ -929,13 +928,8 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 		}
 	}
 
-	// Save the updated game state (scores advanced by domain)
-	if err := uc.duelGameRepo.Save(game); err != nil {
-		return nil, fmt.Errorf("submit duel answer: save game: %w", err)
-	}
-
 	// Track this answer in the distributed cache
-	if err := uc.roundCache.AddAnswer(input.GameID, currentRound, playerAnswer{
+	if err := uc.roundCache.AddAnswer(input.GameID, currentRound, PlayerAnswer{
 		PlayerID:  input.PlayerID,
 		AnswerID:  input.AnswerID,
 		IsCorrect: isCorrect,
@@ -969,7 +963,15 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 		GameComplete:    gameComplete,
 	}
 
-	// If game is complete, calculate MMR changes
+	// Save updated game state (covers both mid-game and final-round persistence).
+	// finalizeGame will save again after applying MMR changes.
+	if !gameComplete {
+		if err := uc.duelGameRepo.Save(game); err != nil {
+			return nil, fmt.Errorf("submit duel answer: save game: %w", err)
+		}
+	}
+
+	// If game is complete, apply MMR changes and save the finalised game
 	if gameComplete {
 		uc.finalizeGame(game, player1Score, player2Score, now, output)
 	}
