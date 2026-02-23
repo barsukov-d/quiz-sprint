@@ -720,7 +720,7 @@ When time runs out:
   "type": "opponent_disconnected",
   "data": {
     "playerId": "user_456",
-    "reconnectIn": 30
+    "reconnectIn": 10
   }
 }
 ```
