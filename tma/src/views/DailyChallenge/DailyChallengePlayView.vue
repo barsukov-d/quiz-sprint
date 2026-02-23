@@ -6,6 +6,7 @@ import { useAuth } from '@/composables/useAuth'
 import GameTimer from '@/components/shared/GameTimer.vue'
 import QuestionCard from '@/components/shared/QuestionCard.vue'
 import AnswerButton from '@/components/shared/AnswerButton.vue'
+import { useI18n } from 'vue-i18n'
 
 // ===========================
 // Auth & Router
@@ -13,6 +14,7 @@ import AnswerButton from '@/components/shared/AnswerButton.vue'
 
 const router = useRouter()
 const { currentUser } = useAuth()
+const { t } = useI18n()
 const playerId = currentUser.value?.id || 'guest'
 
 // ===========================
@@ -246,7 +248,7 @@ onUnmounted(() => {
 		<!-- Loading State -->
 		<div v-if="!currentQuestion" class="flex flex-col items-center justify-center min-h-[50vh]">
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">Loading question...</p>
+			<p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('daily.loadingQuestion') }}</p>
 		</div>
 
 		<!-- Game View -->
@@ -297,7 +299,7 @@ onUnmounted(() => {
 					v-if="isSubmitting"
 					color="gray"
 					variant="soft"
-					title="Submitting answer..."
+					:title="t('daily.submitting')"
 				>
 					<template #icon>
 						<UIcon name="i-heroicons-arrow-path" class="animate-spin" />
@@ -308,7 +310,7 @@ onUnmounted(() => {
 					v-else-if="showFeedback && feedbackIsCorrect"
 					color="green"
 					variant="soft"
-					title="Correct!"
+					:title="t('daily.correct')"
 					icon="i-heroicons-check-circle"
 				/>
 
@@ -316,7 +318,7 @@ onUnmounted(() => {
 					v-else-if="showFeedback && feedbackIsCorrect === false"
 					color="red"
 					variant="soft"
-					title="Incorrect"
+					:title="t('daily.incorrect')"
 					icon="i-heroicons-x-circle"
 				/>
 			</div>

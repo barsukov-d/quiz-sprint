@@ -5,6 +5,7 @@ import { useDailyChallenge } from '@/composables/useDailyChallenge'
 import { useAuth } from '@/composables/useAuth'
 import { useStreaks } from '@/composables/useStreaks'
 import DailyChallengeLeaderboard from '@/components/DailyChallenge/DailyChallengeLeaderboard.vue'
+import { useI18n } from 'vue-i18n'
 
 // ===========================
 // Auth & Router
@@ -12,6 +13,7 @@ import DailyChallengeLeaderboard from '@/components/DailyChallenge/DailyChalleng
 
 const router = useRouter()
 const { currentUser } = useAuth()
+const { t } = useI18n()
 const playerId = currentUser.value?.id || 'guest'
 
 // ===========================
@@ -94,30 +96,30 @@ const chestColor = computed(() => {
 })
 
 // Bonus display mapping
-const bonusInfo: Record<string, { label: string; icon: string; color: string; description: string }> = {
+const bonusInfo: Record<string, { get label(): string; icon: string; color: string; get description(): string }> = {
 	shield: {
-		label: 'Shield',
+		get label() { return t('daily.shieldName') },
 		icon: 'i-heroicons-shield-check',
 		color: 'text-blue-500',
-		description: 'Absorbs 1 wrong answer',
+		get description() { return t('daily.shieldDesc') },
 	},
 	fifty_fifty: {
-		label: '50/50',
+		get label() { return t('daily.fiftyfiftyName') },
 		icon: 'i-heroicons-scissors',
 		color: 'text-yellow-500',
-		description: 'Removes 2 wrong answers',
+		get description() { return t('daily.fiftyfiftyDesc') },
 	},
 	skip: {
-		label: 'Skip',
+		get label() { return t('daily.skipName') },
 		icon: 'i-heroicons-forward',
 		color: 'text-green-500',
-		description: 'Skip without penalty',
+		get description() { return t('daily.skipDesc') },
 	},
 	freeze: {
-		label: 'Freeze',
+		get label() { return t('daily.freezeName') },
 		icon: 'i-heroicons-clock',
 		color: 'text-cyan-500',
-		description: '+5 seconds to timer',
+		get description() { return t('daily.freezeDesc') },
 	},
 }
 
@@ -189,7 +191,7 @@ onMounted(async () => {
 		<!-- Loading State -->
 		<div v-if="!results" class="flex flex-col items-center justify-center min-h-[50vh]">
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">Loading results...</p>
+			<p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('daily.loadingResults') }}</p>
 		</div>
 
 		<!-- Results View -->
@@ -217,16 +219,16 @@ onMounted(async () => {
 						<div
 							class="text-sm text-gray-600 dark:text-gray-400 uppercase tracking-wider mt-1"
 						>
-							points
+							{{ t('daily.points') }}
 						</div>
 						<!-- Score breakdown -->
 						<div
 							v-if="results && results.baseScore > 0"
 							class="flex items-center justify-center gap-2 mt-2 text-xs text-gray-500 dark:text-gray-400"
 						>
-							<span>Base: {{ results.baseScore }}</span>
+							<span>{{ t('daily.baseScore', { score: results.baseScore }) }}</span>
 							<span v-if="hasStreakBonus" class="text-yellow-500 font-semibold">
-								+ {{ results.streakBonus }} streak (×{{ streakMultiplier }})
+								{{ t('daily.streakBonus', { bonus: results.streakBonus, multiplier: streakMultiplier }) }}
 							</span>
 						</div>
 					</div>
@@ -241,8 +243,8 @@ onMounted(async () => {
 						<p
 							class="text-center text-sm text-gray-700 dark:text-gray-300 font-semibold"
 						>
-							{{ results.correctAnswers }} / {{ results.totalQuestions }} correct
-							<span class="text-gray-500">({{ scorePercentage }}%)</span>
+							{{ t('daily.correctOf', { correct: results.correctAnswers, total: results.totalQuestions }) }}
+							<span class="text-gray-500">{{ t('daily.scorePercent', { percent: scorePercentage }) }}</span>
 						</p>
 					</div>
 				</div>
@@ -253,12 +255,12 @@ onMounted(async () => {
 				v-if="hasNewStreakRecord"
 				color="yellow"
 				variant="soft"
-				title="New Streak Record!"
+				:title="t('daily.newStreakRecord')"
 				icon="i-heroicons-fire"
 			>
 				<template #description>
 					<p>
-						You've reached a {{ streak!.currentStreak }} day streak!
+						{{ t('daily.streakRecordDesc', { days: streak!.currentStreak }) }}
 						{{ streaks.getStreakEmoji.value }}
 					</p>
 				</template>
@@ -276,7 +278,7 @@ onMounted(async () => {
 						<span class="text-5xl">{{ chestEmoji }}</span>
 						<div>
 							<h3 class="text-xl font-bold">{{ chestLabel }}</h3>
-							<p class="text-sm text-gray-500 dark:text-gray-400">Your Rewards</p>
+							<p class="text-sm text-gray-500 dark:text-gray-400">{{ t('daily.yourRewards') }}</p>
 						</div>
 					</div>
 
@@ -293,7 +295,7 @@ onMounted(async () => {
 									{{ chestReward.coins }}
 								</div>
 								<div class="text-xs text-gray-500 uppercase tracking-wider">
-									Coins
+									{{ t('daily.coins') }}
 								</div>
 							</div>
 						</div>
@@ -307,7 +309,7 @@ onMounted(async () => {
 									{{ chestReward.pvpTickets }}
 								</div>
 								<div class="text-xs text-gray-500 uppercase tracking-wider">
-									PVP Tickets
+									{{ t('daily.pvpTickets') }}
 								</div>
 							</div>
 						</div>
@@ -320,7 +322,7 @@ onMounted(async () => {
 					>
 						<UIcon name="i-heroicons-fire" class="w-4 h-4 text-yellow-500" />
 						<span class="text-yellow-700 dark:text-yellow-400">
-							Streak ×{{ streakMultiplier }} applied to coins
+							{{ t('daily.streakApplied', { multiplier: streakMultiplier }) }}
 						</span>
 					</div>
 
@@ -331,7 +333,7 @@ onMounted(async () => {
 						<div class="flex items-center gap-2 mb-3">
 							<UIcon name="i-heroicons-bolt" class="w-4 h-4 text-primary" />
 							<h4 class="text-sm font-semibold text-gray-700 dark:text-gray-300">
-								Marathon Bonuses
+								{{ t('daily.marathonBonuses') }}
 							</h4>
 						</div>
 						<div class="flex flex-col gap-2">
@@ -357,7 +359,7 @@ onMounted(async () => {
 							</div>
 						</div>
 						<p class="text-xs text-gray-400 dark:text-gray-500 mt-2">
-							Use in Solo Marathon mode
+							{{ t('daily.bonusUseDesc') }}
 						</p>
 					</div>
 				</div>
@@ -370,7 +372,7 @@ onMounted(async () => {
 						class="flex items-center gap-3 pb-4 border-b border-gray-200 dark:border-gray-700"
 					>
 						<UIcon name="i-heroicons-chart-bar" class="w-6 h-6 text-primary" />
-						<h3 class="text-lg font-semibold">Your Ranking</h3>
+						<h3 class="text-lg font-semibold">{{ t('daily.yourRanking') }}</h3>
 					</div>
 					<div class="grid grid-cols-2 gap-8 py-4">
 						<div class="text-center">
@@ -379,13 +381,13 @@ onMounted(async () => {
 									#{{ results.rank }}
 								</UBadge>
 							</div>
-							<div class="text-sm text-gray-500">Your Rank</div>
+							<div class="text-sm text-gray-500">{{ t('daily.yourRank') }}</div>
 						</div>
 						<div class="text-center">
 							<div class="text-2xl font-bold text-gray-700 dark:text-gray-300 mb-2">
 								{{ results.totalPlayers }}
 							</div>
-							<div class="text-sm text-gray-500">Total Players</div>
+							<div class="text-sm text-gray-500">{{ t('daily.totalPlayers') }}</div>
 						</div>
 					</div>
 				</div>
@@ -409,12 +411,11 @@ onMounted(async () => {
 							class="flex items-center gap-2 pb-3 border-b border-gray-200 dark:border-gray-700"
 						>
 							<UIcon name="i-heroicons-arrow-path" class="w-5 h-5 text-primary" />
-							<h3 class="text-lg font-semibold">Try Again?</h3>
+							<h3 class="text-lg font-semibold">{{ t('daily.tryAgain') }}</h3>
 						</div>
 
 						<p class="text-sm text-gray-600 dark:text-gray-400">
-							You can retry today's challenge to improve your score. Your best score
-							will count for the leaderboard.
+							{{ t('daily.tryAgainDesc') }}
 						</p>
 
 						<div class="grid grid-cols-2 gap-3">
@@ -427,8 +428,8 @@ onMounted(async () => {
 								@click="handleRetryWithCoins"
 							>
 								<div class="flex flex-col items-center gap-1">
-									<span class="font-bold">100 Coins</span>
-									<span class="text-xs opacity-80">Retry</span>
+									<span class="font-bold">{{ t('daily.retryCoins') }}</span>
+									<span class="text-xs opacity-80">{{ t('daily.retry') }}</span>
 								</div>
 							</UButton>
 
@@ -441,8 +442,8 @@ onMounted(async () => {
 								@click="handleRetryWithAd"
 							>
 								<div class="flex flex-col items-center gap-1">
-									<span class="font-bold">Watch Ad</span>
-									<span class="text-xs opacity-80">Free Retry</span>
+									<span class="font-bold">{{ t('daily.watchAd') }}</span>
+									<span class="text-xs opacity-80">{{ t('daily.freeRetry') }}</span>
 								</div>
 							</UButton>
 						</div>
@@ -457,7 +458,7 @@ onMounted(async () => {
 					block
 					@click="handleGoHome"
 				>
-					Back to Home
+					{{ t('daily.backToHome') }}
 				</UButton>
 			</div>
 
@@ -465,7 +466,7 @@ onMounted(async () => {
 			<div class="flex items-center justify-center gap-2 p-4 text-center">
 				<UIcon name="i-heroicons-calendar-days" class="w-5 h-5 text-gray-400" />
 				<p class="text-sm text-gray-500 dark:text-gray-400">
-					Next challenge available in
+					{{ t('daily.nextChallenge') }}
 					<span class="font-semibold">{{ timeToExpireFormatted }}</span>
 				</p>
 			</div>
