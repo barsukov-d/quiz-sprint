@@ -38,10 +38,11 @@ Daily Challenge → Earn PvP Tickets → Enter Duel → Win/Lose → MMR Change 
 
 ### 2. ELO/MMR Rating System
 Skill-based matchmaking:
-- Win against stronger opponent → +25-40 MMR
-- Win against weaker opponent → +10-15 MMR
-- Lose to stronger opponent → -10-15 MMR
-- Lose to weaker opponent → -25-40 MMR
+- Win against stronger opponent → more MMR (up to ~+30)
+- Win against weaker opponent → less MMR (minimum +10)
+- Lose to stronger opponent → less MMR lost (minimum -10)
+- Lose to weaker opponent → more MMR lost (up to ~-30)
+- Exact values: ELO formula, K=32, min ±10. See `03_rules.md`.
 
 ### 3. League System
 
