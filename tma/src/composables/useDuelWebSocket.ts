@@ -131,6 +131,20 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
   const gameResult = ref<GameResult | null>(null)
   const error = ref<string | null>(null)
 
+  // Per-answer feedback state
+  const myAnswerCorrect = ref<boolean | null>(null)
+  const myAnswerTime = ref(0)
+  const opponentAnswerTime = ref(0)
+
+  // Opponent reconnect grace period
+  const opponentReconnecting = ref(false)
+  const opponentReconnectCountdown = ref(0)
+  let reconnectTimer: ReturnType<typeof setInterval> | null = null
+
+  // Emotes
+  const emotesLeft = ref(3)
+  const unlockedEmotes = ['🔥', '😎', '👏']
+
   // ===========================
   // Computed
   // ===========================
@@ -286,6 +300,9 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
         currentRound.value = message.data.roundNum
         opponentAnswered.value = false
         lastRoundResult.value = null
+        myAnswerCorrect.value = null
+        myAnswerTime.value = 0
+        opponentAnswerTime.value = 0
         if (game.value) {
           game.value.status = 'in_progress'
           game.value.currentRound = message.data.roundNum
@@ -294,19 +311,22 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
         break
 
       case 'answer_result':
-        // Check if this is opponent's answer (mark opponent as answered)
         if (message.data.playerId !== playerId) {
           opponentAnswered.value = true
+          opponentAnswerTime.value = message.data.timeTaken
+        } else {
+          myAnswerCorrect.value = message.data.isCorrect
+          myAnswerTime.value = message.data.timeTaken
         }
-        // Update scores
+        // Update scores for both players
         if (game.value) {
           game.value.player1.score = message.data.player1Score
           game.value.player2.score = message.data.player2Score
         }
-        // Store last result for feedback
+        // Reveal correct answer for UI feedback
         lastRoundResult.value = {
           questionNumber: currentRound.value,
-          player1Correct: false, // Will be filled from specific player data
+          player1Correct: false,
           player1Time: 0,
           player2Correct: false,
           player2Time: 0,
@@ -328,6 +348,11 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
         break
 
       case 'game_complete':
+        if (reconnectTimer) {
+          clearInterval(reconnectTimer)
+          reconnectTimer = null
+        }
+        opponentReconnecting.value = false
         gameResult.value = {
           winnerId: message.data.winnerId,
           player1Score: message.data.player1Score,
@@ -347,6 +372,16 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
         if (opponent.value) {
           opponent.value.connected = false
         }
+        opponentReconnecting.value = true
+        opponentReconnectCountdown.value = message.data.reconnectIn
+        if (reconnectTimer) clearInterval(reconnectTimer)
+        reconnectTimer = setInterval(() => {
+          opponentReconnectCountdown.value--
+          if (opponentReconnectCountdown.value <= 0) {
+            clearInterval(reconnectTimer!)
+            reconnectTimer = null
+          }
+        }, 1000)
         break
 
       case 'error':
@@ -371,18 +406,26 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
 
     ws.value.send(
       JSON.stringify({
-        type: 'answer',
-        questionId: currentQuestion.value?.id,
-        answerId,
-        timeTaken,
+        type: 'submit_answer',
+        data: {
+          questionId: currentQuestion.value?.id ?? '',
+          answerId,
+          timeTaken,
+        },
       }),
     )
   }
 
   const sendReady = () => {
     if (!ws.value || ws.value.readyState !== WebSocket.OPEN) return
+    ws.value.send(JSON.stringify({ type: 'player_ready' }))
+  }
 
-    ws.value.send(JSON.stringify({ type: 'ready' }))
+  const sendEmote = (emote: string) => {
+    if (emotesLeft.value <= 0) return
+    if (!ws.value || ws.value.readyState !== WebSocket.OPEN) return
+    emotesLeft.value--
+    ws.value.send(JSON.stringify({ type: 'emote', data: { emote } }))
   }
 
   // ===========================
@@ -390,6 +433,7 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
   // ===========================
 
   onUnmounted(() => {
+    if (reconnectTimer) clearInterval(reconnectTimer)
     disconnect()
   })
 
@@ -427,8 +471,22 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
     didWin,
     myMmrChange,
 
+    // Answer feedback
+    myAnswerCorrect,
+    myAnswerTime,
+    opponentAnswerTime,
+
+    // Opponent reconnect
+    opponentReconnecting,
+    opponentReconnectCountdown,
+
+    // Emotes
+    emotesLeft,
+    unlockedEmotes,
+
     // Actions
     sendAnswer,
     sendReady,
+    sendEmote,
   }
 }

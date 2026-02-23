@@ -289,6 +289,10 @@ export default {
     requestRematch: 'Запросить реванш',
     shareResult: 'Поделиться результатом',
     backToLobby: 'В лобби',
+    correct: 'Правильно!',
+    wrong: 'Неверно',
+    yourTime: 'Твоё время',
+    reconnectingDesc: 'Если соперник не вернётся, победа будет за тобой',
   },
   shared: {
     questionOf: 'Вопрос {current} / {total}',

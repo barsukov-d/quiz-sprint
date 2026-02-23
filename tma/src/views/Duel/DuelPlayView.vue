@@ -42,7 +42,15 @@ const {
   isFinished,
   didWin,
   myMmrChange,
+  myAnswerCorrect,
+  myAnswerTime,
+  opponentAnswerTime,
+  opponentReconnecting,
+  opponentReconnectCountdown,
+  emotesLeft,
+  unlockedEmotes,
   sendAnswer,
+  sendEmote,
 } = useDuelWebSocket(duelId.value, playerId.value)
 
 // ===========================
@@ -113,9 +121,9 @@ watch(currentQuestion, (newQuestion) => {
   }
 })
 
-// Watch for round result
+// Watch for round result — only show feedback after player has answered
 watch(lastRoundResult, (result) => {
-  if (result) {
+  if (result && hasAnswered.value) {
     showFeedback.value = true
     timer.stop()
   }
@@ -283,7 +291,54 @@ onMounted(() => {
             @click="handleAnswerSelect(answer.id)"
           />
         </div>
+
+        <!-- Answer Feedback (1.5s overlay after answering) -->
+        <Transition name="fade">
+          <div
+            v-if="showFeedback && myAnswerCorrect !== null"
+            class="mt-4 rounded-xl p-4 text-center"
+            :class="myAnswerCorrect ? 'bg-green-100 dark:bg-green-900' : 'bg-red-100 dark:bg-red-900'"
+          >
+            <p class="text-lg font-bold mb-1">
+              {{ myAnswerCorrect ? '✅ ' + t('duel.correct') : '❌ ' + t('duel.wrong') }}
+            </p>
+            <div class="flex justify-center gap-6 text-sm text-gray-600 dark:text-gray-300">
+              <span>{{ t('duel.yourTime') }}: {{ (myAnswerTime / 1000).toFixed(1) }}s</span>
+              <span v-if="opponentAnswered">
+                {{ opponent?.username }}: {{ (opponentAnswerTime / 1000).toFixed(1) }}s
+              </span>
+            </div>
+          </div>
+        </Transition>
+
+        <!-- Emote Bar -->
+        <div v-if="emotesLeft > 0" class="mt-3 flex items-center justify-center gap-2">
+          <button
+            v-for="emote in unlockedEmotes"
+            :key="emote"
+            class="text-2xl w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:scale-110 transition-transform"
+            @click="sendEmote(emote)"
+          >
+            {{ emote }}
+          </button>
+          <span class="text-xs text-gray-400">{{ emotesLeft }}/3</span>
+        </div>
       </div>
+
+      <!-- Opponent Disconnect Overlay -->
+      <Transition name="fade">
+        <div
+          v-if="opponentReconnecting"
+          class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+        >
+          <div class="bg-white dark:bg-gray-800 rounded-2xl p-6 mx-4 text-center max-w-sm w-full">
+            <div class="text-4xl mb-3">🔄</div>
+            <h3 class="text-lg font-bold mb-1">{{ opponent?.username }} {{ t('duel.reconnecting') }}</h3>
+            <p class="text-gray-500 text-sm mb-3">{{ t('duel.reconnectingDesc') }}</p>
+            <div class="text-3xl font-bold text-primary">{{ opponentReconnectCountdown }}s</div>
+          </div>
+        </div>
+      </Transition>
     </template>
 
     <!-- Match Finished (brief summary before redirect) -->

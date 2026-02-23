@@ -290,6 +290,10 @@ export default {
     requestRematch: 'Request Rematch',
     shareResult: 'Share Result',
     backToLobby: 'Back to Lobby',
+    correct: 'Correct!',
+    wrong: 'Wrong',
+    yourTime: 'Your time',
+    reconnectingDesc: 'If opponent doesn\'t return, you win',
   },
   shared: {
     questionOf: 'Question {current} / {total}',
