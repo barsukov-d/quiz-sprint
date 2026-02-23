@@ -380,6 +380,26 @@ docker compose logs -f api
 
 Full API docs: http://localhost:3000/swagger/index.html
 
+## Git Hooks (lefthook)
+
+Pre-commit автоматически запускает: format → lint → type-check.
+
+**Первоначальная настройка** (один раз после клона):
+```bash
+brew install lefthook
+lefthook install
+```
+
+**Ручной запуск:**
+```bash
+lefthook run pre-commit                        # все проверки
+lefthook run pre-commit --commands lint        # только lint
+lefthook run pre-commit --commands format      # только prettier
+lefthook run pre-commit --commands type-check  # только tsc
+```
+
+**Конфиг**: `lefthook.yml` в корне репо.
+
 ## Workflow Requirements
 
 Before completing session:

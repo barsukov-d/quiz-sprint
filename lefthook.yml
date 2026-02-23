@@ -3,6 +3,11 @@ pre-commit:
     bd-flush:
       run: bash scripts/pre-commit-bd.sh
 
+    format:
+      root: "tma/"
+      glob: "**/*"
+      run: pnpm format
+
     lint:
       root: "tma/"
       glob: "**/*"
