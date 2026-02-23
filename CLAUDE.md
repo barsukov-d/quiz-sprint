@@ -208,8 +208,8 @@ Go Handlers (@annotations) → swag → swagger.json → kubb → TypeScript typ
 | Environment | Frontend | Backend API | Database |
 |-------------|----------|-------------|----------|
 | Development | `dev.quiz-sprint-tma.online` → CF Tunnel → localhost:5173 | `api-dev.quiz-sprint-tma.online` → CF Tunnel → localhost:3000 | PostgreSQL (Docker local) |
-| Staging | `staging.quiz-sprint-tma.online` → CF Pages | `staging.quiz-sprint-tma.online/api` → VPS:3001 | PostgreSQL (Docker VPS) |
-| Production | `quiz-sprint-tma.online` → CF Pages | `quiz-sprint-tma.online/api` → VPS:3000 | PostgreSQL (Docker VPS) |
+| Staging | `staging.quiz-sprint-tma.online` → CF Pages (`quiz-sprint-staging`) | `api-staging.quiz-sprint-tma.online` → VPS:3001 | PostgreSQL (Docker VPS) |
+| Production | `quiz-sprint-tma.online` → CF Pages (`quiz-sprint`) | `api.quiz-sprint-tma.online` → VPS:3000 | PostgreSQL (Docker VPS) |
 
 **API Endpoints**: `https://<api-domain>/api/v1/*`, WebSocket: `wss://<domain>/ws/leaderboard/:id`
 
@@ -338,16 +338,37 @@ POST /api/v1/daily-challenge/start
 
 ## Deployment
 
-**Frontend**: GitHub Actions (`build.yml` → `deploy.yml`) → `wrangler pages deploy` → Cloudflare Pages
+### Frontend (Cloudflare Pages)
 
-**Backend**: GitHub Actions → Docker build → Push to GHCR → Deploy via docker-compose on VPS
+**CF Pages projects**:
+- `quiz-sprint` — production (`quiz-sprint-tma.online`), auto-deploy OFF
+- `quiz-sprint-staging` — staging (`staging.quiz-sprint-tma.online`), no Git connection
 
-**Manual restart** (on VPS):
+**CI/CD flow**:
+1. GitHub Actions `build.yml` → builds `tma/`, uploads artifact `tma-build-*`
+2. GitHub Actions `deploy.yml` (manual, `workflow_dispatch`) → downloads artifact → `wrangler pages deploy`
+
 ```bash
-cd /opt/quiz-sprint/staging  # or production
+# Deploy frontend (GitHub Actions → manual trigger)
+# Deploy TMA → staging   → quiz-sprint-staging CF Pages project
+# Deploy TMA → production → quiz-sprint CF Pages project
+```
+
+### Backend (VPS Docker)
+
+**CI/CD flow**: GitHub Actions `backend-build.yml` → Docker build → push to GHCR → `backend-docker-deploy.yml` pulls on VPS
+
+```bash
+# Manual restart on VPS
+cd /opt/quiz-sprint/staging    # or production
 docker compose restart api
 docker compose logs -f api
 ```
+
+**Nginx configs** (on VPS):
+- `/etc/nginx/sites-available/api-staging` → proxies `api-staging.quiz-sprint-tma.online` → localhost:3001
+- `/etc/nginx/sites-available/api-production` → proxies `api.quiz-sprint-tma.online` → localhost:3000
+- CORS handled by Go/Fiber middleware only (NOT nginx)
 
 ## Key API Endpoints
 
