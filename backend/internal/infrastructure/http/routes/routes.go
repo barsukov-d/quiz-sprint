@@ -429,17 +429,14 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 		// submitDuelAnswerUC requires a duel-specific QuestionRepository adapter.
 		// Until that adapter exists, pass nil for questionRepo; the handler guards against nil.
-		// duelRoundCache is always non-nil here (Redis or in-memory fallback).
-		if duelRoundCache != nil {
-			submitDuelAnswerUC = appDuel.NewSubmitDuelAnswerUseCase(
-				duelGameRepo,
-				playerRatingRepo,
-				nil, // QuestionRepository adapter not yet implemented
-				seasonRepo,
-				duelEventBus,
-				duelRoundCache,
-			)
-		}
+		submitDuelAnswerUC = appDuel.NewSubmitDuelAnswerUseCase(
+			duelGameRepo,
+			playerRatingRepo,
+			nil, // QuestionRepository adapter not yet implemented
+			seasonRepo,
+			duelEventBus,
+			duelRoundCache,
+		)
 	}
 
 	// ========================================

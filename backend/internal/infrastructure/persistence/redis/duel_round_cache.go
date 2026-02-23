@@ -44,7 +44,7 @@ func (c *DuelRoundCache) AddAnswer(gameID string, round int, answer appDuel.Play
 
 	key := roundKey(gameID, round)
 
-	pipe := c.rdb.Pipeline()
+	pipe := c.rdb.TxPipeline()
 	pipe.HSet(ctx, key, answer.PlayerID, data)
 	pipe.Expire(ctx, key, duelRoundTTL)
 
