@@ -4,6 +4,9 @@ import DailyChallengeCard from '@/components/DailyChallenge/DailyChallengeCard.v
 import MarathonCard from '@/components/Marathon/MarathonCard.vue'
 import DuelCard from '@/components/Duel/DuelCard.vue'
 import GameModeCard from '@/components/shared/GameModeCard.vue'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 const { currentUser, isAuthenticated } = useAuth()
 
@@ -32,7 +35,7 @@ const playerId = currentUser.value?.id || 'guest'
 		<section class="mb-8">
 			<h2 class="text-xl font-bold mb-4 flex items-center gap-2">
 				<UIcon name="i-heroicons-calendar-days" class="size-6 text-primary" />
-				Today's Challenge
+				{{ t('home.todaysChallenge') }}
 			</h2>
 			<DailyChallengeCard :player-id="playerId" />
 		</section>
@@ -43,7 +46,7 @@ const playerId = currentUser.value?.id || 'guest'
 		<section class="mb-8">
 			<h2 class="text-xl font-bold mb-4 flex items-center gap-2">
 				<UIcon name="i-heroicons-puzzle-piece" class="size-6 text-primary" />
-				Game Modes
+				{{ t('home.gameModes') }}
 			</h2>
 
 			<div class="space-y-3">
@@ -55,21 +58,21 @@ const playerId = currentUser.value?.id || 'guest'
 
 				<!-- Coming Soon: Party Mode -->
 				<GameModeCard
-					title="Party Mode"
+					:title="t('home.partyMode')"
 					icon="i-heroicons-user-group"
-					description="Multiplayer quiz party with friends"
+					:description="t('home.partyModeDesc')"
 					:disabled="true"
-					badge="Coming Soon"
+					:badge="t('home.comingSoon')"
 					badge-color="yellow"
 				/>
 
 				<!-- Coming Soon: Tournament -->
 				<GameModeCard
-					title="Tournament"
+					:title="t('home.tournament')"
 					icon="i-heroicons-trophy"
-					description="Compete in weekly tournaments for prizes"
+					:description="t('home.tournamentDesc')"
 					:disabled="true"
-					badge="Coming Soon"
+					:badge="t('home.comingSoon')"
 					badge-color="yellow"
 				/>
 			</div>
