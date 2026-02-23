@@ -256,16 +256,13 @@ func HandleTimeout(playerID string) {
 
 ### Ticket Consumption
 ```go
+// Tickets are consumed BEFORE game start:
+// - Random queue: consumed at JoinQueue()
+// - Friend challenge (challenger): consumed at CreateChallenge()
+// - Friend challenge (challengee): consumed at AcceptChallenge()
+// StartDuel() assumes tickets already consumed and validated.
 func StartDuel(player1, player2 *Player) error {
-    // Consume tickets
-    if err := player1.ConsumeTicket(); err != nil {
-        return ErrInsufficientTickets
-    }
-    if err := player2.ConsumeTicket(); err != nil {
-        player1.RefundTicket()  // Rollback
-        return ErrInsufficientTickets
-    }
-
+    // Tickets already consumed upstream. Nothing to do here.
     return nil
 }
 ```
