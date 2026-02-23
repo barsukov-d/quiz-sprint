@@ -7,6 +7,7 @@ import { useAuth } from '@/composables/useAuth'
 import GameTimer from '@/components/shared/GameTimer.vue'
 import QuestionCard from '@/components/shared/QuestionCard.vue'
 import AnswerButton from '@/components/shared/AnswerButton.vue'
+import { useI18n } from 'vue-i18n'
 
 // ===========================
 // Auth & Router
@@ -14,6 +15,7 @@ import AnswerButton from '@/components/shared/AnswerButton.vue'
 
 const router = useRouter()
 const { currentUser } = useAuth()
+const { t } = useI18n()
 const playerId = currentUser.value?.id || 'guest'
 
 // ===========================
@@ -70,10 +72,10 @@ const feedbackShieldConsumed = ref(false)
 const answerLabels = ['A', 'B', 'C', 'D']
 
 const bonusButtons = [
-	{ type: 'shield' as BonusType, key: 'shield' as const, label: 'Shield', icon: 'i-heroicons-shield-check', color: 'blue' as const, activeColor: 'text-blue-500', canUse: canUseShield },
-	{ type: 'fifty_fifty' as BonusType, key: 'fiftyFifty' as const, label: '50/50', icon: 'i-heroicons-scissors', color: 'yellow' as const, activeColor: 'text-yellow-500', canUse: canUseFiftyFifty },
-	{ type: 'skip' as BonusType, key: 'skip' as const, label: 'Skip', icon: 'i-heroicons-forward', color: 'green' as const, activeColor: 'text-green-500', canUse: canUseSkip },
-	{ type: 'freeze' as BonusType, key: 'freeze' as const, label: 'Freeze', icon: 'i-heroicons-clock', color: 'cyan' as const, activeColor: 'text-cyan-500', canUse: canUseFreeze },
+	{ type: 'shield' as BonusType, key: 'shield' as const, get label() { return t('daily.shieldName') }, icon: 'i-heroicons-shield-check', color: 'blue' as const, activeColor: 'text-blue-500', canUse: canUseShield },
+	{ type: 'fifty_fifty' as BonusType, key: 'fiftyFifty' as const, get label() { return t('daily.fiftyfiftyName') }, icon: 'i-heroicons-scissors', color: 'yellow' as const, activeColor: 'text-yellow-500', canUse: canUseFiftyFifty },
+	{ type: 'skip' as BonusType, key: 'skip' as const, get label() { return t('daily.skipName') }, icon: 'i-heroicons-forward', color: 'green' as const, activeColor: 'text-green-500', canUse: canUseSkip },
+	{ type: 'freeze' as BonusType, key: 'freeze' as const, get label() { return t('daily.freezeName') }, icon: 'i-heroicons-clock', color: 'cyan' as const, activeColor: 'text-cyan-500', canUse: canUseFreeze },
 ]
 
 const currentQuestion = computed(() => state.value.currentQuestion)
@@ -281,7 +283,7 @@ onUnmounted(() => {
 		<!-- Loading State -->
 		<div v-if="!currentQuestion" class="flex flex-col items-center justify-center min-h-[50vh]">
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">Loading question...</p>
+			<p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('marathon.loadingQuestion') }}</p>
 		</div>
 
 		<!-- Game View -->
@@ -349,7 +351,7 @@ onUnmounted(() => {
 				v-if="state.milestone && state.milestone.next > 0"
 				class="text-xs text-center text-gray-500 dark:text-gray-400"
 			>
-				Next milestone: {{ state.milestone.next }} ({{ state.milestone.remaining }} to go)
+				{{ t('marathon.nextMilestone', { next: state.milestone.next, remaining: state.milestone.remaining }) }}
 			</div>
 
 			<!-- Question -->
@@ -420,7 +422,7 @@ onUnmounted(() => {
 					v-if="isSubmitting"
 					color="gray"
 					variant="soft"
-					title="Submitting answer..."
+					:title="t('marathon.submittingAnswer')"
 				>
 					<template #icon>
 						<UIcon name="i-heroicons-arrow-path" class="animate-spin" />
@@ -431,7 +433,7 @@ onUnmounted(() => {
 					v-else-if="showFeedback && feedbackShieldConsumed"
 					color="blue"
 					variant="soft"
-					title="Shield absorbed the hit!"
+					:title="t('marathon.shieldAbsorbed')"
 					icon="i-heroicons-shield-check"
 				/>
 
@@ -439,7 +441,7 @@ onUnmounted(() => {
 					v-else-if="showFeedback && feedbackIsCorrect"
 					color="green"
 					variant="soft"
-					title="Correct!"
+					:title="t('marathon.correct')"
 					icon="i-heroicons-check-circle"
 				/>
 
@@ -447,7 +449,7 @@ onUnmounted(() => {
 					v-else-if="showFeedback && feedbackLifeLost"
 					color="red"
 					variant="soft"
-					title="Wrong! Life lost"
+					:title="t('marathon.wrongLifeLost')"
 					icon="i-heroicons-heart"
 				/>
 
@@ -455,7 +457,7 @@ onUnmounted(() => {
 					v-else-if="showFeedback && feedbackIsCorrect === false"
 					color="red"
 					variant="soft"
-					title="Incorrect"
+					:title="t('marathon.incorrect')"
 					icon="i-heroicons-x-circle"
 				/>
 			</div>

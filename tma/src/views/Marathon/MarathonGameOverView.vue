@@ -4,9 +4,11 @@ import { useRouter } from 'vue-router'
 import { useMarathon } from '@/composables/useMarathon'
 import { useMarathonSession } from '@/composables/useMarathonSession'
 import { useAuth } from '@/composables/useAuth'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const { currentUser } = useAuth()
+const { t } = useI18n()
 const playerId = currentUser.value?.id || 'guest'
 
 const {
@@ -82,15 +84,15 @@ onMounted(async () => {
       <!-- Game Over Header -->
       <div class="text-center">
         <UIcon name="i-heroicons-trophy" class="size-16 text-yellow-500 mb-4" />
-        <h1 class="text-2xl font-bold">Забег завершён</h1>
-        <p class="text-gray-500 dark:text-gray-400 mt-1">Марафон</p>
+        <h1 class="text-2xl font-bold">{{ t('marathon.runCompleted') }}</h1>
+        <p class="text-gray-500 dark:text-gray-400 mt-1">{{ t('marathon.title') }}</p>
       </div>
 
       <!-- Score Card -->
       <UCard class="w-full">
         <div class="text-center space-y-4">
           <div>
-            <p class="text-sm text-gray-500 dark:text-gray-400">Правильных ответов</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('marathon.correctAnswers') }}</p>
             <p class="text-4xl font-bold text-primary">
               {{ gameOverResult?.finalScore ?? state.score }}
             </p>
@@ -98,16 +100,16 @@ onMounted(async () => {
 
           <div class="grid grid-cols-2 gap-4">
             <div>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Вопросов</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('marathon.questions') }}</p>
               <p class="text-lg font-semibold">
                 {{ gameOverResult?.totalQuestions ?? state.totalQuestions }}
               </p>
             </div>
             <div>
-              <p class="text-xs text-gray-500 dark:text-gray-400">Личный рекорд</p>
+              <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('marathon.personalBest') }}</p>
               <p class="text-lg font-semibold">
                 <template v-if="gameOverResult?.isNewPersonalBest">
-                  <span class="text-green-500">Новый рекорд! 🎉</span>
+                  <span class="text-green-500">{{ t('marathon.newRecord') }}</span>
                 </template>
                 <template v-else>
                   {{ gameOverResult?.previousRecord ?? state.personalBest ?? '-' }}
@@ -121,9 +123,9 @@ onMounted(async () => {
       <!-- Continue Offer -->
       <UCard v-if="canContinue && continueOffer" class="w-full">
         <div class="text-center space-y-3">
-          <h3 class="font-semibold">Продолжить текущий забег?</h3>
+          <h3 class="font-semibold">{{ t('marathon.continueRun') }}</h3>
           <p class="text-sm text-gray-500 dark:text-gray-400">
-            Получи +1 ⚡ и продолжи с того же места
+            {{ t('marathon.continueRunDesc') }}
           </p>
 
           <div class="flex flex-col gap-2">
@@ -135,7 +137,7 @@ onMounted(async () => {
               icon="i-heroicons-currency-dollar"
               @click="handleContinueWithCoins"
             >
-              Продолжить ({{ continueOffer.costCoins }} монет)
+              {{ t('marathon.continueWithCoins', { coins: continueOffer.costCoins }) }}
             </UButton>
 
             <UButton
@@ -148,7 +150,7 @@ onMounted(async () => {
               icon="i-heroicons-play"
               @click="handleContinueWithAd"
             >
-              Смотреть рекламу
+              {{ t('marathon.watchAd') }}
             </UButton>
           </div>
         </div>
@@ -176,7 +178,7 @@ onMounted(async () => {
           icon="i-heroicons-bolt"
           @click="handleStartNewRun"
         >
-          ▶ Новый забег
+          {{ t('marathon.newRun') }}
         </UButton>
 
         <UButton
@@ -187,7 +189,7 @@ onMounted(async () => {
           icon="i-heroicons-home"
           @click="handleBackToHome"
         >
-          На главную
+          {{ t('marathon.home') }}
         </UButton>
       </div>
     </div>
