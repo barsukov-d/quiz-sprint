@@ -104,6 +104,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		referralRepo     domainDuel.ReferralRepository
 		seasonRepo       domainDuel.SeasonRepository
 		matchmakingQueue domainDuel.MatchmakingQueue
+		duelRoundCache   appDuel.DuelRoundCache
 	)
 	if db != nil {
 		duelGameRepo = postgres.NewDuelGameRepository(db)
@@ -112,13 +113,15 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		referralRepo = postgres.NewReferralRepository(db)
 		seasonRepo = postgres.NewSeasonRepository(db)
 
-		// Initialize Redis for matchmaking queue
+		// Initialize Redis for matchmaking queue and round-answer cache
 		redisClient, err := redisStore.NewClient()
 		if err != nil {
-			log.Printf("⚠️ Redis not available, matchmaking queue disabled: %v", err)
+			log.Printf("⚠️ Redis not available, using in-memory fallbacks: %v", err)
+			duelRoundCache = appDuel.NewMemoryRoundCache()
 		} else {
-			log.Println("✅ Connected to Redis for matchmaking queue")
+			log.Println("✅ Connected to Redis for matchmaking queue and round-answer cache")
 			matchmakingQueue = redisStore.NewMatchmakingQueue(redisClient)
+			duelRoundCache = redisStore.NewDuelRoundCache(redisClient)
 		}
 	}
 
@@ -360,6 +363,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		getGameHistoryUC       *appDuel.GetGameHistoryUseCase
 		getDuelLeaderboardUC   *appDuel.GetLeaderboardUseCase
 		requestRematchUC       *appDuel.RequestRematchUseCase
+		startGameUC            *appDuel.StartGameUseCase
+		submitDuelAnswerUC     *appDuel.SubmitDuelAnswerUseCase
 	)
 
 	if duelGameRepo != nil && playerRatingRepo != nil && challengeRepo != nil && referralRepo != nil && seasonRepo != nil && userRepo != nil {
@@ -421,6 +426,20 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			challengeRepo,
 			duelEventBus,
 		)
+
+		// submitDuelAnswerUC requires a duel-specific QuestionRepository adapter.
+		// Until that adapter exists, pass nil for questionRepo; the handler guards against nil.
+		// duelRoundCache is always non-nil here (Redis or in-memory fallback).
+		if duelRoundCache != nil {
+			submitDuelAnswerUC = appDuel.NewSubmitDuelAnswerUseCase(
+				duelGameRepo,
+				playerRatingRepo,
+				nil, // QuestionRepository adapter not yet implemented
+				seasonRepo,
+				duelEventBus,
+				duelRoundCache,
+			)
+		}
 	}
 
 	// ========================================
@@ -559,9 +578,10 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 	// Duel WebSocket (if database available)
 	if duelGameRepo != nil {
-		// Note: StartMatchUseCase and SubmitDuelAnswerUseCase would need QuestionRepository
-		// For now, create hub without use cases (they can be added later)
-		duelWsHub := handlers.NewDuelWebSocketHub(nil, nil)
+		// startGameUC and submitDuelAnswerUC require a duel-specific QuestionRepository
+		// adapter (appDuel.QuestionRepository) that does not exist yet. They will be nil
+		// until that adapter is implemented; the hub handles nil use cases gracefully.
+		duelWsHub := handlers.NewDuelWebSocketHub(startGameUC, submitDuelAnswerUC)
 		ws.Get("/duel/:matchId", websocket.New(duelWsHub.HandleDuelWebSocket))
 	}
 

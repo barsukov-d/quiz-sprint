@@ -1,6 +1,7 @@
 package quick_duel
 
 import (
+	"fmt"
 	"time"
 
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quick_duel"
@@ -824,17 +825,22 @@ type SubmitDuelAnswerUseCase struct {
 	questionRepo     QuestionRepository
 	seasonRepo       quick_duel.SeasonRepository
 	eventBus         EventBus
-	// Track round answers temporarily (in production, store in Redis)
-	roundAnswers map[string]map[int][]playerAnswer
+	roundCache       DuelRoundCache
 }
 
-type playerAnswer struct {
-	PlayerID   string
-	AnswerID   string
-	IsCorrect  bool
-	TimeTaken  int
-	Points     int
+// PlayerAnswer holds a single player's answer for one duel round.
+// Exported so it can be stored and retrieved by DuelRoundCache implementations.
+type PlayerAnswer struct {
+	PlayerID  string `json:"player_id"`
+	AnswerID  string `json:"answer_id"`
+	IsCorrect bool   `json:"is_correct"`
+	TimeTaken int    `json:"time_taken"`
+	Points    int    `json:"points"`
 }
+
+// playerAnswer is a backward-compatible alias kept to minimise diff in this file.
+// All new code should use PlayerAnswer directly.
+type playerAnswer = PlayerAnswer
 
 func NewSubmitDuelAnswerUseCase(
 	duelGameRepo quick_duel.DuelGameRepository,
@@ -842,6 +848,7 @@ func NewSubmitDuelAnswerUseCase(
 	questionRepo QuestionRepository,
 	seasonRepo quick_duel.SeasonRepository,
 	eventBus EventBus,
+	roundCache DuelRoundCache,
 ) *SubmitDuelAnswerUseCase {
 	return &SubmitDuelAnswerUseCase{
 		duelGameRepo:     duelGameRepo,
@@ -849,7 +856,7 @@ func NewSubmitDuelAnswerUseCase(
 		questionRepo:     questionRepo,
 		seasonRepo:       seasonRepo,
 		eventBus:         eventBus,
-		roundAnswers:     make(map[string]map[int][]playerAnswer),
+		roundCache:       roundCache,
 	}
 }
 
@@ -887,25 +894,23 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 		points = 100 + timeBonus
 	}
 
-	// Track this answer
+	// Track this answer in the distributed cache
 	currentRound := game.CurrentRound()
-	if uc.roundAnswers[input.GameID] == nil {
-		uc.roundAnswers[input.GameID] = make(map[int][]playerAnswer)
+	if err := uc.roundCache.AddAnswer(input.GameID, currentRound, playerAnswer{
+		PlayerID:  input.PlayerID,
+		AnswerID:  input.AnswerID,
+		IsCorrect: isCorrect,
+		TimeTaken: input.TimeTaken,
+		Points:    points,
+	}); err != nil {
+		return nil, fmt.Errorf("submit duel answer: cache answer: %w", err)
 	}
 
-	uc.roundAnswers[input.GameID][currentRound] = append(
-		uc.roundAnswers[input.GameID][currentRound],
-		playerAnswer{
-			PlayerID:  input.PlayerID,
-			AnswerID:  input.AnswerID,
-			IsCorrect: isCorrect,
-			TimeTaken: input.TimeTaken,
-			Points:    points,
-		},
-	)
-
 	// Check if round is complete (both players answered)
-	roundAnswers := uc.roundAnswers[input.GameID][currentRound]
+	roundAnswers, err := uc.roundCache.GetAnswers(input.GameID, currentRound)
+	if err != nil {
+		return nil, fmt.Errorf("submit duel answer: get round answers: %w", err)
+	}
 	roundComplete := len(roundAnswers) >= 2
 
 	// Calculate current scores
@@ -1001,8 +1006,8 @@ func (uc *SubmitDuelAnswerUseCase) finalizeGame(
 	// Save game (domain already updated status internally)
 	uc.duelGameRepo.Save(game)
 
-	// Clean up round answers
-	delete(uc.roundAnswers, game.ID().String())
+	// Clean up cached round answers — best-effort, ignore errors
+	_ = uc.roundCache.DeleteGame(game.ID().String())
 }
 
 func max(a, b int) int {

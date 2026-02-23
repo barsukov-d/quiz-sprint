@@ -677,6 +677,7 @@ func (f *duelFixture) newSubmitDuelAnswerUC() *SubmitDuelAnswerUseCase {
 	return NewSubmitDuelAnswerUseCase(
 		f.duelGameRepo, f.playerRatingRepo, f.questionRepo,
 		f.seasonRepo, f.eventBus,
+		NewMemoryRoundCache(),
 	)
 }
 
