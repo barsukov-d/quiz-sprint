@@ -1,6 +1,9 @@
 <script setup lang="ts">
 import { computed, watch } from 'vue'
 import { useGameTimer } from '@/composables/useGameTimer'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 interface Props {
 	initialTime: number
@@ -104,7 +107,7 @@ defineExpose({
 			class="flex items-center justify-center gap-1 text-red-500"
 		>
 			<UIcon name="i-heroicons-x-circle" class="size-4" />
-			<span class="text-xs font-semibold">Time's up!</span>
+			<span class="text-xs font-semibold">{{ t('shared.timesUp') }}</span>
 		</div>
 	</div>
 </template>

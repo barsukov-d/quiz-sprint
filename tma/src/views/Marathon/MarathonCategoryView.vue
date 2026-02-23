@@ -4,9 +4,11 @@ import { useRouter } from 'vue-router'
 import { useMarathon } from '@/composables/useMarathon'
 import { useAuth } from '@/composables/useAuth'
 import { useGetCategories } from '@/api/generated'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const { currentUser } = useAuth()
+const { t } = useI18n()
 const playerId = currentUser.value?.id || 'guest'
 
 const { startGame, isLoading } = useMarathon(playerId)
@@ -43,9 +45,9 @@ const handleBack = () => {
 				@click="handleBack"
 			/>
 			<div>
-				<h1 class="text-xl font-bold">Choose Category</h1>
+				<h1 class="text-xl font-bold">{{ t('marathon.chooseCategory') }}</h1>
 				<p class="text-sm text-gray-500 dark:text-gray-400">
-					Select a category for your marathon
+					{{ t('marathon.chooseCategoryDesc') }}
 				</p>
 			</div>
 		</div>
@@ -56,7 +58,7 @@ const handleBack = () => {
 			class="flex flex-col items-center justify-center min-h-[30vh]"
 		>
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">Loading categories...</p>
+			<p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('marathon.loadingCategories') }}</p>
 		</div>
 
 		<!-- Category List -->
@@ -72,9 +74,9 @@ const handleBack = () => {
 				<div class="flex items-center gap-3">
 					<UIcon name="i-heroicons-squares-2x2" class="size-6 text-primary" />
 					<div class="flex-1">
-						<p class="font-semibold">All Categories</p>
+						<p class="font-semibold">{{ t('marathon.allCategories') }}</p>
 						<p class="text-sm text-gray-500 dark:text-gray-400">
-							Questions from all topics
+							{{ t('marathon.allCategoriesDesc') }}
 						</p>
 					</div>
 					<UIcon

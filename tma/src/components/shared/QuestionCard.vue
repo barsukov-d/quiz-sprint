@@ -1,5 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
 import type { InternalInfrastructureHttpHandlersQuestionDTO } from '@/api/generated'
+
+const { t } = useI18n()
 
 interface Props {
 	question: InternalInfrastructureHttpHandlersQuestionDTO
@@ -22,11 +25,11 @@ withDefaults(defineProps<Props>(), {
 			class="flex items-center justify-between mb-3"
 		>
 			<UBadge color="primary" variant="subtle">
-				Question {{ questionNumber }} / {{ totalQuestions }}
+				{{ t('shared.questionOf', { current: questionNumber, total: totalQuestions }) }}
 			</UBadge>
 			<UBadge v-if="points" color="yellow" variant="subtle">
 				<UIcon name="i-heroicons-star" class="size-3" />
-				{{ points }} pts
+				{{ t('shared.pts', { pts: points }) }}
 			</UBadge>
 		</div>
 

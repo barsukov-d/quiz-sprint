@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { InternalInfrastructureHttpHandlersLeaderboardEntryDTO } from '@/api/generated'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
 	leaderboard: InternalInfrastructureHttpHandlersLeaderboardEntryDTO[] | null | undefined
@@ -13,6 +14,7 @@ const props = withDefaults(defineProps<Props>(), {
 	showRank: true,
 	maxEntries: 10,
 })
+const { t } = useI18n()
 
 // ===========================
 // Computed
@@ -47,9 +49,9 @@ const isCurrentPlayer = (playerId: string) => {
 		<div class="leaderboard-header">
 			<h3 class="text-lg font-semibold flex items-center gap-2">
 				<UIcon name="i-heroicons-trophy" class="size-5 text-yellow-500" />
-				Top Players
+				{{ t('daily.topPlayers') }}
 			</h3>
-			<p class="text-sm text-gray-500 dark:text-gray-400">Today's daily challenge</p>
+			<p class="text-sm text-gray-500 dark:text-gray-400">{{ t('daily.todaysChallenge') }}</p>
 		</div>
 
 		<div class="leaderboard-list">
@@ -81,7 +83,7 @@ const isCurrentPlayer = (playerId: string) => {
 						<p class="player-name">
 							{{ entry.username }}
 							<UBadge v-if="isCurrentPlayer(entry.userId)" color="primary" size="xs">
-								You
+								{{ t('daily.youBadge') }}
 							</UBadge>
 						</p>
 					</div>
@@ -92,15 +94,15 @@ const isCurrentPlayer = (playerId: string) => {
 					<div class="score-value">
 						{{ entry.score }}
 					</div>
-					<div class="score-label">points</div>
+					<div class="score-label">{{ t('daily.points') }}</div>
 				</div>
 			</div>
 
 			<!-- Empty State -->
 			<UEmpty
 				v-if="displayedLeaderboard.length === 0"
-				title="No players yet"
-				description="Be the first to complete today's challenge!"
+				:title="t('daily.noPlayers')"
+				:description="t('daily.noPlayersDesc')"
 				icon="i-heroicons-user-group"
 			/>
 		</div>

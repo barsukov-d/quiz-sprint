@@ -1,9 +1,11 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
+const { t } = useI18n()
 
 interface Tab {
 	name: string
@@ -12,26 +14,26 @@ interface Tab {
 	label: string
 }
 
-const tabs: Tab[] = [
+const tabs = computed<Tab[]>(() => [
 	{
 		name: 'home',
 		path: '/',
 		icon: 'i-heroicons-home',
-		label: 'Home',
+		label: t('nav.home'),
 	},
 	{
 		name: 'leaderboard',
 		path: '/leaderboard',
 		icon: 'i-heroicons-trophy',
-		label: 'Leaderboard',
+		label: t('nav.leaderboard'),
 	},
 	{
 		name: 'profile',
 		path: '/profile',
 		icon: 'i-heroicons-user',
-		label: 'Profile',
+		label: t('nav.profile'),
 	},
-]
+])
 
 const currentTab = computed(() => {
 	const path = route.path

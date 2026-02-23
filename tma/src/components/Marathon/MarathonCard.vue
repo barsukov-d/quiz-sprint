@@ -2,6 +2,7 @@
 import { onMounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useMarathon } from '@/composables/useMarathon'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
 	playerId: string
@@ -9,6 +10,7 @@ interface Props {
 
 const props = defineProps<Props>()
 const router = useRouter()
+const { t } = useI18n()
 
 const { state, isPlaying, isGameOver, isLoading, progressToRecord, initialize } = useMarathon(
 	props.playerId,
@@ -21,31 +23,31 @@ const { state, isPlaying, isGameOver, isLoading, progressToRecord, initialize } 
 const bonusList = [
 	{
 		key: 'shield' as const,
-		label: 'Shield',
+		get label() { return t('daily.shieldName') },
 		icon: 'i-heroicons-shield-check',
 		color: 'text-blue-500',
-		description: 'Absorbs 1 wrong answer',
+		get description() { return t('daily.shieldDesc') },
 	},
 	{
 		key: 'fiftyFifty' as const,
-		label: '50/50',
+		get label() { return t('daily.fiftyfiftyName') },
 		icon: 'i-heroicons-scissors',
 		color: 'text-yellow-500',
-		description: 'Removes 2 wrong answers',
+		get description() { return t('daily.fiftyfiftyDesc') },
 	},
 	{
 		key: 'skip' as const,
-		label: 'Skip',
+		get label() { return t('daily.skipName') },
 		icon: 'i-heroicons-forward',
 		color: 'text-green-500',
-		description: 'Skip without penalty',
+		get description() { return t('daily.skipDesc') },
 	},
 	{
 		key: 'freeze' as const,
-		label: 'Freeze',
+		get label() { return t('daily.freezeName') },
 		icon: 'i-heroicons-clock',
 		color: 'text-cyan-500',
-		description: '+5 seconds to timer',
+		get description() { return t('daily.freezeDesc') },
 	},
 ]
 
@@ -84,7 +86,7 @@ onMounted(async () => {
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-2.5">
 					<span class="text-2xl">🏃</span>
-					<h3 class="text-lg font-bold">Marathon</h3>
+					<h3 class="text-lg font-bold">{{ t('marathon.title') }}</h3>
 				</div>
 			</div>
 		</template>
@@ -96,12 +98,12 @@ onMounted(async () => {
 			<!-- Current game stats -->
 			<div class="flex items-center justify-between">
 				<div class="text-center flex-1">
-					<p class="text-xs text-gray-500 dark:text-gray-400">Score</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400">{{ t('marathon.score') }}</p>
 					<p class="text-2xl font-bold text-primary">{{ state.score }}</p>
 				</div>
 				<div class="w-px h-10 bg-gray-200 dark:bg-gray-700" />
 				<div class="text-center flex-1">
-					<p class="text-xs text-gray-500 dark:text-gray-400">Question</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400">{{ t('marathon.question') }}</p>
 					<p class="text-2xl font-bold text-gray-900 dark:text-gray-100">
 						{{ state.totalQuestions }}
 					</p>
@@ -112,7 +114,7 @@ onMounted(async () => {
 			<div v-if="state.personalBest && state.personalBest > 0">
 				<div class="flex justify-between text-xs mb-1">
 					<span class="text-gray-500 dark:text-gray-400">
-						{{ state.score }}/{{ state.personalBest }} record
+						{{ t('marathon.recordLabel', { score: state.score, best: state.personalBest }) }}
 					</span>
 					<span
 						:class="
@@ -157,10 +159,10 @@ onMounted(async () => {
 		<!-- ==================== -->
 		<div v-else-if="isGameOver" class="space-y-4">
 			<div class="text-center">
-				<p class="text-sm text-gray-500 dark:text-gray-400">Game Over</p>
+				<p class="text-sm text-gray-500 dark:text-gray-400">{{ t('marathon.gameOver') }}</p>
 				<p class="text-3xl font-bold text-primary mt-1">{{ state.score }}</p>
 				<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
-					{{ state.totalQuestions }} questions answered
+					{{ t('marathon.questionsAnswered', { count: state.totalQuestions }) }}
 				</p>
 			</div>
 		</div>
@@ -174,13 +176,13 @@ onMounted(async () => {
 				v-if="state.personalBest !== null && state.personalBest > 0"
 				class="flex items-center justify-between"
 			>
-				<span class="text-sm text-gray-500 dark:text-gray-400">Record</span>
+				<span class="text-sm text-gray-500 dark:text-gray-400">{{ t('marathon.personalBest') }}</span>
 				<span class="font-bold text-yellow-500"> 🏆 {{ state.personalBest }} </span>
 			</div>
 
 			<!-- Bonuses available -->
 			<div>
-				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">Bonuses</p>
+				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ t('marathon.bonuses') }}</p>
 				<div class="flex gap-2">
 					<div
 						v-for="b in bonusList"
@@ -206,9 +208,9 @@ onMounted(async () => {
 				v-if="state.personalBest === null || state.personalBest === 0"
 				class="text-xs text-gray-500 dark:text-gray-400 space-y-1"
 			>
-				<p>5 энергии, ошибка = −1 ⚡</p>
-				<p>5 правильных подряд = +1 ⚡</p>
-				<p>Сложность растёт со временем</p>
+				<p>{{ t('marathon.energyRule1') }}</p>
+				<p>{{ t('marathon.energyRule2') }}</p>
+				<p>{{ t('marathon.difficultyRule') }}</p>
 			</div>
 		</div>
 
@@ -224,7 +226,7 @@ onMounted(async () => {
 				size="lg"
 				@click="handleResume"
 			>
-				Continue Marathon
+				{{ t('marathon.continueMarathon') }}
 			</UButton>
 
 			<!-- Game over: new run (primary) + view results (secondary) -->
@@ -237,7 +239,7 @@ onMounted(async () => {
 					size="lg"
 					@click="handleStart"
 				>
-					Новый забег
+					{{ t('marathon.newRun') }}
 				</UButton>
 				<UButton
 					icon="i-heroicons-flag"
@@ -248,7 +250,7 @@ onMounted(async () => {
 					size="sm"
 					@click="handleViewGameOver"
 				>
-					View Results
+					{{ t('marathon.viewResults') }}
 				</UButton>
 			</div>
 
@@ -262,7 +264,7 @@ onMounted(async () => {
 				size="lg"
 				@click="handleStart"
 			>
-				Start Marathon
+				{{ t('marathon.startMarathon') }}
 			</UButton>
 		</template>
 	</UCard>

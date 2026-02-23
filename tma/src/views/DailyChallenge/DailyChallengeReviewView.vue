@@ -4,6 +4,7 @@ import { useRouter } from 'vue-router'
 import { useDailyChallenge } from '@/composables/useDailyChallenge'
 import { useAuth } from '@/composables/useAuth'
 import DailyChallengeReviewAnswer from '@/components/DailyChallenge/DailyChallengeReviewAnswer.vue'
+import { useI18n } from 'vue-i18n'
 
 // ===========================
 // Auth & Router
@@ -11,6 +12,7 @@ import DailyChallengeReviewAnswer from '@/components/DailyChallenge/DailyChallen
 
 const router = useRouter()
 const { currentUser } = useAuth()
+const { t } = useI18n()
 const playerId = currentUser.value?.id || 'guest'
 
 // ===========================
@@ -66,7 +68,7 @@ onMounted(async () => {
 		<!-- Loading State -->
 		<div v-if="!results" class="loading-container">
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">Loading review...</p>
+			<p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('daily.loadingReview') }}</p>
 		</div>
 
 		<!-- Review View -->
@@ -75,21 +77,21 @@ onMounted(async () => {
 			<div class="review-header-section">
 				<div class="header-title">
 					<UIcon name="i-heroicons-document-text" class="size-7 text-primary" />
-					<h1 class="text-2xl font-bold">Answer Review</h1>
+					<h1 class="text-2xl font-bold">{{ t('daily.reviewTitle') }}</h1>
 				</div>
-				<p class="header-subtitle">Review your answers from today's challenge</p>
+				<p class="header-subtitle">{{ t('daily.reviewDesc') }}</p>
 
 				<!-- Summary Stats -->
 				<div class="summary-stats">
 					<div class="stat-item correct">
 						<UIcon name="i-heroicons-check-circle" class="size-5" />
 						<span class="stat-value">{{ correctCount }}</span>
-						<span class="stat-label">Correct</span>
+						<span class="stat-label">{{ t('daily.correctLabel') }}</span>
 					</div>
 					<div class="stat-item wrong">
 						<UIcon name="i-heroicons-x-circle" class="size-5" />
 						<span class="stat-value">{{ wrongCount }}</span>
-						<span class="stat-label">Wrong</span>
+						<span class="stat-label">{{ t('daily.wrongLabel') }}</span>
 					</div>
 				</div>
 			</div>
@@ -115,7 +117,7 @@ onMounted(async () => {
 					block
 					@click="handleBackToResults"
 				>
-					Back to Results
+					{{ t('daily.backToResults') }}
 				</UButton>
 
 				<UButton
@@ -126,7 +128,7 @@ onMounted(async () => {
 					block
 					@click="handleGoHome"
 				>
-					Back to Home
+					{{ t('daily.backToHome') }}
 				</UButton>
 			</div>
 		</div>

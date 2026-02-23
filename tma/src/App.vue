@@ -8,6 +8,13 @@ import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from './composables/useAuth'
 import { usePostUserRegister } from './api/generated/hooks/userController/usePostUserRegister'
 import BottomTabBar from './components/BottomTabBar.vue'
+import { useI18n } from 'vue-i18n'
+import * as nuxtLocales from '@nuxt/ui/locale'
+
+const { t, locale } = useI18n()
+const nuxtLocale = computed(
+  () => nuxtLocales[locale.value as keyof typeof nuxtLocales] ?? nuxtLocales.en,
+)
 
 const route = useRoute()
 const router = useRouter()
@@ -55,7 +62,7 @@ onMounted(async () => {
 		// Ждем инициализации TMA
 		if (!isInitialized.value) {
 			console.warn('TMA not initialized yet')
-			error.value = 'Приложение должно быть запущено в Telegram'
+			error.value = t('app.openInTelegram')
 			isLoading.value = false
 			return
 		}
@@ -65,7 +72,7 @@ onMounted(async () => {
 
 		if (!rawInitData) {
 			console.warn('No Telegram init data available')
-			error.value = 'Нет данных авторизации из Telegram'
+			error.value = t('app.noAuthData')
 			isLoading.value = false
 			return
 		}
@@ -102,7 +109,7 @@ onMounted(async () => {
 		}
 	} catch (err) {
 		console.error('Failed to register user:', err)
-		error.value = 'Не удалось зарегистрировать пользователя'
+		error.value = t('app.registerFailed')
 	} finally {
 		isLoading.value = false
 	}
@@ -110,21 +117,21 @@ onMounted(async () => {
 </script>
 
 <template>
-	<UApp>
+	<UApp :locale="nuxtLocale">
 		<!-- Экран загрузки -->
 		<div v-if="isLoading" class="loading-screen">
 			<div class="loading-content">
 				<div class="spinner"></div>
-				<p>Загрузка...</p>
+				<p>{{ t('app.loading') }}</p>
 			</div>
 		</div>
 
 		<!-- Экран ошибки -->
 		<div v-else-if="error" class="error-screen">
 			<div class="error-content">
-				<h2>Ошибка</h2>
+				<h2>{{ t('app.error') }}</h2>
 				<p>{{ error }}</p>
-				<p class="hint">Убедитесь, что приложение запущено в Telegram</p>
+				<p class="hint">{{ t('app.openInTelegramHint') }}</p>
 			</div>
 		</div>
 

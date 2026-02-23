@@ -3,6 +3,7 @@ import { computed, onMounted, ref, onBeforeUnmount } from 'vue'
 import { useRouter } from 'vue-router'
 import { useDailyChallenge } from '@/composables/useDailyChallenge'
 import { useStreaks } from '@/composables/useStreaks'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
 	playerId: string
@@ -10,6 +11,7 @@ interface Props {
 
 const props = defineProps<Props>()
 const router = useRouter()
+const { t } = useI18n()
 
 // ===========================
 // Composables
@@ -59,9 +61,9 @@ const stopCountdown = () => {
 // ===========================
 
 const buttonText = computed(() => {
-	if (isPlaying.value) return 'Continue'
-	if (hasPlayed.value) return 'View Results'
-	return 'Start Challenge'
+	if (isPlaying.value) return t('daily.continue')
+	if (hasPlayed.value) return t('daily.viewResults')
+	return t('daily.startChallenge')
 })
 
 const buttonIcon = computed(() => {
@@ -131,7 +133,7 @@ onBeforeUnmount(() => {
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-2.5">
 					<UIcon name="i-heroicons-calendar-days" class="size-5 text-primary" />
-					<h3 class="text-base font-semibold">Today's Challenge</h3>
+					<h3 class="text-base font-semibold">{{ t('daily.title') }}</h3>
 				</div>
 				<UIcon
 					v-if="statusIcon"
@@ -166,7 +168,7 @@ onBeforeUnmount(() => {
 
 			<!-- Not Played State: Info + Streak -->
 			<div v-else class="space-y-2 py-1">
-				<p class="text-sm text-gray-700 dark:text-gray-300">10 questions • 15s each</p>
+				<p class="text-sm text-gray-700 dark:text-gray-300">{{ t('daily.questionsInfo') }}</p>
 				<p v-if="streak" class="text-sm font-medium text-gray-700 dark:text-gray-300">
 					{{ streaks.formattedStreak.value }}
 				</p>
@@ -175,7 +177,7 @@ onBeforeUnmount(() => {
 			<!-- Meta Info (always shown) -->
 			<div class="grid grid-cols-2 gap-4 pt-3 border-t border-gray-200 dark:border-gray-700">
 				<div class="text-center">
-					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Resets in</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{{ t('daily.resetsIn') }}</p>
 					<p class="text-sm font-mono font-semibold tabular-nums">
 						<UIcon name="i-heroicons-clock" class="inline size-3.5" />
 						{{ timeToExpireFormatted }}
@@ -183,7 +185,7 @@ onBeforeUnmount(() => {
 				</div>
 
 				<div class="text-center">
-					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">Players Today</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">{{ t('daily.playersToday') }}</p>
 					<p class="text-sm font-semibold">
 						<UIcon name="i-heroicons-user-group" class="inline size-3.5" />
 						{{ totalPlayers }}

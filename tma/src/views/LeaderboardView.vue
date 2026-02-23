@@ -4,10 +4,12 @@ import { useRoute } from 'vue-router'
 import { useGetQuiz, useGetLeaderboard } from '@/api'
 import { useAuth } from '@/composables/useAuth'
 import { useLastQuiz } from '@/composables/useLastQuiz'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const { currentUser } = useAuth()
 const { lastQuizId, saveLastQuizId } = useLastQuiz()
+const { t } = useI18n()
 
 // Get quizId from route params or localStorage
 const routeQuizId = computed(() => route.params.quizId as string | undefined)
@@ -105,14 +107,14 @@ const isCurrentUser = (userId: string) => {
 		<div class="max-w-4xl mx-auto">
 			<!-- Header -->
 			<div class="mb-6 mx-auto text-center">
-				<h1 class="text-3xl font-bold mb-2">Leaderboard</h1>
-				<p class="text-gray-600">Top players by score</p>
+				<h1 class="text-3xl font-bold mb-2">{{ t('leaderboard.title') }}</h1>
+				<p class="text-gray-600">{{ t('leaderboard.subtitle') }}</p>
 			</div>
 
 			<!-- Loading -->
 			<div v-if="isLoading" class="flex justify-center items-center py-12">
 				<UProgress animation="carousel" />
-				<span class="ml-4">Loading leaderboard...</span>
+				<span class="ml-4">{{ t('leaderboard.loading') }}</span>
 			</div>
 
 			<!-- Error -->
@@ -120,17 +122,17 @@ const isCurrentUser = (userId: string) => {
 				<UAlert
 					color="red"
 					variant="soft"
-					title="Failed to load leaderboard"
-					:description="error?.error?.message || 'Please try again'"
+					:title="t('leaderboard.loadFailed')"
+					:description="error?.error?.message || t('quiz.tryAgain2')"
 				/>
-				<UButton color="red" class="mt-2" @click="refetch()"> Retry </UButton>
+				<UButton color="red" class="mt-2" @click="refetch()"> {{ t('leaderboard.retry') }} </UButton>
 			</div>
 
 			<!-- Empty state -->
 			<div v-else-if="entries.length === 0" class="text-center py-12">
 				<div class="text-6xl mb-4">🏆</div>
-				<h2 class="text-2xl font-bold mb-2">No scores yet!</h2>
-				<p class="text-gray-600">Be the first to complete this quiz.</p>
+				<h2 class="text-2xl font-bold mb-2">{{ t('leaderboard.empty') }}</h2>
+				<p class="text-gray-600">{{ t('leaderboard.emptyDesc') }}</p>
 			</div>
 
 			<!-- Leaderboard Table -->
@@ -139,7 +141,7 @@ const isCurrentUser = (userId: string) => {
 				<UCard v-if="currentUserRank && currentUserRank > 10" class="mb-4 bg-blue-50">
 					<div class="flex items-center justify-between">
 						<div>
-							<p class="text-sm text-gray-600">Your Rank</p>
+							<p class="text-sm text-gray-600">{{ t('leaderboard.yourRank') }}</p>
 							<p class="text-2xl font-bold text-blue-600">#{{ currentUserRank }}</p>
 						</div>
 						<UIcon name="i-heroicons-star" class="text-4xl text-blue-600" />
@@ -153,16 +155,16 @@ const isCurrentUser = (userId: string) => {
 							<thead>
 								<tr class="border-b border-gray-200">
 									<th class="text-left py-3 px-4 font-semibold text-gray-700">
-										Rank
+										{{ t('leaderboard.colRank') }}
 									</th>
 									<th class="text-left py-3 px-4 font-semibold text-gray-700">
-										Player
+										{{ t('leaderboard.colPlayer') }}
 									</th>
 									<th class="text-right py-3 px-4 font-semibold text-gray-700">
-										Score
+										{{ t('leaderboard.colScore') }}
 									</th>
 									<th class="text-right py-3 px-4 font-semibold text-gray-700">
-										Date
+										{{ t('leaderboard.colDate') }}
 									</th>
 								</tr>
 							</thead>
@@ -193,7 +195,7 @@ const isCurrentUser = (userId: string) => {
 									<td class="py-3 px-4">
 										<div class="flex items-center gap-2">
 											<span class="font-medium">{{
-												entry.username || 'Anonymous'
+												entry.username || t('leaderboard.anonymous')
 											}}</span>
 											<UIcon
 												v-if="isCurrentUser(entry.userId)"
@@ -224,7 +226,7 @@ const isCurrentUser = (userId: string) => {
 
 				<!-- Stats footer -->
 				<div class="mt-4 text-center text-sm text-gray-500">
-					Showing top {{ entries.length }} players
+					{{ t('leaderboard.showingTop', { count: entries.length }) }}
 				</div>
 			</div>
 		</div>

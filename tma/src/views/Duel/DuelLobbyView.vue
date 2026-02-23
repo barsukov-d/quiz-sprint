@@ -4,12 +4,14 @@ import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePvPDuel } from '@/composables/usePvPDuel'
 import { usePostDuelChallengeAcceptByCode } from '@/api/generated/hooks/duelController/usePostDuelChallengeAcceptByCode'
+import { useI18n } from 'vue-i18n'
 
 const router = useRouter()
 const route = useRoute()
 const { currentUser } = useAuth()
 
 const playerId = computed(() => currentUser.value?.id ?? '')
+const { t } = useI18n()
 
 const {
   tickets,
@@ -120,7 +122,7 @@ const handleChallengeFriend = async (friendId: string) => {
 
 const handleAcceptByLinkCode = async (linkCode: string) => {
   if (!playerId.value) {
-    deepLinkError.value = 'Пожалуйста, авторизуйтесь'
+    deepLinkError.value = t('duel.pleaseLogin')
     return
   }
 
@@ -146,7 +148,7 @@ const handleAcceptByLinkCode = async (linkCode: string) => {
     }
   } catch (error: unknown) {
     console.error('[DuelLobby] Failed to accept challenge:', error)
-    deepLinkError.value = 'Не удалось принять вызов. Возможно, ссылка устарела.'
+    deepLinkError.value = t('duel.acceptFailed')
   }
 }
 
@@ -183,7 +185,7 @@ onMounted(async () => {
       <button class="p-2 -ml-2" @click="router.push({ name: 'home' })">
         <UIcon name="i-heroicons-arrow-left" class="size-6" />
       </button>
-      <h1 class="text-xl font-bold">PvP Duel</h1>
+      <h1 class="text-xl font-bold">{{ t('duel.title') }}</h1>
       <div class="w-10" />
     </div>
 
@@ -193,7 +195,7 @@ onMounted(async () => {
         <div class="animate-spin">
           <UIcon name="i-heroicons-arrow-path" class="size-6 text-primary" />
         </div>
-        <p class="font-medium">Принимаем вызов...</p>
+        <p class="font-medium">{{ t('duel.acceptingChallenge') }}</p>
       </div>
     </UCard>
 
@@ -210,7 +212,7 @@ onMounted(async () => {
             class="mt-1"
             @click="deepLinkError = null; router.replace({ name: 'duel-lobby' })"
           >
-            Закрыть
+            {{ t('duel.close') }}
           </UButton>
         </div>
       </div>
@@ -223,7 +225,7 @@ onMounted(async () => {
           <span class="text-4xl">{{ leagueIcon }}</span>
           <div>
             <p class="text-lg font-bold">{{ leagueLabel }}</p>
-            <p class="text-sm text-gray-500 dark:text-gray-400">{{ mmr }} MMR</p>
+            <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('duel.mmrValue', { mmr }) }}</p>
           </div>
         </div>
         <div class="text-right">
@@ -231,7 +233,7 @@ onMounted(async () => {
             <UIcon name="i-heroicons-ticket" class="size-4 text-primary" />
             <span class="font-semibold">{{ tickets }}</span>
           </div>
-          <p class="text-xs text-gray-500 dark:text-gray-400">tickets</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('duel.tickets') }}</p>
         </div>
       </div>
 
@@ -239,15 +241,15 @@ onMounted(async () => {
       <div class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700">
         <div class="text-center">
           <p class="text-lg font-bold text-green-600 dark:text-green-400">{{ seasonWins }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Wins</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('duel.wins') }}</p>
         </div>
         <div class="text-center">
           <p class="text-lg font-bold text-red-600 dark:text-red-400">{{ seasonLosses }}</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Losses</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('duel.losses') }}</p>
         </div>
         <div class="text-center">
           <p class="text-lg font-bold">{{ Math.round(winRate) }}%</p>
-          <p class="text-xs text-gray-500 dark:text-gray-400">Win Rate</p>
+          <p class="text-xs text-gray-500 dark:text-gray-400">{{ t('duel.winRate') }}</p>
         </div>
       </div>
     </UCard>
@@ -255,14 +257,14 @@ onMounted(async () => {
     <!-- Pending Challenges -->
     <div v-if="pendingChallenges.length > 0" class="mb-4">
       <h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
-        Pending Challenges
+        {{ t('duel.pendingChallenges') }}
       </h2>
       <div class="space-y-2">
         <UCard v-for="challenge in pendingChallenges" :key="challenge.id" class="!p-3">
           <div class="flex items-center justify-between">
             <div class="flex items-center gap-2">
               <UIcon name="i-heroicons-bolt" class="size-5 text-orange-500" />
-              <span class="font-medium">Challenge</span>
+              <span class="font-medium">{{ t('duel.challenge') }}</span>
             </div>
             <div class="flex gap-2">
               <UButton
@@ -270,7 +272,7 @@ onMounted(async () => {
                 color="green"
                 @click="handleAcceptChallenge(challenge.id!)"
               >
-                Accept
+                {{ t('duel.accept') }}
               </UButton>
               <UButton
                 size="xs"
@@ -278,7 +280,7 @@ onMounted(async () => {
                 variant="soft"
                 @click="handleDeclineChallenge(challenge.id!)"
               >
-                Decline
+                {{ t('duel.decline') }}
               </UButton>
             </div>
           </div>
@@ -294,7 +296,7 @@ onMounted(async () => {
         size="sm"
         @click="activeTab = 'play'"
       >
-        Play
+        {{ t('duel.tabPlay') }}
       </UButton>
       <UButton
         :color="activeTab === 'leaderboard' ? 'primary' : 'gray'"
@@ -302,7 +304,7 @@ onMounted(async () => {
         size="sm"
         @click="activeTab = 'leaderboard'"
       >
-        Leaderboard
+        {{ t('duel.tabLeaderboard') }}
       </UButton>
       <UButton
         :color="activeTab === 'history' ? 'primary' : 'gray'"
@@ -310,7 +312,7 @@ onMounted(async () => {
         size="sm"
         @click="activeTab = 'history'"
       >
-        History
+        {{ t('duel.tabHistory') }}
       </UButton>
     </div>
 
@@ -322,7 +324,7 @@ onMounted(async () => {
           <div class="animate-pulse mb-4">
             <UIcon name="i-heroicons-magnifying-glass" class="size-12 text-primary" />
           </div>
-          <p class="text-lg font-semibold mb-1">Searching for opponent...</p>
+          <p class="text-lg font-semibold mb-1">{{ t('duel.searching') }}</p>
           <p class="text-2xl font-mono font-bold text-primary">{{ searchTimeFormatted }}</p>
           <UButton
             color="gray"
@@ -330,7 +332,7 @@ onMounted(async () => {
             class="mt-4"
             @click="handleFindMatch"
           >
-            Cancel
+            {{ t('duel.cancel') }}
           </UButton>
         </div>
 
@@ -343,17 +345,17 @@ onMounted(async () => {
             block
             @click="handleFindMatch"
           >
-            Find Random Opponent
+            {{ t('duel.findOpponent') }}
           </UButton>
           <p v-if="tickets === 0" class="text-sm text-red-500 mt-2">
-            No tickets available
+            {{ t('duel.noTickets') }}
           </p>
         </div>
       </UCard>
 
       <!-- Invite Friend -->
       <UCard>
-        <h3 class="font-semibold mb-3">Challenge a Friend</h3>
+        <h3 class="font-semibold mb-3">{{ t('duel.challengeFriend') }}</h3>
 
         <!-- Primary: Share via Telegram -->
         <UButton
@@ -363,7 +365,7 @@ onMounted(async () => {
           :loading="isSharing"
           @click="handleShareToTelegram"
         >
-          Invite Friend via Telegram
+          {{ t('duel.inviteFriend') }}
         </UButton>
 
         <!-- Secondary: Create link manually -->
@@ -375,25 +377,25 @@ onMounted(async () => {
           class="mt-2"
           @click="handleCreateLink"
         >
-          Create Challenge Link
+          {{ t('duel.createLink') }}
         </UButton>
 
         <div v-if="showChallengeLink" class="mt-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg">
-          <p class="text-xs text-gray-500 mb-2">Share this link:</p>
+          <p class="text-xs text-gray-500 mb-2">{{ t('duel.shareLink') }}</p>
           <div class="flex gap-2">
             <input
               :value="challengeLink"
               readonly
               class="flex-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
             />
-            <UButton size="xs" @click="handleCopyLink">Copy</UButton>
+            <UButton size="xs" @click="handleCopyLink">{{ t('duel.copy') }}</UButton>
           </div>
         </div>
       </UCard>
 
       <!-- Friends Online -->
       <UCard v-if="friendsOnline.length > 0">
-        <h3 class="font-semibold mb-3">Friends Online</h3>
+        <h3 class="font-semibold mb-3">{{ t('duel.friendsOnline') }}</h3>
         <div class="space-y-2">
           <div
             v-for="friend in friendsOnline"
@@ -403,14 +405,14 @@ onMounted(async () => {
             <div class="flex items-center gap-2">
               <div class="w-2 h-2 bg-green-500 rounded-full" />
               <span>{{ friend.username }}</span>
-              <UBadge v-if="friend.inGame" size="xs" color="orange">In Game</UBadge>
+              <UBadge v-if="friend.inGame" size="xs" color="orange">{{ t('duel.inGameBadge') }}</UBadge>
             </div>
             <UButton
               v-if="!friend.inGame"
               size="xs"
               @click="handleChallengeFriend(friend.id!)"
             >
-              Challenge
+              {{ t('duel.challenge') }}
             </UButton>
           </div>
         </div>
@@ -421,7 +423,7 @@ onMounted(async () => {
     <div v-else-if="activeTab === 'leaderboard'">
       <UCard>
         <div v-if="playerRank > 0" class="mb-4 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg">
-          <p class="text-sm text-gray-600 dark:text-gray-400">Your Rank</p>
+          <p class="text-sm text-gray-600 dark:text-gray-400">{{ t('duel.yourRank') }}</p>
           <p class="text-2xl font-bold text-primary">#{{ playerRank }}</p>
         </div>
 
@@ -443,9 +445,9 @@ onMounted(async () => {
               </div>
             </div>
             <div class="text-right text-sm">
-              <span class="text-green-600">{{ entry.wins ?? 0 }}W</span>
+              <span class="text-green-600">{{ entry.wins ?? 0 }}{{ t('duel.wIndicator') }}</span>
               <span class="text-gray-400 mx-1">/</span>
-              <span class="text-red-600">{{ entry.losses ?? 0 }}L</span>
+              <span class="text-red-600">{{ entry.losses ?? 0 }}{{ t('duel.lIndicator') }}</span>
             </div>
           </div>
         </div>
@@ -455,7 +457,7 @@ onMounted(async () => {
     <!-- History Tab -->
     <div v-else-if="activeTab === 'history'">
       <div v-if="gameHistory.length === 0" class="text-center py-8 text-gray-500">
-        No games yet
+        {{ t('duel.noGames') }}
       </div>
       <div v-else class="space-y-2">
         <UCard
@@ -471,7 +473,7 @@ onMounted(async () => {
                 class="size-6"
               />
               <div>
-                <p class="font-medium">vs {{ game.opponent }}</p>
+                <p class="font-medium">{{ t('duel.vsOpponent', { name: game.opponent }) }}</p>
                 <p class="text-xs text-gray-500">
                   {{ game.playerScore }} - {{ game.opponentScore }}
                 </p>
@@ -482,10 +484,10 @@ onMounted(async () => {
                 :class="game.mmrChange! >= 0 ? 'text-green-600' : 'text-red-600'"
                 class="font-semibold"
               >
-                {{ game.mmrChange! >= 0 ? '+' : '' }}{{ game.mmrChange }} MMR
+                {{ t('duel.mmrChange', { sign: game.mmrChange! >= 0 ? '+' : '', amount: game.mmrChange }) }}
               </p>
               <UBadge v-if="game.isFriendGame" size="xs" color="blue" variant="soft">
-                Friend
+                {{ t('duel.friendBadge') }}
               </UBadge>
             </div>
           </div>

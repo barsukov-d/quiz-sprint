@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { ref, computed, onMounted, onUnmounted, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
+import { useI18n } from 'vue-i18n'
 import {
 	usePostQuizIdStart,
 	usePostQuizSessionSessionidAnswer,
@@ -16,6 +17,7 @@ import axios from 'axios'
 const route = useRoute()
 const router = useRouter()
 const { currentUser } = useAuth()
+const { t } = useI18n()
 
 // Quiz state
 const quizId = route.params.id as string
@@ -345,10 +347,10 @@ const getAnswerButtonClass = (answerId: string) => {
 			<span class="ml-4">
 				{{
 					isResuming
-						? 'Resuming session...'
+						? t('quiz.resumingSession')
 						: isInitializing
-							? 'Loading quiz...'
-							: 'Starting quiz...'
+							? t('quiz.loadingQuiz')
+							: t('quiz.startingQuiz')
 				}}
 			</span>
 		</div>
@@ -359,7 +361,7 @@ const getAnswerButtonClass = (answerId: string) => {
 			<div class="mb-6">
 				<div class="flex justify-between items-center mb-2">
 					<span class="text-sm font-semibold text-gray-600"
-						>Question {{ currentQuestionIndex }} of {{ totalQuestions }}</span
+						>{{ t('quiz.questionOf', { current: currentQuestionIndex, total: totalQuestions }) }}</span
 					>
 					<div class="flex items-center gap-4">
 						<!-- Timer -->
@@ -378,7 +380,7 @@ const getAnswerButtonClass = (answerId: string) => {
 						</div>
 						<!-- Score -->
 						<span class="text-sm font-semibold text-gray-600"
-							>Score: {{ session.score }}</span
+							>{{ t('quiz.score', { score: session.score }) }}</span
 						>
 					</div>
 				</div>
@@ -391,7 +393,7 @@ const getAnswerButtonClass = (answerId: string) => {
 				class="mb-4 p-3 bg-orange-50 border-2 border-orange-300 rounded-lg text-center"
 			>
 				<span class="text-orange-700 font-bold">
-					🔥 {{ answerResult.currentStreak }} Streak!
+					{{ t('quiz.streakLabel', { count: answerResult.currentStreak }) }}
 				</span>
 			</div>
 
@@ -437,34 +439,31 @@ const getAnswerButtonClass = (answerId: string) => {
 				<!-- Main feedback -->
 				<UAlert
 					:color="answerResult.isCorrect ? 'green' : 'red'"
-					:title="answerResult.isCorrect ? '✓ Correct!' : '✗ Incorrect'"
+					:title="answerResult.isCorrect ? t('quiz.correct') : '✗ Incorrect'"
 				>
 					<template #description>
 						<div v-if="answerResult.isCorrect" class="space-y-1">
 							<div class="font-semibold text-lg">
-								+{{ answerResult.pointsEarned }} points
+								{{ t('quiz.pointsEarned', { points: answerResult.pointsEarned }) }}
 							</div>
 							<div class="text-sm mt-2 space-y-1">
-								<div>Base: {{ answerResult.basePoints }}</div>
+								<div>{{ t('quiz.basePoints', { points: answerResult.basePoints }) }}</div>
 								<div v-if="answerResult.timeBonus > 0" class="text-green-700">
-									Speed Bonus: +{{ answerResult.timeBonus }} ⚡
+									{{ t('quiz.speedBonus', { points: answerResult.timeBonus }) }}
 								</div>
 								<div v-if="answerResult.streakBonus > 0" class="text-orange-700">
-									Streak Bonus: +{{ answerResult.streakBonus }} 🔥
+									{{ t('quiz.streakBonus', { points: answerResult.streakBonus }) }}
 								</div>
 							</div>
 						</div>
-						<div v-else>Better luck next time! Streak lost.</div>
+						<div v-else>{{ t('quiz.wrongAnswer') }}</div>
 					</template>
 				</UAlert>
 
 				<!-- Streak achievement notification -->
-				<UAlert v-if="answerResult.streakBonus > 0" color="orange" title="🔥 Streak Bonus!">
+				<UAlert v-if="answerResult.streakBonus > 0" color="orange" :title="t('quiz.streakBonusTitle')">
 					<template #description>
-						Amazing! {{ answerResult.currentStreak }} correct answers in a row! +{{
-							answerResult.streakBonus
-						}}
-						bonus points
+						{{ t('quiz.streakBonusDesc', { count: answerResult.currentStreak, bonus: answerResult.streakBonus }) }}
 					</template>
 				</UAlert>
 			</div>
@@ -479,13 +478,13 @@ const getAnswerButtonClass = (answerId: string) => {
 				block
 				@click="confirmAnswer"
 			>
-				{{ isSubmitting ? 'Submitting...' : 'Submit Answer' }}
+				{{ isSubmitting ? t('quiz.submitting') : t('quiz.submit') }}
 			</UButton>
 
 			<!-- Next question indicator -->
 			<div v-else class="text-center text-gray-500">
 				<UProgress animation="carousel" size="sm" />
-				<p class="mt-2">Loading next question...</p>
+				<p class="mt-2">{{ t('quiz.loadingNext') }}</p>
 			</div>
 		</div>
 
@@ -493,8 +492,8 @@ const getAnswerButtonClass = (answerId: string) => {
 		<div v-else-if="!showConflictModal" class="text-center py-12">
 			<UAlert
 				color="red"
-				title="Failed to load quiz"
-				:description="errorMessage || 'Please try again'"
+				:title="t('quiz.loadFailed2')"
+				:description="errorMessage || t('quiz.tryAgain2')"
 			/>
 		</div>
 
@@ -507,14 +506,11 @@ const getAnswerButtonClass = (answerId: string) => {
 		>
 			<UCard>
 				<template #header>
-					<h3 class="text-xl font-bold">Active Quiz Session Found</h3>
+					<h3 class="text-xl font-bold">{{ t('quiz.activeSession') }}</h3>
 				</template>
 
 				<div class="space-y-4">
-					<p class="text-gray-700">
-						You already have an active quiz session. Would you like to continue where
-						you left off or start fresh?
-					</p>
+					<p class="text-gray-700">{{ t('quiz.activeSessionDesc') }}</p>
 
 					<!-- Error message -->
 					<UAlert v-if="errorMessage" color="red" :title="errorMessage" />
@@ -527,7 +523,7 @@ const getAnswerButtonClass = (answerId: string) => {
 							:disabled="isAbandoning"
 							@click="handleResumeSession"
 						>
-							Continue Session
+							{{ t('quiz.continueSession') }}
 						</UButton>
 						<UButton
 							size="lg"
@@ -537,7 +533,7 @@ const getAnswerButtonClass = (answerId: string) => {
 							:loading="isAbandoning"
 							@click="handleStartFresh"
 						>
-							{{ isAbandoning ? 'Starting Fresh...' : 'Start Fresh' }}
+							{{ isAbandoning ? t('quiz.startingFresh') : t('quiz.startFresh') }}
 						</UButton>
 					</div>
 				</div>

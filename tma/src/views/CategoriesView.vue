@@ -2,6 +2,9 @@
 import { useGetCategories } from '@/api'
 import { useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
 
 // Получаем категории через сгенерированный hook
 const { data: categories, isLoading, isError, error, refetch } = useGetCategories()
@@ -61,13 +64,13 @@ const getCategoryIcon = (categoryName: string): string => {
 			</div>
 		</UCard>
 
-		<h1 class="text-3xl font-bold mb-2">Quiz Sprint</h1>
-		<p class="text-gray-600 mb-8">Выберите категорию</p>
+		<h1 class="text-3xl font-bold mb-2">{{ t('categories.title') }}</h1>
+		<p class="text-gray-600 mb-8">{{ t('categories.subtitle') }}</p>
 
 		<!-- Loading state -->
 		<div v-if="isLoading" class="flex justify-center items-center py-12">
 			<UProgress animation="carousel" />
-			<span class="ml-4">Загрузка категорий...</span>
+			<span class="ml-4">{{ t('categories.loading') }}</span>
 		</div>
 
 		<!-- Error state -->
@@ -75,10 +78,10 @@ const getCategoryIcon = (categoryName: string): string => {
 			<UAlert
 				color="red"
 				variant="soft"
-				title="Ошибка загрузки"
-				:description="error?.error.message || 'Не удалось загрузить категории'"
+				:title="t('categories.loadError')"
+				:description="error?.error.message || t('categories.loadFailed')"
 			/>
-			<UButton color="red" class="mt-2" @click="refetch()"> Попробовать снова </UButton>
+			<UButton color="red" class="mt-2" @click="refetch()"> {{ t('categories.tryAgain') }} </UButton>
 		</div>
 
 		<!-- Success state with data -->
@@ -98,7 +101,7 @@ const getCategoryIcon = (categoryName: string): string => {
 						<div class="flex-1">
 							<h3 class="text-lg font-semibold mb-1">{{ category.name }}</h3>
 							<p class="text-sm text-gray-500">
-								Explore {{ category.name.toLowerCase() }} quizzes
+								{{ t('categories.exploreDesc', { name: category.name.toLowerCase() }) }}
 							</p>
 						</div>
 					</div>
@@ -127,8 +130,8 @@ const getCategoryIcon = (categoryName: string): string => {
 		<!-- Empty state -->
 		<div v-else class="text-center py-12 text-gray-500">
 			<div class="text-6xl mb-4">📂</div>
-			<p class="text-lg font-semibold mb-2">Категории пока не доступны</p>
-			<p class="text-sm">Убедитесь что backend запущен</p>
+			<p class="text-lg font-semibold mb-2">{{ t('categories.empty') }}</p>
+			<p class="text-sm">{{ t('categories.emptyDesc') }}</p>
 		</div>
 	</div>
 </template>

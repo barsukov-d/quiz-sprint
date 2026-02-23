@@ -7,6 +7,7 @@ import { useGameTimer } from '@/composables/useGameTimer'
 import GameTimer from '@/components/shared/GameTimer.vue'
 import AnswerButton from '@/components/shared/AnswerButton.vue'
 import QuestionCard from '@/components/shared/QuestionCard.vue'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
@@ -14,6 +15,7 @@ const { currentUser } = useAuth()
 
 const duelId = computed(() => route.params.duelId as string)
 const playerId = computed(() => currentUser.value?.id ?? '')
+const { t } = useI18n()
 
 // ===========================
 // WebSocket
@@ -176,7 +178,7 @@ onMounted(() => {
       class="bg-yellow-500 text-white text-center py-2 text-sm"
     >
       <UIcon name="i-heroicons-wifi" class="inline size-4 mr-1" />
-      {{ isReconnecting ? 'Reconnecting...' : 'Connecting...' }}
+      {{ isReconnecting ? t('duel.reconnecting') : t('duel.connecting') }}
     </div>
 
     <!-- Error -->
@@ -190,15 +192,15 @@ onMounted(() => {
         <div class="animate-pulse mb-4">
           <UIcon name="i-heroicons-users" class="size-16 text-primary" />
         </div>
-        <h2 class="text-xl font-bold mb-2">Waiting for opponent...</h2>
-        <p class="text-gray-500">The duel will start when both players are ready</p>
+        <h2 class="text-xl font-bold mb-2">{{ t('duel.waitingOpponent') }}</h2>
+        <p class="text-gray-500">{{ t('duel.waitingDesc') }}</p>
       </div>
     </div>
 
     <!-- Countdown -->
     <div v-else-if="isCountdown" class="flex-1 flex items-center justify-center p-4">
       <div class="text-center">
-        <p class="text-gray-500 mb-2">Get ready!</p>
+        <p class="text-gray-500 mb-2">{{ t('duel.getReady') }}</p>
         <p class="text-8xl font-bold text-primary animate-pulse">
           {{ countdownSeconds }}
         </p>
@@ -216,15 +218,15 @@ onMounted(() => {
               <span class="text-lg">{{ myPlayer?.leagueIcon }}</span>
             </div>
             <div>
-              <p class="font-medium text-sm">You</p>
+              <p class="font-medium text-sm">{{ t('duel.you') }}</p>
               <p class="text-2xl font-bold text-primary">{{ myScore }}</p>
             </div>
           </div>
 
           <!-- VS / Round -->
           <div class="text-center">
-            <p class="text-xs text-gray-500">Round</p>
-            <p class="font-bold">{{ currentRound }}/{{ totalRounds }}</p>
+            <p class="text-xs text-gray-500">{{ t('duel.round') }}</p>
+            <p class="font-bold">{{ t('duel.roundOf', { current: currentRound, total: totalRounds }) }}</p>
           </div>
 
           <!-- Opponent -->
@@ -295,7 +297,7 @@ onMounted(() => {
           />
         </div>
         <h2 class="text-3xl font-bold mb-2">
-          {{ didWin === null ? 'Draw!' : didWin ? 'Victory!' : 'Defeat' }}
+          {{ didWin === null ? t('duel.draw') : didWin ? t('duel.victory') : t('duel.defeat') }}
         </h2>
         <p class="text-xl">
           {{ myScore }} - {{ opponentScore }}
@@ -304,7 +306,7 @@ onMounted(() => {
           :class="myMmrChange >= 0 ? 'text-green-600' : 'text-red-600'"
           class="text-lg font-semibold mt-2"
         >
-          {{ myMmrChange >= 0 ? '+' : '' }}{{ myMmrChange }} MMR
+          {{ t('duel.mmrChange', { sign: myMmrChange >= 0 ? '+' : '', amount: myMmrChange }) }}
         </p>
       </div>
     </div>

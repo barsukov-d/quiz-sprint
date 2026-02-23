@@ -3,10 +3,12 @@ import { useRoute, useRouter } from 'vue-router'
 import { computed, watch } from 'vue'
 import { useGetQuizSessionSessionid } from '@/api'
 import { useLastQuiz } from '@/composables/useLastQuiz'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
 const { saveLastQuizId } = useLastQuiz()
+const { t } = useI18n()
 
 // Get sessionId from route params
 const sessionId = route.params.sessionId as string
@@ -94,15 +96,15 @@ const goHome = () => {
 			<!-- Loading -->
 			<div v-if="isLoading" class="flex justify-center items-center py-12">
 				<UProgress animation="carousel" />
-				<span class="ml-4">Loading results...</span>
+				<span class="ml-4">{{ t('quiz.loadingResults') }}</span>
 			</div>
 
 			<!-- Error -->
 			<div v-else-if="isError" class="text-center py-12">
 				<UAlert
 					color="red"
-					title="Failed to load results"
-					:description="error?.error?.message || 'Please try again'"
+					:title="t('quiz.loadResultsFailed')"
+					:description="error?.error?.message || t('quiz.tryAgain2')"
 				/>
 			</div>
 
@@ -112,7 +114,7 @@ const goHome = () => {
 				<UCard class="mb-6 text-center">
 					<div class="py-8">
 						<div class="text-8xl mb-4">{{ performanceEmoji }}</div>
-						<h1 class="text-3xl font-bold mb-2">Quiz Completed!</h1>
+						<h1 class="text-3xl font-bold mb-2">{{ t('quiz.completed') }}</h1>
 						<p class="text-xl text-gray-600 mb-6">{{ performanceMessage }}</p>
 
 						<!-- Score Circle -->
@@ -142,7 +144,7 @@ const goHome = () => {
 							size="lg"
 							class="mb-4"
 						>
-							{{ results.passed ? '✓ Passed' : '✗ Not Passed' }}
+							{{ results.passed ? t('quiz.passed') : t('quiz.notPassed') }}
 						</UBadge>
 
 						<!-- Quiz Title -->
@@ -157,21 +159,21 @@ const goHome = () => {
 							<div class="text-3xl font-bold mb-2">
 								{{ results.correctAnswers }}/{{ results.totalQuestions }}
 							</div>
-							<div class="text-sm text-gray-600">Correct Answers</div>
+							<div class="text-sm text-gray-600">{{ t('quiz.correctAnswers') }}</div>
 						</div>
 					</UCard>
 
 					<UCard>
 						<div class="text-center py-4">
 							<div class="text-3xl font-bold mb-2">{{ formatTime }}</div>
-							<div class="text-sm text-gray-600">Time Spent</div>
+							<div class="text-sm text-gray-600">{{ t('quiz.timeSpent') }}</div>
 						</div>
 					</UCard>
 
 					<UCard>
 						<div class="text-center py-4">
 							<div class="text-3xl font-bold mb-2">{{ results.session.score }}</div>
-							<div class="text-sm text-gray-600">Points Earned</div>
+							<div class="text-sm text-gray-600">{{ t('quiz.pointsEarnedLabel') }}</div>
 						</div>
 					</UCard>
 
@@ -180,7 +182,7 @@ const goHome = () => {
 							<div class="text-3xl font-bold mb-2">
 								{{ results.scorePercentage }}%
 							</div>
-							<div class="text-sm text-gray-600">Accuracy</div>
+							<div class="text-sm text-gray-600">{{ t('quiz.accuracy') }}</div>
 						</div>
 					</UCard>
 
@@ -189,21 +191,21 @@ const goHome = () => {
 							<div class="text-3xl font-bold mb-2 text-orange-500">
 								🔥 {{ results.longestStreak }}
 							</div>
-							<div class="text-sm text-gray-600">Longest Streak</div>
+							<div class="text-sm text-gray-600">{{ t('quiz.longestStreak') }}</div>
 						</div>
 					</UCard>
 
 					<UCard>
 						<div class="text-center py-4">
 							<div class="text-3xl font-bold mb-2">{{ avgAnswerTime }}s</div>
-							<div class="text-sm text-gray-600">Avg. Response</div>
+							<div class="text-sm text-gray-600">{{ t('quiz.avgResponse') }}</div>
 						</div>
 					</UCard>
 				</div>
 
 				<!-- Actions -->
 				<div class="space-y-3">
-					<UButton size="xl" color="primary" block @click="tryAgain"> Try Again </UButton>
+					<UButton size="xl" color="primary" block @click="tryAgain"> {{ t('quiz.tryAgainBtn') }} </UButton>
 					<UButton
 						size="xl"
 						color="gray"
@@ -211,20 +213,20 @@ const goHome = () => {
 						block
 						@click="viewLeaderboard"
 					>
-						View Leaderboard
+						{{ t('quiz.viewLeaderboard') }}
 					</UButton>
 					<UButton size="xl" color="gray" variant="ghost" block @click="goHome">
-						Back to Home
+						{{ t('quiz.backToHome') }}
 					</UButton>
 				</div>
 
 				<!-- Share Section (Optional) -->
 				<UCard class="mt-6">
 					<div class="text-center py-4">
-						<p class="text-sm text-gray-600 mb-3">Share your achievement!</p>
+						<p class="text-sm text-gray-600 mb-3">{{ t('quiz.shareAchievement') }}</p>
 						<div class="flex justify-center gap-3">
 							<UButton icon="i-heroicons-share" color="gray" variant="outline">
-								Share
+								{{ t('quiz.share') }}
 							</UButton>
 						</div>
 					</div>

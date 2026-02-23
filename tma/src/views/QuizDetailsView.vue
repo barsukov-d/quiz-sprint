@@ -2,10 +2,12 @@
 import { useGetQuizId } from '@/api'
 import { useRoute, useRouter } from 'vue-router'
 import { useLastQuiz } from '@/composables/useLastQuiz'
+import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
 const router = useRouter()
 const { saveLastQuizId } = useLastQuiz()
+const { t } = useI18n()
 
 // Получаем ID квиза из URL
 const quizId = route.params.id as string
@@ -55,7 +57,7 @@ const formatTime = (seconds: number) => {
 		<!-- Loading state -->
 		<div v-if="isLoading" class="flex justify-center items-center py-12">
 			<UProgress animation="carousel" />
-			<span class="ml-4">Loading quiz details...</span>
+			<span class="ml-4">{{ t('quiz.loadingQuiz') }}</span>
 		</div>
 
 		<!-- Error state -->
@@ -63,8 +65,8 @@ const formatTime = (seconds: number) => {
 			<UAlert
 				color="red"
 				variant="soft"
-				title="Error loading quiz"
-				:description="error?.error.message || 'Failed to load quiz details'"
+				:title="t('quiz.loadError')"
+				:description="error?.error.message || t('quiz.loadFailed')"
 			/>
 		</div>
 
@@ -80,24 +82,24 @@ const formatTime = (seconds: number) => {
 			<!-- Quiz Stats Card -->
 			<UCard class="mb-6">
 				<template #header>
-					<h2 class="text-xl font-semibold">📊 Quiz Stats</h2>
+					<h2 class="text-xl font-semibold">{{ t('quiz.stats') }}</h2>
 				</template>
 
 				<div class="space-y-3">
 					<div class="flex justify-between items-center">
-						<span class="text-gray-600">Questions:</span>
+						<span class="text-gray-600">{{ t('quiz.questions') }}</span>
 						<span class="font-semibold">{{
 							quizData.data.quiz.questions?.length || 0
 						}}</span>
 					</div>
 					<div class="flex justify-between items-center">
-						<span class="text-gray-600">Time Limit:</span>
+						<span class="text-gray-600">{{ t('quiz.timeLimitLabel') }}</span>
 						<span class="font-semibold">{{
 							formatTime(quizData.data.quiz.timeLimit || 0)
 						}}</span>
 					</div>
 					<div class="flex justify-between items-center">
-						<span class="text-gray-600">Passing Score:</span>
+						<span class="text-gray-600">{{ t('quiz.passingScoreLabel') }}</span>
 						<span class="font-semibold"
 							>{{ quizData.data.quiz.passingScore || 0 }}%</span
 						>
@@ -112,7 +114,7 @@ const formatTime = (seconds: number) => {
 			>
 				<template #header>
 					<div class="flex justify-between items-center">
-						<h2 class="text-xl font-semibold">👑 Top 3 Leaders</h2>
+						<h2 class="text-xl font-semibold">{{ t('quiz.topLeaders') }}</h2>
 					</div>
 				</template>
 
@@ -132,7 +134,7 @@ const formatTime = (seconds: number) => {
 								{{ index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉' }}
 							</span>
 							<div>
-								<div class="font-semibold">{{ entry.username || 'Anonymous' }}</div>
+								<div class="font-semibold">{{ entry.username || t('quiz.anonymous') }}</div>
 								<div class="text-sm text-gray-500">
 									{{ new Date(entry.completedAt * 1000).toLocaleDateString() }}
 								</div>
@@ -146,7 +148,7 @@ const formatTime = (seconds: number) => {
 			<!-- Start Quiz Button -->
 			<div class="text-center">
 				<UButton size="xl" color="primary" class="px-12 py-4" @click="startQuiz">
-					START QUIZ →
+					{{ t('quiz.startQuiz') }}
 				</UButton>
 			</div>
 		</div>

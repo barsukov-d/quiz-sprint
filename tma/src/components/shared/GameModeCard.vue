@@ -1,4 +1,8 @@
 <script setup lang="ts">
+import { useI18n } from 'vue-i18n'
+
+const { t } = useI18n()
+
 interface Props {
 	title: string
 	icon: string
@@ -70,7 +74,7 @@ const handleClick = () => {
 						:class="i <= lives ? 'text-red-500' : 'text-gray-300 dark:text-gray-600'"
 						class="size-4"
 					/>
-					<span class="text-xs text-gray-500 ml-1">{{ lives }} lives</span>
+					<span class="text-xs text-gray-500 ml-1">{{ t('marathon.lives', { count: lives }) }}</span>
 				</div>
 			</div>
 

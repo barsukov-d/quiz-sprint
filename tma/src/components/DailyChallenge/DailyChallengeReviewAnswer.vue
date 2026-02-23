@@ -1,6 +1,7 @@
 <script setup lang="ts">
 import { computed } from 'vue'
 import type { InternalInfrastructureHttpHandlersAnsweredQuestionDTO } from '@/api/generated'
+import { useI18n } from 'vue-i18n'
 
 interface Props {
 	answeredQuestion: InternalInfrastructureHttpHandlersAnsweredQuestionDTO
@@ -9,6 +10,7 @@ interface Props {
 }
 
 const props = defineProps<Props>()
+const { t } = useI18n()
 
 // ===========================
 // Computed
@@ -17,13 +19,13 @@ const props = defineProps<Props>()
 const resultBadge = computed(() => {
 	if (props.answeredQuestion.isCorrect) {
 		return {
-			label: 'Correct',
+			label: t('daily.correctLabel'),
 			color: 'green' as const,
 			icon: 'i-heroicons-check-circle',
 		}
 	}
 	return {
-		label: 'Wrong',
+		label: t('daily.wrongLabel'),
 		color: 'red' as const,
 		icon: 'i-heroicons-x-circle',
 	}
@@ -42,7 +44,7 @@ const formattedTime = computed(() => {
 		<template #header>
 			<div class="flex justify-between items-center">
 				<UBadge color="gray" variant="subtle">
-					Question {{ questionNumber }} / {{ totalQuestions }}
+					{{ t('shared.questionOf', { current: questionNumber, total: totalQuestions }) }}
 				</UBadge>
 				<UBadge
 					:color="resultBadge.color"
@@ -68,7 +70,7 @@ const formattedTime = computed(() => {
 				<div
 					class="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider"
 				>
-					Your Answer:
+					{{ t('daily.yourAnswer') }}
 				</div>
 				<div
 					class="flex items-center gap-3 p-4 rounded-lg border-2"
@@ -97,7 +99,7 @@ const formattedTime = computed(() => {
 				<div
 					class="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider"
 				>
-					Correct Answer:
+					{{ t('daily.correctAnswer') }}
 				</div>
 				<div
 					class="flex items-center gap-3 p-4 rounded-lg border-2 bg-green-50 dark:bg-green-900/30 border-green-500 dark:border-green-600 text-green-700 dark:text-green-400"
@@ -134,8 +136,8 @@ const formattedTime = computed(() => {
 					<span>
 						{{
 							answeredQuestion.isCorrect
-								? `+${answeredQuestion.pointsEarned} points`
-								: 'No points'
+								? t('daily.pointsEarned', { points: answeredQuestion.pointsEarned })
+								: t('daily.noPoints')
 						}}
 					</span>
 				</div>
