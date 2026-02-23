@@ -326,6 +326,53 @@ func (dg *DuelGame) finishGame(finishedAt int64) error {
 	return nil
 }
 
+// RecordTimeoutAnswer records a timeout (no answer) for a player in the current round.
+// Used by the WebSocket hub when the round timer expires without a player answering.
+// Returns ErrPlayerAlreadyAnswered if the player already submitted an answer (idempotent).
+func (dg *DuelGame) RecordTimeoutAnswer(playerID UserID, timedOutAt int64) (*SubmitAnswerResult, error) {
+	if dg.status != GameStatusInProgress {
+		return nil, ErrGameNotActive
+	}
+	if !dg.isPlayerInGame(playerID) {
+		return nil, ErrPlayerNotInGame
+	}
+	if dg.hasPlayerAnsweredRound(playerID, dg.currentRound) {
+		return nil, ErrPlayerAlreadyAnswered
+	}
+
+	// Record as timed out: wrong, max time, 0 points, zero AnswerID
+	roundAnswer := RoundAnswer{
+		playerID:  playerID,
+		timeTaken: TimePerQuestionSec * 1000,
+		isCorrect: false,
+		points:    0,
+	}
+	dg.roundAnswers[dg.currentRound] = append(dg.roundAnswers[dg.currentRound], roundAnswer)
+
+	bothAnswered := len(dg.roundAnswers[dg.currentRound]) == 2
+	result := &SubmitAnswerResult{
+		IsCorrect:      false,
+		PointsEarned:   0,
+		PlayerScore:    dg.getPlayerScore(playerID),
+		OpponentScore:  dg.getOpponentScore(playerID),
+		RoundNumber:    dg.currentRound,
+		BothAnswered:   bothAnswered,
+		IsGameFinished: false,
+	}
+
+	if bothAnswered {
+		if err := dg.completeRound(timedOutAt); err != nil {
+			return nil, err
+		}
+		if dg.status == GameStatusFinished {
+			result.IsGameFinished = true
+			result.WinnerID = dg.determineWinner()
+		}
+	}
+
+	return result, nil
+}
+
 // HandlePlayerDisconnect handles player disconnect
 func (dg *DuelGame) HandlePlayerDisconnect(playerID UserID, disconnectedAt int64) error {
 	if !dg.isPlayerInGame(playerID) {

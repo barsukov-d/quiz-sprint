@@ -788,32 +788,28 @@ func (uc *StartGameUseCase) GetRoundQuestion(gameIDStr string, roundNum int) (*R
 		return nil, err
 	}
 
-	if roundNum < 1 || roundNum > len(game.QuestionIDs()) {
+	questionIDs := game.QuestionIDs()
+	if roundNum < 1 || roundNum > len(questionIDs) {
 		return nil, quick_duel.ErrGameNotFound
 	}
 
-	// Get question data
-	questionID := game.QuestionIDs()[roundNum-1]
-	questions, err := uc.questionRepo.FindRandomByDifficulty(1, "medium")
-	if err != nil || len(questions) == 0 {
-		return nil, err
+	questionID := questionIDs[roundNum-1]
+	question, err := uc.questionRepo.FindByID(questionID)
+	if err != nil {
+		return nil, fmt.Errorf("get round question: load question %s: %w", questionID, err)
 	}
 
-	// In real implementation, we'd look up the specific question by ID
-	// For now, just return the first random question as placeholder
-	q := questions[0]
-
-	answers := make([]map[string]string, 0, len(q.Answers))
-	for _, a := range q.Answers {
+	answers := make([]map[string]string, 0, len(question.Answers()))
+	for _, a := range question.Answers() {
 		answers = append(answers, map[string]string{
-			"id":   a.ID,
-			"text": a.Text,
+			"id":   a.ID().String(),
+			"text": a.Text().String(),
 		})
 	}
 
 	return &RoundQuestionOutput{
 		QuestionID:   questionID.String(),
-		QuestionText: q.Text,
+		QuestionText: question.Text().String(),
 		Answers:      answers,
 	}, nil
 }
@@ -1041,6 +1037,82 @@ func (uc *SubmitDuelAnswerUseCase) finalizeGame(
 
 	// Clean up cached round answers — best-effort, ignore errors
 	_ = uc.roundCache.DeleteGame(game.ID().String())
+}
+
+// TimeoutRound submits timeout answers for any players who have not yet answered the given round.
+// Advances the domain's currentRound so subsequent answers are validated against the right question.
+// Returns nil output (no error) when the round already advanced or the game is not in progress.
+func (uc *SubmitDuelAnswerUseCase) TimeoutRound(gameIDStr string, roundNum int) (*SubmitDuelAnswerOutput, error) {
+	now := time.Now().UTC().Unix()
+
+	gameID := quick_duel.NewGameIDFromString(gameIDStr)
+	game, err := uc.duelGameRepo.FindByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	if game.Status() != quick_duel.GameStatusInProgress {
+		return nil, nil // Game already finished — nothing to do
+	}
+	if game.CurrentRound() != roundNum {
+		return nil, nil // Round already advanced — nothing to do
+	}
+
+	// Record timeout for each player who hasn't answered yet
+	var lastResult *quick_duel.SubmitAnswerResult
+	for _, playerID := range []quick_duel.UserID{game.Player1().UserID(), game.Player2().UserID()} {
+		result, err := game.RecordTimeoutAnswer(playerID, now)
+		if err != nil {
+			if isErr(err, quick_duel.ErrPlayerAlreadyAnswered) {
+				continue
+			}
+			return nil, fmt.Errorf("timeout round %d player %s: %w", roundNum, playerID, err)
+		}
+
+		_ = uc.roundCache.AddAnswer(gameIDStr, roundNum, PlayerAnswer{
+			PlayerID:  playerID.String(),
+			AnswerID:  "",
+			IsCorrect: false,
+			TimeTaken: quick_duel.TimePerQuestionSec * 1000,
+			Points:    0,
+		})
+
+		lastResult = result
+	}
+
+	if lastResult == nil {
+		return nil, nil // Both players already answered before timeout fired
+	}
+
+	player1Score := game.Player1().Score()
+	player2Score := game.Player2().Score()
+
+	output := &SubmitDuelAnswerOutput{
+		IsCorrect:     false,
+		Player1Score:  player1Score,
+		Player2Score:  player2Score,
+		RoundComplete: lastResult.BothAnswered,
+		GameComplete:  lastResult.IsGameFinished,
+	}
+
+	if lastResult.IsGameFinished {
+		uc.finalizeGame(game, player1Score, player2Score, now, output)
+	} else if err := uc.duelGameRepo.Save(game); err != nil {
+		return nil, fmt.Errorf("timeout round: save game: %w", err)
+	}
+
+	return output, nil
+}
+
+// isErr reports whether err or any of its unwrapped causes equals target.
+func isErr(err, target error) bool {
+	if err == target {
+		return true
+	}
+	if u, ok := err.(interface{ Unwrap() error }); ok {
+		return isErr(u.Unwrap(), target)
+	}
+	return false
 }
 
 func max(a, b int) int {
