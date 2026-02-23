@@ -12,8 +12,8 @@ export function detectLocale(): Locale {
 
   // 2. Telegram user language
   try {
-    const params = retrieveLaunchParams() as any
-    const lang: string = params?.initData?.user?.languageCode ?? ''
+    const params = retrieveLaunchParams()
+    const lang: string = params.initData?.user?.languageCode ?? ''
     if (lang.startsWith('ru')) return 'ru'
   } catch {
     // SDK not available outside Telegram
