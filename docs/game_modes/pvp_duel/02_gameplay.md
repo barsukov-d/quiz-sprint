@@ -179,6 +179,12 @@ Home → "Дуэль" → Shows:
 - Do NOT show which answer they selected
 - Create tension without revealing strategy
 
+**Emotes (in-game reactions):**
+- Emote button in top corner → pick from unlocked set
+- Max 1 emote per question, max 3 per game
+- Appears briefly (~1.5s) on opponent's screen
+- Default: 👋. More unlocked via achievements (see `04_rewards.md`)
+
 ---
 
 ### 5. Answer Feedback (Brief)
@@ -291,10 +297,6 @@ Home → "Дуэль" → Shows:
 │                                     │
 │  MMR: 1,650 → 1,625 (-25)           │
 │  Ранг: 🥇 Gold III                  │
-│                                     │
-│  💡 Совет: Быстрее отвечай на       │
-│  вопросы по науке — твоё слабое     │
-│  место.                             │
 │                                     │
 │  [  РЕВАНШ  ]  [  В МЕНЮ  ]         │
 └─────────────────────────────────────┘

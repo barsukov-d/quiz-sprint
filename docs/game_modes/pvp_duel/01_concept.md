@@ -176,29 +176,8 @@ After losing to a friend:
 
 Creates engagement loop: lose → revenge → rematch → repeat.
 
-### 6. Weekly Friend Tournaments
-**Every Sunday:** Mini-tournament among friends who played each other.
-- Auto-generated bracket from week's duels
-- Winner gets "Champion of Friends" badge
-- Shareable results
-
-### 7. "Bring a Friend" Events
-Monthly events:
-```
-🎉 НЕДЕЛЯ ДРУЖБЫ
-
-Сыграй 10 дуэлей с друзьями →
-Получи эксклюзивную рамку аватара!
-
-Прогресс: 4/10
-[ Пригласить друга ]
-```
-
-### 8. Spectator Mode (Future)
-Friends can watch live duels:
-- Real-time question + answers
-- React with emojis
-- Share ongoing game
+### 6. Spectator Mode (Future)
+Friends can watch live duels. Deferred to Phase 4+.
 
 ---
 
