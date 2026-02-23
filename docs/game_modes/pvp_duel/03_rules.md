@@ -15,8 +15,8 @@ func CalculateMMRChange(winnerMMR, loserMMR int, result GameResult) (winnerDelta
     actualWinner := 1.0  // Win = 1
     actualLoser := 0.0   // Lose = 0
 
-    winnerDelta = int(float64(K) * (actualWinner - expectedWinner))
-    loserDelta = int(float64(K) * (actualLoser - expectedLoser))
+    winnerDelta = int(math.Round(float64(K) * (actualWinner - expectedWinner)))
+    loserDelta = int(math.Round(float64(K) * (actualLoser - expectedLoser)))
 
     // Minimum change
     if winnerDelta < 10 {
