@@ -1,0 +1,14 @@
+pre-commit:
+  commands:
+    bd-flush:
+      run: bash scripts/pre-commit-bd.sh
+
+    lint:
+      root: "tma/"
+      glob: "**/*"
+      run: pnpm lint
+
+    type-check:
+      root: "tma/"
+      glob: "**/*"
+      run: pnpm run type-check
