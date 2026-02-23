@@ -12,8 +12,8 @@ export function detectLocale(): Locale {
 
   // 2. Telegram user language
   try {
-    const params = retrieveLaunchParams()
-    const lang = params?.initData?.user?.languageCode ?? ''
+    const params = retrieveLaunchParams() as any
+    const lang: string = params?.initData?.user?.languageCode ?? ''
     if (lang.startsWith('ru')) return 'ru'
   } catch {
     // SDK not available outside Telegram
@@ -31,7 +31,6 @@ export const i18n = createI18n({
 })
 
 export function setLocale(lang: Locale) {
-  // @ts-expect-error — Composition API mode uses Ref<string>
   i18n.global.locale.value = lang
   localStorage.setItem('locale', lang)
 }
