@@ -203,8 +203,8 @@ const (
 | Daily Challenge Result | Tickets Earned |
 |----------------------|----------------|
 | 0-4 correct (Wooden Chest) | 1 🎟️ |
-| 5-7 correct (Silver Chest) | 2-3 🎟️ |
-| 8-10 correct (Golden Chest) | 4-5 🎟️ |
+| 5-7 correct (Silver Chest) | 2 🎟️ |
+| 8-10 correct (Golden Chest) | 3 🎟️ |
 
 ---
 
