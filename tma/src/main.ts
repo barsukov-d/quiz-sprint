@@ -7,6 +7,7 @@ import App from './App.vue'
 import router from './router'
 import ui from '@nuxt/ui/vue-plugin'
 import { useAuth } from './composables/useAuth'
+import { i18n } from './i18n/index'
 
 // Инициализация Telegram Mini App
 async function initializeApp() {
@@ -41,6 +42,7 @@ async function initializeApp() {
 
 		// 5. Подключаем плагины
 		app.use(router)
+		app.use(i18n)
 		app.use(ui)
 		app.use(VueQueryPlugin, vueQueryOptions)
 
