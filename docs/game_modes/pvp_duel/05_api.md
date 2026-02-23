@@ -665,7 +665,6 @@ Sent to both players when someone answers:
     "questionId": "q_003",
     "isCorrect": true,
     "correctAnswer": "a_002",
-    "pointsEarned": 100,
     "timeTaken": 4200,
     "player1Score": 3,
     "player2Score": 2
