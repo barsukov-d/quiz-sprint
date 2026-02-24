@@ -58,6 +58,19 @@ const challengeLink = ref('')
 const deepLinkChallenge = ref<string | null>(null)
 const deepLinkError = ref<string | null>(null)
 
+function navigateToHome() {
+	router.push({ name: 'home' })
+}
+
+function setActiveTab(tab: string) {
+	activeTab.value = tab
+}
+
+function dismissDeepLinkError() {
+	deepLinkError.value = null
+	router.replace({ name: 'duel-lobby' })
+}
+
 // ===========================
 // Computed
 // ===========================
@@ -139,12 +152,15 @@ const handleAcceptByLinkCode = async (linkCode: string) => {
 		if (response.data?.success) {
 			console.log('[DuelLobby] Challenge accepted, game starting...')
 			deepLinkChallenge.value = null
-			// Clear the query param
-			router.replace({ name: 'duel-lobby' })
-			// Refresh status to get the new game
-			await refetchStatus()
-			if (hasActiveDuel.value && activeGameId.value) {
-				goToActiveDuel()
+			// Navigate directly using gameId from response, or fall back to status refetch
+			if (response.data.gameId) {
+				router.push({ name: 'duel-play', params: { duelId: response.data.gameId } })
+			} else {
+				router.replace({ name: 'duel-lobby' })
+				await refetchStatus()
+				if (hasActiveDuel.value && activeGameId.value) {
+					goToActiveDuel()
+				}
 			}
 		}
 	} catch (error: unknown) {
@@ -183,7 +199,7 @@ onMounted(async () => {
 	<div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
 		<!-- Header -->
 		<div class="flex items-center justify-between mb-6">
-			<button class="p-2 -ml-2" @click="router.push({ name: 'home' })">
+			<button class="p-2 -ml-2" @click="navigateToHome">
 				<UIcon name="i-heroicons-arrow-left" class="size-6" />
 			</button>
 			<h1 class="text-xl font-bold">{{ t('duel.title') }}</h1>
@@ -211,10 +227,7 @@ onMounted(async () => {
 						color="gray"
 						variant="link"
 						class="mt-1"
-						@click="
-							deepLinkError = null
-							router.replace({ name: 'duel-lobby' })
-						"
+						@click="dismissDeepLinkError"
 					>
 						{{ t('duel.close') }}
 					</UButton>
@@ -282,7 +295,7 @@ onMounted(async () => {
 							<UButton
 								size="xs"
 								color="green"
-								@click="handleAcceptChallenge(challenge.id!)"
+								@click="() => handleAcceptChallenge(challenge.id!)"
 							>
 								{{ t('duel.accept') }}
 							</UButton>
@@ -290,7 +303,7 @@ onMounted(async () => {
 								size="xs"
 								color="red"
 								variant="soft"
-								@click="handleDeclineChallenge(challenge.id!)"
+								@click="() => handleDeclineChallenge(challenge.id!)"
 							>
 								{{ t('duel.decline') }}
 							</UButton>
@@ -306,7 +319,7 @@ onMounted(async () => {
 				:color="activeTab === 'play' ? 'primary' : 'gray'"
 				:variant="activeTab === 'play' ? 'solid' : 'ghost'"
 				size="sm"
-				@click="activeTab = 'play'"
+				@click="() => setActiveTab('play')"
 			>
 				{{ t('duel.tabPlay') }}
 			</UButton>
@@ -314,7 +327,7 @@ onMounted(async () => {
 				:color="activeTab === 'leaderboard' ? 'primary' : 'gray'"
 				:variant="activeTab === 'leaderboard' ? 'solid' : 'ghost'"
 				size="sm"
-				@click="activeTab = 'leaderboard'"
+				@click="() => setActiveTab('leaderboard')"
 			>
 				{{ t('duel.tabLeaderboard') }}
 			</UButton>
@@ -322,7 +335,7 @@ onMounted(async () => {
 				:color="activeTab === 'history' ? 'primary' : 'gray'"
 				:variant="activeTab === 'history' ? 'solid' : 'ghost'"
 				size="sm"
-				@click="activeTab = 'history'"
+				@click="() => setActiveTab('history')"
 			>
 				{{ t('duel.tabHistory') }}
 			</UButton>
@@ -424,7 +437,7 @@ onMounted(async () => {
 						<UButton
 							v-if="!friend.inGame"
 							size="xs"
-							@click="handleChallengeFriend(friend.id!)"
+							@click="() => handleChallengeFriend(friend.id!)"
 						>
 							{{ t('duel.challenge') }}
 						</UButton>

@@ -401,13 +401,44 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			seasonRepo,
 			duelEventBus,
 		)
-		acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
-			challengeRepo,
-			duelGameRepo,
-			playerRatingRepo,
-			seasonRepo,
-			duelEventBus,
-		)
+		// Build duel question adapter if questionRepo is available
+		if questionRepo != nil {
+			duelQuestionRepo := postgres.NewDuelQuestionRepositoryAdapter(questionRepo)
+			startGameUC = appDuel.NewStartGameUseCase(
+				duelGameRepo,
+				playerRatingRepo,
+				duelQuestionRepo,
+				seasonRepo,
+				duelEventBus,
+			)
+			acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
+				challengeRepo,
+				duelGameRepo,
+				playerRatingRepo,
+				seasonRepo,
+				duelQuestionRepo,
+				userRepo,
+				duelEventBus,
+			)
+			submitDuelAnswerUC = appDuel.NewSubmitDuelAnswerUseCase(
+				duelGameRepo,
+				playerRatingRepo,
+				duelQuestionRepo,
+				seasonRepo,
+				duelEventBus,
+				duelRoundCache,
+			)
+		} else {
+			acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
+				challengeRepo,
+				duelGameRepo,
+				playerRatingRepo,
+				seasonRepo,
+				nil,
+				userRepo,
+				duelEventBus,
+			)
+		}
 		createChallengeLinkUC = appDuel.NewCreateChallengeLinkUseCase(
 			challengeRepo,
 			duelEventBus,
@@ -434,16 +465,6 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			userRepo,
 		)
 
-		// submitDuelAnswerUC requires a duel-specific QuestionRepository adapter.
-		// Until that adapter exists, pass nil for questionRepo; the handler guards against nil.
-		submitDuelAnswerUC = appDuel.NewSubmitDuelAnswerUseCase(
-			duelGameRepo,
-			playerRatingRepo,
-			nil, // QuestionRepository adapter not yet implemented
-			seasonRepo,
-			duelEventBus,
-			duelRoundCache,
-		)
 	}
 
 	// ========================================

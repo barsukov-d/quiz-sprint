@@ -415,7 +415,7 @@ const getAnswerButtonClass = (answerId: string) => {
 					:disabled="isAnswerSubmitted || isSubmitting"
 					class="w-full p-4 text-left border-2 rounded-lg transition-all hover:border-primary disabled:cursor-not-allowed"
 					:class="getAnswerButtonClass(answer.id)"
-					@click="selectAnswer(answer.id)"
+					@click="() => selectAnswer(answer.id)"
 				>
 					<div class="flex items-center justify-between">
 						<span class="font-medium">{{ answer.text }}</span>

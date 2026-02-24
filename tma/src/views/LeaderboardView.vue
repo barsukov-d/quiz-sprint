@@ -125,7 +125,7 @@ const isCurrentUser = (userId: string) => {
 					:title="t('leaderboard.loadFailed')"
 					:description="error?.error?.message || t('quiz.tryAgain2')"
 				/>
-				<UButton color="red" class="mt-2" @click="refetch()">
+				<UButton color="red" class="mt-2" @click="() => { refetch() }">
 					{{ t('leaderboard.retry') }}
 				</UButton>
 			</div>

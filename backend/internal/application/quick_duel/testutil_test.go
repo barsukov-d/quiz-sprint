@@ -677,7 +677,7 @@ func (f *duelFixture) newRespondChallengeUC() *RespondChallengeUseCase {
 func (f *duelFixture) newAcceptByLinkCodeUC() *AcceptByLinkCodeUseCase {
 	return NewAcceptByLinkCodeUseCase(
 		f.challengeRepo, f.duelGameRepo, f.playerRatingRepo,
-		f.seasonRepo, f.eventBus,
+		f.seasonRepo, f.questionRepo, f.userRepo, f.eventBus,
 	)
 }
 

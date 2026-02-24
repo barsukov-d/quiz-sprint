@@ -55,7 +55,7 @@ const navigateTo = (tab: Tab) => {
 				v-for="tab in tabs"
 				:key="tab.name"
 				:class="['tab-button', { active: currentTab === tab.name }]"
-				@click="navigateTo(tab)"
+				@click="() => navigateTo(tab)"
 			>
 				<UIcon :name="tab.icon" class="tab-icon" />
 				<span class="tab-label">{{ tab.label }}</span>

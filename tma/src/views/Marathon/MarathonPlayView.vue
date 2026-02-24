@@ -456,7 +456,7 @@ onUnmounted(() => {
 						activatedBonus === b.type && b.color === 'cyan' ? 'ring-cyan-500' : '',
 					]"
 					:disabled="!b.canUse.value || isSubmitting || showFeedback"
-					@click="handleUseBonus(b.type)"
+					@click="() => handleUseBonus(b.type)"
 				>
 					<UIcon
 						:name="b.icon"

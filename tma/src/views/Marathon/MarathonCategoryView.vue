@@ -102,7 +102,7 @@ const handleBack = () => {
 						? 'ring-2 ring-primary'
 						: 'hover:ring-1 hover:ring-gray-300',
 				]"
-				@click="handleSelectCategory(category.id)"
+				@click="() => handleSelectCategory(category.id)"
 			>
 				<div class="flex items-center gap-3">
 					<UIcon name="i-heroicons-tag" class="size-6 text-gray-500" />

@@ -294,7 +294,7 @@ onMounted(() => {
 						:disabled="hasAnswered"
 						:show-feedback="showFeedback"
 						:is-correct="isCorrectAnswer(answer.id)"
-						@click="handleAnswerSelect(answer.id)"
+						@click="() => handleAnswerSelect(answer.id)"
 					/>
 				</div>
 
@@ -337,7 +337,7 @@ onMounted(() => {
 						v-for="emote in unlockedEmotes"
 						:key="emote"
 						class="text-2xl w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:scale-110 transition-transform"
-						@click="sendEmote(emote)"
+						@click="() => sendEmote(emote)"
 					>
 						{{ emote }}
 					</button>

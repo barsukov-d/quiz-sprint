@@ -81,7 +81,7 @@ const getCategoryIcon = (categoryName: string): string => {
 				:title="t('categories.loadError')"
 				:description="error?.error.message || t('categories.loadFailed')"
 			/>
-			<UButton color="red" class="mt-2" @click="refetch()">
+			<UButton color="red" class="mt-2" @click="() => { refetch() }">
 				{{ t('categories.tryAgain') }}
 			</UButton>
 		</div>
@@ -92,7 +92,7 @@ const getCategoryIcon = (categoryName: string): string => {
 				v-for="category in categories.data"
 				:key="category.id"
 				class="hover:shadow-lg transition-all cursor-pointer hover:scale-[1.02]"
-				@click="navigateToQuizzes(category.id, category.name)"
+				@click="() => navigateToQuizzes(category.id, category.name)"
 			>
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-4 flex-1">

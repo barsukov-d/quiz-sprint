@@ -388,6 +388,8 @@ type AcceptByLinkCodeUseCase struct {
 	duelGameRepo     quick_duel.DuelGameRepository
 	playerRatingRepo quick_duel.PlayerRatingRepository
 	seasonRepo       quick_duel.SeasonRepository
+	questionRepo     QuestionRepository
+	userRepo         domainUser.UserRepository
 	eventBus         EventBus
 }
 
@@ -396,6 +398,8 @@ func NewAcceptByLinkCodeUseCase(
 	duelGameRepo quick_duel.DuelGameRepository,
 	playerRatingRepo quick_duel.PlayerRatingRepository,
 	seasonRepo quick_duel.SeasonRepository,
+	questionRepo QuestionRepository,
+	userRepo domainUser.UserRepository,
 	eventBus EventBus,
 ) *AcceptByLinkCodeUseCase {
 	return &AcceptByLinkCodeUseCase{
@@ -403,6 +407,8 @@ func NewAcceptByLinkCodeUseCase(
 		duelGameRepo:     duelGameRepo,
 		playerRatingRepo: playerRatingRepo,
 		seasonRepo:       seasonRepo,
+		questionRepo:     questionRepo,
+		userRepo:         userRepo,
 		eventBus:         eventBus,
 	}
 }
@@ -410,7 +416,7 @@ func NewAcceptByLinkCodeUseCase(
 func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptByLinkCodeOutput, error) {
 	now := time.Now().UTC().Unix()
 
-	playerID, err := shared.NewUserID(input.PlayerID)
+	accepterID, err := shared.NewUserID(input.PlayerID)
 	if err != nil {
 		return AcceptByLinkCodeOutput{}, err
 	}
@@ -422,7 +428,7 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 	}
 
 	// Accept challenge
-	err = challenge.Accept(playerID, now)
+	err = challenge.Accept(accepterID, now)
 	if err != nil {
 		return AcceptByLinkCodeOutput{}, err
 	}
@@ -438,15 +444,79 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 		uc.eventBus.Publish(event)
 	}
 
-	// TODO: Create game between challenger and challenged
+	// Create game between challenger and accepter
+	challengerID := challenge.ChallengerID()
+	seasonID, _ := uc.seasonRepo.GetCurrentSeason()
+
+	rating1, err := uc.playerRatingRepo.FindOrCreate(challengerID, seasonID, now)
+	if err != nil {
+		return AcceptByLinkCodeOutput{}, err
+	}
+	rating2, err := uc.playerRatingRepo.FindOrCreate(accepterID, seasonID, now)
+	if err != nil {
+		return AcceptByLinkCodeOutput{}, err
+	}
+
+	// Get usernames (fallback to player ID on error)
+	challenger1Username := challengerID.String()
+	if u, err := uc.userRepo.FindByID(challengerID); err == nil {
+		challenger1Username = u.Username().String()
+		if challenger1Username == "" {
+			challenger1Username = u.TelegramUsername().String()
+		}
+	}
+	accepter2Username := accepterID.String()
+	if u, err := uc.userRepo.FindByID(accepterID); err == nil {
+		accepter2Username = u.Username().String()
+		if accepter2Username == "" {
+			accepter2Username = u.TelegramUsername().String()
+		}
+	}
+
+	// Select random questions
+	questions, err := uc.questionRepo.FindRandomByDifficulty(quick_duel.QuestionsPerDuel, "medium")
+	if err != nil {
+		return AcceptByLinkCodeOutput{}, err
+	}
+
+	questionIDs := make([]quick_duel.QuestionID, 0, len(questions))
+	for _, q := range questions {
+		qid, _ := quiz.NewQuestionIDFromString(q.ID)
+		questionIDs = append(questionIDs, qid)
+	}
+
+	player1 := quick_duel.NewDuelPlayer(
+		challengerID,
+		challenger1Username,
+		quick_duel.ReconstructEloRating(rating1.MMR(), 0),
+	)
+	player2 := quick_duel.NewDuelPlayer(
+		accepterID,
+		accepter2Username,
+		quick_duel.ReconstructEloRating(rating2.MMR(), 0),
+	)
+
+	game, err := quick_duel.NewDuelGame(player1, player2, questionIDs, now)
+	if err != nil {
+		return AcceptByLinkCodeOutput{}, err
+	}
+	if err := game.Start(now); err != nil {
+		return AcceptByLinkCodeOutput{}, err
+	}
+
+	if err := uc.duelGameRepo.Save(game); err != nil {
+		return AcceptByLinkCodeOutput{}, err
+	}
+
+	gameIDStr := game.ID().String()
 	startsIn := 3
 
 	return AcceptByLinkCodeOutput{
 		Success:        true,
-		GameID:         nil,
+		GameID:         &gameIDStr,
 		TicketConsumed: true,
 		StartsIn:       &startsIn,
-		ChallengerID:   challenge.ChallengerID().String(),
+		ChallengerID:   challengerID.String(),
 	}, nil
 }
 

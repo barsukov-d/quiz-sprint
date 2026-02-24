@@ -39,29 +39,37 @@ export function useAuth() {
 
 			// 🔍 DEBUG: Смотрим что вернул retrieveLaunchParams
 			console.log('🔍 Full launch params:', launchParams)
-			console.log('🔍 initDataRaw from SDK:', launchParams.initDataRaw)
-			console.log('🔍 initData from SDK:', launchParams.initData)
-			console.log('🔍 startParam from SDK:', launchParams.startParam)
+			// In @tma.js/sdk v3, startParam is named tgWebAppStartParam
+			console.log('🔍 tgWebAppStartParam from SDK:', launchParams.tgWebAppStartParam)
 
 			// Extract startParam for deep linking (from ?startapp=xxx)
-			if (launchParams.startParam) {
-				startParam.value = launchParams.startParam as string
+			// In @tma.js/sdk v3, the property is tgWebAppStartParam (not startParam)
+			if (launchParams.tgWebAppStartParam) {
+				startParam.value = launchParams.tgWebAppStartParam
 				console.log('✅ Deep link startParam:', startParam.value)
 			}
 
-			let rawData: string | undefined = launchParams.initDataRaw as string | undefined
-			let parsedData: ParsedInitData | undefined = launchParams.initData as
-				| ParsedInitData
-				| undefined
+			let rawData: string | undefined = undefined
+			let parsedData: ParsedInitData | undefined = undefined
 
-			// 🔧 WORKAROUND: Если SDK не вернул initDataRaw, парсим из hash вручную
+			// 🔧 WORKAROUND: Парсим из hash вручную
 			// Telegram Desktop передает данные в hash параметрах
-			if (!rawData && typeof window !== 'undefined') {
+			if (typeof window !== 'undefined') {
 				const hash = window.location.hash
 				console.log('🔧 Trying to parse from hash:', hash)
 
 				// Извлекаем tgWebAppData из hash
 				const hashParams = new URLSearchParams(hash.substring(1)) // убираем #
+
+				// Also extract startParam from hash as fallback
+				if (!startParam.value) {
+					const hashStartParam = hashParams.get('tgWebAppStartParam')
+					if (hashStartParam) {
+						startParam.value = hashStartParam
+						console.log('✅ Deep link startParam from hash:', startParam.value)
+					}
+				}
+
 				const tgWebAppData = hashParams.get('tgWebAppData')
 
 				if (tgWebAppData) {

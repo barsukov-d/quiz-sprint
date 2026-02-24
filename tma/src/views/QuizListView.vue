@@ -67,7 +67,7 @@ const goToQuizDetails = (quizId: string) => {
 				:title="t('quiz.loadError')"
 				:description="error?.error.message || t('quiz.loadFailed')"
 			/>
-			<UButton color="red" class="mt-2" @click="refetch()">
+			<UButton color="red" class="mt-2" @click="() => { refetch() }">
 				{{ t('quiz.tryAgain') }}
 			</UButton>
 		</div>
@@ -110,7 +110,7 @@ const goToQuizDetails = (quizId: string) => {
 				</div>
 
 				<template #footer>
-					<UButton block color="primary" @click="goToQuizDetails(quiz.id)">
+					<UButton block color="primary" @click="() => goToQuizDetails(quiz.id)">
 						{{ t('quiz.viewQuiz') }}
 					</UButton>
 				</template>
