@@ -81,7 +81,15 @@ const getCategoryIcon = (categoryName: string): string => {
 				:title="t('categories.loadError')"
 				:description="error?.error.message || t('categories.loadFailed')"
 			/>
-			<UButton color="red" class="mt-2" @click="() => { refetch() }">
+			<UButton
+				color="red"
+				class="mt-2"
+				@click="
+					() => {
+						refetch()
+					}
+				"
+			>
 				{{ t('categories.tryAgain') }}
 			</UButton>
 		</div>

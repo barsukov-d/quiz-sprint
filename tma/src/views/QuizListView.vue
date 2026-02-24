@@ -67,7 +67,15 @@ const goToQuizDetails = (quizId: string) => {
 				:title="t('quiz.loadError')"
 				:description="error?.error.message || t('quiz.loadFailed')"
 			/>
-			<UButton color="red" class="mt-2" @click="() => { refetch() }">
+			<UButton
+				color="red"
+				class="mt-2"
+				@click="
+					() => {
+						refetch()
+					}
+				"
+			>
 				{{ t('quiz.tryAgain') }}
 			</UButton>
 		</div>
