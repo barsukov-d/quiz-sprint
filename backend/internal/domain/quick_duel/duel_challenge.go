@@ -15,10 +15,11 @@ const (
 type ChallengeStatus string
 
 const (
-	ChallengeStatusPending  ChallengeStatus = "pending"
-	ChallengeStatusAccepted ChallengeStatus = "accepted"
-	ChallengeStatusDeclined ChallengeStatus = "declined"
-	ChallengeStatusExpired  ChallengeStatus = "expired"
+	ChallengeStatusPending               ChallengeStatus = "pending"
+	ChallengeStatusAccepted              ChallengeStatus = "accepted"
+	ChallengeStatusAcceptedWaitingInviter ChallengeStatus = "accepted_waiting_inviter"
+	ChallengeStatusDeclined              ChallengeStatus = "declined"
+	ChallengeStatusExpired               ChallengeStatus = "expired"
 )
 
 // ChallengeType represents the type of challenge
@@ -57,6 +58,7 @@ type DuelChallenge struct {
 	createdAt     int64
 	respondedAt   int64           // When accepted/declined (0 if pending)
 	matchID       *GameID         // Set when match starts
+	inviteeName   string          // Display name of invitee (set when accepted_waiting_inviter)
 
 	events []Event
 }
@@ -151,6 +153,7 @@ func ReconstructDuelChallenge(
 	createdAt int64,
 	respondedAt int64,
 	matchID *GameID,
+	inviteeName string,
 ) *DuelChallenge {
 	return &DuelChallenge{
 		id:            id,
@@ -163,8 +166,35 @@ func ReconstructDuelChallenge(
 		createdAt:     createdAt,
 		respondedAt:   respondedAt,
 		matchID:       matchID,
+		inviteeName:   inviteeName,
 		events:        make([]Event, 0),
 	}
+}
+
+// AcceptWaiting sets status to accepted_waiting_inviter (invitee accepted, waiting for inviter to start).
+// Used only for link-based challenges.
+func (dc *DuelChallenge) AcceptWaiting(accepterID UserID, inviteeName string, acceptedAt int64) error {
+	if dc.status != ChallengeStatusPending {
+		return ErrChallengeNotPending
+	}
+	if dc.IsExpired(acceptedAt) {
+		dc.status = ChallengeStatusExpired
+		return ErrChallengeExpired
+	}
+	if dc.challengeType != ChallengeTypeLink {
+		return ErrNotChallengedPlayer
+	}
+	if dc.challengerID.Equals(accepterID) {
+		return ErrCannotChallengeSelf
+	}
+	dc.challengedID = &accepterID
+	dc.inviteeName = inviteeName
+	dc.status = ChallengeStatusAcceptedWaitingInviter
+	dc.respondedAt = acceptedAt
+	dc.events = append(dc.events, NewChallengeAcceptedEvent(
+		dc.id, dc.challengerID, accepterID, acceptedAt,
+	))
+	return nil
 }
 
 // Accept accepts the challenge
@@ -275,6 +305,7 @@ func (dc *DuelChallenge) ExpiresAt() int64           { return dc.expiresAt }
 func (dc *DuelChallenge) CreatedAt() int64           { return dc.createdAt }
 func (dc *DuelChallenge) RespondedAt() int64         { return dc.respondedAt }
 func (dc *DuelChallenge) MatchID() *GameID           { return dc.matchID }
+func (dc *DuelChallenge) InviteeName() string        { return dc.inviteeName }
 
 // Events returns collected domain events and clears them
 func (dc *DuelChallenge) Events() []Event {

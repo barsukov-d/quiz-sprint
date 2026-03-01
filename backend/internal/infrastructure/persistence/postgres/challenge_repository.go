@@ -264,5 +264,6 @@ func (r *ChallengeRepository) reconstructChallenge(
 		createdAt,
 		ra,
 		mid,
+		"", // inviteeName resolved at application layer from user repo
 	), nil
 }
