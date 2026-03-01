@@ -297,6 +297,10 @@ export default {
 		waitingForFriend: 'Waiting for friend to accept challenge',
 		linkExpiresIn: 'Link expires in: {time}',
 		waiting: 'waiting...',
+		expired: 'expired',
+		challengeExpired: 'Challenge Expired',
+		shareAgain: 'Share Again',
+		createNewLink: 'Create New Link',
 	},
 	shared: {
 		questionOf: 'Question {current} / {total}',

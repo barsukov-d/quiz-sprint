@@ -297,6 +297,10 @@ export default {
 		waitingForFriend: 'Ожидание ответа на вызов',
 		linkExpiresIn: 'Ссылка активна ещё: {time}',
 		waiting: 'ожидание...',
+		expired: 'истекла',
+		challengeExpired: 'Вызов истёк',
+		shareAgain: 'Поделиться снова',
+		createNewLink: 'Создать новую ссылку',
 	},
 	shared: {
 		questionOf: 'Вопрос {current} / {total}',
