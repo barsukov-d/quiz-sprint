@@ -1077,6 +1077,63 @@ const docTemplate = `{
                 }
             }
         },
+        "/duel/game/{gameId}": {
+            "get": {
+                "description": "Get full result of a finished duel game",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Get game result",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID",
+                        "name": "gameId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Game result",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetGameResultResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/duel/game/{gameId}/rematch": {
             "post": {
                 "description": "Request a rematch after a completed duel",
@@ -3878,6 +3935,12 @@ const docTemplate = `{
                         "hasActiveDuel": {
                             "type": "boolean"
                         },
+                        "outgoingChallenges": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO"
+                            }
+                        },
                         "pendingChallenges": {
                             "type": "array",
                             "items": {
@@ -3917,6 +3980,70 @@ const docTemplate = `{
                         },
                         "total": {
                             "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetGameResultPlayerDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "league": {
+                    "type": "string"
+                },
+                "leagueIcon": {
+                    "type": "string"
+                },
+                "mmr": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetGameResultResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "canRematch": {
+                            "type": "boolean"
+                        },
+                        "gameId": {
+                            "type": "string"
+                        },
+                        "mmrChange": {
+                            "type": "integer"
+                        },
+                        "newDivision": {
+                            "type": "integer"
+                        },
+                        "newLeague": {
+                            "type": "string"
+                        },
+                        "newMmr": {
+                            "type": "integer"
+                        },
+                        "opponent": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetGameResultPlayerDTO"
+                        },
+                        "opponentScore": {
+                            "type": "integer"
+                        },
+                        "playerScore": {
+                            "type": "integer"
+                        },
+                        "result": {
+                            "description": "\"win\", \"loss\", \"draw\"",
+                            "type": "string"
                         }
                     }
                 }

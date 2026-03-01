@@ -783,6 +783,10 @@ definitions:
             type: array
           hasActiveDuel:
             type: boolean
+          outgoingChallenges:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO'
+            type: array
           pendingChallenges:
             items:
               $ref: '#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO'
@@ -809,6 +813,48 @@ definitions:
             type: boolean
           total:
             type: integer
+        type: object
+    type: object
+  internal_infrastructure_http_handlers.GetGameResultPlayerDTO:
+    properties:
+      id:
+        type: string
+      league:
+        type: string
+      leagueIcon:
+        type: string
+      mmr:
+        type: integer
+      score:
+        type: integer
+      username:
+        type: string
+    type: object
+  internal_infrastructure_http_handlers.GetGameResultResponse:
+    properties:
+      data:
+        properties:
+          canRematch:
+            type: boolean
+          gameId:
+            type: string
+          mmrChange:
+            type: integer
+          newDivision:
+            type: integer
+          newLeague:
+            type: string
+          newMmr:
+            type: integer
+          opponent:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetGameResultPlayerDTO'
+          opponentScore:
+            type: integer
+          playerScore:
+            type: integer
+          result:
+            description: '"win", "loss", "draw"'
+            type: string
         type: object
     type: object
   internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse:
@@ -2681,6 +2727,44 @@ paths:
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Create challenge link
+      tags:
+      - duel
+  /duel/game/{gameId}:
+    get:
+      consumes:
+      - application/json
+      description: Get full result of a finished duel game
+      parameters:
+      - description: Game ID
+        in: path
+        name: gameId
+        required: true
+        type: string
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Game result
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetGameResultResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Game not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get game result
       tags:
       - duel
   /duel/game/{gameId}/rematch:
