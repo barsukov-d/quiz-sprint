@@ -297,14 +297,27 @@ func (h *DuelWebSocketHub) handleDisconnectGracePeriod(gameID, playerID string) 
 }
 
 func (h *DuelWebSocketHub) notifyBothPlayersReady(game *DuelGame) {
-	// Both players connected - start the game
+	// Use domain player order so game_ready.player1Id matches answer_result.player1Score.
+	// Domain order: player1 = challenger (set at game creation), player2 = accepter.
+	// Hub order (WS connection order) may differ — accepter usually connects first.
+	domainPlayer1ID := game.Player1ID
+	domainPlayer2ID := game.Player2ID
+	if h.startGameUC != nil {
+		if p1, p2, err := h.startGameUC.GetDomainPlayerOrder(game.ID); err == nil {
+			domainPlayer1ID = p1
+			domainPlayer2ID = p2
+		} else {
+			log.Printf("[DuelWS] GetDomainPlayerOrder failed for %s: %v (falling back to hub order)", game.ID, err)
+		}
+	}
+
 	readyMsg := map[string]interface{}{
 		"type": "game_ready",
 		"data": map[string]interface{}{
 			"gameId":      game.ID,
-			"player1Id":   game.Player1ID,
-			"player2Id":   game.Player2ID,
-			"startsIn":    3, // countdown seconds
+			"player1Id":   domainPlayer1ID,
+			"player2Id":   domainPlayer2ID,
+			"startsIn":    3,
 			"totalRounds": quick_duel.QuestionsPerDuel,
 		},
 	}
@@ -316,7 +329,6 @@ func (h *DuelWebSocketHub) notifyBothPlayersReady(game *DuelGame) {
 		game.Player2Conn.WriteJSON(readyMsg)
 	}
 
-	// Start the game after countdown
 	go func() {
 		time.Sleep(3 * time.Second)
 		h.startRound(game, 1)
