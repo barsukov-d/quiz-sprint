@@ -1448,6 +1448,22 @@ type GetGameResultPlayerDTO struct {
 
 // @name GetGameResultPlayerDTO
 
+// StartChallengeRequest - request to start a challenge
+type StartChallengeRequest struct {
+	PlayerID string `json:"playerId" validate:"required"`
+}
+
+// @name StartChallengeRequest
+
+// StartChallengeResponse - game started
+type StartChallengeResponse struct {
+	Data struct {
+		GameID string `json:"gameId"`
+	} `json:"data"`
+}
+
+// @name StartChallengeResponse
+
 // GetGameResultResponse wraps the game result response
 type GetGameResultResponse struct {
 	Data struct {

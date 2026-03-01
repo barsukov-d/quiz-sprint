@@ -1077,6 +1077,65 @@ const docTemplate = `{
                 }
             }
         },
+        "/duel/challenge/{challengeId}/start": {
+            "post": {
+                "description": "Inviter confirms game start after invitee accepted via link",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Start the duel after invitee accepted",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Challenge ID",
+                        "name": "challengeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Start request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.StartChallengeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Game started",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.StartChallengeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Challenge not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Challenge not in accepted_waiting_inviter state",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/duel/game/{gameId}": {
             "get": {
                 "description": "Get full result of a finished duel game",
@@ -5183,6 +5242,30 @@ const docTemplate = `{
                 },
                 "totalQuestions": {
                     "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.StartChallengeRequest": {
+            "type": "object",
+            "required": [
+                "playerId"
+            ],
+            "properties": {
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.StartChallengeResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "gameId": {
+                            "type": "string"
+                        }
+                    }
                 }
             }
         },

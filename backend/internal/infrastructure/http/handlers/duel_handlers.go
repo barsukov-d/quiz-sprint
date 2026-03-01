@@ -18,6 +18,7 @@ type DuelHandler struct {
 	sendChallengeUC      *appDuel.SendChallengeUseCase
 	respondChallengeUC   *appDuel.RespondChallengeUseCase
 	acceptByLinkCodeUC   *appDuel.AcceptByLinkCodeUseCase
+	startChallengeUC     *appDuel.StartChallengeUseCase
 	createLinkUC         *appDuel.CreateChallengeLinkUseCase
 	getHistoryUC         *appDuel.GetGameHistoryUseCase
 	getLeaderboardUC     *appDuel.GetLeaderboardUseCase
@@ -32,6 +33,7 @@ func NewDuelHandler(
 	sendChallengeUC *appDuel.SendChallengeUseCase,
 	respondChallengeUC *appDuel.RespondChallengeUseCase,
 	acceptByLinkCodeUC *appDuel.AcceptByLinkCodeUseCase,
+	startChallengeUC *appDuel.StartChallengeUseCase,
 	createLinkUC *appDuel.CreateChallengeLinkUseCase,
 	getHistoryUC *appDuel.GetGameHistoryUseCase,
 	getLeaderboardUC *appDuel.GetLeaderboardUseCase,
@@ -45,6 +47,7 @@ func NewDuelHandler(
 		sendChallengeUC:      sendChallengeUC,
 		respondChallengeUC:   respondChallengeUC,
 		acceptByLinkCodeUC:   acceptByLinkCodeUC,
+		startChallengeUC:     startChallengeUC,
 		createLinkUC:         createLinkUC,
 		getHistoryUC:         getHistoryUC,
 		getLeaderboardUC:     getLeaderboardUC,
@@ -439,6 +442,48 @@ func (h *DuelHandler) GetGameResult(c fiber.Ctx) error {
 	output, err := h.getGameResultUC.Execute(appDuel.GetGameResultInput{
 		PlayerID: playerID,
 		GameID:   gameID,
+	})
+	if err != nil {
+		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
+}
+
+// StartChallenge handles POST /api/v1/duel/challenge/:challengeId/start
+// @Summary Start the duel after invitee accepted
+// @Description Inviter confirms game start after invitee accepted via link
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Param challengeId path string true "Challenge ID"
+// @Param request body StartChallengeRequest true "Start request"
+// @Success 200 {object} StartChallengeResponse "Game started"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 404 {object} ErrorResponse "Challenge not found"
+// @Failure 409 {object} ErrorResponse "Challenge not in accepted_waiting_inviter state"
+// @Router /duel/challenge/{challengeId}/start [post]
+func (h *DuelHandler) StartChallenge(c fiber.Ctx) error {
+	challengeID := c.Params("challengeId")
+	if _, err := uuid.Parse(challengeID); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid challenge ID format")
+	}
+
+	var req StartChallengeRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+	if req.PlayerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+
+	if h.startChallengeUC == nil {
+		return fiber.NewError(fiber.StatusServiceUnavailable, "Service not available")
+	}
+
+	output, err := h.startChallengeUC.Execute(appDuel.StartChallengeInput{
+		PlayerID:    req.PlayerID,
+		ChallengeID: challengeID,
 	})
 	if err != nil {
 		return mapDuelError(err)

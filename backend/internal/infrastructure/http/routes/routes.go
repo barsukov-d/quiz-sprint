@@ -361,6 +361,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		sendChallengeUC        *appDuel.SendChallengeUseCase
 		respondChallengeUC     *appDuel.RespondChallengeUseCase
 		acceptByLinkCodeUC     *appDuel.AcceptByLinkCodeUseCase
+		startChallengeUC       *appDuel.StartChallengeUseCase
 		createChallengeLinkUC  *appDuel.CreateChallengeLinkUseCase
 		getGameHistoryUC       *appDuel.GetGameHistoryUseCase
 		getDuelLeaderboardUC   *appDuel.GetLeaderboardUseCase
@@ -422,6 +423,15 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				playerRatingRepo,
 				duelQuestionRepo,
 				seasonRepo,
+				duelEventBus,
+			)
+			startChallengeUC = appDuel.NewStartChallengeUseCase(
+				challengeRepo,
+				duelGameRepo,
+				playerRatingRepo,
+				seasonRepo,
+				duelQuestionRepo,
+				userRepo,
 				duelEventBus,
 			)
 			submitDuelAnswerUC = appDuel.NewSubmitDuelAnswerUseCase(
@@ -539,6 +549,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			sendChallengeUC,
 			respondChallengeUC,
 			acceptByLinkCodeUC,
+			startChallengeUC,
 			createChallengeLinkUC,
 			getGameHistoryUC,
 			getDuelLeaderboardUC,
@@ -657,6 +668,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		duel.Post("/challenge", duelHandler.SendChallenge)
 		duel.Post("/challenge/link", duelHandler.CreateChallengeLink)
 		duel.Post("/challenge/accept-by-code", duelHandler.AcceptByLinkCode)
+		duel.Post("/challenge/:challengeId/start", duelHandler.StartChallenge)
 		duel.Post("/challenge/:challengeId/respond", duelHandler.RespondChallenge)
 		duel.Get("/history", duelHandler.GetGameHistory)
 		duel.Get("/leaderboard", duelHandler.GetDuelLeaderboard)
