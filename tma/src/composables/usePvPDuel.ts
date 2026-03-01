@@ -1,4 +1,4 @@
-import { computed, ref } from 'vue'
+import { computed, ref, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { shareURL } from '@tma.js/sdk'
 import {
@@ -30,6 +30,31 @@ export function usePvPDuel(playerId: string) {
 	const isSearching = ref(false)
 	const searchTime = ref(0)
 	const searchInterval = ref<ReturnType<typeof setInterval> | null>(null)
+
+	// Polling interval when waiting for a friend to accept a challenge link
+	let pollInterval: ReturnType<typeof setInterval> | null = null
+
+	const startOutgoingPoll = () => {
+		if (pollInterval) return
+		pollInterval = setInterval(async () => {
+			if (outgoingChallenges.value.length > 0) {
+				await refetchStatus()
+				if (hasActiveDuel.value && activeGameId.value) {
+					stopOutgoingPoll()
+					goToActiveDuel()
+				}
+			} else {
+				stopOutgoingPoll()
+			}
+		}, 5000)
+	}
+
+	const stopOutgoingPoll = () => {
+		if (pollInterval) {
+			clearInterval(pollInterval)
+			pollInterval = null
+		}
+	}
 
 	// ===========================
 	// API Hooks (Server State)
@@ -93,6 +118,7 @@ export function usePvPDuel(playerId: string) {
 	const tickets = computed(() => statusData.value?.data?.tickets ?? 0)
 	const friendsOnline = computed(() => statusData.value?.data?.friendsOnline ?? [])
 	const pendingChallenges = computed(() => statusData.value?.data?.pendingChallenges ?? [])
+	const outgoingChallenges = computed(() => statusData.value?.data?.outgoingChallenges ?? [])
 	const seasonId = computed(() => statusData.value?.data?.seasonId ?? '')
 	const seasonEndsAt = computed(() => statusData.value?.data?.seasonEndsAt ?? 0)
 
@@ -141,6 +167,23 @@ export function usePvPDuel(playerId: string) {
 
 	// Can play (has tickets and not in game)
 	const canPlay = computed(() => tickets.value > 0 && !hasActiveDuel.value && !isSearching.value)
+
+	// Start/stop polling when outgoing challenges change
+	watch(
+		outgoingChallenges,
+		(challenges) => {
+			if (challenges.length > 0) {
+				startOutgoingPoll()
+			} else {
+				stopOutgoingPoll()
+			}
+		},
+		{ immediate: true },
+	)
+
+	onUnmounted(() => {
+		stopOutgoingPoll()
+	})
 
 	// ===========================
 	// Actions
@@ -389,6 +432,7 @@ export function usePvPDuel(playerId: string) {
 		tickets,
 		friendsOnline,
 		pendingChallenges,
+		outgoingChallenges,
 		seasonId,
 		seasonEndsAt,
 
@@ -425,6 +469,8 @@ export function usePvPDuel(playerId: string) {
 		requestRematch,
 		goToActiveDuel,
 		initialize,
+		startOutgoingPoll,
+		stopOutgoingPoll,
 
 		// Refetch
 		refetchStatus,
