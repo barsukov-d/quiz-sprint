@@ -70,6 +70,18 @@ GET /api/v1/duel/status
         "expiresAt": 1706428900,
         "expiresIn": 45
       }
+    ],
+    "outgoingChallenges": [
+      {
+        "id": "ch_xyz",
+        "challengerId": "user_123",
+        "type": "link",
+        "status": "pending",
+        "challengeLink": "https://t.me/quiz_sprint_dev_bot?startapp=duel_abc123",
+        "expiresAt": 1706515200,
+        "expiresIn": 82800,
+        "createdAt": 1706428800
+      }
     ]
   }
 }
@@ -774,6 +786,7 @@ Heartbeat:
 | 400 | `ALREADY_IN_QUEUE` | Already searching for match |
 | 400 | `ALREADY_IN_GAME` | Currently in active duel |
 | 400 | `INVALID_CHALLENGE` | Challenge expired or invalid |
+| 400 | `SELF_CHALLENGE` | Cannot challenge yourself |
 | 404 | `GAME_NOT_FOUND` | Game doesn't exist |
 | 404 | `FRIEND_NOT_FOUND` | Friend ID invalid |
 | 409 | `CHALLENGE_EXPIRED` | Challenge timed out |
