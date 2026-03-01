@@ -5,6 +5,7 @@ import { useAuth } from '@/composables/useAuth'
 import { usePvPDuel } from '@/composables/usePvPDuel'
 import { usePostDuelChallengeAcceptByCode } from '@/api/generated/hooks/duelController/usePostDuelChallengeAcceptByCode'
 import { useI18n } from 'vue-i18n'
+import { FEATURES } from '@/features'
 
 const router = useRouter()
 const route = useRoute()
@@ -351,7 +352,7 @@ onMounted(async () => {
 		<!-- Play Tab -->
 		<div v-if="activeTab === 'play'" class="space-y-4">
 			<!-- Find Match Button -->
-			<UCard class="text-center">
+			<UCard v-if="FEATURES.matchmaking" class="text-center">
 				<div v-if="isSearching" class="py-4">
 					<div class="animate-pulse mb-4">
 						<UIcon name="i-heroicons-magnifying-glass" class="size-12 text-primary" />
