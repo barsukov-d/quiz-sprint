@@ -2,12 +2,15 @@
 
 > **For Claude:** REQUIRED SUB-SKILL: Use superpowers:executing-plans to implement this plan task-by-task.
 
-**Goal:** Добавить `outgoingChallenges` в статус дуэли + UI-карточку ожидания в лобби + обновить документацию invite-флоу
+**Goal:** Добавить `outgoingChallenges` в статус дуэли + UI-карточку ожидания + изменить логику билетов ("кто зовёт — тот платит") + обновить документацию
 
 **Architecture:**
-- Backend: `GetDuelStatusUseCase` вызывает `FindPendingByChallenger` (репо уже реализован), добавляет поле в DTO
-- Frontend: `usePvPDuel` читает новое поле + polling каждые 5с пока есть ожидающие вызовы, `DuelLobbyView` показывает карточку
+- Backend: `GetDuelStatusUseCase` вызывает `FindPendingByChallenger`; `AcceptByLinkCodeUseCase` и `RespondChallengeUseCase` — билет списывается с challenger, а не с challenged
+- Frontend: `usePvPDuel` читает новое поле + polling 5с; `DuelLobbyView` показывает карточку ожидания и баннер "бесплатная игра" для invitee
 - Docs: `02_gameplay.md` и `05_api.md` обновляются новыми разделами
+
+**Ticket rule (approved 2026-03-01):**
+> Challenger платит 1 🎟️ при старте игры. Challenged играет бесплатно. Queue — каждый сам. Rematch — каждый сам.
 
 **Tech Stack:** Go/Fiber backend, Vue 3 + TypeScript frontend, существующий Postgres ChallengeRepository
 
@@ -175,6 +178,163 @@ git add backend/internal/application/quick_duel/dto.go \
         backend/internal/application/quick_duel/use_cases_test.go \
         backend/internal/infrastructure/http/handlers/swagger_models.go
 git commit -m "feat(pvp-duel): add outgoingChallenges to GET /duel/status response"
+```
+
+---
+
+## Task 2b: Backend — "Кто зовёт — тот платит"
+
+**Files:**
+- Modify: `backend/internal/application/quick_duel/use_cases.go` (AcceptByLinkCodeUseCase + RespondChallengeUseCase)
+- Modify: `backend/internal/application/quick_duel/dto.go` (AcceptByLinkCodeOutput, RespondChallengeOutput)
+
+### Step 1: Написать failing тест для AcceptByLinkCode — билет списывается с challenger, не с accepter
+
+Добавить в `backend/internal/application/quick_duel/use_cases_test.go`:
+
+```go
+func TestAcceptByLinkCode_ChargesChallenger_NotAccepter(t *testing.T) {
+    f := newDuelFixture(t)
+
+    // Give challenger 1 ticket, accepter 0 tickets
+    f.setTickets(f.user1.id, 1)
+    f.setTickets(f.user2.id, 0)
+
+    // user1 creates link challenge
+    link, err := f.newCreateChallengeLinkUC().Execute(CreateChallengeLinkInput{
+        PlayerID: f.user1.id.String(),
+    })
+    require.NoError(t, err)
+
+    // user2 (0 tickets) accepts — should succeed
+    uc := f.newAcceptByLinkCodeUC()
+    output, err := uc.Execute(AcceptByLinkCodeInput{
+        PlayerID: f.user2.id.String(),
+        LinkCode: link.LinkCode,
+    })
+    require.NoError(t, err)
+    assert.True(t, output.FreeForAccepter)
+    assert.Equal(t, f.user1.id.String(), output.TicketOwnerID)
+
+    // user1's ticket was consumed
+    tickets1 := f.getTickets(f.user1.id)
+    assert.Equal(t, 0, tickets1)
+
+    // user2's tickets unchanged (still 0)
+    tickets2 := f.getTickets(f.user2.id)
+    assert.Equal(t, 0, tickets2)
+}
+
+func TestAcceptByLinkCode_FailsIfChallengerHasNoTickets(t *testing.T) {
+    f := newDuelFixture(t)
+
+    f.setTickets(f.user1.id, 0) // challenger broke
+    f.setTickets(f.user2.id, 3)
+
+    link, err := f.newCreateChallengeLinkUC().Execute(CreateChallengeLinkInput{
+        PlayerID: f.user1.id.String(),
+    })
+    require.NoError(t, err)
+
+    uc := f.newAcceptByLinkCodeUC()
+    _, err = uc.Execute(AcceptByLinkCodeInput{
+        PlayerID: f.user2.id.String(),
+        LinkCode: link.LinkCode,
+    })
+    require.ErrorIs(t, err, quick_duel.ErrInsufficientTickets)
+}
+```
+
+### Step 2: Запустить тесты — убедиться что падают
+
+```bash
+cd backend && go test ./internal/application/quick_duel/... \
+  -run "TestAcceptByLinkCode_ChargesChallenger|TestAcceptByLinkCode_FailsIfChallengerHasNoTickets" -v
+```
+
+Expected: FAIL (output fields не существуют, логика не изменена)
+
+### Step 3: Добавить поля в AcceptByLinkCodeOutput
+
+В `backend/internal/application/quick_duel/dto.go`:
+
+```go
+// Было:
+type AcceptByLinkCodeOutput struct {
+    Success      bool   `json:"success"`
+    GameID       string `json:"gameId"`
+    StartsIn     int    `json:"startsIn"`
+    ChallengerID string `json:"challengerId"`
+}
+
+// Стало:
+type AcceptByLinkCodeOutput struct {
+    Success         bool   `json:"success"`
+    GameID          string `json:"gameId"`
+    StartsIn        int    `json:"startsIn"`
+    ChallengerID    string `json:"challengerId"`
+    FreeForAccepter bool   `json:"freeForAccepter"`
+    TicketOwnerID   string `json:"ticketOwnerId"`
+}
+```
+
+### Step 4: Изменить логику AcceptByLinkCodeUseCase
+
+В `backend/internal/application/quick_duel/use_cases.go`, метод `AcceptByLinkCodeUseCase.Execute`:
+
+```go
+// Найти и удалить/заменить:
+// consumeTicket(accepterID) → consumeTicket(challengerID)
+
+// В блоке перед созданием игры добавить:
+// 1. Проверить билеты у challenger
+challengerTickets, err := uc.ticketRepo.GetTickets(challengerID)
+if err != nil || challengerTickets < 1 {
+    return AcceptByLinkCodeOutput{}, quick_duel.ErrInsufficientTickets
+}
+// 2. Списать с challenger
+if err := uc.ticketRepo.ConsumeTicket(challengerID); err != nil {
+    return AcceptByLinkCodeOutput{}, err
+}
+
+// В return добавить новые поля:
+return AcceptByLinkCodeOutput{
+    Success:         true,
+    GameID:          gameIDStr,
+    StartsIn:        startsIn,
+    ChallengerID:    challengerID.String(),
+    FreeForAccepter: true,
+    TicketOwnerID:   challengerID.String(),
+}, nil
+```
+
+### Step 5: Аналогично для RespondChallengeUseCase (accept)
+
+В том же файле, `RespondChallengeUseCase.Execute` при `action == "accept"`:
+
+```go
+// Удалить:
+// consumeTicket(challengedID)
+
+// Добавить:
+// Проверить и списать с challenger (initiatorID)
+```
+
+### Step 6: Запустить тесты
+
+```bash
+cd backend && go test ./internal/application/quick_duel/... -v
+```
+
+Expected: все PASS включая новые
+
+### Step 7: Коммит
+
+```bash
+git add backend/internal/application/quick_duel/dto.go \
+        backend/internal/application/quick_duel/use_cases.go \
+        backend/internal/application/quick_duel/use_cases_test.go
+git commit -m "feat(pvp-duel): challenger pays ticket, challenged plays free on invite"
 ```
 
 ---
@@ -400,7 +560,55 @@ duel.waiting = "ожидание..."
 
 Если через внешний файл locale → найти `tma/src/locales/*.json` или `*.ts` и добавить там.
 
-### Step 5: Проверить что нет TypeScript-ошибок
+### Step 5: Добавить баннер "бесплатная игра" для invitee
+
+В `handleAcceptByLinkCode` после успешного ответа сервера — сохранить флаг перед переходом:
+
+```typescript
+if (response.data?.freeForAccepter) {
+    sessionStorage.setItem('duelFreeGame', '1')
+}
+router.push({ name: 'duel-play', params: { duelId: response.data.gameId } })
+```
+
+В `DuelPlayView.vue` — при монтировании, если флаг есть, показать баннер на 3 секунды:
+
+```typescript
+// В onMounted:
+const showFreeBanner = ref(sessionStorage.getItem('duelFreeGame') === '1')
+if (showFreeBanner.value) {
+    sessionStorage.removeItem('duelFreeGame')
+    setTimeout(() => { showFreeBanner.value = false }, 3000)
+}
+```
+
+В `<template>` DuelPlayView:
+
+```html
+<!-- Free game banner for invitee -->
+<Transition name="fade">
+    <div v-if="showFreeBanner"
+         class="fixed top-4 left-4 right-4 z-50 bg-primary text-white rounded-xl p-3 text-center shadow-lg">
+        <p class="font-bold">🎟️ {{ t('duel.freeGame') }}</p>
+        <p class="text-sm opacity-90">{{ t('duel.friendInvited') }}</p>
+    </div>
+</Transition>
+```
+
+i18n-ключи:
+```
+duel.freeGame = "Бесплатная игра!"
+duel.friendInvited = "Друг угощает тебя дуэлью"
+```
+
+### Step 6: Изменить label стоимости кнопок в лобби
+
+В `DuelLobbyView.vue` найти строку `Стоимость: 1 🎟️ (обоим)` и заменить на:
+```
+Стоимость: 1 🎟️ (с тебя)
+```
+
+### Step 7: Проверить что нет TypeScript-ошибок
 
 ```bash
 cd tma && pnpm run type-check
@@ -408,7 +616,7 @@ cd tma && pnpm run type-check
 
 Expected: no errors
 
-### Step 6: Запустить линтер
+### Step 8: Запустить линтер
 
 ```bash
 cd tma && pnpm lint
@@ -416,11 +624,11 @@ cd tma && pnpm lint
 
 Expected: no errors
 
-### Step 7: Коммит
+### Step 9: Коммит
 
 ```bash
-git add tma/src/views/Duel/DuelLobbyView.vue
-git commit -m "feat(pvp-duel): add outgoing challenge status card to duel lobby"
+git add tma/src/views/Duel/DuelLobbyView.vue tma/src/views/Duel/DuelPlayView.vue
+git commit -m "feat(pvp-duel): add free game banner for invitee + update cost labels"
 ```
 
 ---
