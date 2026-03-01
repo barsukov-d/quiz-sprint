@@ -18,6 +18,8 @@ const {
 	tickets,
 	friendsOnline,
 	pendingChallenges,
+	outgoingReadyChallenges,
+	outgoingPendingChallenges,
 	hasActiveDuel,
 	activeGameId,
 	mmr,
@@ -39,6 +41,7 @@ const {
 	respondChallenge,
 	createChallengeLink,
 	shareChallengeToTelegram,
+	startChallenge,
 	goToActiveDuel,
 	refetchStatus,
 	refetchLeaderboard,
@@ -58,6 +61,8 @@ const showChallengeLink = ref(false)
 const challengeLink = ref('')
 const deepLinkChallenge = ref<string | null>(null)
 const deepLinkError = ref<string | null>(null)
+const showConfirmModal = ref(false)
+const pendingLinkCode = ref<string | null>(null)
 
 function navigateToHome() {
 	router.push({ name: 'home' })
@@ -81,6 +86,14 @@ const searchTimeFormatted = computed(() => {
 	const seconds = searchTime.value % 60
 	return `${minutes}:${seconds.toString().padStart(2, '0')}`
 })
+
+const formatExpiry = (expiresAt: number) => {
+	const diff = expiresAt - Math.floor(Date.now() / 1000)
+	if (diff <= 0) return t('duel.expired')
+	const hours = Math.floor(diff / 3600)
+	const minutes = Math.floor((diff % 3600) / 60)
+	return hours > 0 ? `${hours}ч ${minutes}мин` : `${minutes}мин`
+}
 
 // ===========================
 // Actions
@@ -129,6 +142,19 @@ const handleShareToTelegram = async () => {
 
 const handleChallengeFriend = async (friendId: string) => {
 	await sendChallenge(friendId)
+}
+
+const handleConfirmChallenge = async () => {
+	if (!pendingLinkCode.value) return
+	showConfirmModal.value = false
+	await handleAcceptByLinkCode(pendingLinkCode.value)
+	pendingLinkCode.value = null
+}
+
+const handleDeclineChallengeModal = () => {
+	showConfirmModal.value = false
+	pendingLinkCode.value = null
+	router.replace({ name: 'duel-lobby' })
 }
 
 // ===========================
@@ -190,8 +216,9 @@ onMounted(async () => {
 	if (challengeCode) {
 		console.log('[DuelLobby] Deep link challenge detected:', challengeCode)
 		deepLinkChallenge.value = challengeCode
-		// Auto-accept the challenge
-		await handleAcceptByLinkCode(challengeCode)
+		// Show confirmation modal instead of auto-accepting
+		pendingLinkCode.value = challengeCode
+		showConfirmModal.value = true
 	}
 })
 </script>
@@ -235,6 +262,39 @@ onMounted(async () => {
 				</div>
 			</div>
 		</UCard>
+
+		<!-- Confirmation Modal -->
+		<UModal v-model:open="showConfirmModal" :dismissible="false">
+			<template #content>
+				<div class="p-6 text-center">
+					<div class="text-4xl mb-4">⚔️</div>
+					<h3 class="text-xl font-bold mb-2">{{ t('duel.incomingChallenge') }}</h3>
+					<p class="text-gray-600 dark:text-gray-400 mb-6">
+						{{ t('duel.wantsToFight') }}
+					</p>
+					<div class="space-y-3">
+						<UButton
+							block
+							size="lg"
+							color="primary"
+							:loading="isAcceptingChallenge"
+							@click="handleConfirmChallenge"
+						>
+							{{ t('duel.acceptChallenge') }}
+						</UButton>
+						<UButton
+							block
+							size="lg"
+							color="gray"
+							variant="ghost"
+							@click="handleDeclineChallengeModal"
+						>
+							{{ t('duel.decline') }}
+						</UButton>
+					</div>
+				</div>
+			</template>
+		</UModal>
 
 		<!-- Player Rating Card -->
 		<UCard class="mb-4">
@@ -382,6 +442,50 @@ onMounted(async () => {
 					</p>
 				</div>
 			</UCard>
+
+			<!-- Outgoing Challenges -->
+			<div
+				v-if="outgoingReadyChallenges.length > 0 || outgoingPendingChallenges.length > 0"
+				class="space-y-2"
+			>
+				<h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400">
+					{{ t('duel.outgoingChallenges') }}
+				</h3>
+
+				<!-- Ready to start -->
+				<UCard
+					v-for="challenge in outgoingReadyChallenges"
+					:key="challenge.id"
+					class="border-green-200 dark:border-green-800"
+				>
+					<div class="flex items-center gap-2 mb-3">
+						<span class="text-green-500">✅</span>
+						<p class="font-medium">
+							{{ challenge.inviteeName || t('duel.friend') }} {{ t('duel.isReady') }}
+						</p>
+					</div>
+					<UButton color="green" block @click="() => { startChallenge(challenge.id!) }">
+						{{ t('duel.startDuel') }}
+					</UButton>
+				</UCard>
+
+				<!-- Waiting for response -->
+				<UCard v-for="challenge in outgoingPendingChallenges" :key="challenge.id">
+					<div class="flex items-center gap-2">
+						<UIcon name="i-heroicons-paper-airplane" class="size-5 text-blue-500" />
+						<div class="flex-1">
+							<p class="font-medium">{{ t('duel.waitingForResponse') }}</p>
+							<p class="text-xs text-gray-500">
+								{{
+									t('duel.linkExpiresIn', {
+										time: formatExpiry(challenge.expiresAt!),
+									})
+								}}
+							</p>
+						</div>
+					</div>
+				</UCard>
+			</div>
 
 			<!-- Invite Friend -->
 			<UCard>
