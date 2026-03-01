@@ -10,6 +10,81 @@ Home → "Дуэль" → Shows:
 
 ---
 
+## Invite Link Flow (Friend Challenge по ссылке)
+
+### Технический механизм
+
+```
+POST /api/v1/duel/challenge/link → { challengeLink: "t.me/bot?startapp=duel_abc123" }
+Telegram share sheet → получатель кликает
+
+TMA открывается: SDK launchParams.startParam = "duel_abc123"
+useAuth.ts → сохраняет startParam в памяти
+
+App.vue (onMounted):
+  registerUser() → Welcome bonus +3 🎟️ (новый пользователь)
+  consumeStartParam() → "duel_abc123"
+  handleDeepLink() → router.push('/duel?challenge=duel_abc123')
+
+DuelLobbyView (onMounted):
+  route.query.challenge = "duel_abc123"
+  POST /duel/challenge/accept-by-code { linkCode: "duel_abc123" }
+  → { gameId: "g_xyz", startsIn: 3 }
+  router.push('/duel/g_xyz')
+```
+
+### UX Flow — новый пользователь
+
+| Шаг | Экран | Действие |
+|-----|-------|---------|
+| 1 | Telegram чат | Кликает invite-ссылку |
+| 2 | TMA splash | Загрузка + Telegram Auth |
+| 3 | (фон) | `POST /user/register` → +3 🎟️ welcome bonus |
+| 4 | DuelLobby | Баннер "Принимаем вызов..." |
+| 5 | (фон) | `POST /duel/challenge/accept-by-code` → -1 🎟️ |
+| 6 | DuelPlay | "Соперник найден" → 3...2...1 → игра |
+
+### Состояния баннера "Принимаем вызов"
+
+```
+┌───────────────────────────────────┐
+│  ⟳  Принимаем вызов от друга...   │  ← isPending
+└───────────────────────────────────┘
+
+┌───────────────────────────────────┐
+│  ✗  Ссылка устарела               │  ← 409 CHALLENGE_EXPIRED
+│     Попроси друга прислать новую  │
+│                          [Закрыть]│
+└───────────────────────────────────┘
+```
+
+### Статус для Inviter (тот, кто создал ссылку)
+
+GET /duel/status возвращает `outgoingChallenges`.
+Лобби показывает карточку пока ожидается ответ, polling каждые 5с:
+
+```
+┌──────────────────────────────────────┐
+│  ✈ Ожидание ответа на вызов          │
+│  Ссылка активна ещё: 23ч 45мин       │  ● ожидание...
+└──────────────────────────────────────┘
+```
+
+Когда друг принял → polling обнаруживает `hasActiveDuel: true` → авто-переход в дуэль.
+
+### Edge Cases
+
+| Ситуация | HTTP | UI |
+|----------|------|----|
+| Ссылка истекла | 409 | "Ссылка устарела. Попроси новую" |
+| Ссылка уже использована | 409 | "Вызов уже принят другим игроком" |
+| Inviter уже в игре | 409 | "Твой друг сейчас в игре" |
+| Inviter отменил ссылку | 404 | "Вызов отменён. Хочешь создать новый?" |
+| Себе отправил ссылку | 400 | "Нельзя вызвать самого себя" |
+| Уже в очереди | 409 | "Отмени поиск и попробуй снова" |
+
+---
+
 ## Game Flow
 
 ### 1. Pre-Game Screen
