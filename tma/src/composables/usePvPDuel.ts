@@ -11,6 +11,7 @@ import {
 	usePostDuelChallengeChallengeidRespond,
 	usePostDuelChallengeLink,
 	usePostDuelGameGameidRematch,
+	usePostDuelChallengeChallengeidStart,
 } from '@/api/generated'
 
 /**
@@ -66,6 +67,7 @@ export function usePvPDuel(playerId: string) {
 	const respondChallengeMutation = usePostDuelChallengeChallengeidRespond()
 	const createLinkMutation = usePostDuelChallengeLink()
 	const rematchMutation = usePostDuelGameGameidRematch()
+	const startChallengeMutation = usePostDuelChallengeChallengeidStart()
 
 	// Main status endpoint
 	const {
@@ -119,6 +121,15 @@ export function usePvPDuel(playerId: string) {
 	const friendsOnline = computed(() => statusData.value?.data?.friendsOnline ?? [])
 	const pendingChallenges = computed(() => statusData.value?.data?.pendingChallenges ?? [])
 	const outgoingChallenges = computed(() => statusData.value?.data?.outgoingChallenges ?? [])
+
+	const outgoingReadyChallenges = computed(() =>
+		outgoingChallenges.value.filter((c) => c.status === 'accepted_waiting_inviter'),
+	)
+
+	const outgoingPendingChallenges = computed(() =>
+		outgoingChallenges.value.filter((c) => c.status === 'pending'),
+	)
+
 	const seasonId = computed(() => statusData.value?.data?.seasonId ?? '')
 	const seasonEndsAt = computed(() => statusData.value?.data?.seasonEndsAt ?? 0)
 
@@ -404,6 +415,31 @@ export function usePvPDuel(playerId: string) {
 	}
 
 	/**
+	 * Start challenge game (inviter confirms after invitee accepted via link)
+	 */
+	const startChallenge = async (challengeId: string) => {
+		try {
+			console.log('[usePvPDuel] Starting challenge:', challengeId)
+
+			const response = await startChallengeMutation.mutateAsync({
+				challengeId,
+				data: { playerId },
+			})
+
+			console.log('[usePvPDuel] Challenge started:', response)
+
+			if (response?.data?.gameId) {
+				router.push({ name: 'duel-play', params: { duelId: response.data.gameId } })
+			}
+
+			return response
+		} catch (error) {
+			console.error('[usePvPDuel] Failed to start challenge:', error)
+			throw error
+		}
+	}
+
+	/**
 	 * Navigate to active duel
 	 */
 	const goToActiveDuel = () => {
@@ -433,6 +469,8 @@ export function usePvPDuel(playerId: string) {
 		friendsOnline,
 		pendingChallenges,
 		outgoingChallenges,
+		outgoingReadyChallenges,
+		outgoingPendingChallenges,
 		seasonId,
 		seasonEndsAt,
 
@@ -467,6 +505,7 @@ export function usePvPDuel(playerId: string) {
 		createChallengeLink,
 		shareChallengeToTelegram,
 		requestRematch,
+		startChallenge,
 		goToActiveDuel,
 		initialize,
 		startOutgoingPoll,
