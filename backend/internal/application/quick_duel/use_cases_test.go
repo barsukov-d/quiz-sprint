@@ -798,6 +798,61 @@ func TestSubmitDuelAnswer_WrongAnswer(t *testing.T) {
 }
 
 // ========================================
+// Score Ordering Regression Tests
+// ========================================
+
+// TestScoreOrdering_AccepterAnswersFirst verifies that when the accepter (domain player2)
+// answers correctly and the challenger (domain player1) answers wrong,
+// player1Score reflects domain player1's score (not the accepter's).
+// This catches the bug where hub WS-slot order could shadow domain player order.
+func TestScoreOrdering_AccepterAnswersFirst(t *testing.T) {
+	f := setupFixture(t)
+
+	// Challenger = player1 (domain), Accepter = player2 (domain)
+	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
+	uc := f.newSubmitDuelAnswerUC()
+
+	// Accepter (domain player2) answers CORRECTLY — simulates accepter connecting to WS first
+	out, err := uc.Execute(SubmitDuelAnswerInput{
+		PlayerID:  testPlayer2ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.correctAnswerID(0),
+		TimeTaken: 2000,
+	})
+	if err != nil {
+		t.Fatalf("accepter answer error: %v", err)
+	}
+
+	// Player2Score (accepter = domain player2) should be > 0
+	if out.Player2Score == 0 {
+		t.Error("accepter answered correctly: Player2Score should be > 0")
+	}
+	// Player1Score (challenger = domain player1) should still be 0
+	if out.Player1Score != 0 {
+		t.Errorf("challenger hasn't answered: Player1Score should be 0, got %d", out.Player1Score)
+	}
+
+	// Now challenger (domain player1) answers WRONG
+	out2, err := uc.Execute(SubmitDuelAnswerInput{
+		PlayerID:  testPlayer1ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.wrongAnswerID(0),
+		TimeTaken: 3000,
+	})
+	if err != nil {
+		t.Fatalf("challenger answer error: %v", err)
+	}
+
+	// After both answered: Player1Score = challenger (0, wrong), Player2Score = accepter (> 0, correct)
+	if out2.Player1Score != 0 {
+		t.Errorf("challenger answered wrong: Player1Score should be 0, got %d", out2.Player1Score)
+	}
+	if out2.Player2Score == 0 {
+		t.Error("accepter answered correctly: Player2Score should be > 0")
+	}
+}
+
+// ========================================
 // RequestRematch Tests
 // ========================================
 
