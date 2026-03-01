@@ -481,11 +481,11 @@ func TestAcceptByLinkCode_Success(t *testing.T) {
 	if !output.Success {
 		t.Error("Success should be true")
 	}
-	if output.ChallengerID != testPlayer1ID {
-		t.Errorf("ChallengerID = %s, want %s", output.ChallengerID, testPlayer1ID)
+	if output.ChallengeID == "" {
+		t.Error("ChallengeID should not be empty")
 	}
-	if output.TicketConsumed != true {
-		t.Error("TicketConsumed should be true")
+	if output.Status != "accepted_waiting_inviter" {
+		t.Errorf("Status = %s, want accepted_waiting_inviter", output.Status)
 	}
 }
 
@@ -1350,7 +1350,7 @@ func TestFullFlow_LinkChallengeAccept(t *testing.T) {
 	if !acceptOutput.Success {
 		t.Error("accept should succeed")
 	}
-	if acceptOutput.ChallengerID != testPlayer1ID {
-		t.Errorf("ChallengerID = %s, want %s", acceptOutput.ChallengerID, testPlayer1ID)
+	if acceptOutput.ChallengeID == "" {
+		t.Error("ChallengeID should not be empty after accept")
 	}
 }

@@ -229,11 +229,9 @@ type AcceptByLinkCodeInput struct {
 }
 
 type AcceptByLinkCodeOutput struct {
-	Success        bool    `json:"success"`
-	GameID         *string `json:"gameId,omitempty"`
-	TicketConsumed bool    `json:"ticketConsumed"`
-	StartsIn       *int    `json:"startsIn,omitempty"`
-	ChallengerID   string  `json:"challengerId"`
+	Success     bool   `json:"success"`
+	ChallengeID string `json:"challengeId"`
+	Status      string `json:"status"` // "accepted_waiting_inviter"
 }
 
 // ========================================

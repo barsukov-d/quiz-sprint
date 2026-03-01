@@ -1,7 +1,9 @@
 package quick_duel
 
 import (
+	"context"
 	"fmt"
+	"strconv"
 	"time"
 
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quick_duel"
@@ -409,36 +411,37 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 }
 
 // ========================================
+// TelegramNotifier port (implemented in infrastructure/telegram)
+// ========================================
+
+// TelegramNotifier sends Telegram notifications to users.
+type TelegramNotifier interface {
+	NotifyChallengeAccepted(ctx context.Context, inviterTelegramID int64, inviteeName string, lobbyURL string) error
+	NotifyInviterWaiting(ctx context.Context, inviteeTelegramID int64, inviterName string, lobbyURL string) error
+}
+
+// ========================================
 // AcceptByLinkCode Use Case
 // ========================================
 
 type AcceptByLinkCodeUseCase struct {
-	challengeRepo    quick_duel.ChallengeRepository
-	duelGameRepo     quick_duel.DuelGameRepository
-	playerRatingRepo quick_duel.PlayerRatingRepository
-	seasonRepo       quick_duel.SeasonRepository
-	questionRepo     QuestionRepository
-	userRepo         domainUser.UserRepository
-	eventBus         EventBus
+	challengeRepo quick_duel.ChallengeRepository
+	userRepo      domainUser.UserRepository
+	notifier      TelegramNotifier
+	eventBus      EventBus
 }
 
 func NewAcceptByLinkCodeUseCase(
 	challengeRepo quick_duel.ChallengeRepository,
-	duelGameRepo quick_duel.DuelGameRepository,
-	playerRatingRepo quick_duel.PlayerRatingRepository,
-	seasonRepo quick_duel.SeasonRepository,
-	questionRepo QuestionRepository,
 	userRepo domainUser.UserRepository,
+	notifier TelegramNotifier,
 	eventBus EventBus,
 ) *AcceptByLinkCodeUseCase {
 	return &AcceptByLinkCodeUseCase{
-		challengeRepo:    challengeRepo,
-		duelGameRepo:     duelGameRepo,
-		playerRatingRepo: playerRatingRepo,
-		seasonRepo:       seasonRepo,
-		questionRepo:     questionRepo,
-		userRepo:         userRepo,
-		eventBus:         eventBus,
+		challengeRepo: challengeRepo,
+		userRepo:      userRepo,
+		notifier:      notifier,
+		eventBus:      eventBus,
 	}
 }
 
@@ -456,96 +459,40 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 		return AcceptByLinkCodeOutput{}, err
 	}
 
-	// Accept challenge
-	err = challenge.Accept(accepterID, now)
-	if err != nil {
+	// Get accepter's display name
+	inviteeName := accepterID.String()
+	if u, err := uc.userRepo.FindByID(accepterID); err == nil && u != nil {
+		if n := u.TelegramUsername().String(); n != "" {
+			inviteeName = n
+		} else if n := u.Username().String(); n != "" {
+			inviteeName = n
+		}
+	}
+
+	// Set status to accepted_waiting_inviter
+	if err := challenge.AcceptWaiting(accepterID, inviteeName, now); err != nil {
 		return AcceptByLinkCodeOutput{}, err
 	}
 
-	// Save challenge
-	err = uc.challengeRepo.Save(challenge)
-	if err != nil {
+	if err := uc.challengeRepo.Save(challenge); err != nil {
 		return AcceptByLinkCodeOutput{}, err
 	}
 
-	// Publish events
 	for _, event := range challenge.Events() {
 		uc.eventBus.Publish(event)
 	}
 
-	// Create game between challenger and accepter
+	// Notify inviter via Telegram (best-effort — do not fail if notification errors)
 	challengerID := challenge.ChallengerID()
-	seasonID, _ := uc.seasonRepo.GetCurrentSeason()
-
-	rating1, err := uc.playerRatingRepo.FindOrCreate(challengerID, seasonID, now)
-	if err != nil {
-		return AcceptByLinkCodeOutput{}, err
+	if tgID, err := strconv.ParseInt(challengerID.String(), 10, 64); err == nil && tgID > 0 {
+		lobbyURL := "https://t.me/quiz_sprint_dev_bot?startapp=lobby"
+		_ = uc.notifier.NotifyChallengeAccepted(context.Background(), tgID, inviteeName, lobbyURL)
 	}
-	rating2, err := uc.playerRatingRepo.FindOrCreate(accepterID, seasonID, now)
-	if err != nil {
-		return AcceptByLinkCodeOutput{}, err
-	}
-
-	// Get usernames (fallback to player ID on error)
-	challenger1Username := challengerID.String()
-	if u, err := uc.userRepo.FindByID(challengerID); err == nil {
-		challenger1Username = u.Username().String()
-		if challenger1Username == "" {
-			challenger1Username = u.TelegramUsername().String()
-		}
-	}
-	accepter2Username := accepterID.String()
-	if u, err := uc.userRepo.FindByID(accepterID); err == nil {
-		accepter2Username = u.Username().String()
-		if accepter2Username == "" {
-			accepter2Username = u.TelegramUsername().String()
-		}
-	}
-
-	// Select random questions
-	questions, err := uc.questionRepo.FindRandomByDifficulty(quick_duel.QuestionsPerDuel, "medium")
-	if err != nil {
-		return AcceptByLinkCodeOutput{}, err
-	}
-
-	questionIDs := make([]quick_duel.QuestionID, 0, len(questions))
-	for _, q := range questions {
-		qid, _ := quiz.NewQuestionIDFromString(q.ID)
-		questionIDs = append(questionIDs, qid)
-	}
-
-	player1 := quick_duel.NewDuelPlayer(
-		challengerID,
-		challenger1Username,
-		quick_duel.ReconstructEloRating(rating1.MMR(), 0),
-	)
-	player2 := quick_duel.NewDuelPlayer(
-		accepterID,
-		accepter2Username,
-		quick_duel.ReconstructEloRating(rating2.MMR(), 0),
-	)
-
-	game, err := quick_duel.NewDuelGame(player1, player2, questionIDs, now)
-	if err != nil {
-		return AcceptByLinkCodeOutput{}, err
-	}
-	if err := game.Start(now); err != nil {
-		return AcceptByLinkCodeOutput{}, err
-	}
-
-	if err := uc.duelGameRepo.Save(game); err != nil {
-		return AcceptByLinkCodeOutput{}, err
-	}
-
-	gameIDStr := game.ID().String()
-	startsIn := 3
 
 	return AcceptByLinkCodeOutput{
-		Success:        true,
-		GameID:         &gameIDStr,
-		TicketConsumed: true,
-		StartsIn:       &startsIn,
-		ChallengerID:   challengerID.String(),
+		Success:     true,
+		ChallengeID: challenge.ID().String(),
+		Status:      string(quick_duel.ChallengeStatusAcceptedWaitingInviter),
 	}, nil
 }
 

@@ -4,6 +4,7 @@ import (
 	"database/sql"
 	"log"
 	"math/rand"
+	"os"
 	"time"
 
 	"github.com/gofiber/contrib/v3/websocket"
@@ -25,6 +26,7 @@ import (
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence/memory"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence/postgres"
 	redisStore "github.com/barsukov/quiz-sprint/backend/internal/infrastructure/persistence/redis"
+	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/telegram"
 
 	"github.com/gofiber/contrib/v3/swaggo"
 )
@@ -371,6 +373,11 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	if duelGameRepo != nil && playerRatingRepo != nil && challengeRepo != nil && referralRepo != nil && seasonRepo != nil && userRepo != nil {
 		duelEventBus := appDuel.NewNoOpEventBus() // Simple event bus for now
 
+		var telegramNotifier appDuel.TelegramNotifier = telegram.NewNoOpNotifier()
+		if token := os.Getenv("TELEGRAM_BOT_TOKEN"); token != "" {
+			telegramNotifier = telegram.NewHTTPNotifier(token)
+		}
+
 		getDuelStatusUC = appDuel.NewGetDuelStatusUseCase(
 			playerRatingRepo,
 			duelGameRepo,
@@ -401,6 +408,12 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			seasonRepo,
 			duelEventBus,
 		)
+		acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
+			challengeRepo,
+			userRepo,
+			telegramNotifier,
+			duelEventBus,
+		)
 		// Build duel question adapter if questionRepo is available
 		if questionRepo != nil {
 			duelQuestionRepo := postgres.NewDuelQuestionRepositoryAdapter(questionRepo)
@@ -411,15 +424,6 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				seasonRepo,
 				duelEventBus,
 			)
-			acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
-				challengeRepo,
-				duelGameRepo,
-				playerRatingRepo,
-				seasonRepo,
-				duelQuestionRepo,
-				userRepo,
-				duelEventBus,
-			)
 			submitDuelAnswerUC = appDuel.NewSubmitDuelAnswerUseCase(
 				duelGameRepo,
 				playerRatingRepo,
@@ -427,16 +431,6 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				seasonRepo,
 				duelEventBus,
 				duelRoundCache,
-			)
-		} else {
-			acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
-				challengeRepo,
-				duelGameRepo,
-				playerRatingRepo,
-				seasonRepo,
-				nil,
-				userRepo,
-				duelEventBus,
 			)
 		}
 		createChallengeLinkUC = appDuel.NewCreateChallengeLinkUseCase(

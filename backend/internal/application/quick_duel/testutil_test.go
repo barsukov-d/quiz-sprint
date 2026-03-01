@@ -1,6 +1,7 @@
 package quick_duel
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -676,9 +677,18 @@ func (f *duelFixture) newRespondChallengeUC() *RespondChallengeUseCase {
 
 func (f *duelFixture) newAcceptByLinkCodeUC() *AcceptByLinkCodeUseCase {
 	return NewAcceptByLinkCodeUseCase(
-		f.challengeRepo, f.duelGameRepo, f.playerRatingRepo,
-		f.seasonRepo, f.questionRepo, f.userRepo, f.eventBus,
+		f.challengeRepo, f.userRepo, &noOpNotifier{}, f.eventBus,
 	)
+}
+
+// noOpNotifier satisfies TelegramNotifier in tests
+type noOpNotifier struct{}
+
+func (n *noOpNotifier) NotifyChallengeAccepted(_ context.Context, _ int64, _ string, _ string) error {
+	return nil
+}
+func (n *noOpNotifier) NotifyInviterWaiting(_ context.Context, _ int64, _ string, _ string) error {
+	return nil
 }
 
 func (f *duelFixture) newCreateChallengeLinkUC() *CreateChallengeLinkUseCase {
