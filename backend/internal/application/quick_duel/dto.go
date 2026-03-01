@@ -80,15 +80,16 @@ type LeaderboardEntryDTO struct {
 
 // ChallengeDTO represents a duel challenge
 type ChallengeDTO struct {
-	ID            string  `json:"id"`
-	ChallengerID  string  `json:"challengerId"`
-	ChallengedID  *string `json:"challengedId,omitempty"`
-	Type          string  `json:"type"`
-	Status        string  `json:"status"`
-	ChallengeLink string  `json:"challengeLink,omitempty"`
-	ExpiresAt     int64   `json:"expiresAt"`
-	ExpiresIn     int     `json:"expiresIn"`
-	CreatedAt     int64   `json:"createdAt"`
+	ID                 string  `json:"id"`
+	ChallengerID       string  `json:"challengerId"`
+	ChallengedID       *string `json:"challengedId,omitempty"`
+	ChallengerUsername string  `json:"challengerUsername,omitempty"`
+	Type               string  `json:"type"`
+	Status             string  `json:"status"`
+	ChallengeLink      string  `json:"challengeLink,omitempty"`
+	ExpiresAt          int64   `json:"expiresAt"`
+	ExpiresIn          int     `json:"expiresIn"`
+	CreatedAt          int64   `json:"createdAt"`
 }
 
 // GameHistoryEntryDTO represents a game in history

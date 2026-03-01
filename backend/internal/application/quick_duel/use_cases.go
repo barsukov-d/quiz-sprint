@@ -74,7 +74,15 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 
 	challengeDTOs := make([]ChallengeDTO, 0, len(pendingChallenges))
 	for _, c := range pendingChallenges {
-		challengeDTOs = append(challengeDTOs, ToChallengeDTO(c, now))
+		username := c.ChallengerID().String() // fallback = ID
+		if u, err := uc.userRepo.FindByID(c.ChallengerID()); err == nil && u != nil {
+			if !u.Username().IsAnonymous() {
+				username = u.Username().String()
+			} else if u.TelegramUsername().String() != "" {
+				username = u.TelegramUsername().String()
+			}
+		}
+		challengeDTOs = append(challengeDTOs, ToChallengeDTO(c, now, username))
 	}
 
 	// Get season end time
@@ -87,7 +95,7 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 
 	outgoingDTOs := make([]ChallengeDTO, 0, len(outgoingChallenges))
 	for _, c := range outgoingChallenges {
-		outgoingDTOs = append(outgoingDTOs, ToChallengeDTO(c, now))
+		outgoingDTOs = append(outgoingDTOs, ToChallengeDTO(c, now, ""))
 	}
 
 	return GetDuelStatusOutput{
