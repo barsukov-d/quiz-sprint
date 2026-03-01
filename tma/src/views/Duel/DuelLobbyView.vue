@@ -351,9 +351,7 @@ onMounted(async () => {
 					@click="handleShareToTelegram"
 				>
 					{{
-						isOutgoingChallengeExpired
-							? t('duel.createNewLink')
-							: t('duel.shareAgain')
+						isOutgoingChallengeExpired ? t('duel.createNewLink') : t('duel.shareAgain')
 					}}
 				</UButton>
 			</UCard>
@@ -365,29 +363,31 @@ onMounted(async () => {
 				{{ t('duel.pendingChallenges') }}
 			</h2>
 			<div class="space-y-2">
-				<UCard v-for="challenge in pendingChallenges" :key="challenge.id" class="!p-3">
-					<div class="flex items-center justify-between">
-						<div class="flex items-center gap-2">
-							<UIcon name="i-heroicons-bolt" class="size-5 text-orange-500" />
-							<span class="font-medium">{{ t('duel.challenge') }}</span>
-						</div>
-						<div class="flex gap-2">
-							<UButton
-								size="xs"
-								color="green"
-								@click="() => handleAcceptChallenge(challenge.id!)"
-							>
-								{{ t('duel.accept') }}
-							</UButton>
-							<UButton
-								size="xs"
-								color="red"
-								variant="soft"
-								@click="() => handleDeclineChallenge(challenge.id!)"
-							>
-								{{ t('duel.decline') }}
-							</UButton>
-						</div>
+				<UCard v-for="challenge in pendingChallenges" :key="challenge.id">
+					<!-- Challenger identity -->
+					<div class="flex items-center gap-2 mb-3">
+						<UIcon name="i-heroicons-bolt" class="size-5 text-orange-500" />
+						<span class="font-medium">
+							{{ challenge.challengerUsername || t('duel.challenge') }}
+						</span>
+					</div>
+					<!-- Block buttons -->
+					<div class="space-y-2">
+						<UButton
+							color="green"
+							block
+							@click="() => handleAcceptChallenge(challenge.id!)"
+						>
+							{{ t('duel.accept') }}
+						</UButton>
+						<UButton
+							color="red"
+							variant="soft"
+							block
+							@click="() => handleDeclineChallenge(challenge.id!)"
+						>
+							{{ t('duel.decline') }}
+						</UButton>
 					</div>
 				</UCard>
 			</div>
