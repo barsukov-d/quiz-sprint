@@ -608,7 +608,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		// adapter (appDuel.QuestionRepository) that does not exist yet. They will be nil
 		// until that adapter is implemented; the hub handles nil use cases gracefully.
 		duelWsHub := handlers.NewDuelWebSocketHub(startGameUC, submitDuelAnswerUC)
-		ws.Get("/duel/:matchId", websocket.New(duelWsHub.HandleDuelWebSocket))
+		ws.Get("/duel/:gameId", websocket.New(duelWsHub.HandleDuelWebSocket))
 	}
 
 	// User routes (only if database is available)

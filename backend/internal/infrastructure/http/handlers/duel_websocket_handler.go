@@ -25,13 +25,15 @@ type DuelWebSocketHub struct {
 
 // DuelGame represents an active duel game with two players
 type DuelGame struct {
-	ID           string
-	Player1Conn  *websocket.Conn
-	Player2Conn  *websocket.Conn
-	Player1ID    string
-	Player2ID    string
-	CurrentRound int
-	mu           sync.Mutex
+	ID              string
+	Player1Conn     *websocket.Conn
+	Player2Conn     *websocket.Conn
+	Player1ID       string
+	Player2ID       string
+	CurrentRound    int
+	Finished        bool
+	GameCompleteMsg map[string]interface{} // cached for reconnecting players
+	mu              sync.Mutex
 }
 
 // DuelMessage represents a WebSocket message
@@ -144,8 +146,9 @@ func (h *DuelWebSocketHub) registerPlayer(gameID, playerID string, conn *websock
 				"playerId": playerID,
 			},
 		})
-		// If game already started, resend current question so reconnected player can continue
-		if game.CurrentRound > 0 {
+		if game.Finished && game.GameCompleteMsg != nil {
+			conn.WriteJSON(game.GameCompleteMsg)
+		} else if game.CurrentRound > 0 {
 			go h.resendCurrentQuestion(game, game.CurrentRound)
 		}
 		return nil
@@ -161,7 +164,9 @@ func (h *DuelWebSocketHub) registerPlayer(gameID, playerID string, conn *websock
 				"playerId": playerID,
 			},
 		})
-		if game.CurrentRound > 0 {
+		if game.Finished && game.GameCompleteMsg != nil {
+			conn.WriteJSON(game.GameCompleteMsg)
+		} else if game.CurrentRound > 0 {
 			go h.resendCurrentQuestion(game, game.CurrentRound)
 		}
 		return nil
@@ -463,6 +468,10 @@ func (h *DuelWebSocketHub) broadcastGameComplete(game *DuelGame, output *appDuel
 			"player2NewMMR":    output.Player2NewMMR,
 		},
 	}
+
+	// Cache for reconnecting players
+	game.Finished = true
+	game.GameCompleteMsg = gameCompleteMsg
 
 	if game.Player1Conn != nil {
 		game.Player1Conn.WriteJSON(gameCompleteMsg)

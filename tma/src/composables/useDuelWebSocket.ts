@@ -195,10 +195,24 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
 	// WebSocket Connection
 	// ===========================
 
-	const connect = () => {
+	const getWsBaseUrl = () => {
+		const hostname = window.location.hostname
+		if (hostname === 'dev.quiz-sprint-tma.online') return 'wss://api-dev.quiz-sprint-tma.online'
+		if (hostname === 'staging.quiz-sprint-tma.online')
+			return 'wss://api-staging.quiz-sprint-tma.online'
+		if (hostname === 'quiz-sprint-tma.online') return 'wss://api.quiz-sprint-tma.online'
 		const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:'
-		const host = window.location.host
-		const wsUrl = `${protocol}//${host}/ws/duel/${gameId}?playerId=${playerId}`
+		return `${protocol}//${window.location.host}`
+	}
+
+	const connect = () => {
+		// Close any existing connection before opening a new one
+		if (ws.value && ws.value.readyState !== WebSocket.CLOSED) {
+			ws.value.onclose = null // prevent triggering reconnect loop
+			ws.value.close()
+		}
+
+		const wsUrl = `${getWsBaseUrl()}/ws/duel/${gameId}?playerId=${playerId}`
 
 		console.log('[DuelWS] Connecting to:', wsUrl)
 
