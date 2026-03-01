@@ -588,6 +588,40 @@ func TestStartGame_InvalidPlayer2(t *testing.T) {
 }
 
 // ========================================
+// GetDomainPlayerOrder Tests
+// ========================================
+
+func TestGetDomainPlayerOrder_ReturnsCorrectOrder(t *testing.T) {
+	f := setupFixture(t)
+
+	// Start game: player1=testPlayer1ID (challenger), player2=testPlayer2ID (accepter)
+	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
+
+	uc := f.newStartGameUC()
+	p1ID, p2ID, err := uc.GetDomainPlayerOrder(gameOutput.GameID)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if p1ID != testPlayer1ID {
+		t.Errorf("Player1ID = %s, want %s", p1ID, testPlayer1ID)
+	}
+	if p2ID != testPlayer2ID {
+		t.Errorf("Player2ID = %s, want %s", p2ID, testPlayer2ID)
+	}
+}
+
+func TestGetDomainPlayerOrder_GameNotFound(t *testing.T) {
+	f := setupFixture(t)
+	uc := f.newStartGameUC()
+
+	_, _, err := uc.GetDomainPlayerOrder("nonexistent-game-id")
+	if err == nil {
+		t.Error("expected error for nonexistent game, got nil")
+	}
+}
+
+// ========================================
 // SubmitDuelAnswer Tests
 // ========================================
 

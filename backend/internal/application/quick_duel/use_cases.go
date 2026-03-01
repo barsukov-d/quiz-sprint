@@ -903,6 +903,19 @@ func (uc *StartGameUseCase) GetRoundQuestion(gameIDStr string, roundNum int) (*R
 	}, nil
 }
 
+// GetDomainPlayerOrder returns the domain's canonical player1ID and player2ID
+// for a given game. This is the authoritative order (set at game creation):
+// Player1 = challenger, Player2 = accepter.
+// Used by the WS hub to send consistent player IDs in game_ready messages.
+func (uc *StartGameUseCase) GetDomainPlayerOrder(gameIDStr string) (player1ID, player2ID string, err error) {
+	gameID := quick_duel.NewGameIDFromString(gameIDStr)
+	game, err := uc.duelGameRepo.FindByID(gameID)
+	if err != nil {
+		return "", "", err
+	}
+	return game.Player1().UserID().String(), game.Player2().UserID().String(), nil
+}
+
 // ========================================
 // SubmitDuelAnswer Use Case
 // ========================================
