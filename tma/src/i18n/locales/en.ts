@@ -250,7 +250,7 @@ export default {
 		tabHistory: 'History',
 		searching: 'Searching for opponent...',
 		cancel: 'Cancel',
-		findOpponent: 'Find Random Opponent',
+		findOpponent: 'Find',
 		noTickets: 'No tickets available',
 		challengeFriend: 'Challenge a Friend',
 		inviteFriend: 'Invite Friend via Telegram',

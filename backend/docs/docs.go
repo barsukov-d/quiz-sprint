@@ -3539,6 +3539,9 @@ const docTemplate = `{
                 "challengerId": {
                     "type": "string"
                 },
+                "challengerUsername": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "integer"
                 },

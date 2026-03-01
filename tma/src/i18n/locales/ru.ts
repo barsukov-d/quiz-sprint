@@ -250,7 +250,7 @@ export default {
 		tabHistory: 'История',
 		searching: 'Ищем соперника...',
 		cancel: 'Отмена',
-		findOpponent: 'Найти случайного соперника',
+		findOpponent: 'Найти',
 		noTickets: 'Нет билетов',
 		challengeFriend: 'Вызвать друга',
 		inviteFriend: 'Пригласить в Telegram',
