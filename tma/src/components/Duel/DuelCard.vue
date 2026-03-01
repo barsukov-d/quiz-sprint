@@ -19,6 +19,7 @@ const { t } = useI18n()
 const {
 	tickets,
 	pendingChallenges,
+	outgoingReadyChallenges,
 	hasActiveDuel,
 	mmr,
 	leagueLabel,
@@ -38,6 +39,7 @@ const {
 
 const buttonText = computed(() => {
 	if (hasActiveDuel.value) return t('duel.continueDuel')
+	if (outgoingReadyChallenges.value.length > 0) return t('duel.friendReady')
 	if (pendingChallenges.value.length > 0)
 		return t('duel.challengesCount', { count: pendingChallenges.value.length })
 	return t('duel.findOpponent')
@@ -45,14 +47,20 @@ const buttonText = computed(() => {
 
 const buttonIcon = computed(() => {
 	if (hasActiveDuel.value) return 'i-heroicons-play'
+	if (outgoingReadyChallenges.value.length > 0) return 'i-heroicons-bolt'
 	if (pendingChallenges.value.length > 0) return 'i-heroicons-bell-alert'
 	return 'i-heroicons-magnifying-glass'
 })
 
 const buttonColor = computed(() => {
+	if (outgoingReadyChallenges.value.length > 0) return 'green'
 	if (pendingChallenges.value.length > 0) return 'orange'
 	return 'primary'
 })
+
+const totalAlerts = computed(
+	() => pendingChallenges.value.length + outgoingReadyChallenges.value.length,
+)
 
 const totalGames = computed(() => seasonWins.value + seasonLosses.value)
 
@@ -95,8 +103,8 @@ onMounted(async () => {
 					<UIcon name="i-heroicons-bolt" class="size-5 text-orange-500" />
 					<h3 class="text-base font-semibold">{{ t('duel.title') }}</h3>
 				</div>
-				<UBadge v-if="pendingChallenges.length > 0" color="orange" variant="soft" size="sm">
-					{{ t('duel.pendingCount', { count: pendingChallenges.length }) }}
+				<UBadge v-if="totalAlerts > 0" color="orange" variant="soft" size="sm">
+					{{ t('duel.pendingCount', { count: totalAlerts }) }}
 				</UBadge>
 			</div>
 		</template>
@@ -160,7 +168,7 @@ onMounted(async () => {
 				:icon="buttonIcon"
 				:color="buttonColor"
 				:loading="isLoading"
-				:disabled="!canPlay && !hasActiveDuel && pendingChallenges.length === 0"
+				:disabled="!canPlay && !hasActiveDuel && totalAlerts === 0"
 				block
 				size="lg"
 				@click="handleClick"
