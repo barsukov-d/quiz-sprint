@@ -301,6 +301,7 @@ export default {
 		challengeExpired: 'Challenge Expired',
 		shareAgain: 'Share Again',
 		createNewLink: 'Create New Link',
+		challengesYou: 'Challenges you to a duel',
 	},
 	shared: {
 		questionOf: 'Question {current} / {total}',

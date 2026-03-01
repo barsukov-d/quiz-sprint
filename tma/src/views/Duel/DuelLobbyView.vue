@@ -17,7 +17,6 @@ const {
 	tickets,
 	friendsOnline,
 	pendingChallenges,
-	outgoingChallenges,
 	hasActiveDuel,
 	activeGameId,
 	mmr,
@@ -80,23 +79,6 @@ const searchTimeFormatted = computed(() => {
 	const minutes = Math.floor(searchTime.value / 60)
 	const seconds = searchTime.value % 60
 	return `${minutes}:${seconds.toString().padStart(2, '0')}`
-})
-
-const outgoingChallengeExpiry = computed(() => {
-	const challenge = outgoingChallenges.value[0]
-	if (!challenge) return ''
-	const secondsLeft = (challenge.expiresAt ?? 0) - Math.floor(Date.now() / 1000)
-	if (secondsLeft <= 0) return t('duel.expired')
-	const hours = Math.floor(secondsLeft / 3600)
-	const minutes = Math.floor((secondsLeft % 3600) / 60)
-	if (hours > 0) return `${hours}ч ${minutes}мин`
-	return `${minutes} мин`
-})
-
-const isOutgoingChallengeExpired = computed(() => {
-	const challenge = outgoingChallenges.value[0]
-	if (!challenge) return false
-	return (challenge.expiresAt ?? 0) - Math.floor(Date.now() / 1000) <= 0
 })
 
 // ===========================
@@ -297,66 +279,6 @@ onMounted(async () => {
 			</div>
 		</UCard>
 
-		<!-- Outgoing Challenge (waiting for friend to accept link) -->
-		<div v-if="outgoingChallenges.length > 0" class="mb-4">
-			<UCard
-				:class="
-					isOutgoingChallengeExpired
-						? 'border-gray-300 dark:border-gray-600'
-						: 'border-primary-200 dark:border-primary-800'
-				"
-			>
-				<div class="flex items-center justify-between mb-3">
-					<div class="flex items-center gap-2">
-						<UIcon
-							name="i-heroicons-paper-airplane"
-							:class="isOutgoingChallengeExpired ? 'text-gray-400' : 'text-primary'"
-							class="size-5"
-						/>
-						<div>
-							<p class="font-medium text-sm">
-								{{
-									isOutgoingChallengeExpired
-										? t('duel.challengeExpired')
-										: t('duel.waitingForFriend')
-								}}
-							</p>
-							<p class="text-xs text-gray-500 dark:text-gray-400">
-								{{ t('duel.linkExpiresIn', { time: outgoingChallengeExpiry }) }}
-							</p>
-						</div>
-					</div>
-					<div class="flex items-center gap-2">
-						<div
-							:class="
-								isOutgoingChallengeExpired
-									? 'bg-gray-400'
-									: 'bg-primary animate-pulse'
-							"
-							class="w-2 h-2 rounded-full"
-						/>
-						<span class="text-xs text-gray-500">
-							{{ isOutgoingChallengeExpired ? t('duel.expired') : t('duel.waiting') }}
-						</span>
-					</div>
-				</div>
-				<!-- Action button -->
-				<UButton
-					icon="i-heroicons-paper-airplane"
-					:color="isOutgoingChallengeExpired ? 'primary' : 'gray'"
-					:variant="isOutgoingChallengeExpired ? 'solid' : 'soft'"
-					size="sm"
-					block
-					:loading="isSharing"
-					@click="handleShareToTelegram"
-				>
-					{{
-						isOutgoingChallengeExpired ? t('duel.createNewLink') : t('duel.shareAgain')
-					}}
-				</UButton>
-			</UCard>
-		</div>
-
 		<!-- Pending Challenges -->
 		<div v-if="pendingChallenges.length > 0" class="mb-4">
 			<h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
@@ -367,9 +289,14 @@ onMounted(async () => {
 					<!-- Challenger identity -->
 					<div class="flex items-center gap-2 mb-3">
 						<UIcon name="i-heroicons-bolt" class="size-5 text-orange-500" />
-						<span class="font-medium">
-							{{ challenge.challengerUsername || t('duel.challenge') }}
-						</span>
+						<div>
+							<p class="font-medium">
+								{{ challenge.challengerUsername || t('duel.challenge') }}
+							</p>
+							<p class="text-xs text-gray-500 dark:text-gray-400">
+								{{ t('duel.challengesYou') }}
+							</p>
+						</div>
 					</div>
 					<!-- Block buttons -->
 					<div class="space-y-2">

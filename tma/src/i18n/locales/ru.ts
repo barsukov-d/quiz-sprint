@@ -301,6 +301,7 @@ export default {
 		challengeExpired: 'Вызов истёк',
 		shareAgain: 'Поделиться снова',
 		createNewLink: 'Создать новую ссылку',
+		challengesYou: 'Вызывает на дуэль',
 	},
 	shared: {
 		questionOf: 'Вопрос {current} / {total}',
