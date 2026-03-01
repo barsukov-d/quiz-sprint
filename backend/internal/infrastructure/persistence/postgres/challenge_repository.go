@@ -120,7 +120,7 @@ func (r *ChallengeRepository) FindPendingByChallenger(playerID quick_duel.UserID
 		SELECT id, challenger_id, challenged_id, challenge_type, status,
 			challenge_link, match_id, expires_at, created_at, responded_at
 		FROM duel_challenges
-		WHERE challenger_id = $1 AND status = 'pending'
+		WHERE challenger_id = $1 AND status IN ('pending', 'accepted_waiting_inviter')
 		ORDER BY created_at DESC
 	`
 

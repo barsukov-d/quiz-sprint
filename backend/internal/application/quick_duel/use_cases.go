@@ -95,7 +95,17 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 
 	outgoingDTOs := make([]ChallengeDTO, 0, len(outgoingChallenges))
 	for _, c := range outgoingChallenges {
-		outgoingDTOs = append(outgoingDTOs, ToChallengeDTO(c, now, ""))
+		dto := ToChallengeDTO(c, now, "")
+		if c.ChallengedID() != nil {
+			if u, err := uc.userRepo.FindByID(*c.ChallengedID()); err == nil && u != nil {
+				name := u.TelegramUsername().String()
+				if name == "" {
+					name = u.Username().String()
+				}
+				dto.InviteeName = name
+			}
+		}
+		outgoingDTOs = append(outgoingDTOs, dto)
 	}
 
 	return GetDuelStatusOutput{
