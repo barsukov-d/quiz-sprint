@@ -3613,6 +3613,9 @@ const docTemplate = `{
                 "id": {
                     "type": "string"
                 },
+                "inviteeName": {
+                    "type": "string"
+                },
                 "status": {
                     "type": "string"
                 },

@@ -1,0 +1,2 @@
+export { getCategories200Schema, getCategories500Schema, getCategoriesQueryResponseSchema } from "./getCategoriesSchema.ts";
+export { postCategories201Schema, postCategories400Schema, postCategories500Schema, postCategoriesMutationRequestSchema, postCategoriesMutationResponseSchema } from "./postCategoriesSchema.ts";

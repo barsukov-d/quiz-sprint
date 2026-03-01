@@ -1352,6 +1352,7 @@ type DuelChallengeDTO struct {
 	ChallengerID       string  `json:"challengerId"`
 	ChallengedID       *string `json:"challengedId,omitempty"`
 	ChallengerUsername string  `json:"challengerUsername,omitempty"`
+	InviteeName        string  `json:"inviteeName,omitempty"`
 	Type               string  `json:"type"`
 	Status             string  `json:"status"`
 	ChallengeLink      string  `json:"challengeLink,omitempty"`

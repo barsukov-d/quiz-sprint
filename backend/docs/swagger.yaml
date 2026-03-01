@@ -525,6 +525,8 @@ definitions:
         type: integer
       id:
         type: string
+      inviteeName:
+        type: string
       status:
         type: string
       type:
