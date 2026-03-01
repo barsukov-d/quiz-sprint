@@ -294,6 +294,9 @@ export default {
 		wrong: 'Неверно',
 		yourTime: 'Твоё время',
 		reconnectingDesc: 'Если соперник не вернётся, победа будет за тобой',
+		waitingForFriend: 'Ожидание ответа на вызов',
+		linkExpiresIn: 'Ссылка активна ещё: {time}',
+		waiting: 'ожидание...',
 	},
 	shared: {
 		questionOf: 'Вопрос {current} / {total}',

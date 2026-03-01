@@ -17,6 +17,7 @@ const {
 	tickets,
 	friendsOnline,
 	pendingChallenges,
+	outgoingChallenges,
 	hasActiveDuel,
 	activeGameId,
 	mmr,
@@ -79,6 +80,17 @@ const searchTimeFormatted = computed(() => {
 	const minutes = Math.floor(searchTime.value / 60)
 	const seconds = searchTime.value % 60
 	return `${minutes}:${seconds.toString().padStart(2, '0')}`
+})
+
+const outgoingChallengeExpiry = computed(() => {
+	const challenge = outgoingChallenges.value[0]
+	if (!challenge) return ''
+	const secondsLeft = (challenge.expiresAt ?? 0) - Math.floor(Date.now() / 1000)
+	if (secondsLeft <= 0) return t('duel.expired', 'Истекла')
+	const hours = Math.floor(secondsLeft / 3600)
+	const minutes = Math.floor((secondsLeft % 3600) / 60)
+	if (hours > 0) return `${hours}ч ${minutes}мин`
+	return `${minutes} мин`
 })
 
 // ===========================
@@ -278,6 +290,27 @@ onMounted(async () => {
 				</div>
 			</div>
 		</UCard>
+
+		<!-- Outgoing Challenge (waiting for friend to accept link) -->
+		<div v-if="outgoingChallenges.length > 0" class="mb-4">
+			<UCard class="border-primary-200 dark:border-primary-800">
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-2">
+						<UIcon name="i-heroicons-paper-airplane" class="size-5 text-primary" />
+						<div>
+							<p class="font-medium text-sm">{{ t('duel.waitingForFriend') }}</p>
+							<p class="text-xs text-gray-500 dark:text-gray-400">
+								{{ t('duel.linkExpiresIn', { time: outgoingChallengeExpiry }) }}
+							</p>
+						</div>
+					</div>
+					<div class="flex items-center gap-2">
+						<div class="w-2 h-2 bg-primary rounded-full animate-pulse" />
+						<span class="text-xs text-gray-500">{{ t('duel.waiting') }}</span>
+					</div>
+				</div>
+			</UCard>
+		</div>
 
 		<!-- Pending Challenges -->
 		<div v-if="pendingChallenges.length > 0" class="mb-4">

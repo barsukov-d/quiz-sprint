@@ -294,6 +294,9 @@ export default {
 		wrong: 'Wrong',
 		yourTime: 'Your time',
 		reconnectingDesc: "If opponent doesn't return, you win",
+		waitingForFriend: 'Waiting for friend to accept challenge',
+		linkExpiresIn: 'Link expires in: {time}',
+		waiting: 'waiting...',
 	},
 	shared: {
 		questionOf: 'Question {current} / {total}',
