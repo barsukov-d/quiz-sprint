@@ -194,8 +194,18 @@ onMounted(() => {
 			{{ error }}
 		</div>
 
+		<!-- Initial connecting / loading state -->
+		<div v-if="!game" class="flex-1 flex items-center justify-center p-4">
+			<div class="text-center">
+				<div class="animate-pulse mb-4">
+					<UIcon name="i-heroicons-bolt" class="size-16 text-primary" />
+				</div>
+				<h2 class="text-xl font-bold mb-2">{{ t('duel.connecting') }}</h2>
+			</div>
+		</div>
+
 		<!-- Waiting for Opponent -->
-		<div v-if="isWaiting" class="flex-1 flex items-center justify-center p-4">
+		<div v-else-if="isWaiting" class="flex-1 flex items-center justify-center p-4">
 			<div class="text-center">
 				<div class="animate-pulse mb-4">
 					<UIcon name="i-heroicons-users" class="size-16 text-primary" />
