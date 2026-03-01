@@ -1348,15 +1348,16 @@ type DuelFriendDTO struct {
 
 // DuelChallengeDTO represents a pending challenge
 type DuelChallengeDTO struct {
-	ID            string  `json:"id"`
-	ChallengerID  string  `json:"challengerId"`
-	ChallengedID  *string `json:"challengedId,omitempty"`
-	Type          string  `json:"type"`
-	Status        string  `json:"status"`
-	ChallengeLink string  `json:"challengeLink,omitempty"`
-	ExpiresAt     int64   `json:"expiresAt"`
-	ExpiresIn     int     `json:"expiresIn"`
-	CreatedAt     int64   `json:"createdAt"`
+	ID                 string  `json:"id"`
+	ChallengerID       string  `json:"challengerId"`
+	ChallengedID       *string `json:"challengedId,omitempty"`
+	ChallengerUsername string  `json:"challengerUsername,omitempty"`
+	Type               string  `json:"type"`
+	Status             string  `json:"status"`
+	ChallengeLink      string  `json:"challengeLink,omitempty"`
+	ExpiresAt          int64   `json:"expiresAt"`
+	ExpiresIn          int     `json:"expiresIn"`
+	CreatedAt          int64   `json:"createdAt"`
 }
 
 // @name DuelChallengeDTO
