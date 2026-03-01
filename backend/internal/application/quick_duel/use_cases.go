@@ -1479,3 +1479,128 @@ func (uc *GetOnlineFriendsUseCase) Execute(input GetOnlineFriendsInput) (GetOnli
 		OnlineFriends: friends,
 	}, nil
 }
+
+// ========================================
+// StartChallenge Use Case
+// ========================================
+
+type StartChallengeUseCase struct {
+	challengeRepo    quick_duel.ChallengeRepository
+	duelGameRepo     quick_duel.DuelGameRepository
+	playerRatingRepo quick_duel.PlayerRatingRepository
+	seasonRepo       quick_duel.SeasonRepository
+	questionRepo     QuestionRepository
+	userRepo         domainUser.UserRepository
+	eventBus         EventBus
+}
+
+func NewStartChallengeUseCase(
+	challengeRepo quick_duel.ChallengeRepository,
+	duelGameRepo quick_duel.DuelGameRepository,
+	playerRatingRepo quick_duel.PlayerRatingRepository,
+	seasonRepo quick_duel.SeasonRepository,
+	questionRepo QuestionRepository,
+	userRepo domainUser.UserRepository,
+	eventBus EventBus,
+) *StartChallengeUseCase {
+	return &StartChallengeUseCase{
+		challengeRepo:    challengeRepo,
+		duelGameRepo:     duelGameRepo,
+		playerRatingRepo: playerRatingRepo,
+		seasonRepo:       seasonRepo,
+		questionRepo:     questionRepo,
+		userRepo:         userRepo,
+		eventBus:         eventBus,
+	}
+}
+
+func (uc *StartChallengeUseCase) Execute(input StartChallengeInput) (StartChallengeOutput, error) {
+	now := time.Now().UTC().Unix()
+
+	inviterID, err := shared.NewUserID(input.PlayerID)
+	if err != nil {
+		return StartChallengeOutput{}, err
+	}
+
+	challengeID := quick_duel.NewChallengeIDFromString(input.ChallengeID)
+	challenge, err := uc.challengeRepo.FindByID(challengeID)
+	if err != nil {
+		return StartChallengeOutput{}, err
+	}
+
+	// Validate inviter is the challenger
+	if !challenge.ChallengerID().Equals(inviterID) {
+		return StartChallengeOutput{}, quick_duel.ErrNotChallengedPlayer
+	}
+
+	// Validate status
+	if challenge.Status() != quick_duel.ChallengeStatusAcceptedWaitingInviter {
+		return StartChallengeOutput{}, quick_duel.ErrChallengeNotPending
+	}
+
+	if challenge.ChallengedID() == nil {
+		return StartChallengeOutput{}, quick_duel.ErrChallengeNotFound
+	}
+
+	accepterID := *challenge.ChallengedID()
+	seasonID, _ := uc.seasonRepo.GetCurrentSeason()
+
+	rating1, err := uc.playerRatingRepo.FindOrCreate(inviterID, seasonID, now)
+	if err != nil {
+		return StartChallengeOutput{}, err
+	}
+	rating2, err := uc.playerRatingRepo.FindOrCreate(accepterID, seasonID, now)
+	if err != nil {
+		return StartChallengeOutput{}, err
+	}
+
+	// Get usernames
+	inviterName := inviterID.String()
+	if u, err := uc.userRepo.FindByID(inviterID); err == nil && u != nil {
+		if n := u.TelegramUsername().String(); n != "" {
+			inviterName = n
+		} else if n := u.Username().String(); n != "" {
+			inviterName = n
+		}
+	}
+	accepterName := accepterID.String()
+	if u, err := uc.userRepo.FindByID(accepterID); err == nil && u != nil {
+		if n := u.TelegramUsername().String(); n != "" {
+			accepterName = n
+		} else if n := u.Username().String(); n != "" {
+			accepterName = n
+		}
+	}
+
+	// Select random questions
+	questions, err := uc.questionRepo.FindRandomByDifficulty(quick_duel.QuestionsPerDuel, "medium")
+	if err != nil {
+		return StartChallengeOutput{}, err
+	}
+
+	questionIDs := make([]quick_duel.QuestionID, 0, len(questions))
+	for _, q := range questions {
+		qid, _ := quiz.NewQuestionIDFromString(q.ID)
+		questionIDs = append(questionIDs, qid)
+	}
+
+	player1 := quick_duel.NewDuelPlayer(inviterID, inviterName, quick_duel.ReconstructEloRating(rating1.MMR(), 0))
+	player2 := quick_duel.NewDuelPlayer(accepterID, accepterName, quick_duel.ReconstructEloRating(rating2.MMR(), 0))
+
+	game, err := quick_duel.NewDuelGame(player1, player2, questionIDs, now)
+	if err != nil {
+		return StartChallengeOutput{}, err
+	}
+	if err := game.Start(now); err != nil {
+		return StartChallengeOutput{}, err
+	}
+	if err := uc.duelGameRepo.Save(game); err != nil {
+		return StartChallengeOutput{}, err
+	}
+
+	// Mark challenge as accepted (game started)
+	challenge.SetMatchID(game.ID())
+	_ = uc.challengeRepo.Save(challenge)
+
+	return StartChallengeOutput{GameID: game.ID().String()}, nil
+}

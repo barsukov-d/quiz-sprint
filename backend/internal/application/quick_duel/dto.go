@@ -371,6 +371,19 @@ type ClaimReferralRewardOutput struct {
 }
 
 // ========================================
+// StartChallenge Use Case
+// ========================================
+
+type StartChallengeInput struct {
+	PlayerID    string `json:"playerId"`
+	ChallengeID string `json:"challengeId"`
+}
+
+type StartChallengeOutput struct {
+	GameID string `json:"gameId"`
+}
+
+// ========================================
 // StartGame Use Case
 // ========================================
 
