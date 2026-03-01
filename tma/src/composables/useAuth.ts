@@ -103,6 +103,37 @@ export function useAuth() {
 				}
 			}
 
+			// Fallback: try localStorage (app resume after background reload)
+			if (!rawData && typeof localStorage !== 'undefined') {
+				const cached = localStorage.getItem('tma_init_data_raw')
+				if (cached) {
+					rawData = cached
+					console.log('✅ Using cached init data from localStorage (app resume)')
+
+					// Parse user from cached raw data
+					const initParams = new URLSearchParams(rawData)
+					const userJson = initParams.get('user')
+					if (userJson) {
+						const user = JSON.parse(userJson)
+						parsedData = {
+							user: {
+								id: user.id,
+								first_name: user.first_name,
+								last_name: user.last_name,
+								username: user.username,
+								language_code: user.language_code,
+								is_premium: user.is_premium || false,
+								allows_write_to_pm: user.allows_write_to_pm || false,
+								photo_url: user.photo_url,
+							} as TelegramUser,
+							authDate: new Date(parseInt(initParams.get('auth_date') || '0') * 1000),
+							hash: initParams.get('hash') || '',
+							queryId: initParams.get('query_id'),
+						}
+					}
+				}
+			}
+
 			if (!rawData) {
 				console.error('❌ TMA: No raw init data available!')
 				console.error('❌ Could not find data in SDK or hash parameters')
