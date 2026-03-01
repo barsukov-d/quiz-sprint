@@ -76,11 +76,22 @@ GET /api/v1/duel/status
         "id": "ch_xyz",
         "challengerId": "user_123",
         "type": "link",
-        "status": "pending",
+        "status": "accepted_waiting_inviter",
+        "inviteeName": "@vasya",
         "challengeLink": "https://t.me/quiz_sprint_dev_bot?startapp=duel_abc123",
         "expiresAt": 1706515200,
         "expiresIn": 82800,
         "createdAt": 1706428800
+      },
+      {
+        "id": "ch_aaa",
+        "challengerId": "user_123",
+        "type": "link",
+        "status": "pending",
+        "challengeLink": "https://t.me/quiz_sprint_dev_bot?startapp=duel_bbb456",
+        "expiresAt": 1706515200,
+        "expiresIn": 72000,
+        "createdAt": 1706443200
       }
     ]
   }
@@ -277,6 +288,7 @@ POST /api/v1/duel/challenge/link
 ### 6a. Accept Challenge by Link Code
 
 Used by TMA when user opens deep link with `?startapp=duel_xxx` parameter.
+**New behaviour:** does NOT create a game immediately — sets status to `accepted_waiting_inviter` and notifies the inviter via Telegram Bot API. Inviter must then call `/start` to create the game.
 
 ```http
 POST /api/v1/duel/challenge/accept-by-code
@@ -295,16 +307,45 @@ POST /api/v1/duel/challenge/accept-by-code
 {
   "data": {
     "success": true,
-    "gameId": "g_xyz789",
-    "ticketConsumed": true,
-    "startsIn": 3,
-    "challengerId": "user_456"
+    "challengeId": "ch_xyz789",
+    "status": "accepted_waiting_inviter"
   }
 }
 ```
 
 **Error 404:** Challenge not found
-**Error 409:** Challenge expired or already accepted
+**Error 409:** Challenge expired or already accepted / already in `accepted_waiting_inviter`
+
+---
+
+### 6b. Start Challenge (Inviter confirms)
+
+Called by the inviter after they see that the invitee accepted (`status = accepted_waiting_inviter`).
+Creates the `DuelGame` and returns `gameId`.
+
+```http
+POST /api/v1/duel/challenge/:challengeId/start
+```
+
+**Request:**
+```json
+{
+  "playerId": "user_456"
+}
+```
+
+**Response 200:**
+```json
+{
+  "data": {
+    "gameId": "g_xyz789"
+  }
+}
+```
+
+**Error 400:** `playerId` missing or invalid UUID for challengeId
+**Error 403/409:** Player is not the challenger, or challenge not in `accepted_waiting_inviter` state
+**Error 404:** Challenge not found
 
 ---
 
@@ -790,6 +831,7 @@ Heartbeat:
 | 404 | `GAME_NOT_FOUND` | Game doesn't exist |
 | 404 | `FRIEND_NOT_FOUND` | Friend ID invalid |
 | 409 | `CHALLENGE_EXPIRED` | Challenge timed out |
+| 409 | `CHALLENGE_NOT_PENDING` | Challenge not in expected state for this action |
 | 409 | `FRIEND_BUSY` | Friend already in queue/match |
 | 429 | `RATE_LIMIT` | Too many requests |
 

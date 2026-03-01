@@ -85,30 +85,60 @@ type DuelGameRepository interface {
 ```go
 type DuelChallenge struct {
     id            ChallengeID
-    challengerID  PlayerID
-    challengedID  *PlayerID       // nil if link-based
-    status        ChallengeStatus // pending, accepted, declined, expired
-
-    challengeLink *string         // For link-based challenges
+    challengerID  UserID
+    challengedID  *UserID         // nil until invitee accepts
+    challengeType ChallengeType   // "direct" | "link"
+    status        ChallengeStatus
+    challengeLink string          // For link-based challenges
     expiresAt     int64
-
     createdAt     int64
-    respondedAt   *int64
+    respondedAt   int64           // 0 if pending
+    matchID       *GameID         // set when game created
+    inviteeName   string          // display name of invitee (set at AcceptWaiting)
 }
 ```
+
+**ChallengeStatus lifecycle:**
+
+```
+pending → accepted_waiting_inviter → (inviter calls /start) → matchID set
+        ↘ declined
+        ↘ expired
+```
+
+| Status | Description |
+|--------|-------------|
+| `pending` | Created, waiting for invitee response |
+| `accepted_waiting_inviter` | Invitee accepted via link, waiting for inviter to start the game |
+| `accepted` | Game created (direct challenges only) |
+| `declined` | Invitee declined |
+| `expired` | Timed out |
 
 **Factory:**
 ```go
 func NewDirectChallenge(
-    challengerID PlayerID,
-    challengedID PlayerID,
-    expiresAt int64,
-) *DuelChallenge
+    challengerID UserID,
+    challengedID UserID,
+    createdAt int64,
+) (*DuelChallenge, error)
 
 func NewLinkChallenge(
-    challengerID PlayerID,
-    expiresAt int64,
-) *DuelChallenge
+    challengerID UserID,
+    createdAt int64,
+) (*DuelChallenge, error)
+```
+
+**Key Methods:**
+```go
+// For direct challenges — immediately accepted, game created separately
+func (dc *DuelChallenge) Accept(accepterID UserID, acceptedAt int64) error
+
+// For link challenges — sets accepted_waiting_inviter, notifies inviter via Telegram
+func (dc *DuelChallenge) AcceptWaiting(accepterID UserID, inviteeName string, acceptedAt int64) error
+
+func (dc *DuelChallenge) Decline(declinerID UserID, declinedAt int64) error
+func (dc *DuelChallenge) SetMatchID(matchID GameID)
+func (dc *DuelChallenge) InviteeName() string
 ```
 
 ---
