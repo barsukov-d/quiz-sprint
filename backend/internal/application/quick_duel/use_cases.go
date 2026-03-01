@@ -80,15 +80,26 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 	// Get season end time
 	_, seasonEndsAt, _ := uc.seasonRepo.GetSeasonInfo(seasonID)
 
+	outgoingChallenges, err := uc.challengeRepo.FindPendingByChallenger(playerID)
+	if err != nil {
+		outgoingChallenges = []*quick_duel.DuelChallenge{}
+	}
+
+	outgoingDTOs := make([]ChallengeDTO, 0, len(outgoingChallenges))
+	for _, c := range outgoingChallenges {
+		outgoingDTOs = append(outgoingDTOs, ToChallengeDTO(c, now))
+	}
+
 	return GetDuelStatusOutput{
-		HasActiveDuel:     activeGameID != nil,
-		ActiveGameID:      activeGameID,
-		Player:            ToPlayerRatingDTO(rating),
-		Tickets:           10, // TODO: get from user wallet
-		FriendsOnline:     []FriendDTO{}, // TODO: implement friends service
-		PendingChallenges: challengeDTOs,
-		SeasonID:          seasonID,
-		SeasonEndsAt:      seasonEndsAt,
+		HasActiveDuel:      activeGameID != nil,
+		ActiveGameID:       activeGameID,
+		Player:             ToPlayerRatingDTO(rating),
+		Tickets:            10, // TODO: get from user wallet
+		FriendsOnline:      []FriendDTO{}, // TODO: implement friends service
+		PendingChallenges:  challengeDTOs,
+		OutgoingChallenges: outgoingDTOs,
+		SeasonID:           seasonID,
+		SeasonEndsAt:       seasonEndsAt,
 	}, nil
 }
 
@@ -1011,6 +1022,23 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 		return nil, fmt.Errorf("submit duel answer: get round answers: %w", err)
 	}
 	roundComplete := len(roundAnswers) >= 2
+
+	// roundAnswers are not persisted to the DB (see TODO in reconstructGame), so the
+	// domain's bothAnswered check is always false after reconstruction. When the cache
+	// confirms both players answered, force completeRound() via RecordTimeoutAnswer for
+	// the opponent — this advances currentRound in the DB so the next answer hits the
+	// correct question.
+	if roundComplete && !result.BothAnswered {
+		var opponentID quick_duel.UserID
+		if game.Player1().UserID().String() == input.PlayerID {
+			opponentID = game.Player2().UserID()
+		} else {
+			opponentID = game.Player1().UserID()
+		}
+		if timeoutResult, _ := game.RecordTimeoutAnswer(opponentID, now); timeoutResult != nil && timeoutResult.IsGameFinished {
+			result.IsGameFinished = true
+		}
+	}
 
 	// Scores are already maintained by the domain aggregate
 	player1Score := game.Player1().Score()

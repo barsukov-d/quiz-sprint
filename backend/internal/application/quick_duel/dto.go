@@ -143,14 +143,15 @@ type GetDuelStatusInput struct {
 }
 
 type GetDuelStatusOutput struct {
-	HasActiveDuel     bool              `json:"hasActiveDuel"`
-	ActiveGameID      *string           `json:"activeGameId,omitempty"`
-	Player            PlayerRatingDTO   `json:"player"`
-	Tickets           int               `json:"tickets"`
-	FriendsOnline     []FriendDTO       `json:"friendsOnline"`
-	PendingChallenges []ChallengeDTO    `json:"pendingChallenges"`
-	SeasonID          string            `json:"seasonId"`
-	SeasonEndsAt      int64             `json:"seasonEndsAt"`
+	HasActiveDuel      bool            `json:"hasActiveDuel"`
+	ActiveGameID       *string         `json:"activeGameId,omitempty"`
+	Player             PlayerRatingDTO `json:"player"`
+	Tickets            int             `json:"tickets"`
+	FriendsOnline      []FriendDTO     `json:"friendsOnline"`
+	PendingChallenges  []ChallengeDTO  `json:"pendingChallenges"`
+	OutgoingChallenges []ChallengeDTO  `json:"outgoingChallenges"`
+	SeasonID           string          `json:"seasonId"`
+	SeasonEndsAt       int64           `json:"seasonEndsAt"`
 }
 
 // ========================================

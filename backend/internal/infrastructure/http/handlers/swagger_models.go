@@ -1300,14 +1300,15 @@ type CreateChallengeLinkResponse struct {
 // GetDuelStatusResponse wraps the duel status response
 type GetDuelStatusResponse struct {
 	Data struct {
-		HasActiveDuel     bool                 `json:"hasActiveDuel"`
-		ActiveGameID      *string              `json:"activeGameId,omitempty"`
-		Player            DuelPlayerRatingDTO  `json:"player"`
-		Tickets           int                  `json:"tickets"`
-		FriendsOnline     []DuelFriendDTO      `json:"friendsOnline"`
-		PendingChallenges []DuelChallengeDTO   `json:"pendingChallenges"`
-		SeasonID          string               `json:"seasonId"`
-		SeasonEndsAt      int64                `json:"seasonEndsAt"`
+		HasActiveDuel      bool                `json:"hasActiveDuel"`
+		ActiveGameID       *string             `json:"activeGameId,omitempty"`
+		Player             DuelPlayerRatingDTO `json:"player"`
+		Tickets            int                 `json:"tickets"`
+		FriendsOnline      []DuelFriendDTO     `json:"friendsOnline"`
+		PendingChallenges  []DuelChallengeDTO  `json:"pendingChallenges"`
+		OutgoingChallenges []DuelChallengeDTO  `json:"outgoingChallenges"`
+		SeasonID           string              `json:"seasonId"`
+		SeasonEndsAt       int64               `json:"seasonEndsAt"`
 	} `json:"data"`
 }
 

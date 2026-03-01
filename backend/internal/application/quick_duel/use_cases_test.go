@@ -82,6 +82,36 @@ func TestGetDuelStatus_WithPendingChallenge(t *testing.T) {
 	}
 }
 
+func TestGetDuelStatus_IncludesOutgoingChallenges(t *testing.T) {
+	f := setupFixture(t)
+
+	// Create a link challenge sent by player1
+	challenge, err := quick_duel.NewLinkChallenge(
+		mustUserID(testPlayer1ID),
+		time.Now().UTC().Unix(),
+	)
+	if err != nil {
+		t.Fatalf("failed to create link challenge: %v", err)
+	}
+	f.challengeRepo.Save(challenge)
+
+	uc := f.newGetDuelStatusUC()
+	output, err := uc.Execute(GetDuelStatusInput{PlayerID: testPlayer1ID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(output.OutgoingChallenges) != 1 {
+		t.Fatalf("OutgoingChallenges = %d, want 1", len(output.OutgoingChallenges))
+	}
+	if output.OutgoingChallenges[0].Type != "link" {
+		t.Errorf("Type = %s, want link", output.OutgoingChallenges[0].Type)
+	}
+	if output.OutgoingChallenges[0].Status != "pending" {
+		t.Errorf("Status = %s, want pending", output.OutgoingChallenges[0].Status)
+	}
+}
+
 func TestGetDuelStatus_InvalidPlayer(t *testing.T) {
 	f := setupFixture(t)
 	uc := f.newGetDuelStatusUC()
