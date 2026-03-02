@@ -265,6 +265,17 @@ func (dc *DuelChallenge) SetMatchID(matchID GameID) {
 	dc.matchID = &matchID
 }
 
+// MarkStarted transitions challenge from accepted_waiting_inviter to accepted.
+// Called when the inviter confirms game start via StartChallenge use case.
+func (dc *DuelChallenge) MarkStarted(matchID GameID) error {
+	if dc.status != ChallengeStatusAcceptedWaitingInviter {
+		return ErrChallengeNotPending
+	}
+	dc.matchID = &matchID
+	dc.status = ChallengeStatusAccepted
+	return nil
+}
+
 // Expire marks the challenge as expired
 func (dc *DuelChallenge) Expire(expiredAt int64) error {
 	if dc.status != ChallengeStatusPending {
