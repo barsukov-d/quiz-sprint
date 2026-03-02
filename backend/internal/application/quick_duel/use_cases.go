@@ -1598,9 +1598,13 @@ func (uc *StartChallengeUseCase) Execute(input StartChallengeInput) (StartChalle
 		return StartChallengeOutput{}, err
 	}
 
-	// Mark challenge as accepted (game started)
-	challenge.SetMatchID(game.ID())
-	_ = uc.challengeRepo.Save(challenge)
+	// Transition challenge to accepted — removes it from lobby outgoing cards
+	if err := challenge.MarkStarted(game.ID()); err != nil {
+		return StartChallengeOutput{}, err
+	}
+	if err := uc.challengeRepo.Save(challenge); err != nil {
+		return StartChallengeOutput{}, err
+	}
 
 	return StartChallengeOutput{GameID: game.ID().String()}, nil
 }
