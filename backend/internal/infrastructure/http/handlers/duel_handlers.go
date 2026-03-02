@@ -513,6 +513,10 @@ func mapDuelError(err error) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Insufficient tickets")
 	case domainDuel.ErrCannotChallengeSelf:
 		return fiber.NewError(fiber.StatusBadRequest, "Cannot challenge yourself")
+	case domainDuel.ErrChallengeNotPending:
+		return fiber.NewError(fiber.StatusConflict, "Challenge is no longer pending")
+	case domainDuel.ErrNotChallengedPlayer:
+		return fiber.NewError(fiber.StatusForbidden, "Not the challenged player")
 	default:
 		return fiber.NewError(fiber.StatusInternalServerError, "Internal server error")
 	}

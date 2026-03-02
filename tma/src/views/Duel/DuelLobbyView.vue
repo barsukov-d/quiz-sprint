@@ -464,7 +464,15 @@ onMounted(async () => {
 							{{ challenge.inviteeName || t('duel.friend') }} {{ t('duel.isReady') }}
 						</p>
 					</div>
-					<UButton color="green" block @click="() => { startChallenge(challenge.id!) }">
+					<UButton
+						color="green"
+						block
+						@click="
+							() => {
+								startChallenge(challenge.id!)
+							}
+						"
+					>
 						{{ t('duel.startDuel') }}
 					</UButton>
 				</UCard>

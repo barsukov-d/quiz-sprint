@@ -17,6 +17,16 @@ type DuelGameRepository interface {
 
 	// Delete removes a duel game
 	Delete(id GameID) error
+
+	// FindRecentOpponents returns unique opponents from completed games, most recent first
+	FindRecentOpponents(playerID UserID, limit int) ([]RecentOpponentEntry, error)
+}
+
+// RecentOpponentEntry represents a recent opponent with game count
+type RecentOpponentEntry struct {
+	OpponentID   UserID
+	GamesCount   int
+	LastPlayedAt int64
 }
 
 // MatchmakingQueue defines the interface for matchmaking queue operations
