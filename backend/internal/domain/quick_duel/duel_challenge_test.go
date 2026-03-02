@@ -1,6 +1,7 @@
 package quick_duel_test
 
 import (
+	"errors"
 	"testing"
 
 	quick_duel "github.com/barsukov/quiz-sprint/backend/internal/domain/quick_duel"
@@ -51,7 +52,7 @@ func TestMarkStarted_FailsIfNotWaitingInviter(t *testing.T) {
 
 	gameID := quick_duel.NewGameIDFromString("game-001")
 	err = challenge.MarkStarted(gameID)
-	if err == nil {
-		t.Error("expected error when status is pending")
+	if !errors.Is(err, quick_duel.ErrChallengeNotPending) {
+		t.Errorf("expected ErrChallengeNotPending, got %v", err)
 	}
 }
