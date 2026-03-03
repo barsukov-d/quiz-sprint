@@ -5,6 +5,7 @@ import {
 	useGetDuelStatus,
 	useGetDuelLeaderboard,
 	useGetDuelHistory,
+	useGetDuelRivals,
 	usePostDuelQueueJoin,
 	useDeleteDuelQueueLeave,
 	usePostDuelChallenge,
@@ -109,6 +110,17 @@ export function usePvPDuel(playerId: string) {
 		},
 	)
 
+	// Rivals (recent opponents)
+	const { data: rivalsData, refetch: refetchRivals } = useGetDuelRivals(
+		computed(() => ({ playerId })),
+		{
+			query: {
+				enabled: computed(() => !!playerId),
+				staleTime: 30000,
+			},
+		},
+	)
+
 	// ===========================
 	// Computed Properties
 	// ===========================
@@ -165,6 +177,9 @@ export function usePvPDuel(playerId: string) {
 
 	// History
 	const gameHistory = computed(() => historyData.value?.data?.games ?? [])
+
+	// Rivals
+	const rivals = computed(() => rivalsData.value?.data?.rivals ?? [])
 
 	// Loading states
 	const isLoading = computed(
@@ -491,6 +506,9 @@ export function usePvPDuel(playerId: string) {
 		// History
 		gameHistory,
 
+		// Rivals
+		rivals,
+
 		// UI State
 		isSearching,
 		searchTime,
@@ -515,5 +533,6 @@ export function usePvPDuel(playerId: string) {
 		refetchStatus,
 		refetchLeaderboard,
 		refetchHistory,
+		refetchRivals,
 	}
 }
