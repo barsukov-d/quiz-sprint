@@ -16,10 +16,8 @@ const { t } = useI18n()
 
 const {
 	tickets,
-	friendsOnline,
 	pendingChallenges,
 	outgoingReadyChallenges,
-	outgoingPendingChallenges,
 	hasActiveDuel,
 	activeGameId,
 	mmr,
@@ -31,6 +29,7 @@ const {
 	leaderboard,
 	playerRank,
 	gameHistory,
+	rivals,
 	isSearching,
 	searchTime,
 	isLoading,
@@ -39,13 +38,13 @@ const {
 	leaveQueue,
 	sendChallenge,
 	respondChallenge,
-	createChallengeLink,
 	shareChallengeToTelegram,
 	startChallenge,
 	goToActiveDuel,
 	refetchStatus,
 	refetchLeaderboard,
 	refetchHistory,
+	refetchRivals,
 } = usePvPDuel(playerId.value)
 
 // Accept by link code mutation
@@ -87,14 +86,6 @@ const searchTimeFormatted = computed(() => {
 	return `${minutes}:${seconds.toString().padStart(2, '0')}`
 })
 
-const formatExpiry = (expiresAt: number) => {
-	const diff = expiresAt - Math.floor(Date.now() / 1000)
-	if (diff <= 0) return t('duel.expired')
-	const hours = Math.floor(diff / 3600)
-	const minutes = Math.floor((diff % 3600) / 60)
-	return hours > 0 ? `${hours}ч ${minutes}мин` : `${minutes}мин`
-}
-
 // ===========================
 // Actions
 // ===========================
@@ -113,14 +104,6 @@ const handleAcceptChallenge = async (challengeId: string) => {
 
 const handleDeclineChallenge = async (challengeId: string) => {
 	await respondChallenge(challengeId, 'decline')
-}
-
-const handleCreateLink = async () => {
-	const result = await createChallengeLink()
-	if (result?.challengeLink) {
-		challengeLink.value = result.challengeLink
-		showChallengeLink.value = true
-	}
 }
 
 const handleCopyLink = () => {
@@ -204,6 +187,7 @@ onMounted(async () => {
 	await refetchStatus()
 	await refetchLeaderboard()
 	await refetchHistory()
+	await refetchRivals()
 
 	// If has active duel, redirect
 	if (hasActiveDuel.value && activeGameId.value) {
@@ -444,10 +428,7 @@ onMounted(async () => {
 			</UCard>
 
 			<!-- Outgoing Challenges -->
-			<div
-				v-if="outgoingReadyChallenges.length > 0 || outgoingPendingChallenges.length > 0"
-				class="space-y-2"
-			>
+			<div v-if="outgoingReadyChallenges.length > 0" class="space-y-2">
 				<h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400">
 					{{ t('duel.outgoingChallenges') }}
 				</h3>
@@ -476,30 +457,50 @@ onMounted(async () => {
 						{{ t('duel.startDuel') }}
 					</UButton>
 				</UCard>
-
-				<!-- Waiting for response -->
-				<UCard v-for="challenge in outgoingPendingChallenges" :key="challenge.id">
-					<div class="flex items-center gap-2">
-						<UIcon name="i-heroicons-paper-airplane" class="size-5 text-blue-500" />
-						<div class="flex-1">
-							<p class="font-medium">{{ t('duel.waitingForResponse') }}</p>
-							<p class="text-xs text-gray-500">
-								{{
-									t('duel.linkExpiresIn', {
-										time: formatExpiry(challenge.expiresAt!),
-									})
-								}}
-							</p>
-						</div>
-					</div>
-				</UCard>
 			</div>
 
-			<!-- Invite Friend -->
+			<!-- Rivals Section -->
 			<UCard>
-				<h3 class="font-semibold mb-3">{{ t('duel.challengeFriend') }}</h3>
+				<h3 class="font-semibold mb-3">{{ t('duel.rivals') }}</h3>
 
-				<!-- Primary: Share via Telegram -->
+				<!-- Rivals list -->
+				<div v-if="rivals.length > 0" class="space-y-2 mb-4">
+					<div
+						v-for="rival in rivals"
+						:key="rival.id"
+						class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded"
+					>
+						<div class="flex items-center gap-2">
+							<div
+								class="w-2 h-2 rounded-full"
+								:class="rival.isOnline ? 'bg-green-500' : 'bg-gray-400'"
+							/>
+							<div>
+								<span class="font-medium">{{ rival.username }}</span>
+								<span class="text-xs text-gray-500 ml-2">
+									{{ rival.leagueIcon }} {{ rival.mmr }} MMR
+								</span>
+							</div>
+						</div>
+						<UButton size="xs" @click="() => handleChallengeFriend(rival.id!)">
+							{{ t('duel.challenge') }}
+						</UButton>
+					</div>
+				</div>
+
+				<!-- Empty state -->
+				<p v-else class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+					{{ t('duel.noRivalsYet') }}
+				</p>
+
+				<!-- Divider -->
+				<div class="flex items-center gap-3 my-3">
+					<div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+					<span class="text-xs text-gray-400">{{ t('duel.orInvite') }}</span>
+					<div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+				</div>
+
+				<!-- Invite via Telegram -->
 				<UButton
 					icon="i-heroicons-paper-airplane"
 					color="primary"
@@ -508,18 +509,6 @@ onMounted(async () => {
 					@click="handleShareToTelegram"
 				>
 					{{ t('duel.inviteFriend') }}
-				</UButton>
-
-				<!-- Secondary: Create link manually -->
-				<UButton
-					icon="i-heroicons-link"
-					color="gray"
-					variant="soft"
-					block
-					class="mt-2"
-					@click="handleCreateLink"
-				>
-					{{ t('duel.createLink') }}
 				</UButton>
 
 				<div
@@ -534,33 +523,6 @@ onMounted(async () => {
 							class="flex-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
 						/>
 						<UButton size="xs" @click="handleCopyLink">{{ t('duel.copy') }}</UButton>
-					</div>
-				</div>
-			</UCard>
-
-			<!-- Friends Online -->
-			<UCard v-if="friendsOnline.length > 0">
-				<h3 class="font-semibold mb-3">{{ t('duel.friendsOnline') }}</h3>
-				<div class="space-y-2">
-					<div
-						v-for="friend in friendsOnline"
-						:key="friend.id"
-						class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded"
-					>
-						<div class="flex items-center gap-2">
-							<div class="w-2 h-2 bg-green-500 rounded-full" />
-							<span>{{ friend.username }}</span>
-							<UBadge v-if="friend.inGame" size="xs" color="orange">{{
-								t('duel.inGameBadge')
-							}}</UBadge>
-						</div>
-						<UButton
-							v-if="!friend.inGame"
-							size="xs"
-							@click="() => handleChallengeFriend(friend.id!)"
-						>
-							{{ t('duel.challenge') }}
-						</UButton>
 					</div>
 				</div>
 			</UCard>
