@@ -78,6 +78,56 @@ func (m *mockDuelGameRepo) Delete(id quick_duel.GameID) error {
 	return nil
 }
 
+func (m *mockDuelGameRepo) FindRecentOpponents(playerID quick_duel.UserID, limit int) ([]quick_duel.RecentOpponentEntry, error) {
+	seen := make(map[string]int)
+	lastPlayed := make(map[string]int64)
+
+	for _, g := range m.games {
+		if g.Status() != quick_duel.GameStatusFinished {
+			continue
+		}
+		var opponentID string
+		if g.Player1().UserID().Equals(playerID) {
+			opponentID = g.Player2().UserID().String()
+		} else if g.Player2().UserID().Equals(playerID) {
+			opponentID = g.Player1().UserID().String()
+		} else {
+			continue
+		}
+		seen[opponentID]++
+		if g.StartedAt() > lastPlayed[opponentID] {
+			lastPlayed[opponentID] = g.StartedAt()
+		}
+	}
+
+	var result []quick_duel.RecentOpponentEntry
+	for idStr, count := range seen {
+		id, err := shared.NewUserID(idStr)
+		if err != nil {
+			continue
+		}
+		result = append(result, quick_duel.RecentOpponentEntry{
+			OpponentID:   id,
+			GamesCount:   count,
+			LastPlayedAt: lastPlayed[idStr],
+		})
+	}
+
+	// Sort by LastPlayedAt desc
+	for i := 0; i < len(result); i++ {
+		for j := i + 1; j < len(result); j++ {
+			if result[j].LastPlayedAt > result[i].LastPlayedAt {
+				result[i], result[j] = result[j], result[i]
+			}
+		}
+	}
+
+	if limit > 0 && len(result) > limit {
+		result = result[:limit]
+	}
+	return result, nil
+}
+
 // mockChallengeRepo is an in-memory challenge repository
 type mockChallengeRepo struct {
 	challenges map[string]*quick_duel.DuelChallenge
