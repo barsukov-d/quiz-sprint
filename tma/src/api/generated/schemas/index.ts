@@ -11,6 +11,7 @@ export { deleteDuelQueueLeaveQueryParamsSchema, deleteDuelQueueLeave200Schema, d
 export { getDuelGameGameidPathParamsSchema, getDuelGameGameidQueryParamsSchema, getDuelGameGameid200Schema, getDuelGameGameid400Schema, getDuelGameGameid404Schema, getDuelGameGameid500Schema, getDuelGameGameidQueryResponseSchema } from "./duelController/getDuelGameGameidSchema.ts";
 export { getDuelHistoryQueryParamsSchema, getDuelHistory200Schema, getDuelHistory400Schema, getDuelHistory500Schema, getDuelHistoryQueryResponseSchema } from "./duelController/getDuelHistorySchema.ts";
 export { getDuelLeaderboardQueryParamsSchema, getDuelLeaderboard200Schema, getDuelLeaderboard400Schema, getDuelLeaderboard500Schema, getDuelLeaderboardQueryResponseSchema } from "./duelController/getDuelLeaderboardSchema.ts";
+export { getDuelRivalsQueryParamsSchema, getDuelRivals200Schema, getDuelRivals400Schema, getDuelRivals500Schema, getDuelRivalsQueryResponseSchema } from "./duelController/getDuelRivalsSchema.ts";
 export { getDuelStatusQueryParamsSchema, getDuelStatus200Schema, getDuelStatus400Schema, getDuelStatus500Schema, getDuelStatusQueryResponseSchema } from "./duelController/getDuelStatusSchema.ts";
 export { postDuelChallengeAcceptByCode200Schema, postDuelChallengeAcceptByCode400Schema, postDuelChallengeAcceptByCode404Schema, postDuelChallengeAcceptByCode409Schema, postDuelChallengeAcceptByCode500Schema, postDuelChallengeAcceptByCodeMutationRequestSchema, postDuelChallengeAcceptByCodeMutationResponseSchema } from "./duelController/postDuelChallengeAcceptByCodeSchema.ts";
 export { postDuelChallengeChallengeidRespondPathParamsSchema, postDuelChallengeChallengeidRespond200Schema, postDuelChallengeChallengeidRespond400Schema, postDuelChallengeChallengeidRespond404Schema, postDuelChallengeChallengeidRespond409Schema, postDuelChallengeChallengeidRespond500Schema, postDuelChallengeChallengeidRespondMutationRequestSchema, postDuelChallengeChallengeidRespondMutationResponseSchema } from "./duelController/postDuelChallengeChallengeidRespondSchema.ts";
@@ -84,6 +85,7 @@ export { internalInfrastructureHttpHandlersGetPlayerStreakResponseSchema } from 
 export { internalInfrastructureHttpHandlersGetQuizDetailsDataSchema } from "./internalInfrastructureHttpHandlers/getQuizDetailsDataSchema.ts";
 export { internalInfrastructureHttpHandlersGetQuizDetailsResponseSchema } from "./internalInfrastructureHttpHandlers/getQuizDetailsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetRandomQuizResponseSchema } from "./internalInfrastructureHttpHandlers/getRandomQuizResponseSchema.ts";
+export { internalInfrastructureHttpHandlersGetRivalsResponseSchema } from "./internalInfrastructureHttpHandlers/getRivalsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetSessionResultsResponseSchema } from "./internalInfrastructureHttpHandlers/getSessionResultsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetUserActiveSessionsResponseSchema } from "./internalInfrastructureHttpHandlers/getUserActiveSessionsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetUserResponseSchema } from "./internalInfrastructureHttpHandlers/getUserResponseSchema.ts";
@@ -120,6 +122,7 @@ export { internalInfrastructureHttpHandlersRespondChallengeResponseSchema } from
 export { internalInfrastructureHttpHandlersRetryChallengeDataSchema } from "./internalInfrastructureHttpHandlers/retryChallengeDataSchema.ts";
 export { internalInfrastructureHttpHandlersRetryChallengeRequestSchema } from "./internalInfrastructureHttpHandlers/retryChallengeRequestSchema.ts";
 export { internalInfrastructureHttpHandlersRetryChallengeResponseSchema } from "./internalInfrastructureHttpHandlers/retryChallengeResponseSchema.ts";
+export { internalInfrastructureHttpHandlersRivalItemDTOSchema } from "./internalInfrastructureHttpHandlers/rivalItemDTOSchema.ts";
 export { internalInfrastructureHttpHandlersSendChallengeRequestSchema } from "./internalInfrastructureHttpHandlers/sendChallengeRequestSchema.ts";
 export { internalInfrastructureHttpHandlersSendChallengeResponseSchema } from "./internalInfrastructureHttpHandlers/sendChallengeResponseSchema.ts";
 export { internalInfrastructureHttpHandlersSessionDTOSchema } from "./internalInfrastructureHttpHandlers/sessionDTOSchema.ts";

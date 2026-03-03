@@ -11,6 +11,7 @@ export type { DeleteDuelQueueLeaveMutationKey } from "./duelController/useDelete
 export type { GetDuelGameGameidQueryKey } from "./duelController/useGetDuelGameGameid.ts";
 export type { GetDuelHistoryQueryKey } from "./duelController/useGetDuelHistory.ts";
 export type { GetDuelLeaderboardQueryKey } from "./duelController/useGetDuelLeaderboard.ts";
+export type { GetDuelRivalsQueryKey } from "./duelController/useGetDuelRivals.ts";
 export type { GetDuelStatusQueryKey } from "./duelController/useGetDuelStatus.ts";
 export type { PostDuelChallengeMutationKey } from "./duelController/usePostDuelChallenge.ts";
 export type { PostDuelChallengeAcceptByCodeMutationKey } from "./duelController/usePostDuelChallengeAcceptByCode.ts";
@@ -90,6 +91,10 @@ export { getDuelLeaderboardQueryKey } from "./duelController/useGetDuelLeaderboa
 export { getDuelLeaderboard } from "./duelController/useGetDuelLeaderboard.ts";
 export { getDuelLeaderboardQueryOptions } from "./duelController/useGetDuelLeaderboard.ts";
 export { useGetDuelLeaderboard } from "./duelController/useGetDuelLeaderboard.ts";
+export { getDuelRivalsQueryKey } from "./duelController/useGetDuelRivals.ts";
+export { getDuelRivals } from "./duelController/useGetDuelRivals.ts";
+export { getDuelRivalsQueryOptions } from "./duelController/useGetDuelRivals.ts";
+export { useGetDuelRivals } from "./duelController/useGetDuelRivals.ts";
 export { getDuelStatusQueryKey } from "./duelController/useGetDuelStatus.ts";
 export { getDuelStatus } from "./duelController/useGetDuelStatus.ts";
 export { getDuelStatusQueryOptions } from "./duelController/useGetDuelStatus.ts";

@@ -988,6 +988,18 @@ definitions:
     required:
     - data
     type: object
+  internal_infrastructure_http_handlers.GetRivalsResponse:
+    properties:
+      data:
+        properties:
+          rivals:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.RivalItemDTO'
+            type: array
+        required:
+        - rivals
+        type: object
+    type: object
   internal_infrastructure_http_handlers.GetSessionResultsResponse:
     properties:
       data:
@@ -1524,6 +1536,31 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.RetryChallengeData'
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.RivalItemDTO:
+    properties:
+      gamesCount:
+        type: integer
+      id:
+        type: string
+      isOnline:
+        type: boolean
+      league:
+        type: string
+      leagueIcon:
+        type: string
+      mmr:
+        type: integer
+      username:
+        type: string
+    required:
+    - gamesCount
+    - id
+    - isOnline
+    - league
+    - leagueIcon
+    - mmr
+    - username
     type: object
   internal_infrastructure_http_handlers.SendChallengeRequest:
     properties:
@@ -3007,6 +3044,35 @@ paths:
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Leave matchmaking queue
+      tags:
+      - duel
+  /duel/rivals:
+    get:
+      consumes:
+      - application/json
+      description: Get list of recent unique opponents the player has faced
+      parameters:
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Rivals list
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetRivalsResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get recent rivals
       tags:
       - duel
   /duel/status:

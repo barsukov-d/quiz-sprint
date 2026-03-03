@@ -63,6 +63,7 @@ export { internalInfrastructureHttpHandlersGetPlayerStreakResponseSchema } from 
 export { internalInfrastructureHttpHandlersGetQuizDetailsDataSchema } from "./getQuizDetailsDataSchema.ts";
 export { internalInfrastructureHttpHandlersGetQuizDetailsResponseSchema } from "./getQuizDetailsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetRandomQuizResponseSchema } from "./getRandomQuizResponseSchema.ts";
+export { internalInfrastructureHttpHandlersGetRivalsResponseSchema } from "./getRivalsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetSessionResultsResponseSchema } from "./getSessionResultsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetUserActiveSessionsResponseSchema } from "./getUserActiveSessionsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetUserResponseSchema } from "./getUserResponseSchema.ts";
@@ -99,6 +100,7 @@ export { internalInfrastructureHttpHandlersRespondChallengeResponseSchema } from
 export { internalInfrastructureHttpHandlersRetryChallengeDataSchema } from "./retryChallengeDataSchema.ts";
 export { internalInfrastructureHttpHandlersRetryChallengeRequestSchema } from "./retryChallengeRequestSchema.ts";
 export { internalInfrastructureHttpHandlersRetryChallengeResponseSchema } from "./retryChallengeResponseSchema.ts";
+export { internalInfrastructureHttpHandlersRivalItemDTOSchema } from "./rivalItemDTOSchema.ts";
 export { internalInfrastructureHttpHandlersSendChallengeRequestSchema } from "./sendChallengeRequestSchema.ts";
 export { internalInfrastructureHttpHandlersSendChallengeResponseSchema } from "./sendChallengeResponseSchema.ts";
 export { internalInfrastructureHttpHandlersSessionDTOSchema } from "./sessionDTOSchema.ts";

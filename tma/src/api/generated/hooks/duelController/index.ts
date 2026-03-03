@@ -2,6 +2,7 @@ export type { DeleteDuelQueueLeaveMutationKey } from "./useDeleteDuelQueueLeave.
 export type { GetDuelGameGameidQueryKey } from "./useGetDuelGameGameid.ts";
 export type { GetDuelHistoryQueryKey } from "./useGetDuelHistory.ts";
 export type { GetDuelLeaderboardQueryKey } from "./useGetDuelLeaderboard.ts";
+export type { GetDuelRivalsQueryKey } from "./useGetDuelRivals.ts";
 export type { GetDuelStatusQueryKey } from "./useGetDuelStatus.ts";
 export type { PostDuelChallengeMutationKey } from "./usePostDuelChallenge.ts";
 export type { PostDuelChallengeAcceptByCodeMutationKey } from "./usePostDuelChallengeAcceptByCode.ts";
@@ -25,6 +26,10 @@ export { getDuelLeaderboardQueryKey } from "./useGetDuelLeaderboard.ts";
 export { getDuelLeaderboard } from "./useGetDuelLeaderboard.ts";
 export { getDuelLeaderboardQueryOptions } from "./useGetDuelLeaderboard.ts";
 export { useGetDuelLeaderboard } from "./useGetDuelLeaderboard.ts";
+export { getDuelRivalsQueryKey } from "./useGetDuelRivals.ts";
+export { getDuelRivals } from "./useGetDuelRivals.ts";
+export { getDuelRivalsQueryOptions } from "./useGetDuelRivals.ts";
+export { useGetDuelRivals } from "./useGetDuelRivals.ts";
 export { getDuelStatusQueryKey } from "./useGetDuelStatus.ts";
 export { getDuelStatus } from "./useGetDuelStatus.ts";
 export { getDuelStatusQueryOptions } from "./useGetDuelStatus.ts";

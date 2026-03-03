@@ -11,6 +11,7 @@ export type { DeleteDuelQueueLeaveMutationKey } from "./hooks/duelController/use
 export type { GetDuelGameGameidQueryKey } from "./hooks/duelController/useGetDuelGameGameid.ts";
 export type { GetDuelHistoryQueryKey } from "./hooks/duelController/useGetDuelHistory.ts";
 export type { GetDuelLeaderboardQueryKey } from "./hooks/duelController/useGetDuelLeaderboard.ts";
+export type { GetDuelRivalsQueryKey } from "./hooks/duelController/useGetDuelRivals.ts";
 export type { GetDuelStatusQueryKey } from "./hooks/duelController/useGetDuelStatus.ts";
 export type { PostDuelChallengeMutationKey } from "./hooks/duelController/usePostDuelChallenge.ts";
 export type { PostDuelChallengeAcceptByCodeMutationKey } from "./hooks/duelController/usePostDuelChallengeAcceptByCode.ts";
@@ -57,6 +58,7 @@ export type { DeleteDuelQueueLeaveQueryParams, DeleteDuelQueueLeave200, DeleteDu
 export type { GetDuelGameGameidPathParams, GetDuelGameGameidQueryParams, GetDuelGameGameid200, GetDuelGameGameid400, GetDuelGameGameid404, GetDuelGameGameid500, GetDuelGameGameidQueryResponse, GetDuelGameGameidQuery } from "./types/duelController/GetDuelGameGameid.ts";
 export type { GetDuelHistoryQueryParams, GetDuelHistory200, GetDuelHistory400, GetDuelHistory500, GetDuelHistoryQueryResponse, GetDuelHistoryQuery } from "./types/duelController/GetDuelHistory.ts";
 export type { GetDuelLeaderboardQueryParams, GetDuelLeaderboard200, GetDuelLeaderboard400, GetDuelLeaderboard500, GetDuelLeaderboardQueryResponse, GetDuelLeaderboardQuery } from "./types/duelController/GetDuelLeaderboard.ts";
+export type { GetDuelRivalsQueryParams, GetDuelRivals200, GetDuelRivals400, GetDuelRivals500, GetDuelRivalsQueryResponse, GetDuelRivalsQuery } from "./types/duelController/GetDuelRivals.ts";
 export type { GetDuelStatusQueryParams, GetDuelStatus200, GetDuelStatus400, GetDuelStatus500, GetDuelStatusQueryResponse, GetDuelStatusQuery } from "./types/duelController/GetDuelStatus.ts";
 export type { PostDuelChallenge201, PostDuelChallenge400, PostDuelChallenge409, PostDuelChallenge500, PostDuelChallengeMutationRequest, PostDuelChallengeMutationResponse, PostDuelChallengeMutation } from "./types/duelController/PostDuelChallenge.ts";
 export type { PostDuelChallengeAcceptByCode200, PostDuelChallengeAcceptByCode400, PostDuelChallengeAcceptByCode404, PostDuelChallengeAcceptByCode409, PostDuelChallengeAcceptByCode500, PostDuelChallengeAcceptByCodeMutationRequest, PostDuelChallengeAcceptByCodeMutationResponse, PostDuelChallengeAcceptByCodeMutation } from "./types/duelController/PostDuelChallengeAcceptByCode.ts";
@@ -130,6 +132,7 @@ export type { InternalInfrastructureHttpHandlersGetPlayerStreakResponse } from "
 export type { InternalInfrastructureHttpHandlersGetQuizDetailsData } from "./types/internalInfrastructureHttpHandlers/GetQuizDetailsData.ts";
 export type { InternalInfrastructureHttpHandlersGetQuizDetailsResponse } from "./types/internalInfrastructureHttpHandlers/GetQuizDetailsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetRandomQuizResponse } from "./types/internalInfrastructureHttpHandlers/GetRandomQuizResponse.ts";
+export type { InternalInfrastructureHttpHandlersGetRivalsResponse } from "./types/internalInfrastructureHttpHandlers/GetRivalsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetSessionResultsResponse } from "./types/internalInfrastructureHttpHandlers/GetSessionResultsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetUserActiveSessionsResponse } from "./types/internalInfrastructureHttpHandlers/GetUserActiveSessionsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetUserResponse } from "./types/internalInfrastructureHttpHandlers/GetUserResponse.ts";
@@ -166,6 +169,7 @@ export type { InternalInfrastructureHttpHandlersRespondChallengeResponse } from 
 export type { InternalInfrastructureHttpHandlersRetryChallengeData } from "./types/internalInfrastructureHttpHandlers/RetryChallengeData.ts";
 export type { InternalInfrastructureHttpHandlersRetryChallengeRequest } from "./types/internalInfrastructureHttpHandlers/RetryChallengeRequest.ts";
 export type { InternalInfrastructureHttpHandlersRetryChallengeResponse } from "./types/internalInfrastructureHttpHandlers/RetryChallengeResponse.ts";
+export type { InternalInfrastructureHttpHandlersRivalItemDTO } from "./types/internalInfrastructureHttpHandlers/RivalItemDTO.ts";
 export type { InternalInfrastructureHttpHandlersSendChallengeRequest } from "./types/internalInfrastructureHttpHandlers/SendChallengeRequest.ts";
 export type { InternalInfrastructureHttpHandlersSendChallengeResponse } from "./types/internalInfrastructureHttpHandlers/SendChallengeResponse.ts";
 export type { InternalInfrastructureHttpHandlersSessionDTO } from "./types/internalInfrastructureHttpHandlers/SessionDTO.ts";
@@ -269,6 +273,10 @@ export { getDuelLeaderboardQueryKey } from "./hooks/duelController/useGetDuelLea
 export { getDuelLeaderboard } from "./hooks/duelController/useGetDuelLeaderboard.ts";
 export { getDuelLeaderboardQueryOptions } from "./hooks/duelController/useGetDuelLeaderboard.ts";
 export { useGetDuelLeaderboard } from "./hooks/duelController/useGetDuelLeaderboard.ts";
+export { getDuelRivalsQueryKey } from "./hooks/duelController/useGetDuelRivals.ts";
+export { getDuelRivals } from "./hooks/duelController/useGetDuelRivals.ts";
+export { getDuelRivalsQueryOptions } from "./hooks/duelController/useGetDuelRivals.ts";
+export { useGetDuelRivals } from "./hooks/duelController/useGetDuelRivals.ts";
 export { getDuelStatusQueryKey } from "./hooks/duelController/useGetDuelStatus.ts";
 export { getDuelStatus } from "./hooks/duelController/useGetDuelStatus.ts";
 export { getDuelStatusQueryOptions } from "./hooks/duelController/useGetDuelStatus.ts";
@@ -397,6 +405,7 @@ export { deleteDuelQueueLeaveQueryParamsSchema, deleteDuelQueueLeave200Schema, d
 export { getDuelGameGameidPathParamsSchema, getDuelGameGameidQueryParamsSchema, getDuelGameGameid200Schema, getDuelGameGameid400Schema, getDuelGameGameid404Schema, getDuelGameGameid500Schema, getDuelGameGameidQueryResponseSchema } from "./schemas/duelController/getDuelGameGameidSchema.ts";
 export { getDuelHistoryQueryParamsSchema, getDuelHistory200Schema, getDuelHistory400Schema, getDuelHistory500Schema, getDuelHistoryQueryResponseSchema } from "./schemas/duelController/getDuelHistorySchema.ts";
 export { getDuelLeaderboardQueryParamsSchema, getDuelLeaderboard200Schema, getDuelLeaderboard400Schema, getDuelLeaderboard500Schema, getDuelLeaderboardQueryResponseSchema } from "./schemas/duelController/getDuelLeaderboardSchema.ts";
+export { getDuelRivalsQueryParamsSchema, getDuelRivals200Schema, getDuelRivals400Schema, getDuelRivals500Schema, getDuelRivalsQueryResponseSchema } from "./schemas/duelController/getDuelRivalsSchema.ts";
 export { getDuelStatusQueryParamsSchema, getDuelStatus200Schema, getDuelStatus400Schema, getDuelStatus500Schema, getDuelStatusQueryResponseSchema } from "./schemas/duelController/getDuelStatusSchema.ts";
 export { postDuelChallengeAcceptByCode200Schema, postDuelChallengeAcceptByCode400Schema, postDuelChallengeAcceptByCode404Schema, postDuelChallengeAcceptByCode409Schema, postDuelChallengeAcceptByCode500Schema, postDuelChallengeAcceptByCodeMutationRequestSchema, postDuelChallengeAcceptByCodeMutationResponseSchema } from "./schemas/duelController/postDuelChallengeAcceptByCodeSchema.ts";
 export { postDuelChallengeChallengeidRespondPathParamsSchema, postDuelChallengeChallengeidRespond200Schema, postDuelChallengeChallengeidRespond400Schema, postDuelChallengeChallengeidRespond404Schema, postDuelChallengeChallengeidRespond409Schema, postDuelChallengeChallengeidRespond500Schema, postDuelChallengeChallengeidRespondMutationRequestSchema, postDuelChallengeChallengeidRespondMutationResponseSchema } from "./schemas/duelController/postDuelChallengeChallengeidRespondSchema.ts";
@@ -470,6 +479,7 @@ export { internalInfrastructureHttpHandlersGetPlayerStreakResponseSchema } from 
 export { internalInfrastructureHttpHandlersGetQuizDetailsDataSchema } from "./schemas/internalInfrastructureHttpHandlers/getQuizDetailsDataSchema.ts";
 export { internalInfrastructureHttpHandlersGetQuizDetailsResponseSchema } from "./schemas/internalInfrastructureHttpHandlers/getQuizDetailsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetRandomQuizResponseSchema } from "./schemas/internalInfrastructureHttpHandlers/getRandomQuizResponseSchema.ts";
+export { internalInfrastructureHttpHandlersGetRivalsResponseSchema } from "./schemas/internalInfrastructureHttpHandlers/getRivalsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetSessionResultsResponseSchema } from "./schemas/internalInfrastructureHttpHandlers/getSessionResultsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetUserActiveSessionsResponseSchema } from "./schemas/internalInfrastructureHttpHandlers/getUserActiveSessionsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetUserResponseSchema } from "./schemas/internalInfrastructureHttpHandlers/getUserResponseSchema.ts";
@@ -506,6 +516,7 @@ export { internalInfrastructureHttpHandlersRespondChallengeResponseSchema } from
 export { internalInfrastructureHttpHandlersRetryChallengeDataSchema } from "./schemas/internalInfrastructureHttpHandlers/retryChallengeDataSchema.ts";
 export { internalInfrastructureHttpHandlersRetryChallengeRequestSchema } from "./schemas/internalInfrastructureHttpHandlers/retryChallengeRequestSchema.ts";
 export { internalInfrastructureHttpHandlersRetryChallengeResponseSchema } from "./schemas/internalInfrastructureHttpHandlers/retryChallengeResponseSchema.ts";
+export { internalInfrastructureHttpHandlersRivalItemDTOSchema } from "./schemas/internalInfrastructureHttpHandlers/rivalItemDTOSchema.ts";
 export { internalInfrastructureHttpHandlersSendChallengeRequestSchema } from "./schemas/internalInfrastructureHttpHandlers/sendChallengeRequestSchema.ts";
 export { internalInfrastructureHttpHandlersSendChallengeResponseSchema } from "./schemas/internalInfrastructureHttpHandlers/sendChallengeResponseSchema.ts";
 export { internalInfrastructureHttpHandlersSessionDTOSchema } from "./schemas/internalInfrastructureHttpHandlers/sessionDTOSchema.ts";

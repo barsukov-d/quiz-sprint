@@ -1469,6 +1469,50 @@
                 }
             }
         },
+        "/duel/rivals": {
+            "get": {
+                "description": "Get list of recent unique opponents the player has faced",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Get recent rivals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rivals list",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetRivalsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/duel/status": {
             "get": {
                 "description": "Get player's duel status, MMR, pending challenges",
@@ -4305,6 +4349,25 @@
                 }
             }
         },
+        "internal_infrastructure_http_handlers.GetRivalsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "rivals"
+                    ],
+                    "properties": {
+                        "rivals": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.RivalItemDTO"
+                            }
+                        }
+                    }
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.GetSessionResultsResponse": {
             "type": "object",
             "required": [
@@ -5086,6 +5149,41 @@
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.RetryChallengeData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.RivalItemDTO": {
+            "type": "object",
+            "required": [
+                "gamesCount",
+                "id",
+                "isOnline",
+                "league",
+                "leagueIcon",
+                "mmr",
+                "username"
+            ],
+            "properties": {
+                "gamesCount": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isOnline": {
+                    "type": "boolean"
+                },
+                "league": {
+                    "type": "string"
+                },
+                "leagueIcon": {
+                    "type": "string"
+                },
+                "mmr": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
                 }
             }
         },
