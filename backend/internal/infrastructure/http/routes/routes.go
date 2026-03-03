@@ -107,6 +107,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		seasonRepo       domainDuel.SeasonRepository
 		matchmakingQueue domainDuel.MatchmakingQueue
 		duelRoundCache   appDuel.DuelRoundCache
+		duelOnlineTracker appDuel.OnlineTracker
 	)
 	if db != nil {
 		duelGameRepo = postgres.NewDuelGameRepository(db)
@@ -124,6 +125,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			log.Println("✅ Connected to Redis for matchmaking queue and round-answer cache")
 			matchmakingQueue = redisStore.NewMatchmakingQueue(redisClient)
 			duelRoundCache = redisStore.NewDuelRoundCache(redisClient)
+			duelOnlineTracker = redisStore.NewOnlineTracker(redisClient)
 		}
 	}
 
@@ -369,6 +371,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		startGameUC            *appDuel.StartGameUseCase
 		submitDuelAnswerUC     *appDuel.SubmitDuelAnswerUseCase
 		getGameResultUC        *appDuel.GetGameResultUseCase
+		getRivalsUC            *appDuel.GetRivalsUseCase
 	)
 
 	if duelGameRepo != nil && playerRatingRepo != nil && challengeRepo != nil && referralRepo != nil && seasonRepo != nil && userRepo != nil {
@@ -468,6 +471,12 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			seasonRepo,
 			userRepo,
 		)
+		getRivalsUC = appDuel.NewGetRivalsUseCase(
+			duelGameRepo,
+			playerRatingRepo,
+			userRepo,
+			duelOnlineTracker, // nil if Redis unavailable
+		)
 
 	}
 
@@ -555,6 +564,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			getDuelLeaderboardUC,
 			requestRematchUC,
 			getGameResultUC,
+			getRivalsUC,
 		)
 	}
 
@@ -674,6 +684,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		duel.Get("/leaderboard", duelHandler.GetDuelLeaderboard)
 		duel.Get("/game/:gameId", duelHandler.GetGameResult)
 		duel.Post("/game/:gameId/rematch", duelHandler.RequestRematch)
+		duel.Get("/rivals", duelHandler.GetRivals)
 	}
 
 	// Admin routes (debug/testing, protected by API key)

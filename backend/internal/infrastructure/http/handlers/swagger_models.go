@@ -1482,3 +1482,25 @@ type GetGameResultResponse struct {
 }
 
 // @name GetGameResultResponse
+
+// RivalItemDTO represents a rival in Swagger docs
+type RivalItemDTO struct {
+	ID         string `json:"id" validate:"required"`
+	Username   string `json:"username" validate:"required"`
+	MMR        int    `json:"mmr" validate:"required"`
+	League     string `json:"league" validate:"required"`
+	LeagueIcon string `json:"leagueIcon" validate:"required"`
+	IsOnline   bool   `json:"isOnline" validate:"required"`
+	GamesCount int    `json:"gamesCount" validate:"required"`
+}
+
+// @name RivalItemDTO
+
+// GetRivalsResponse is the Swagger response model for GET /duel/rivals
+type GetRivalsResponse struct {
+	Data struct {
+		Rivals []RivalItemDTO `json:"rivals" validate:"required"`
+	} `json:"data"`
+}
+
+// @name GetRivalsResponse

@@ -24,6 +24,7 @@ type DuelHandler struct {
 	getLeaderboardUC     *appDuel.GetLeaderboardUseCase
 	requestRematchUC     *appDuel.RequestRematchUseCase
 	getGameResultUC      *appDuel.GetGameResultUseCase
+	getRivalsUC          *appDuel.GetRivalsUseCase
 }
 
 func NewDuelHandler(
@@ -39,6 +40,7 @@ func NewDuelHandler(
 	getLeaderboardUC *appDuel.GetLeaderboardUseCase,
 	requestRematchUC *appDuel.RequestRematchUseCase,
 	getGameResultUC *appDuel.GetGameResultUseCase,
+	getRivalsUC *appDuel.GetRivalsUseCase,
 ) *DuelHandler {
 	return &DuelHandler{
 		getStatusUC:          getStatusUC,
@@ -53,6 +55,7 @@ func NewDuelHandler(
 		getLeaderboardUC:     getLeaderboardUC,
 		requestRematchUC:     requestRematchUC,
 		getGameResultUC:      getGameResultUC,
+		getRivalsUC:          getRivalsUC,
 	}
 }
 
@@ -520,4 +523,31 @@ func mapDuelError(err error) error {
 	default:
 		return fiber.NewError(fiber.StatusInternalServerError, "Internal server error")
 	}
+}
+
+// GetRivals handles GET /api/v1/duel/rivals
+// @Summary Get recent rivals
+// @Description Get list of recent unique opponents the player has faced
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Param playerId query string true "Player ID"
+// @Success 200 {object} GetRivalsResponse "Rivals list"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /duel/rivals [get]
+func (h *DuelHandler) GetRivals(c fiber.Ctx) error {
+	playerID := c.Query("playerId")
+	if playerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+
+	output, err := h.getRivalsUC.Execute(appDuel.GetRivalsInput{
+		PlayerID: playerID,
+	})
+	if err != nil {
+		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
 }
