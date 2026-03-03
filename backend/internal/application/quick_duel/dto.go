@@ -136,6 +136,17 @@ type FriendDTO struct {
 	InGame   bool   `json:"inGame"`
 }
 
+// RivalDTO represents a recent opponent
+type RivalDTO struct {
+	ID         string `json:"id"`
+	Username   string `json:"username"`
+	MMR        int    `json:"mmr"`
+	League     string `json:"league"`
+	LeagueIcon string `json:"leagueIcon"`
+	IsOnline   bool   `json:"isOnline"`
+	GamesCount int    `json:"gamesCount"`
+}
+
 // ========================================
 // GetDuelStatus Use Case
 // ========================================
@@ -434,4 +445,16 @@ type SubmitDuelAnswerOutput struct {
 	Player2MMRChange int    `json:"player2MmrChange,omitempty"`
 	Player1NewMMR    int    `json:"player1NewMmr,omitempty"`
 	Player2NewMMR    int    `json:"player2NewMmr,omitempty"`
+}
+
+// ========================================
+// GetRivals Use Case
+// ========================================
+
+type GetRivalsInput struct {
+	PlayerID string `json:"playerId"`
+}
+
+type GetRivalsOutput struct {
+	Rivals []RivalDTO `json:"rivals"`
 }
