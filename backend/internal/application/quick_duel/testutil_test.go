@@ -778,6 +778,12 @@ func (f *duelFixture) newGetOnlineFriendsUC() *GetOnlineFriendsUseCase {
 	return NewGetOnlineFriendsUseCase(f.onlineTracker, f.userRepo)
 }
 
+func (f *duelFixture) newGetRivalsUC() *GetRivalsUseCase {
+	return NewGetRivalsUseCase(
+		f.duelGameRepo, f.playerRatingRepo, f.userRepo, f.onlineTracker,
+	)
+}
+
 // correctAnswerID returns the correct answer ID for the question at the given index.
 func (f *duelFixture) correctAnswerID(questionIdx int) string {
 	for _, a := range f.questionRepo.questions[questionIdx].Answers {

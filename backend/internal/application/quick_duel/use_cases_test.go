@@ -1354,3 +1354,61 @@ func TestFullFlow_LinkChallengeAccept(t *testing.T) {
 		t.Error("ChallengeID should not be empty after accept")
 	}
 }
+
+// ========================================
+// GetRivals Tests
+// ========================================
+
+func TestGetRivals_EmptyWhenNoGames(t *testing.T) {
+	f := setupFixture(t)
+	uc := f.newGetRivalsUC()
+
+	output, err := uc.Execute(GetRivalsInput{PlayerID: testPlayer1ID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(output.Rivals) != 0 {
+		t.Errorf("Rivals = %d, want 0", len(output.Rivals))
+	}
+}
+
+func TestGetRivals_ReturnsOpponentsFromCompletedGames(t *testing.T) {
+	f := setupFixture(t)
+
+	// Play a game between player1 and player2
+	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
+
+	// Force-complete the game by submitting all answers
+	submitUC := f.newSubmitDuelAnswerUC()
+	for i := 0; i < 7; i++ {
+		submitUC.Execute(SubmitDuelAnswerInput{
+			PlayerID:   testPlayer1ID,
+			GameID:     gameOutput.GameID,
+			QuestionID: f.questionRepo.questions[i].ID,
+			AnswerID:   f.correctAnswerID(i),
+			TimeTaken:  3000,
+		})
+		submitUC.Execute(SubmitDuelAnswerInput{
+			PlayerID:   testPlayer2ID,
+			GameID:     gameOutput.GameID,
+			QuestionID: f.questionRepo.questions[i].ID,
+			AnswerID:   f.correctAnswerID(i),
+			TimeTaken:  4000,
+		})
+	}
+
+	uc := f.newGetRivalsUC()
+	output, err := uc.Execute(GetRivalsInput{PlayerID: testPlayer1ID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(output.Rivals) != 1 {
+		t.Fatalf("Rivals = %d, want 1", len(output.Rivals))
+	}
+	if output.Rivals[0].ID != testPlayer2ID {
+		t.Errorf("Rivals[0].ID = %s, want %s", output.Rivals[0].ID, testPlayer2ID)
+	}
+	if output.Rivals[0].GamesCount != 1 {
+		t.Errorf("Rivals[0].GamesCount = %d, want 1", output.Rivals[0].GamesCount)
+	}
+}

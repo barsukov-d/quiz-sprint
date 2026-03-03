@@ -1608,3 +1608,75 @@ func (uc *StartChallengeUseCase) Execute(input StartChallengeInput) (StartChalle
 
 	return StartChallengeOutput{GameID: game.ID().String()}, nil
 }
+
+// ========================================
+// GetRivals Use Case
+// ========================================
+
+type GetRivalsUseCase struct {
+	duelGameRepo     quick_duel.DuelGameRepository
+	playerRatingRepo quick_duel.PlayerRatingRepository
+	userRepo         domainUser.UserRepository
+	onlineTracker    OnlineTracker
+}
+
+func NewGetRivalsUseCase(
+	duelGameRepo quick_duel.DuelGameRepository,
+	playerRatingRepo quick_duel.PlayerRatingRepository,
+	userRepo domainUser.UserRepository,
+	onlineTracker OnlineTracker,
+) *GetRivalsUseCase {
+	return &GetRivalsUseCase{
+		duelGameRepo:     duelGameRepo,
+		playerRatingRepo: playerRatingRepo,
+		userRepo:         userRepo,
+		onlineTracker:    onlineTracker,
+	}
+}
+
+func (uc *GetRivalsUseCase) Execute(input GetRivalsInput) (GetRivalsOutput, error) {
+	playerID, err := shared.NewUserID(input.PlayerID)
+	if err != nil {
+		return GetRivalsOutput{}, err
+	}
+
+	const limit = 20
+	opponents, err := uc.duelGameRepo.FindRecentOpponents(playerID, limit)
+	if err != nil {
+		return GetRivalsOutput{Rivals: []RivalDTO{}}, nil
+	}
+
+	rivals := make([]RivalDTO, 0, len(opponents))
+	for _, opp := range opponents {
+		user, err := uc.userRepo.FindByID(opp.OpponentID)
+		if err != nil {
+			continue
+		}
+
+		mmr := 1000
+		leagueStr := "bronze"
+		leagueIcon := "🥉"
+		if rating, err := uc.playerRatingRepo.FindByPlayerID(opp.OpponentID); err == nil && rating != nil {
+			mmr = rating.MMR()
+			leagueStr = rating.League().String()
+			leagueIcon = rating.League().Icon()
+		}
+
+		isOnline := false
+		if uc.onlineTracker != nil {
+			isOnline, _ = uc.onlineTracker.IsOnline(opp.OpponentID.String())
+		}
+
+		rivals = append(rivals, RivalDTO{
+			ID:         opp.OpponentID.String(),
+			Username:   user.Username().String(),
+			MMR:        mmr,
+			League:     leagueStr,
+			LeagueIcon: leagueIcon,
+			IsOnline:   isOnline,
+			GamesCount: opp.GamesCount,
+		})
+	}
+
+	return GetRivalsOutput{Rivals: rivals}, nil
+}
