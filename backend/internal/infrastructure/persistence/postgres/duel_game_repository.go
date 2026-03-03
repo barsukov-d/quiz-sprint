@@ -347,6 +347,47 @@ func (r *DuelGameRepository) reconstructGame(
 	), nil
 }
 
+func (r *DuelGameRepository) FindRecentOpponents(playerID quick_duel.UserID, limit int) ([]quick_duel.RecentOpponentEntry, error) {
+	query := `
+		SELECT
+			CASE WHEN player1_id = $1 THEN player2_id ELSE player1_id END AS opponent_id,
+			COUNT(*) AS games_count,
+			EXTRACT(EPOCH FROM MAX(COALESCE(finished_at, started_at)))::bigint AS last_played_at
+		FROM duel_matches
+		WHERE (player1_id = $1 OR player2_id = $1)
+		  AND status = 'finished'
+		GROUP BY opponent_id
+		ORDER BY last_played_at DESC NULLS LAST
+		LIMIT $2
+	`
+
+	rows, err := r.db.Query(query, playerID.String(), limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var result []quick_duel.RecentOpponentEntry
+	for rows.Next() {
+		var opponentIDStr string
+		var gamesCount int
+		var lastPlayedAt int64
+		if err := rows.Scan(&opponentIDStr, &gamesCount, &lastPlayedAt); err != nil {
+			return nil, err
+		}
+		opponentID, err := shared.NewUserID(opponentIDStr)
+		if err != nil {
+			continue
+		}
+		result = append(result, quick_duel.RecentOpponentEntry{
+			OpponentID:   opponentID,
+			GamesCount:   gamesCount,
+			LastPlayedAt: lastPlayedAt,
+		})
+	}
+	return result, rows.Err()
+}
+
 // Helper function to convert QuestionIDs to strings
 func questionIDsToStrings(ids []quick_duel.QuestionID) []string {
 	strs := make([]string, 0, len(ids))
