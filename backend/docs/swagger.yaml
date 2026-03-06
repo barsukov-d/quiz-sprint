@@ -1541,6 +1541,8 @@ definitions:
     properties:
       gamesCount:
         type: integer
+      hasPendingChallenge:
+        type: boolean
       id:
         type: string
       isOnline:
@@ -1555,6 +1557,7 @@ definitions:
         type: string
     required:
     - gamesCount
+    - hasPendingChallenge
     - id
     - isOnline
     - league

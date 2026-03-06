@@ -5156,6 +5156,7 @@
             "type": "object",
             "required": [
                 "gamesCount",
+                "hasPendingChallenge",
                 "id",
                 "isOnline",
                 "league",
@@ -5166,6 +5167,9 @@
             "properties": {
                 "gamesCount": {
                     "type": "integer"
+                },
+                "hasPendingChallenge": {
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "string"

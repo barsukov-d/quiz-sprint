@@ -5159,6 +5159,7 @@ const docTemplate = `{
             "type": "object",
             "required": [
                 "gamesCount",
+                "hasPendingChallenge",
                 "id",
                 "isOnline",
                 "league",
@@ -5169,6 +5170,9 @@ const docTemplate = `{
             "properties": {
                 "gamesCount": {
                     "type": "integer"
+                },
+                "hasPendingChallenge": {
+                    "type": "boolean"
                 },
                 "id": {
                     "type": "string"
