@@ -243,6 +243,7 @@ export default {
 		winRate: 'Процент побед',
 		pendingChallenges: 'Ожидающие вызовы',
 		challenge: 'Вызов',
+		challengeSent: 'Вызов отправлен',
 		accept: 'Принять',
 		decline: 'Отклонить',
 		tabPlay: 'Играть',

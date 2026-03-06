@@ -243,6 +243,7 @@ export default {
 		winRate: 'Win Rate',
 		pendingChallenges: 'Pending Challenges',
 		challenge: 'Challenge',
+		challengeSent: 'Challenge Sent',
 		accept: 'Accept',
 		decline: 'Decline',
 		tabPlay: 'Play',
