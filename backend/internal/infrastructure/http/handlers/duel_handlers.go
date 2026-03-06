@@ -512,6 +512,8 @@ func mapDuelError(err error) error {
 		return fiber.NewError(fiber.StatusConflict, "Already in an active game")
 	case domainDuel.ErrFriendBusy:
 		return fiber.NewError(fiber.StatusConflict, "Friend is already in a game")
+	case domainDuel.ErrChallengeAlreadySent:
+		return fiber.NewError(fiber.StatusConflict, "Challenge already sent to this player")
 	case domainDuel.ErrInsufficientTickets:
 		return fiber.NewError(fiber.StatusBadRequest, "Insufficient tickets")
 	case domainDuel.ErrCannotChallengeSelf:

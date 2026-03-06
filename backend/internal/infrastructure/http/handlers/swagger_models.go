@@ -1490,8 +1490,9 @@ type RivalItemDTO struct {
 	MMR        int    `json:"mmr" validate:"required"`
 	League     string `json:"league" validate:"required"`
 	LeagueIcon string `json:"leagueIcon" validate:"required"`
-	IsOnline   bool   `json:"isOnline" validate:"required"`
-	GamesCount int    `json:"gamesCount" validate:"required"`
+	IsOnline           bool   `json:"isOnline" validate:"required"`
+	GamesCount         int    `json:"gamesCount" validate:"required"`
+	HasPendingChallenge bool  `json:"hasPendingChallenge" validate:"required"`
 }
 
 // @name RivalItemDTO
