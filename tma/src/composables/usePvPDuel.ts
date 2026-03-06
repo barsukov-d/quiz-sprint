@@ -204,7 +204,7 @@ export function usePvPDuel(playerId: string) {
 			} else {
 				stopOutgoingPoll()
 			}
-			if (prevChallenges !== undefined) {
+			if (prevChallenges !== undefined && challenges.length < prevChallenges.length) {
 				refetchRivals()
 			}
 		},
