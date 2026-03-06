@@ -290,6 +290,16 @@ func (uc *SendChallengeUseCase) Execute(input SendChallengeInput) (SendChallenge
 		return SendChallengeOutput{}, quick_duel.ErrFriendBusy
 	}
 
+	// Check for existing pending challenge to same friend
+	existingChallenges, err := uc.challengeRepo.FindPendingByChallenger(challengerID)
+	if err == nil {
+		for _, c := range existingChallenges {
+			if c.ChallengedID() != nil && c.ChallengedID().Equals(friendID) {
+				return SendChallengeOutput{}, quick_duel.ErrChallengeAlreadySent
+			}
+		}
+	}
+
 	// Create challenge
 	challenge, err := quick_duel.NewDirectChallenge(challengerID, friendID, now)
 	if err != nil {
@@ -457,6 +467,18 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 	challenge, err := uc.challengeRepo.FindByLinkCode(input.LinkCode)
 	if err != nil {
 		return AcceptByLinkCodeOutput{}, err
+	}
+
+	// Idempotency: if already accepted_waiting_inviter by this player, return success
+	if challenge.Status() == quick_duel.ChallengeStatusAcceptedWaitingInviter {
+		if challenged := challenge.ChallengedID(); challenged != nil && challenged.Equals(accepterID) {
+			return AcceptByLinkCodeOutput{
+				Success:     true,
+				ChallengeID: challenge.ID().String(),
+				Status:      string(quick_duel.ChallengeStatusAcceptedWaitingInviter),
+			}, nil
+		}
+		return AcceptByLinkCodeOutput{}, quick_duel.ErrChallengeNotPending
 	}
 
 	// Get accepter's display name

@@ -352,7 +352,7 @@ func (r *DuelGameRepository) FindRecentOpponents(playerID quick_duel.UserID, lim
 		SELECT
 			CASE WHEN player1_id = $1 THEN player2_id ELSE player1_id END AS opponent_id,
 			COUNT(*) AS games_count,
-			EXTRACT(EPOCH FROM MAX(COALESCE(finished_at, started_at)))::bigint AS last_played_at
+			MAX(COALESCE(finished_at, started_at)) AS last_played_at
 		FROM duel_matches
 		WHERE (player1_id = $1 OR player2_id = $1)
 		  AND status = 'finished'

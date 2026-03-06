@@ -293,6 +293,29 @@ func TestSendChallenge_FriendInGame(t *testing.T) {
 	}
 }
 
+func TestSendChallenge_DuplicateChallenge(t *testing.T) {
+	f := setupFixture(t)
+	uc := f.newSendChallengeUC()
+
+	// First challenge — must succeed
+	_, err := uc.Execute(SendChallengeInput{
+		PlayerID: testPlayer1ID,
+		FriendID: testPlayer2ID,
+	})
+	if err != nil {
+		t.Fatalf("first challenge failed: %v", err)
+	}
+
+	// Second challenge to same friend — must fail
+	_, err = uc.Execute(SendChallengeInput{
+		PlayerID: testPlayer1ID,
+		FriendID: testPlayer2ID,
+	})
+	if err != quick_duel.ErrChallengeAlreadySent {
+		t.Errorf("expected ErrChallengeAlreadySent, got %v", err)
+	}
+}
+
 func TestSendChallenge_InvalidPlayer(t *testing.T) {
 	f := setupFixture(t)
 	uc := f.newSendChallengeUC()
