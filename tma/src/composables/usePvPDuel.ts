@@ -320,6 +320,7 @@ export function usePvPDuel(playerId: string) {
 
 			console.log('[usePvPDuel] Challenge sent:', response.data)
 			await refetchStatus()
+			await refetchRivals()
 
 			return response.data
 		} catch (error) {
