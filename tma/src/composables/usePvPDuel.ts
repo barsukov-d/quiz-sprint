@@ -195,13 +195,17 @@ export function usePvPDuel(playerId: string) {
 	const canPlay = computed(() => tickets.value > 0 && !hasActiveDuel.value && !isSearching.value)
 
 	// Start/stop polling when outgoing challenges change
+	// Also invalidate rivals cache when challenge state changes (decline/expire/accept)
 	watch(
 		outgoingChallenges,
-		(challenges) => {
+		(challenges, prevChallenges) => {
 			if (challenges.length > 0) {
 				startOutgoingPoll()
 			} else {
 				stopOutgoingPoll()
+			}
+			if (prevChallenges !== undefined) {
+				refetchRivals()
 			}
 		},
 		{ immediate: true },
