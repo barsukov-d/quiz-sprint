@@ -143,8 +143,9 @@ type RivalDTO struct {
 	MMR        int    `json:"mmr"`
 	League     string `json:"league"`
 	LeagueIcon string `json:"leagueIcon"`
-	IsOnline   bool   `json:"isOnline"`
-	GamesCount int    `json:"gamesCount"`
+	IsOnline            bool   `json:"isOnline"`
+	GamesCount          int    `json:"gamesCount"`
+	HasPendingChallenge bool   `json:"hasPendingChallenge"`
 }
 
 // ========================================
