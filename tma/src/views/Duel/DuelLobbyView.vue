@@ -482,8 +482,13 @@ onMounted(async () => {
 								</span>
 							</div>
 						</div>
-						<UButton size="xs" @click="() => handleChallengeFriend(rival.id!)">
-							{{ t('duel.challenge') }}
+						<UButton
+							size="xs"
+							:disabled="rival.hasPendingChallenge"
+							:color="rival.hasPendingChallenge ? 'gray' : 'primary'"
+							@click="() => { if (!rival.hasPendingChallenge) handleChallengeFriend(rival.id!) }"
+						>
+							{{ rival.hasPendingChallenge ? t('duel.challengeSent') : t('duel.challenge') }}
 						</UButton>
 					</div>
 				</div>
