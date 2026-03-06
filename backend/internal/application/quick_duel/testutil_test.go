@@ -780,7 +780,7 @@ func (f *duelFixture) newGetOnlineFriendsUC() *GetOnlineFriendsUseCase {
 
 func (f *duelFixture) newGetRivalsUC() *GetRivalsUseCase {
 	return NewGetRivalsUseCase(
-		f.duelGameRepo, f.playerRatingRepo, f.userRepo, f.onlineTracker,
+		f.duelGameRepo, f.playerRatingRepo, f.userRepo, f.onlineTracker, f.challengeRepo,
 	)
 }
 

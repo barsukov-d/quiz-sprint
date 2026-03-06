@@ -1435,3 +1435,94 @@ func TestGetRivals_ReturnsOpponentsFromCompletedGames(t *testing.T) {
 		t.Errorf("Rivals[0].GamesCount = %d, want 1", output.Rivals[0].GamesCount)
 	}
 }
+
+// ========================================
+// GetRivals Tests
+// ========================================
+
+func TestGetRivals_HasPendingChallenge(t *testing.T) {
+	f := setupFixture(t)
+
+	// Complete a game between player1 and player2 so player2 appears as rival
+	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
+	submitUC := f.newSubmitDuelAnswerUC()
+	for i := 0; i < 7; i++ {
+		submitUC.Execute(SubmitDuelAnswerInput{
+			PlayerID:   testPlayer1ID,
+			GameID:     gameOutput.GameID,
+			QuestionID: f.questionRepo.questions[i].ID,
+			AnswerID:   f.correctAnswerID(i),
+			TimeTaken:  3000,
+		})
+		submitUC.Execute(SubmitDuelAnswerInput{
+			PlayerID:   testPlayer2ID,
+			GameID:     gameOutput.GameID,
+			QuestionID: f.questionRepo.questions[i].ID,
+			AnswerID:   f.correctAnswerID(i),
+			TimeTaken:  4000,
+		})
+	}
+
+	// Player1 sends challenge to player2
+	sendUC := f.newSendChallengeUC()
+	_, err := sendUC.Execute(SendChallengeInput{
+		PlayerID: testPlayer1ID,
+		FriendID: testPlayer2ID,
+	})
+	if err != nil {
+		t.Fatalf("sendChallenge failed: %v", err)
+	}
+
+	uc := f.newGetRivalsUC()
+	output, err := uc.Execute(GetRivalsInput{PlayerID: testPlayer1ID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(output.Rivals) == 0 {
+		t.Fatal("expected at least one rival")
+	}
+
+	rival := output.Rivals[0]
+	if !rival.HasPendingChallenge {
+		t.Error("expected HasPendingChallenge=true for rival with pending challenge")
+	}
+}
+
+func TestGetRivals_NoPendingChallenge(t *testing.T) {
+	f := setupFixture(t)
+
+	// Complete a game between player1 and player2 so player2 appears as rival
+	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
+	submitUC := f.newSubmitDuelAnswerUC()
+	for i := 0; i < 7; i++ {
+		submitUC.Execute(SubmitDuelAnswerInput{
+			PlayerID:   testPlayer1ID,
+			GameID:     gameOutput.GameID,
+			QuestionID: f.questionRepo.questions[i].ID,
+			AnswerID:   f.correctAnswerID(i),
+			TimeTaken:  3000,
+		})
+		submitUC.Execute(SubmitDuelAnswerInput{
+			PlayerID:   testPlayer2ID,
+			GameID:     gameOutput.GameID,
+			QuestionID: f.questionRepo.questions[i].ID,
+			AnswerID:   f.correctAnswerID(i),
+			TimeTaken:  4000,
+		})
+	}
+
+	uc := f.newGetRivalsUC()
+	output, err := uc.Execute(GetRivalsInput{PlayerID: testPlayer1ID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(output.Rivals) == 0 {
+		t.Fatal("expected at least one rival")
+	}
+
+	if output.Rivals[0].HasPendingChallenge {
+		t.Error("expected HasPendingChallenge=false when no challenge sent")
+	}
+}

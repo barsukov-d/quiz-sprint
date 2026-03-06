@@ -476,6 +476,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			playerRatingRepo,
 			userRepo,
 			duelOnlineTracker, // nil if Redis unavailable
+			challengeRepo,
 		)
 
 	}

@@ -1640,6 +1640,7 @@ type GetRivalsUseCase struct {
 	playerRatingRepo quick_duel.PlayerRatingRepository
 	userRepo         domainUser.UserRepository
 	onlineTracker    OnlineTracker
+	challengeRepo    quick_duel.ChallengeRepository
 }
 
 func NewGetRivalsUseCase(
@@ -1647,12 +1648,14 @@ func NewGetRivalsUseCase(
 	playerRatingRepo quick_duel.PlayerRatingRepository,
 	userRepo domainUser.UserRepository,
 	onlineTracker OnlineTracker,
+	challengeRepo quick_duel.ChallengeRepository,
 ) *GetRivalsUseCase {
 	return &GetRivalsUseCase{
 		duelGameRepo:     duelGameRepo,
 		playerRatingRepo: playerRatingRepo,
 		userRepo:         userRepo,
 		onlineTracker:    onlineTracker,
+		challengeRepo:    challengeRepo,
 	}
 }
 
@@ -1666,6 +1669,16 @@ func (uc *GetRivalsUseCase) Execute(input GetRivalsInput) (GetRivalsOutput, erro
 	opponents, err := uc.duelGameRepo.FindRecentOpponents(playerID, limit)
 	if err != nil {
 		return GetRivalsOutput{Rivals: []RivalDTO{}}, nil
+	}
+
+	// Build set of rival IDs that already have a pending challenge from this player
+	pendingChallengedIDs := map[string]bool{}
+	if pending, err := uc.challengeRepo.FindPendingByChallenger(playerID); err == nil {
+		for _, c := range pending {
+			if c.ChallengedID() != nil {
+				pendingChallengedIDs[c.ChallengedID().String()] = true
+			}
+		}
 	}
 
 	rivals := make([]RivalDTO, 0, len(opponents))
@@ -1690,13 +1703,14 @@ func (uc *GetRivalsUseCase) Execute(input GetRivalsInput) (GetRivalsOutput, erro
 		}
 
 		rivals = append(rivals, RivalDTO{
-			ID:         opp.OpponentID.String(),
-			Username:   user.Username().String(),
-			MMR:        mmr,
-			League:     leagueStr,
-			LeagueIcon: leagueIcon,
-			IsOnline:   isOnline,
-			GamesCount: opp.GamesCount,
+			ID:                  opp.OpponentID.String(),
+			Username:            user.Username().String(),
+			MMR:                 mmr,
+			League:              leagueStr,
+			LeagueIcon:          leagueIcon,
+			IsOnline:            isOnline,
+			GamesCount:          opp.GamesCount,
+			HasPendingChallenge: pendingChallengedIDs[opp.OpponentID.String()],
 		})
 	}
 
