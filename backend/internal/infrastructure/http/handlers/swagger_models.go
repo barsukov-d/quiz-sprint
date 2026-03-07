@@ -1269,11 +1269,10 @@ type AcceptByLinkCodeRequest struct {
 // AcceptByLinkCodeResponse wraps the accept by link response
 type AcceptByLinkCodeResponse struct {
 	Data struct {
-		Success        bool    `json:"success"`
-		GameID         *string `json:"gameId,omitempty"`
-		TicketConsumed bool    `json:"ticketConsumed"`
-		StartsIn       *int    `json:"startsIn,omitempty"`
-		ChallengerID   string  `json:"challengerId"`
+		Success     bool   `json:"success"`
+		ChallengeID string `json:"challengeId"`
+		Status      string `json:"status"`
+		InviterName string `json:"inviterName"` // F2: added
 	} `json:"data"`
 }
 

@@ -606,6 +606,27 @@ func TestAcceptByLinkCode_FailsIfInviteeInGame(t *testing.T) {
 	}
 }
 
+func TestAcceptByLinkCode_ReturnsInviterName(t *testing.T) {
+	f := setupFixture(t)
+	now := time.Now().UTC().Unix()
+
+	// player1 (username "Player1") creates link challenge
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), now)
+	f.challengeRepo.Save(challenge)
+
+	uc := f.newAcceptByLinkCodeUC()
+	output, err := uc.Execute(AcceptByLinkCodeInput{
+		PlayerID: testPlayer2ID,
+		LinkCode: challenge.ChallengeLink(),
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if output.InviterName != "Player1" {
+		t.Errorf("InviterName = %q, want %q", output.InviterName, "Player1")
+	}
+}
+
 // ========================================
 // StartGame Tests
 // ========================================

@@ -567,10 +567,20 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 	// Idempotency: if already accepted_waiting_inviter by this player, return success
 	if challenge.Status() == quick_duel.ChallengeStatusAcceptedWaitingInviter {
 		if challenged := challenge.ChallengedID(); challenged != nil && challenged.Equals(accepterID) {
+			// F2: Resolve inviter name for idempotent response
+			idempotentInviterName := challenge.ChallengerID().String()
+			if u, err := uc.userRepo.FindByID(challenge.ChallengerID()); err == nil && u != nil {
+				if n := u.TelegramUsername().String(); n != "" {
+					idempotentInviterName = n
+				} else if n := u.Username().String(); n != "" {
+					idempotentInviterName = n
+				}
+			}
 			return AcceptByLinkCodeOutput{
 				Success:     true,
 				ChallengeID: challenge.ID().String(),
 				Status:      string(quick_duel.ChallengeStatusAcceptedWaitingInviter),
+				InviterName: idempotentInviterName,
 			}, nil
 		}
 		return AcceptByLinkCodeOutput{}, quick_duel.ErrChallengeNotPending
@@ -611,10 +621,21 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 		_ = uc.notifier.NotifyChallengeAccepted(context.Background(), tgID, inviteeName, lobbyURL)
 	}
 
+	// F2: Resolve inviter's display name
+	inviterName := challengerID.String()
+	if u, err := uc.userRepo.FindByID(challengerID); err == nil && u != nil {
+		if n := u.TelegramUsername().String(); n != "" {
+			inviterName = n
+		} else if n := u.Username().String(); n != "" {
+			inviterName = n
+		}
+	}
+
 	return AcceptByLinkCodeOutput{
 		Success:     true,
 		ChallengeID: challenge.ID().String(),
 		Status:      string(quick_duel.ChallengeStatusAcceptedWaitingInviter),
+		InviterName: inviterName,
 	}, nil
 }
 

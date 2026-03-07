@@ -245,6 +245,7 @@ type AcceptByLinkCodeOutput struct {
 	Success     bool   `json:"success"`
 	ChallengeID string `json:"challengeId"`
 	Status      string `json:"status"` // "accepted_waiting_inviter"
+	InviterName string `json:"inviterName"` // F2: added
 }
 
 // ========================================
