@@ -118,6 +118,24 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 		outgoingDTOs = append(outgoingDTOs, dto)
 	}
 
+	// F1: accepted challenges — invitee is waiting for inviter to start
+	acceptedChallenges, err := uc.challengeRepo.FindAcceptedWaitingForPlayer(playerID)
+	if err != nil {
+		acceptedChallenges = []*quick_duel.DuelChallenge{}
+	}
+	acceptedDTOs := make([]ChallengeDTO, 0, len(acceptedChallenges))
+	for _, c := range acceptedChallenges {
+		username := c.ChallengerID().String()
+		if u, err := uc.userRepo.FindByID(c.ChallengerID()); err == nil && u != nil {
+			if n := u.TelegramUsername().String(); n != "" {
+				username = n
+			} else if n := u.Username().String(); n != "" {
+				username = n
+			}
+		}
+		acceptedDTOs = append(acceptedDTOs, ToChallengeDTO(c, now, username))
+	}
+
 	return GetDuelStatusOutput{
 		HasActiveDuel:      activeGameID != nil,
 		ActiveGameID:       activeGameID,
@@ -126,6 +144,7 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 		FriendsOnline:      []FriendDTO{}, // TODO: implement friends service
 		PendingChallenges:  challengeDTOs,
 		OutgoingChallenges: outgoingDTOs,
+		AcceptedChallenges: acceptedDTOs,
 		SeasonID:           seasonID,
 		SeasonEndsAt:       seasonEndsAt,
 	}, nil

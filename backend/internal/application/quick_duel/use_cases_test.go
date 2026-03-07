@@ -123,6 +123,30 @@ func TestGetDuelStatus_InvalidPlayer(t *testing.T) {
 	}
 }
 
+func TestGetDuelStatus_WithAcceptedChallenge(t *testing.T) {
+	f := setupFixture(t)
+	now := time.Now().UTC().Unix()
+
+	// Create link challenge and have player1 accept it as invitee
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer2ID), now)
+	f.challengeRepo.Save(challenge)
+	_ = challenge.AcceptWaiting(mustUserID(testPlayer1ID), "Player1", now+10)
+	f.challengeRepo.Save(challenge)
+
+	uc := f.newGetDuelStatusUC()
+	output, err := uc.Execute(GetDuelStatusInput{PlayerID: testPlayer1ID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(output.AcceptedChallenges) != 1 {
+		t.Fatalf("AcceptedChallenges = %d, want 1", len(output.AcceptedChallenges))
+	}
+	if output.AcceptedChallenges[0].ChallengerID != testPlayer2ID {
+		t.Errorf("ChallengerID = %s, want %s", output.AcceptedChallenges[0].ChallengerID, testPlayer2ID)
+	}
+}
+
 // ========================================
 // JoinQueue Tests
 // ========================================

@@ -1307,6 +1307,7 @@ type GetDuelStatusResponse struct {
 		FriendsOnline      []DuelFriendDTO     `json:"friendsOnline"`
 		PendingChallenges  []DuelChallengeDTO  `json:"pendingChallenges"`
 		OutgoingChallenges []DuelChallengeDTO  `json:"outgoingChallenges"`
+		AcceptedChallenges []DuelChallengeDTO  `json:"acceptedChallenges"` // F1: added
 		SeasonID           string              `json:"seasonId"`
 		SeasonEndsAt       int64               `json:"seasonEndsAt"`
 	} `json:"data"`
