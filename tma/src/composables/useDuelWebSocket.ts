@@ -315,6 +315,34 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
 				break
 
 			case 'new_question':
+				// Restore game state when reconnecting mid-game (game_ready not re-sent on reconnect)
+				if (!game.value) {
+					game.value = {
+						id: gameId,
+						status: 'in_progress',
+						player1: {
+							id: '',
+							username: '...',
+							mmr: 0,
+							league: '',
+							leagueIcon: '',
+							score: 0,
+							connected: true,
+						},
+						player2: {
+							id: '',
+							username: '...',
+							mmr: 0,
+							league: '',
+							leagueIcon: '',
+							score: 0,
+							connected: true,
+						},
+						currentRound: message.data.roundNum,
+						totalRounds: message.data.totalRounds,
+						startedAt: Date.now(),
+					}
+				}
 				currentQuestion.value = {
 					id: message.data.question.id,
 					questionNumber: message.data.roundNum,
@@ -329,11 +357,9 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
 				myAnswerCorrect.value = null
 				myAnswerTime.value = 0
 				opponentAnswerTime.value = 0
-				if (game.value) {
-					game.value.status = 'in_progress'
-					game.value.currentRound = message.data.roundNum
-					game.value.totalRounds = message.data.totalRounds
-				}
+				game.value.status = 'in_progress'
+				game.value.currentRound = message.data.roundNum
+				game.value.totalRounds = message.data.totalRounds
 				break
 
 			case 'answer_result':
@@ -406,6 +432,7 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
 					if (opponentReconnectCountdown.value <= 0) {
 						clearInterval(reconnectTimer!)
 						reconnectTimer = null
+						opponentReconnecting.value = false
 					}
 				}, 1000)
 				break

@@ -22,6 +22,7 @@ type GetDuelStatusUseCase struct {
 	challengeRepo    quick_duel.ChallengeRepository
 	seasonRepo       quick_duel.SeasonRepository
 	userRepo         domainUser.UserRepository
+	onlineTracker    OnlineTracker // optional, nil if Redis unavailable
 }
 
 func NewGetDuelStatusUseCase(
@@ -30,6 +31,7 @@ func NewGetDuelStatusUseCase(
 	challengeRepo quick_duel.ChallengeRepository,
 	seasonRepo quick_duel.SeasonRepository,
 	userRepo domainUser.UserRepository,
+	onlineTracker OnlineTracker,
 ) *GetDuelStatusUseCase {
 	return &GetDuelStatusUseCase{
 		playerRatingRepo: playerRatingRepo,
@@ -37,6 +39,7 @@ func NewGetDuelStatusUseCase(
 		challengeRepo:    challengeRepo,
 		seasonRepo:       seasonRepo,
 		userRepo:         userRepo,
+		onlineTracker:    onlineTracker,
 	}
 }
 
@@ -46,6 +49,11 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 	playerID, err := shared.NewUserID(input.PlayerID)
 	if err != nil {
 		return GetDuelStatusOutput{}, err
+	}
+
+	// Mark player as online (TTL=120s; refreshed on every status poll)
+	if uc.onlineTracker != nil {
+		_ = uc.onlineTracker.SetOnline(input.PlayerID, 120)
 	}
 
 	// Get current season
@@ -333,8 +341,9 @@ type RespondChallengeUseCase struct {
 	challengeRepo    quick_duel.ChallengeRepository
 	duelGameRepo     quick_duel.DuelGameRepository
 	playerRatingRepo quick_duel.PlayerRatingRepository
-	questionRepo     interface{ FindRandomQuestions(count int) ([]*interface{}, error) } // Simplified
+	questionRepo     QuestionRepository // nil if questions DB unavailable
 	seasonRepo       quick_duel.SeasonRepository
+	userRepo         domainUser.UserRepository
 	eventBus         EventBus
 }
 
@@ -343,6 +352,8 @@ func NewRespondChallengeUseCase(
 	duelGameRepo quick_duel.DuelGameRepository,
 	playerRatingRepo quick_duel.PlayerRatingRepository,
 	seasonRepo quick_duel.SeasonRepository,
+	questionRepo QuestionRepository,
+	userRepo domainUser.UserRepository,
 	eventBus EventBus,
 ) *RespondChallengeUseCase {
 	return &RespondChallengeUseCase{
@@ -350,6 +361,8 @@ func NewRespondChallengeUseCase(
 		duelGameRepo:     duelGameRepo,
 		playerRatingRepo: playerRatingRepo,
 		seasonRepo:       seasonRepo,
+		questionRepo:     questionRepo,
+		userRepo:         userRepo,
 		eventBus:         eventBus,
 	}
 }
@@ -397,26 +410,81 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 		return RespondChallengeOutput{}, err
 	}
 
-	// Save challenge
-	err = uc.challengeRepo.Save(challenge)
-	if err != nil {
-		return RespondChallengeOutput{}, err
-	}
-
 	// Publish events
 	for _, event := range challenge.Events() {
 		uc.eventBus.Publish(event)
 	}
 
-	// TODO: Create game between challenger and challenged
-	// For now, return placeholder
-	startsIn := 3
+	if uc.questionRepo == nil {
+		return RespondChallengeOutput{}, fmt.Errorf("question repository unavailable")
+	}
 
+	// Create game immediately for direct challenge
+	challengerID := challenge.ChallengerID()
+	accepterID := playerID
+
+	challengerName := challengerID.String()
+	if u, err := uc.userRepo.FindByID(challengerID); err == nil && u != nil {
+		if n := u.TelegramUsername().String(); n != "" {
+			challengerName = n
+		} else if n := u.Username().String(); n != "" {
+			challengerName = n
+		}
+	}
+	accepterName := accepterID.String()
+	if u, err := uc.userRepo.FindByID(accepterID); err == nil && u != nil {
+		if n := u.TelegramUsername().String(); n != "" {
+			accepterName = n
+		} else if n := u.Username().String(); n != "" {
+			accepterName = n
+		}
+	}
+
+	seasonID, _ := uc.seasonRepo.GetCurrentSeason()
+	rating1, err := uc.playerRatingRepo.FindOrCreate(challengerID, seasonID, now)
+	if err != nil {
+		return RespondChallengeOutput{}, err
+	}
+	rating2, err := uc.playerRatingRepo.FindOrCreate(accepterID, seasonID, now)
+	if err != nil {
+		return RespondChallengeOutput{}, err
+	}
+
+	questions, err := uc.questionRepo.FindRandomByDifficulty(quick_duel.QuestionsPerDuel, "medium")
+	if err != nil {
+		return RespondChallengeOutput{}, err
+	}
+
+	questionIDs := make([]quick_duel.QuestionID, 0, len(questions))
+	for _, q := range questions {
+		qid, _ := quiz.NewQuestionIDFromString(q.ID)
+		questionIDs = append(questionIDs, qid)
+	}
+
+	player1 := quick_duel.NewDuelPlayer(challengerID, challengerName, quick_duel.ReconstructEloRating(rating1.MMR(), 0))
+	player2 := quick_duel.NewDuelPlayer(accepterID, accepterName, quick_duel.ReconstructEloRating(rating2.MMR(), 0))
+
+	game, err := quick_duel.NewDuelGame(player1, player2, questionIDs, now)
+	if err != nil {
+		return RespondChallengeOutput{}, err
+	}
+	if err := game.Start(now); err != nil {
+		return RespondChallengeOutput{}, err
+	}
+	if err := uc.duelGameRepo.Save(game); err != nil {
+		return RespondChallengeOutput{}, err
+	}
+
+	challenge.SetMatchID(game.ID())
+	if err := uc.challengeRepo.Save(challenge); err != nil {
+		return RespondChallengeOutput{}, err
+	}
+
+	gameID := game.ID().String()
 	return RespondChallengeOutput{
 		Success:        true,
-		GameID:         nil, // Will be set when game is created
+		GameID:         &gameID,
 		TicketConsumed: true,
-		StartsIn:       &startsIn,
 	}, nil
 }
 

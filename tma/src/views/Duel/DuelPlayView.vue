@@ -40,8 +40,6 @@ const {
 	isCountdown,
 	isPlaying,
 	isFinished,
-	didWin,
-	myMmrChange,
 	myAnswerCorrect,
 	myAnswerTime,
 	opponentAnswerTime,
@@ -133,10 +131,7 @@ watch(lastRoundResult, (result) => {
 watch(isFinished, (finished) => {
 	if (finished) {
 		timer.stop()
-		// Navigate to results after short delay
-		setTimeout(() => {
-			router.push({ name: 'duel-results', params: { duelId: duelId.value } })
-		}, 2000)
+		router.push({ name: 'duel-results', params: { duelId: duelId.value } })
 	}
 })
 
@@ -377,38 +372,5 @@ onMounted(() => {
 			</Transition>
 		</template>
 
-		<!-- Match Finished (brief summary before redirect) -->
-		<div v-else-if="isFinished" class="flex-1 flex items-center justify-center p-4">
-			<div class="text-center">
-				<div class="mb-4">
-					<UIcon
-						:name="didWin ? 'i-heroicons-trophy' : 'i-heroicons-x-circle'"
-						:class="didWin ? 'text-yellow-500' : 'text-red-500'"
-						class="size-20"
-					/>
-				</div>
-				<h2 class="text-3xl font-bold mb-2">
-					{{
-						didWin === null
-							? t('duel.draw')
-							: didWin
-								? t('duel.victory')
-								: t('duel.defeat')
-					}}
-				</h2>
-				<p class="text-xl">{{ myScore }} - {{ opponentScore }}</p>
-				<p
-					:class="myMmrChange >= 0 ? 'text-green-600' : 'text-red-600'"
-					class="text-lg font-semibold mt-2"
-				>
-					{{
-						t('duel.mmrChange', {
-							sign: myMmrChange >= 0 ? '+' : '',
-							amount: myMmrChange,
-						})
-					}}
-				</p>
-			</div>
-		</div>
 	</div>
 </template>

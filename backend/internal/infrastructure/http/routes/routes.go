@@ -388,6 +388,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			challengeRepo,
 			seasonRepo,
 			userRepo,
+			duelOnlineTracker, // marks player online on each status poll
 		)
 		if matchmakingQueue != nil {
 			joinQueueUC = appDuel.NewJoinQueueUseCase(
@@ -405,13 +406,6 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			duelGameRepo,
 			duelEventBus,
 		)
-		respondChallengeUC = appDuel.NewRespondChallengeUseCase(
-			challengeRepo,
-			duelGameRepo,
-			playerRatingRepo,
-			seasonRepo,
-			duelEventBus,
-		)
 		acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
 			challengeRepo,
 			userRepo,
@@ -421,6 +415,15 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		// Build duel question adapter if questionRepo is available
 		if questionRepo != nil {
 			duelQuestionRepo := postgres.NewDuelQuestionRepositoryAdapter(questionRepo)
+			respondChallengeUC = appDuel.NewRespondChallengeUseCase(
+				challengeRepo,
+				duelGameRepo,
+				playerRatingRepo,
+				seasonRepo,
+				duelQuestionRepo,
+				userRepo,
+				duelEventBus,
+			)
 			startGameUC = appDuel.NewStartGameUseCase(
 				duelGameRepo,
 				playerRatingRepo,

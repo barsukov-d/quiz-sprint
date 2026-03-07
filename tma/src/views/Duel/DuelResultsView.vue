@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePvPDuel } from '@/composables/usePvPDuel'
+import { useGetDuelGameGameid } from '@/api/generated/hooks/duelController/useGetDuelGameGameid'
 import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
@@ -13,7 +14,12 @@ const duelId = computed(() => route.params.duelId as string)
 const playerId = computed(() => currentUser.value?.id ?? '')
 const { t } = useI18n()
 
-const { gameHistory, requestRematch, refetchHistory, isLoading } = usePvPDuel(playerId.value)
+const { requestRematch, isLoading } = usePvPDuel(playerId.value)
+
+const { data: gameResult } = useGetDuelGameGameid(
+	{ gameId: duelId },
+	computed(() => ({ playerId: playerId.value })),
+)
 
 // ===========================
 // State
@@ -26,10 +32,7 @@ const rematchError = ref<string | null>(null)
 // Computed
 // ===========================
 
-// Find this game in history
-const gameData = computed(() => {
-	return gameHistory.value.find((g) => g.gameId === duelId.value)
-})
+const gameData = computed(() => gameResult.value?.data)
 
 const didWin = computed(() => gameData.value?.result === 'win')
 const isDraw = computed(() => gameData.value?.result === 'draw')
@@ -98,13 +101,6 @@ const handleShare = () => {
 	}
 }
 
-// ===========================
-// Lifecycle
-// ===========================
-
-onMounted(async () => {
-	await refetchHistory()
-})
 </script>
 
 <template>
@@ -139,7 +135,7 @@ onMounted(async () => {
 				<span class="text-2xl text-gray-400">-</span>
 				<div class="text-center">
 					<p class="text-sm text-gray-500 dark:text-gray-400">
-						{{ gameData?.opponent ?? t('duel.opponent') }}
+						{{ gameData?.opponent?.username ?? t('duel.opponent') }}
 					</p>
 					<p class="text-5xl font-bold text-orange-500">
 						{{ gameData?.opponentScore ?? 0 }}
@@ -156,17 +152,7 @@ onMounted(async () => {
 				</p>
 			</div>
 
-			<!-- Friend Game Badge -->
-			<UBadge
-				v-if="gameData?.isFriendGame"
-				color="blue"
-				variant="soft"
-				size="lg"
-				class="mb-6"
-			>
-				{{ t('duel.friendGame') }}
-			</UBadge>
-		</div>
+			</div>
 
 		<!-- Actions -->
 		<div class="p-4 space-y-3">

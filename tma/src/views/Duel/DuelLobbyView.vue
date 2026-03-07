@@ -111,6 +111,7 @@ const handleCopyLink = () => {
 }
 
 const isSharing = ref(false)
+const sendingChallengeId = ref<string | null>(null)
 
 const handleShareToTelegram = async () => {
 	try {
@@ -124,7 +125,12 @@ const handleShareToTelegram = async () => {
 }
 
 const handleChallengeFriend = async (friendId: string) => {
-	await sendChallenge(friendId)
+	sendingChallengeId.value = friendId
+	try {
+		await sendChallenge(friendId)
+	} finally {
+		sendingChallengeId.value = null
+	}
 }
 
 const handleConfirmChallenge = async () => {
@@ -325,31 +331,41 @@ onMounted(async () => {
 		</UCard>
 
 		<!-- Pending Challenges -->
-		<div v-if="pendingChallenges.length > 0" class="mb-4">
-			<h2 class="text-sm font-semibold text-gray-600 dark:text-gray-400 mb-2">
-				{{ t('duel.pendingChallenges') }}
-			</h2>
-			<div class="space-y-2">
-				<UCard v-for="challenge in pendingChallenges" :key="challenge.id">
-					<!-- Challenger identity -->
-					<div class="flex items-center gap-2 mb-3">
+		<UCard v-if="pendingChallenges.length > 0" class="mb-4">
+			<template #header>
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-2.5">
 						<UIcon name="i-heroicons-bolt" class="size-5 text-orange-500" />
+						<h3 class="text-base font-semibold">{{ t('duel.pendingChallenges') }}</h3>
+					</div>
+					<UBadge color="orange" variant="soft" size="sm">
+						{{ t('duel.pendingCount', { count: pendingChallenges.length }) }}
+					</UBadge>
+				</div>
+			</template>
+
+			<div class="space-y-4">
+				<div v-for="(challenge, index) in pendingChallenges" :key="challenge.id">
+					<UDivider v-if="index > 0" class="mb-4" />
+					<!-- Challenger identity -->
+					<div class="flex items-center gap-4 mb-3">
+						<div
+							class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-orange-100 dark:bg-orange-900/30"
+						>
+							<UIcon name="i-heroicons-bolt" class="size-6 text-orange-500" />
+						</div>
 						<div>
-							<p class="font-medium">
+							<p class="font-semibold">
 								{{ challenge.challengerUsername || t('duel.challenge') }}
 							</p>
-							<p class="text-xs text-gray-500 dark:text-gray-400">
+							<p class="text-sm text-gray-500 dark:text-gray-400">
 								{{ t('duel.challengesYou') }}
 							</p>
 						</div>
 					</div>
-					<!-- Block buttons -->
-					<div class="space-y-2">
-						<UButton
-							color="green"
-							block
-							@click="() => handleAcceptChallenge(challenge.id!)"
-						>
+					<!-- Action buttons -->
+					<div class="grid grid-cols-2 gap-3">
+						<UButton color="green" block @click="() => handleAcceptChallenge(challenge.id!)">
 							{{ t('duel.accept') }}
 						</UButton>
 						<UButton
@@ -361,9 +377,9 @@ onMounted(async () => {
 							{{ t('duel.decline') }}
 						</UButton>
 					</div>
-				</UCard>
+				</div>
 			</div>
-		</div>
+		</UCard>
 
 		<!-- Tabs -->
 		<div class="flex gap-2 mb-4">
@@ -464,31 +480,44 @@ onMounted(async () => {
 				<h3 class="font-semibold mb-3">{{ t('duel.rivals') }}</h3>
 
 				<!-- Rivals list -->
-				<div v-if="rivals.length > 0" class="space-y-2 mb-4">
+				<div v-if="rivals.length > 0" class="space-y-3 mb-4">
 					<div
 						v-for="rival in rivals"
 						:key="rival.id"
-						class="flex items-center justify-between p-2 bg-gray-50 dark:bg-gray-800 rounded"
+						class="flex items-center gap-3"
 					>
-						<div class="flex items-center gap-2">
+						<!-- Avatar with online indicator -->
+						<div class="relative flex-shrink-0">
 							<div
-								class="w-2 h-2 rounded-full"
-								:class="rival.isOnline ? 'bg-green-500' : 'bg-gray-400'"
-							/>
-							<div>
-								<span class="font-medium">{{ rival.username }}</span>
-								<span class="text-xs text-gray-500 ml-2">
-									{{ rival.leagueIcon }} {{ rival.mmr }} MMR
-								</span>
+								class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg"
+							>
+								{{ rival.leagueIcon }}
 							</div>
+							<span
+								class="absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-white dark:ring-gray-900"
+								:class="rival.isOnline ? 'bg-green-500' : 'bg-gray-400 dark:bg-gray-600'"
+							/>
 						</div>
+
+						<!-- Info -->
+						<div class="flex-1 min-w-0">
+							<p class="font-semibold truncate">{{ rival.username }}</p>
+							<p class="text-sm text-gray-500 dark:text-gray-400">
+								{{ rival.mmr }} MMR
+							</p>
+						</div>
+
+						<!-- Action button -->
 						<UButton
-							size="xs"
-							:disabled="rival.hasPendingChallenge"
+							size="sm"
+							:disabled="rival.hasPendingChallenge || sendingChallengeId === rival.id"
+							:loading="sendingChallengeId === rival.id"
 							:color="rival.hasPendingChallenge ? 'gray' : 'primary'"
+							:variant="rival.hasPendingChallenge ? 'soft' : 'solid'"
 							@click="
 								() => {
-									if (!rival.hasPendingChallenge) handleChallengeFriend(rival.id!)
+									if (!rival.hasPendingChallenge && !sendingChallengeId)
+										handleChallengeFriend(rival.id!)
 								}
 							"
 						>

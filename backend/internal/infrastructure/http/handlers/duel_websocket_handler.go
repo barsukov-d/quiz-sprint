@@ -229,10 +229,10 @@ func (h *DuelWebSocketHub) unregisterPlayer(gameID, playerID string, conn *webso
 			"type": "opponent_disconnected",
 			"data": map[string]interface{}{
 				"playerId":    playerID,
-				"reconnectIn": 10, // seconds — per spec
+				"reconnectIn": 30, // seconds — per spec
 			},
 		})
-		// Grace period: if player doesn't reconnect within 10s, forfeit remaining rounds
+		// Grace period: if player doesn't reconnect within 30s, forfeit remaining rounds
 		go h.handleDisconnectGracePeriod(gameID, playerID)
 	}
 
@@ -245,10 +245,10 @@ func (h *DuelWebSocketHub) unregisterPlayer(gameID, playerID string, conn *webso
 	log.Printf("Player %s disconnected from game %s", playerID, gameID)
 }
 
-// handleDisconnectGracePeriod waits 10 s; if the player is still gone, it submits
+// handleDisconnectGracePeriod waits 30 s; if the player is still gone, it submits
 // timeout answers for all remaining rounds so the opponent gets a proper result.
 func (h *DuelWebSocketHub) handleDisconnectGracePeriod(gameID, playerID string) {
-	time.Sleep(10 * time.Second)
+	time.Sleep(30 * time.Second)
 
 	h.mu.RLock()
 	game, exists := h.games[gameID]

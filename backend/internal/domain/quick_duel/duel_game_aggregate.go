@@ -8,7 +8,7 @@ const (
 	QuestionsPerDuel = 7  // Fixed: 7 questions per duel
 	TimePerQuestionSec = 10 // 10 seconds per question
 	BasePointsCorrect = 100 // Base points for correct answer
-	MinAnswerTimeMs = 500 // Anti-cheat: minimum 0.5 sec
+	MinAnswerTimeMs = 200 // Anti-cheat: minimum 0.2 sec
 )
 
 // RoundAnswer tracks a player's answer for a round
