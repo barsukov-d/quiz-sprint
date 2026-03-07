@@ -561,6 +561,27 @@ func TestAcceptByLinkCode_NotFound(t *testing.T) {
 	}
 }
 
+func TestAcceptByLinkCode_FailsIfInviteeInGame(t *testing.T) {
+	f := setupFixture(t)
+	now := time.Now().UTC().Unix()
+
+	// Create a link challenge from player1
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), now)
+	f.challengeRepo.Save(challenge)
+
+	// player2 is already in an active game
+	f.startGame(t, testPlayer2ID, testPlayer3ID)
+
+	uc := f.newAcceptByLinkCodeUC()
+	_, err := uc.Execute(AcceptByLinkCodeInput{
+		PlayerID: testPlayer2ID,
+		LinkCode: challenge.ChallengeLink(),
+	})
+	if !errors.Is(err, quick_duel.ErrAlreadyInGame) {
+		t.Errorf("expected ErrAlreadyInGame, got %v", err)
+	}
+}
+
 // ========================================
 // StartGame Tests
 // ========================================

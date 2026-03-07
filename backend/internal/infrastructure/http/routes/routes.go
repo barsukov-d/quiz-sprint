@@ -408,6 +408,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		)
 		acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
 			challengeRepo,
+			duelGameRepo, // B2: added
 			userRepo,
 			telegramNotifier,
 			duelEventBus,

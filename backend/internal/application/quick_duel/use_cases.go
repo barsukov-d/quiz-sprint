@@ -509,6 +509,7 @@ type TelegramNotifier interface {
 
 type AcceptByLinkCodeUseCase struct {
 	challengeRepo quick_duel.ChallengeRepository
+	duelGameRepo  quick_duel.DuelGameRepository // B2: added
 	userRepo      domainUser.UserRepository
 	notifier      TelegramNotifier
 	eventBus      EventBus
@@ -516,12 +517,14 @@ type AcceptByLinkCodeUseCase struct {
 
 func NewAcceptByLinkCodeUseCase(
 	challengeRepo quick_duel.ChallengeRepository,
+	duelGameRepo quick_duel.DuelGameRepository, // B2: added
 	userRepo domainUser.UserRepository,
 	notifier TelegramNotifier,
 	eventBus EventBus,
 ) *AcceptByLinkCodeUseCase {
 	return &AcceptByLinkCodeUseCase{
 		challengeRepo: challengeRepo,
+		duelGameRepo:  duelGameRepo,
 		userRepo:      userRepo,
 		notifier:      notifier,
 		eventBus:      eventBus,
@@ -552,6 +555,11 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 			}, nil
 		}
 		return AcceptByLinkCodeOutput{}, quick_duel.ErrChallengeNotPending
+	}
+
+	// B2: Check if accepter is already in a game
+	if activeGame, err := uc.duelGameRepo.FindActiveByPlayer(accepterID); err == nil && activeGame != nil {
+		return AcceptByLinkCodeOutput{}, quick_duel.ErrAlreadyInGame
 	}
 
 	// Get accepter's display name
