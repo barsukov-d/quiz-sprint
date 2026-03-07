@@ -13,6 +13,11 @@ export type InternalInfrastructureHttpHandlersGetDuelStatusResponse = {
     */
     data?: {
         /**
+         * @description F1: added
+         * @type array | undefined
+        */
+        acceptedChallenges?: InternalInfrastructureHttpHandlersDuelChallengeDTO[];
+        /**
          * @type string | undefined
         */
         activeGameId?: string;

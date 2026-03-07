@@ -12,22 +12,19 @@ export type InternalInfrastructureHttpHandlersAcceptByLinkCodeResponse = {
         /**
          * @type string | undefined
         */
-        challengerId?: string;
+        challengeId?: string;
+        /**
+         * @description F2: added
+         * @type string | undefined
+        */
+        inviterName?: string;
         /**
          * @type string | undefined
         */
-        gameId?: string;
-        /**
-         * @type integer | undefined
-        */
-        startsIn?: number;
+        status?: string;
         /**
          * @type boolean | undefined
         */
         success?: boolean;
-        /**
-         * @type boolean | undefined
-        */
-        ticketConsumed?: boolean;
     };
 };

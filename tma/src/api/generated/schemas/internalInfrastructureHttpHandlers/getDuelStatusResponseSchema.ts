@@ -11,7 +11,10 @@ import { z } from "zod/v4";
 
 export const internalInfrastructureHttpHandlersGetDuelStatusResponseSchema = z.object({
     "data": z.optional(z.object({
-    "activeGameId": z.optional(z.string()),
+    get "acceptedChallenges"(){
+                return z.array(internalInfrastructureHttpHandlersDuelChallengeDTOSchema).describe("F1: added").optional()
+              },
+"activeGameId": z.optional(z.string()),
 get "friendsOnline"(){
                 return z.array(internalInfrastructureHttpHandlersDuelFriendDTOSchema).optional()
               },

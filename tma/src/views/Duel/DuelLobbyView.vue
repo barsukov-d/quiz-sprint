@@ -166,17 +166,12 @@ const handleAcceptByLinkCode = async (linkCode: string) => {
 		})
 
 		if (response.data?.success) {
-			console.log('[DuelLobby] Challenge accepted, game starting...')
+			console.log('[DuelLobby] Challenge accepted, waiting for inviter to start...')
 			deepLinkChallenge.value = null
-			// Navigate directly using gameId from response, or fall back to status refetch
-			if (response.data.gameId) {
-				router.push({ name: 'duel-play', params: { duelId: response.data.gameId } })
-			} else {
-				router.replace({ name: 'duel-lobby' })
-				await refetchStatus()
-				if (hasActiveDuel.value && activeGameId.value) {
-					goToActiveDuel()
-				}
+			router.replace({ name: 'duel-lobby' })
+			await refetchStatus()
+			if (hasActiveDuel.value && activeGameId.value) {
+				goToActiveDuel()
 			}
 		}
 	} catch (error: unknown) {

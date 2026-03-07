@@ -2931,19 +2931,17 @@ const docTemplate = `{
                 "data": {
                     "type": "object",
                     "properties": {
-                        "challengerId": {
+                        "challengeId": {
                             "type": "string"
                         },
-                        "gameId": {
+                        "inviterName": {
+                            "description": "F2: added",
                             "type": "string"
                         },
-                        "startsIn": {
-                            "type": "integer"
+                        "status": {
+                            "type": "string"
                         },
                         "success": {
-                            "type": "boolean"
-                        },
-                        "ticketConsumed": {
                             "type": "boolean"
                         }
                     }
@@ -4032,6 +4030,13 @@ const docTemplate = `{
                 "data": {
                     "type": "object",
                     "properties": {
+                        "acceptedChallenges": {
+                            "description": "F1: added",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO"
+                            }
+                        },
                         "activeGameId": {
                             "type": "string"
                         },

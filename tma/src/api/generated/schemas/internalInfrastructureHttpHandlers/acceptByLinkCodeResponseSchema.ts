@@ -8,10 +8,9 @@ import { z } from "zod/v4";
 
 export const internalInfrastructureHttpHandlersAcceptByLinkCodeResponseSchema = z.object({
     "data": z.optional(z.object({
-    "challengerId": z.optional(z.string()),
-"gameId": z.optional(z.string()),
-"startsIn": z.optional(z.int()),
-"success": z.optional(z.boolean()),
-"ticketConsumed": z.optional(z.boolean())
+    "challengeId": z.optional(z.string()),
+"inviterName": z.optional(z.string().describe("F2: added")),
+"status": z.optional(z.string()),
+"success": z.optional(z.boolean())
     }))
     }) as unknown as z.ZodType<InternalInfrastructureHttpHandlersAcceptByLinkCodeResponse>
