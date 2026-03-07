@@ -741,6 +741,13 @@ func (n *noOpNotifier) NotifyInviterWaiting(_ context.Context, _ int64, _ string
 	return nil
 }
 
+func (f *duelFixture) newStartChallengeUC() *StartChallengeUseCase {
+	return NewStartChallengeUseCase(
+		f.challengeRepo, f.duelGameRepo, f.playerRatingRepo,
+		f.seasonRepo, f.questionRepo, f.userRepo, f.eventBus,
+	)
+}
+
 func (f *duelFixture) newCreateChallengeLinkUC() *CreateChallengeLinkUseCase {
 	return NewCreateChallengeLinkUseCase(f.challengeRepo, f.eventBus)
 }

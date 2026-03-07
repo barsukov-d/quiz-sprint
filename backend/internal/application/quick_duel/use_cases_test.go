@@ -1562,3 +1562,52 @@ func TestGetRivals_NoPendingChallenge(t *testing.T) {
 		t.Error("expected HasPendingChallenge=false when no challenge sent")
 	}
 }
+
+// ========================================
+// StartChallenge Tests
+// ========================================
+
+func TestStartChallenge_FailsIfInviterInGame(t *testing.T) {
+	f := setupFixture(t)
+	now := time.Now().UTC().Unix()
+
+	// Create link challenge and have invitee accept
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), now)
+	f.challengeRepo.Save(challenge)
+	_ = challenge.AcceptWaiting(mustUserID(testPlayer2ID), "Player2", now+10)
+	f.challengeRepo.Save(challenge)
+
+	// inviter (player1) joins another game
+	f.startGame(t, testPlayer1ID, testPlayer3ID)
+
+	uc := f.newStartChallengeUC()
+	_, err := uc.Execute(StartChallengeInput{
+		PlayerID:    testPlayer1ID,
+		ChallengeID: challenge.ID().String(),
+	})
+	if !errors.Is(err, quick_duel.ErrAlreadyInGame) {
+		t.Errorf("expected ErrAlreadyInGame, got %v", err)
+	}
+}
+
+func TestStartChallenge_FailsIfInviteeInGame(t *testing.T) {
+	f := setupFixture(t)
+	now := time.Now().UTC().Unix()
+
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), now)
+	f.challengeRepo.Save(challenge)
+	_ = challenge.AcceptWaiting(mustUserID(testPlayer2ID), "Player2", now+10)
+	f.challengeRepo.Save(challenge)
+
+	// invitee (player2) joins another game
+	f.startGame(t, testPlayer2ID, testPlayer3ID)
+
+	uc := f.newStartChallengeUC()
+	_, err := uc.Execute(StartChallengeInput{
+		PlayerID:    testPlayer1ID,
+		ChallengeID: challenge.ID().String(),
+	})
+	if !errors.Is(err, quick_duel.ErrAlreadyInGame) {
+		t.Errorf("expected ErrAlreadyInGame, got %v", err)
+	}
+}

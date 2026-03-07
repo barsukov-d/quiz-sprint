@@ -1646,6 +1646,16 @@ func (uc *StartChallengeUseCase) Execute(input StartChallengeInput) (StartChalle
 	}
 
 	accepterID := *challenge.ChallengedID()
+
+	// B1: Guard — inviter must not be in an active game
+	if active, err := uc.duelGameRepo.FindActiveByPlayer(inviterID); err == nil && active != nil {
+		return StartChallengeOutput{}, quick_duel.ErrAlreadyInGame
+	}
+	// B1: Guard — invitee must not be in an active game
+	if active, err := uc.duelGameRepo.FindActiveByPlayer(accepterID); err == nil && active != nil {
+		return StartChallengeOutput{}, quick_duel.ErrAlreadyInGame
+	}
+
 	seasonID, _ := uc.seasonRepo.GetCurrentSeason()
 
 	rating1, err := uc.playerRatingRepo.FindOrCreate(inviterID, seasonID, now)
