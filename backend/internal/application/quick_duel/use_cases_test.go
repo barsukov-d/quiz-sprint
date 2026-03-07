@@ -1,6 +1,7 @@
 package quick_duel
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -339,6 +340,20 @@ func TestSendChallenge_InvalidFriend(t *testing.T) {
 	})
 	if err == nil {
 		t.Error("expected error for empty friend ID")
+	}
+}
+
+func TestSendChallenge_FailsIfChallengerInGame(t *testing.T) {
+	f := setupFixture(t)
+	f.startGame(t, testPlayer1ID, testPlayer2ID) // player1 is now in active game
+
+	uc := f.newSendChallengeUC()
+	_, err := uc.Execute(SendChallengeInput{
+		PlayerID: testPlayer1ID,
+		FriendID: testPlayer3ID,
+	})
+	if !errors.Is(err, quick_duel.ErrAlreadyInGame) {
+		t.Errorf("expected ErrAlreadyInGame, got %v", err)
 	}
 }
 

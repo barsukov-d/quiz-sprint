@@ -292,6 +292,11 @@ func (uc *SendChallengeUseCase) Execute(input SendChallengeInput) (SendChallenge
 		return SendChallengeOutput{}, err
 	}
 
+	// B3: Check if challenger is already in a game
+	if activeGame, err := uc.duelGameRepo.FindActiveByPlayer(challengerID); err == nil && activeGame != nil {
+		return SendChallengeOutput{}, quick_duel.ErrAlreadyInGame
+	}
+
 	// Check if friend is already in a game
 	activeGame, err := uc.duelGameRepo.FindActiveByPlayer(friendID)
 	if err == nil && activeGame != nil {
