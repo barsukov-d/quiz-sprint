@@ -18,6 +18,7 @@ const {
 	tickets,
 	pendingChallenges,
 	outgoingReadyChallenges,
+	outgoingPendingChallenges,
 	hasActiveDuel,
 	activeGameId,
 	mmr,
@@ -85,6 +86,13 @@ const searchTimeFormatted = computed(() => {
 	const seconds = searchTime.value % 60
 	return `${minutes}:${seconds.toString().padStart(2, '0')}`
 })
+
+const formatExpiresIn = (seconds: number): string => {
+	const hours = Math.floor(seconds / 3600)
+	const minutes = Math.floor((seconds % 3600) / 60)
+	if (hours > 0) return `${hours}ч ${minutes}мин`
+	return `${minutes}мин`
+}
 
 // ===========================
 // Actions
@@ -471,6 +479,23 @@ onMounted(async () => {
 					>
 						{{ t('duel.startDuel') }}
 					</UButton>
+				</UCard>
+			</div>
+
+			<!-- Outgoing pending link challenges (inviter waiting for someone to click) -->
+			<div v-if="outgoingPendingChallenges.length > 0" class="space-y-2">
+				<UCard
+					v-for="challenge in outgoingPendingChallenges"
+					:key="challenge.id"
+					class="border-blue-200 dark:border-blue-800"
+				>
+					<div class="flex items-center gap-2 mb-1">
+						<span class="text-blue-500">⏳</span>
+						<p class="font-medium">{{ t('duel.waitingForResponse') }}</p>
+					</div>
+					<p class="text-sm text-gray-500 dark:text-gray-400">
+						{{ t('duel.linkExpiresIn', { time: formatExpiresIn(challenge.expiresIn ?? 0) }) }}
+					</p>
 				</UCard>
 			</div>
 
