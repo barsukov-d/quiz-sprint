@@ -100,7 +100,6 @@ const handleShare = () => {
 		})
 	}
 }
-
 </script>
 
 <template>
@@ -151,8 +150,7 @@ const handleShare = () => {
 					}}
 				</p>
 			</div>
-
-			</div>
+		</div>
 
 		<!-- Actions -->
 		<div class="p-4 space-y-3">

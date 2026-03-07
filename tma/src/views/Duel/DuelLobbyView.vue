@@ -365,7 +365,11 @@ onMounted(async () => {
 					</div>
 					<!-- Action buttons -->
 					<div class="grid grid-cols-2 gap-3">
-						<UButton color="green" block @click="() => handleAcceptChallenge(challenge.id!)">
+						<UButton
+							color="green"
+							block
+							@click="() => handleAcceptChallenge(challenge.id!)"
+						>
 							{{ t('duel.accept') }}
 						</UButton>
 						<UButton
@@ -481,11 +485,7 @@ onMounted(async () => {
 
 				<!-- Rivals list -->
 				<div v-if="rivals.length > 0" class="space-y-3 mb-4">
-					<div
-						v-for="rival in rivals"
-						:key="rival.id"
-						class="flex items-center gap-3"
-					>
+					<div v-for="rival in rivals" :key="rival.id" class="flex items-center gap-3">
 						<!-- Avatar with online indicator -->
 						<div class="relative flex-shrink-0">
 							<div
@@ -495,7 +495,9 @@ onMounted(async () => {
 							</div>
 							<span
 								class="absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-white dark:ring-gray-900"
-								:class="rival.isOnline ? 'bg-green-500' : 'bg-gray-400 dark:bg-gray-600'"
+								:class="
+									rival.isOnline ? 'bg-green-500' : 'bg-gray-400 dark:bg-gray-600'
+								"
 							/>
 						</div>
 
