@@ -194,6 +194,18 @@ func (m *mockChallengeRepo) Delete(id quick_duel.ChallengeID) error {
 	return nil
 }
 
+func (m *mockChallengeRepo) FindAcceptedWaitingForPlayer(playerID quick_duel.UserID) ([]*quick_duel.DuelChallenge, error) {
+	var result []*quick_duel.DuelChallenge
+	for _, c := range m.challenges {
+		if c.Status() == quick_duel.ChallengeStatusAcceptedWaitingInviter {
+			if c.ChallengedID() != nil && c.ChallengedID().Equals(playerID) {
+				result = append(result, c)
+			}
+		}
+	}
+	return result, nil
+}
+
 func (m *mockChallengeRepo) DeleteExpired(_ int64) error {
 	return nil
 }

@@ -97,6 +97,10 @@ type ChallengeRepository interface {
 	// FindPendingByChallenger retrieves pending challenges sent by a player
 	FindPendingByChallenger(playerID UserID) ([]*DuelChallenge, error)
 
+	// FindAcceptedWaitingForPlayer retrieves challenges where the player is the invitee
+	// and the challenge status is accepted_waiting_inviter (game not yet started).
+	FindAcceptedWaitingForPlayer(playerID UserID) ([]*DuelChallenge, error)
+
 	// Delete removes a challenge
 	Delete(id ChallengeID) error
 

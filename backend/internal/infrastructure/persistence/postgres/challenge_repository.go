@@ -133,6 +133,22 @@ func (r *ChallengeRepository) FindPendingByChallenger(playerID quick_duel.UserID
 	return r.scanChallenges(rows)
 }
 
+func (r *ChallengeRepository) FindAcceptedWaitingForPlayer(playerID quick_duel.UserID) ([]*quick_duel.DuelChallenge, error) {
+	query := `
+		SELECT id, challenger_id, challenged_id, challenge_type, status,
+			challenge_link, match_id, expires_at, created_at, responded_at
+		FROM duel_challenges
+		WHERE challenged_id = $1 AND status = 'accepted_waiting_inviter'
+		ORDER BY responded_at DESC
+	`
+	rows, err := r.db.Query(query, playerID.String())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return r.scanChallenges(rows)
+}
+
 func (r *ChallengeRepository) Delete(id quick_duel.ChallengeID) error {
 	query := `DELETE FROM duel_challenges WHERE id = $1`
 	_, err := r.db.Exec(query, id.String())
