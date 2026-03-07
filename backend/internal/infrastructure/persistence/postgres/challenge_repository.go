@@ -143,7 +143,8 @@ func (r *ChallengeRepository) DeleteExpired(currentTime int64) error {
 	query := `
 		UPDATE duel_challenges
 		SET status = 'expired', responded_at = $1
-		WHERE status = 'pending' AND expires_at <= $1
+		WHERE (status = 'pending' AND expires_at <= $1)
+		   OR (status = 'accepted_waiting_inviter' AND responded_at + 1800 <= $1)
 	`
 	_, err := r.db.Exec(query, currentTime)
 	return err
