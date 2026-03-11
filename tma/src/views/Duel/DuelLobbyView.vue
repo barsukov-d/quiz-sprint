@@ -34,6 +34,7 @@ const {
 	isSearching,
 	searchTime,
 	isLoading,
+	isLoadingStatus,
 	canPlay,
 	joinQueue,
 	leaveQueue,
@@ -72,7 +73,10 @@ const directChallenge = computed(() => {
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars
 const directChallengeNotFound = computed(
-	() => directChallengeId.value !== null && !isLoading.value && directChallenge.value === null,
+	() =>
+		directChallengeId.value !== null &&
+		!isLoadingStatus.value &&
+		directChallenge.value === null,
 )
 const showConfirmModal = ref(false)
 const pendingLinkCode = ref<string | null>(null)
@@ -99,11 +103,8 @@ const dismissDirectChallenge = () => {
 const handleDirectAccept = async () => {
 	if (!directChallenge.value?.id) return
 	await respondChallenge(directChallenge.value.id, 'accept')
-	dismissDirectChallenge()
-	await refetchStatus()
-	if (hasActiveDuel.value && activeGameId.value) {
-		goToActiveDuel()
-	}
+	// respondChallenge navigates to duel-play on success — just clear local state
+	directChallengeId.value = null
 }
 
 // eslint-disable-next-line @typescript-eslint/no-unused-vars

@@ -518,6 +518,7 @@ export function usePvPDuel(playerId: string) {
 		isSearching,
 		searchTime,
 		isLoading,
+		isLoadingStatus,
 		canPlay,
 
 		// Actions
