@@ -210,6 +210,14 @@ func (m *mockChallengeRepo) DeleteExpired(_ int64) error {
 	return nil
 }
 
+func (m *mockChallengeRepo) FindPendingExpiredWithMessageID(_ int64) ([]*quick_duel.DuelChallenge, error) {
+	return nil, nil
+}
+
+func (m *mockChallengeRepo) DeleteHardExpired(_ int64) error {
+	return nil
+}
+
 // mockPlayerRatingRepo is an in-memory player rating repository
 type mockPlayerRatingRepo struct {
 	ratings map[string]*quick_duel.PlayerRating // keyed by "playerID:seasonID"
@@ -727,7 +735,7 @@ func (f *duelFixture) newLeaveQueueUC() *LeaveQueueUseCase {
 }
 
 func (f *duelFixture) newSendChallengeUC() *SendChallengeUseCase {
-	return NewSendChallengeUseCase(f.challengeRepo, f.duelGameRepo, f.eventBus)
+	return NewSendChallengeUseCase(f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus)
 }
 
 func (f *duelFixture) newRespondChallengeUC() *RespondChallengeUseCase {
@@ -750,6 +758,12 @@ func (n *noOpNotifier) NotifyChallengeAccepted(_ context.Context, _ int64, _ str
 	return nil
 }
 func (n *noOpNotifier) NotifyInviterWaiting(_ context.Context, _ int64, _ string, _ string) error {
+	return nil
+}
+func (n *noOpNotifier) NotifyChallengeReceived(_ context.Context, _ int64, _ string, _ string) (int64, error) {
+	return 0, nil
+}
+func (n *noOpNotifier) EditChallengeMessage(_ context.Context, _ int64, _ int64, _ string) error {
 	return nil
 }
 

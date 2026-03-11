@@ -281,19 +281,25 @@ func (uc *LeaveQueueUseCase) Execute(input LeaveQueueInput) (LeaveQueueOutput, e
 // ========================================
 
 type SendChallengeUseCase struct {
-	challengeRepo    quick_duel.ChallengeRepository
-	duelGameRepo     quick_duel.DuelGameRepository
-	eventBus         EventBus
+	challengeRepo quick_duel.ChallengeRepository
+	duelGameRepo  quick_duel.DuelGameRepository
+	userRepo      domainUser.UserRepository
+	notifier      TelegramNotifier
+	eventBus      EventBus
 }
 
 func NewSendChallengeUseCase(
 	challengeRepo quick_duel.ChallengeRepository,
 	duelGameRepo quick_duel.DuelGameRepository,
+	userRepo domainUser.UserRepository,
+	notifier TelegramNotifier,
 	eventBus EventBus,
 ) *SendChallengeUseCase {
 	return &SendChallengeUseCase{
 		challengeRepo: challengeRepo,
 		duelGameRepo:  duelGameRepo,
+		userRepo:      userRepo,
+		notifier:      notifier,
 		eventBus:      eventBus,
 	}
 }
@@ -347,6 +353,23 @@ func (uc *SendChallengeUseCase) Execute(input SendChallengeInput) (SendChallenge
 	// Publish events
 	for _, event := range challenge.Events() {
 		uc.eventBus.Publish(event)
+	}
+
+	// Send Telegram notification to invitee (best-effort)
+	if inviteeTgID, err := strconv.ParseInt(friendID.String(), 10, 64); err == nil && inviteeTgID > 0 {
+		inviterName := challengerID.String()
+		if u, err := uc.userRepo.FindByID(challengerID); err == nil && u != nil {
+			if n := u.TelegramUsername().String(); n != "" {
+				inviterName = n
+			} else if n := u.Username().String(); n != "" {
+				inviterName = n
+			}
+		}
+		deepLink := "https://t.me/quiz_sprint_dev_bot?startapp=challenge_" + challenge.ID().String()
+		if msgID, err := uc.notifier.NotifyChallengeReceived(context.Background(), inviteeTgID, inviterName, deepLink); err == nil && msgID > 0 {
+			challenge.SetTelegramMessageID(msgID)
+			_ = uc.challengeRepo.Save(challenge) // save messageID (best-effort)
+		}
 	}
 
 	return SendChallengeOutput{

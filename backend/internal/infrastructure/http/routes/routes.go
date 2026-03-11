@@ -404,6 +404,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		sendChallengeUC = appDuel.NewSendChallengeUseCase(
 			challengeRepo,
 			duelGameRepo,
+			userRepo,
+			telegramNotifier,
 			duelEventBus,
 		)
 		acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
