@@ -8,6 +8,21 @@ import (
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/shared"
 )
 
+func TestDuelChallenge_TelegramMessageID(t *testing.T) {
+	challengerID, _ := shared.NewUserID("111")
+	challengedID, _ := shared.NewUserID("222")
+	c, _ := quick_duel.NewDirectChallenge(challengerID, challengedID, 1000)
+
+	if c.TelegramMessageID() != int64(0) {
+		t.Errorf("expected 0, got %d", c.TelegramMessageID())
+	}
+
+	c.SetTelegramMessageID(42)
+	if c.TelegramMessageID() != int64(42) {
+		t.Errorf("expected 42, got %d", c.TelegramMessageID())
+	}
+}
+
 func TestMarkStarted_TransitionsToAccepted(t *testing.T) {
 	challengerID, _ := shared.NewUserID("user-challenger-001")
 	now := int64(1700000000)

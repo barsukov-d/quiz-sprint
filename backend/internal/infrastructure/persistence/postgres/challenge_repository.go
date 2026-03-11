@@ -281,6 +281,7 @@ func (r *ChallengeRepository) reconstructChallenge(
 		createdAt,
 		ra,
 		mid,
-		"", // inviteeName resolved at application layer from user repo
+		"",  // inviteeName resolved at application layer from user repo
+		0,   // telegramMessageID (will be added in B4)
 	), nil
 }

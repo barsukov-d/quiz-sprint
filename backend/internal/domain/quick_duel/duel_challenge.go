@@ -57,8 +57,9 @@ type DuelChallenge struct {
 	expiresAt     int64           // Unix timestamp
 	createdAt     int64
 	respondedAt   int64           // When accepted/declined (0 if pending)
-	matchID       *GameID         // Set when match starts
-	inviteeName   string          // Display name of invitee (set when accepted_waiting_inviter)
+	matchID           *GameID         // Set when match starts
+	inviteeName       string          // Display name of invitee (set when accepted_waiting_inviter)
+	telegramMessageID int64           // Bot message ID in invitee's chat (0 = not sent)
 
 	events []Event
 }
@@ -154,20 +155,22 @@ func ReconstructDuelChallenge(
 	respondedAt int64,
 	matchID *GameID,
 	inviteeName string,
+	telegramMessageID int64,
 ) *DuelChallenge {
 	return &DuelChallenge{
-		id:            id,
-		challengerID:  challengerID,
-		challengedID:  challengedID,
-		challengeType: challengeType,
-		status:        status,
-		challengeLink: challengeLink,
-		expiresAt:     expiresAt,
-		createdAt:     createdAt,
-		respondedAt:   respondedAt,
-		matchID:       matchID,
-		inviteeName:   inviteeName,
-		events:        make([]Event, 0),
+		id:                id,
+		challengerID:      challengerID,
+		challengedID:      challengedID,
+		challengeType:     challengeType,
+		status:            status,
+		challengeLink:     challengeLink,
+		expiresAt:         expiresAt,
+		createdAt:         createdAt,
+		respondedAt:       respondedAt,
+		matchID:           matchID,
+		inviteeName:       inviteeName,
+		telegramMessageID: telegramMessageID,
+		events:            make([]Event, 0),
 	}
 }
 
@@ -316,7 +319,9 @@ func (dc *DuelChallenge) ExpiresAt() int64           { return dc.expiresAt }
 func (dc *DuelChallenge) CreatedAt() int64           { return dc.createdAt }
 func (dc *DuelChallenge) RespondedAt() int64         { return dc.respondedAt }
 func (dc *DuelChallenge) MatchID() *GameID           { return dc.matchID }
-func (dc *DuelChallenge) InviteeName() string        { return dc.inviteeName }
+func (dc *DuelChallenge) InviteeName() string              { return dc.inviteeName }
+func (dc *DuelChallenge) TelegramMessageID() int64        { return dc.telegramMessageID }
+func (dc *DuelChallenge) SetTelegramMessageID(id int64)   { dc.telegramMessageID = id }
 
 // Events returns collected domain events and clears them
 func (dc *DuelChallenge) Events() []Event {
