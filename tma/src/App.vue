@@ -37,7 +37,7 @@ const { mutateAsync: registerUser } = usePostUserRegister()
 const handleDeepLink = (startParam: string) => {
 	// Direct challenge notification: challenge_<uuid>
 	if (startParam.startsWith('challenge_')) {
-		const challengeId = startParam.replace('challenge_', '')
+		const challengeId = startParam.slice('challenge_'.length)
 		console.log('⚔️ Direct challenge deep link, navigating to lobby')
 		router.push({
 			name: 'duel-lobby',
