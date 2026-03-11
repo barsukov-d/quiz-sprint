@@ -1,10 +1,12 @@
 package routes
 
 import (
+	"context"
 	"database/sql"
 	"log"
 	"math/rand"
 	"os"
+	"strconv"
 	"time"
 
 	"github.com/gofiber/contrib/v3/websocket"
@@ -486,6 +488,35 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			challengeRepo,
 		)
 
+
+		// Start background challenge cleanup scheduler
+		go func() {
+			minuteTicker := time.NewTicker(1 * time.Minute)
+			hourTicker := time.NewTicker(1 * time.Hour)
+			defer minuteTicker.Stop()
+			defer hourTicker.Stop()
+
+			for {
+				select {
+				case <-minuteTicker.C:
+					now := time.Now().UTC().Unix()
+					expiring, err := challengeRepo.FindPendingExpiredWithMessageID(now)
+					if err == nil {
+						for _, c := range expiring {
+							if c.TelegramMessageID() > 0 && c.ChallengedID() != nil {
+								if tgID, err := strconv.ParseInt(c.ChallengedID().String(), 10, 64); err == nil {
+									_ = telegramNotifier.EditChallengeMessage(context.Background(), tgID, c.TelegramMessageID(), "⏰ Время истекло")
+								}
+							}
+						}
+					}
+					_ = challengeRepo.DeleteExpired(now)
+				case <-hourTicker.C:
+					oneDayAgo := time.Now().UTC().Unix() - 86400
+					_ = challengeRepo.DeleteHardExpired(oneDayAgo)
+				}
+			}
+		}()
 	}
 
 	// ========================================
