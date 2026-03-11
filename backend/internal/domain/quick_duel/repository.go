@@ -106,6 +106,12 @@ type ChallengeRepository interface {
 
 	// DeleteExpired removes all expired pending challenges
 	DeleteExpired(currentTime int64) error
+
+	// FindPendingExpiredWithMessageID returns pending challenges that expired and have a telegram message to edit
+	FindPendingExpiredWithMessageID(currentTime int64) ([]*DuelChallenge, error)
+
+	// DeleteHardExpired deletes expired/declined challenges older than the given unix timestamp
+	DeleteHardExpired(olderThan int64) error
 }
 
 // ReferralRepository defines the interface for referral persistence
