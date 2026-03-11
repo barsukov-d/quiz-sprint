@@ -315,6 +315,8 @@ export default {
 		waitingForResponse: 'Ожидаем ответа...',
 		friend: 'Друг',
 		friendReady: 'Друг готов к дуэли! →',
+		challengerInvites: '{name} бросает тебе вызов',
+		challengeNotFound: 'Вызов истёк или уже принят',
 	},
 	shared: {
 		questionOf: 'Вопрос {current} / {total}',

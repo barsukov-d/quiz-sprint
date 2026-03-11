@@ -315,6 +315,8 @@ export default {
 		waitingForResponse: 'Waiting for response...',
 		friend: 'Friend',
 		friendReady: 'Friend ready to duel! →',
+		challengerInvites: '{name} challenges you to a duel',
+		challengeNotFound: 'Challenge expired or already accepted',
 	},
 	shared: {
 		questionOf: 'Question {current} / {total}',
