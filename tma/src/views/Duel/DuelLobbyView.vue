@@ -71,7 +71,6 @@ const directChallenge = computed(() => {
 	return pendingChallenges.value.find((c) => c.id === directChallengeId.value) ?? null
 })
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const directChallengeNotFound = computed(
 	() =>
 		directChallengeId.value !== null &&
@@ -99,7 +98,6 @@ const dismissDirectChallenge = () => {
 	router.replace({ name: 'duel-lobby' })
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleDirectAccept = async () => {
 	if (!directChallenge.value?.id) return
 	await respondChallenge(directChallenge.value.id, 'accept')
@@ -107,7 +105,6 @@ const handleDirectAccept = async () => {
 	directChallengeId.value = null
 }
 
-// eslint-disable-next-line @typescript-eslint/no-unused-vars
 const handleDirectDecline = async () => {
 	if (!directChallenge.value?.id) return
 	await respondChallenge(directChallenge.value.id, 'decline')
@@ -271,6 +268,74 @@ onMounted(async () => {
 			<h1 class="text-xl font-bold">{{ t('duel.title') }}</h1>
 			<div class="w-10" />
 		</div>
+
+		<!-- Direct Challenge Hero Banner -->
+		<template v-if="directChallengeId">
+			<!-- Loading state -->
+			<div v-if="isLoadingStatus" class="mb-4 rounded-2xl bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-700 p-5">
+				<div class="animate-pulse space-y-3">
+					<div class="h-5 bg-primary-200 dark:bg-primary-700 rounded w-2/3" />
+					<div class="h-4 bg-primary-100 dark:bg-primary-800 rounded w-1/2" />
+					<div class="grid grid-cols-2 gap-3 mt-4">
+						<div class="h-10 bg-primary-200 dark:bg-primary-700 rounded-lg" />
+						<div class="h-10 bg-primary-100 dark:bg-primary-800 rounded-lg" />
+					</div>
+				</div>
+			</div>
+
+			<!-- Found state -->
+			<div
+				v-else-if="directChallenge"
+				class="mb-4 rounded-2xl bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-600 p-5"
+			>
+				<div class="flex items-center gap-3 mb-1">
+					<span class="text-3xl">⚔️</span>
+					<div>
+						<h2 class="text-lg font-bold text-orange-700 dark:text-orange-300">
+							{{ t('duel.incomingChallenge') }}
+						</h2>
+						<p class="text-sm text-gray-600 dark:text-gray-400">
+							{{ t('duel.challengerInvites', { name: directChallenge.challengerUsername || t('duel.friend') }) }}
+						</p>
+					</div>
+				</div>
+				<div class="grid grid-cols-2 gap-3 mt-4">
+					<UButton
+						color="primary"
+						block
+						size="lg"
+						@click="handleDirectAccept"
+					>
+						{{ t('duel.acceptChallenge') }}
+					</UButton>
+					<UButton
+						color="gray"
+						variant="soft"
+						block
+						size="lg"
+						@click="handleDirectDecline"
+					>
+						{{ t('duel.decline') }}
+					</UButton>
+				</div>
+			</div>
+
+			<!-- Not found / expired state -->
+			<div
+				v-else-if="directChallengeNotFound"
+				class="mb-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5"
+			>
+				<div class="flex items-center justify-between">
+					<div class="flex items-center gap-3">
+						<span class="text-2xl">⏰</span>
+						<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+							{{ t('duel.challengeNotFound') }}
+						</p>
+					</div>
+					<UButton size="xs" color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="dismissDirectChallenge" />
+				</div>
+			</div>
+		</template>
 
 		<!-- Deep Link Challenge Loading -->
 		<UCard v-if="isAcceptingChallenge" class="mb-4">
