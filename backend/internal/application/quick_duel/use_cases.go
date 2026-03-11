@@ -520,6 +520,8 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 type TelegramNotifier interface {
 	NotifyChallengeAccepted(ctx context.Context, inviterTelegramID int64, inviteeName string, lobbyURL string) error
 	NotifyInviterWaiting(ctx context.Context, inviteeTelegramID int64, inviterName string, lobbyURL string) error
+	NotifyChallengeReceived(ctx context.Context, inviteeTelegramID int64, inviterName string, deepLink string) (int64, error)
+	EditChallengeMessage(ctx context.Context, inviteeTelegramID int64, messageID int64, text string) error
 }
 
 // ========================================
