@@ -425,6 +425,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				seasonRepo,
 				duelQuestionRepo,
 				userRepo,
+				telegramNotifier,
 				duelEventBus,
 			)
 			startGameUC = appDuel.NewStartGameUseCase(

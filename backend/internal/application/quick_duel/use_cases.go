@@ -391,6 +391,7 @@ type RespondChallengeUseCase struct {
 	questionRepo     QuestionRepository // nil if questions DB unavailable
 	seasonRepo       quick_duel.SeasonRepository
 	userRepo         domainUser.UserRepository
+	notifier         TelegramNotifier
 	eventBus         EventBus
 }
 
@@ -401,6 +402,7 @@ func NewRespondChallengeUseCase(
 	seasonRepo quick_duel.SeasonRepository,
 	questionRepo QuestionRepository,
 	userRepo domainUser.UserRepository,
+	notifier TelegramNotifier,
 	eventBus EventBus,
 ) *RespondChallengeUseCase {
 	return &RespondChallengeUseCase{
@@ -410,6 +412,7 @@ func NewRespondChallengeUseCase(
 		seasonRepo:       seasonRepo,
 		questionRepo:     questionRepo,
 		userRepo:         userRepo,
+		notifier:         notifier,
 		eventBus:         eventBus,
 	}
 }
@@ -439,6 +442,13 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 		err = uc.challengeRepo.Save(challenge)
 		if err != nil {
 			return RespondChallengeOutput{}, err
+		}
+
+		// Edit Telegram notification in invitee's chat (best-effort)
+		if challenge.TelegramMessageID() > 0 {
+			if tgID, err := strconv.ParseInt(playerID.String(), 10, 64); err == nil {
+				_ = uc.notifier.EditChallengeMessage(context.Background(), tgID, challenge.TelegramMessageID(), "❌ Вызов отклонён")
+			}
 		}
 
 		for _, event := range challenge.Events() {
@@ -525,6 +535,13 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 	challenge.SetMatchID(game.ID())
 	if err := uc.challengeRepo.Save(challenge); err != nil {
 		return RespondChallengeOutput{}, err
+	}
+
+	// Edit Telegram notification in invitee's chat (best-effort)
+	if challenge.TelegramMessageID() > 0 {
+		if tgID, err := strconv.ParseInt(playerID.String(), 10, 64); err == nil {
+			_ = uc.notifier.EditChallengeMessage(context.Background(), tgID, challenge.TelegramMessageID(), "✅ Вызов принят — удачи!")
+		}
 	}
 
 	gameID := game.ID().String()

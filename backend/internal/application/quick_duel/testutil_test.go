@@ -741,7 +741,7 @@ func (f *duelFixture) newSendChallengeUC() *SendChallengeUseCase {
 func (f *duelFixture) newRespondChallengeUC() *RespondChallengeUseCase {
 	return NewRespondChallengeUseCase(
 		f.challengeRepo, f.duelGameRepo, f.playerRatingRepo,
-		f.seasonRepo, f.questionRepo, f.userRepo, f.eventBus,
+		f.seasonRepo, f.questionRepo, f.userRepo, &noOpNotifier{}, f.eventBus,
 	)
 }
 
