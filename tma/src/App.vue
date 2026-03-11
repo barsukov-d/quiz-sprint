@@ -35,6 +35,17 @@ const { mutateAsync: registerUser } = usePostUserRegister()
 
 // Handle deep link navigation
 const handleDeepLink = (startParam: string) => {
+	// Direct challenge notification: challenge_<uuid>
+	if (startParam.startsWith('challenge_')) {
+		const challengeId = startParam.replace('challenge_', '')
+		console.log('⚔️ Direct challenge deep link, navigating to lobby')
+		router.push({
+			name: 'duel-lobby',
+			query: { directChallenge: challengeId },
+		})
+		return
+	}
+
 	// Duel challenge link: duel_abc12345
 	if (startParam.startsWith('duel_')) {
 		console.log('🎮 Duel challenge detected, redirecting to lobby')
