@@ -179,6 +179,26 @@ func (r *ChallengeRepository) FindPendingExpiredWithMessageID(currentTime int64)
 	return r.scanChallenges(rows)
 }
 
+// FindExpiredForPlayer returns expired challenges visible to the player (as inviter or invitee).
+func (r *ChallengeRepository) FindExpiredForPlayer(playerID quick_duel.UserID) ([]*quick_duel.DuelChallenge, error) {
+	query := `
+		SELECT id, challenger_id, challenged_id, challenge_type, status,
+			challenge_link, match_id, expires_at, created_at, responded_at,
+			telegram_message_id
+		FROM duel_challenges
+		WHERE status = 'expired'
+		  AND (challenger_id = $1 OR challenged_id = $1)
+		ORDER BY responded_at DESC
+		LIMIT 20
+	`
+	rows, err := r.db.Query(query, playerID.String())
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	return r.scanChallenges(rows)
+}
+
 // DeleteHardExpired removes expired/declined challenges older than olderThan unix timestamp.
 func (r *ChallengeRepository) DeleteHardExpired(olderThan int64) error {
 	query := `

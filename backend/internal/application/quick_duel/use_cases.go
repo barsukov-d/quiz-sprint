@@ -136,6 +136,32 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 		acceptedDTOs = append(acceptedDTOs, ToChallengeDTO(c, now, username))
 	}
 
+	// B9: expired challenges — shown in lobby for 24h before auto-deletion
+	expiredChallenges, err := uc.challengeRepo.FindExpiredForPlayer(playerID)
+	if err != nil {
+		expiredChallenges = []*quick_duel.DuelChallenge{}
+	}
+	expiredDTOs := make([]ChallengeDTO, 0, len(expiredChallenges))
+	for _, c := range expiredChallenges {
+		dto := ToChallengeDTO(c, now, "")
+		otherID := c.ChallengerID()
+		if c.ChallengerID().Equals(playerID) && c.ChallengedID() != nil {
+			otherID = *c.ChallengedID()
+		}
+		if u, err := uc.userRepo.FindByID(otherID); err == nil && u != nil {
+			name := u.TelegramUsername().String()
+			if name == "" {
+				name = u.Username().String()
+			}
+			if c.ChallengerID().Equals(playerID) {
+				dto.InviteeName = name
+			} else {
+				dto.ChallengerUsername = name
+			}
+		}
+		expiredDTOs = append(expiredDTOs, dto)
+	}
+
 	return GetDuelStatusOutput{
 		HasActiveDuel:      activeGameID != nil,
 		ActiveGameID:       activeGameID,
@@ -145,6 +171,7 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 		PendingChallenges:  challengeDTOs,
 		OutgoingChallenges: outgoingDTOs,
 		AcceptedChallenges: acceptedDTOs,
+		ExpiredChallenges:  expiredDTOs,
 		SeasonID:           seasonID,
 		SeasonEndsAt:       seasonEndsAt,
 	}, nil

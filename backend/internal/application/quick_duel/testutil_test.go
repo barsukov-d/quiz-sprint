@@ -218,6 +218,18 @@ func (m *mockChallengeRepo) DeleteHardExpired(_ int64) error {
 	return nil
 }
 
+func (m *mockChallengeRepo) FindExpiredForPlayer(playerID quick_duel.UserID) ([]*quick_duel.DuelChallenge, error) {
+	var result []*quick_duel.DuelChallenge
+	for _, c := range m.challenges {
+		if c.Status() == quick_duel.ChallengeStatusExpired {
+			if c.ChallengerID().Equals(playerID) || (c.ChallengedID() != nil && c.ChallengedID().Equals(playerID)) {
+				result = append(result, c)
+			}
+		}
+	}
+	return result, nil
+}
+
 // mockPlayerRatingRepo is an in-memory player rating repository
 type mockPlayerRatingRepo struct {
 	ratings map[string]*quick_duel.PlayerRating // keyed by "playerID:seasonID"

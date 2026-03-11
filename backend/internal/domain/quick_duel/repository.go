@@ -112,6 +112,10 @@ type ChallengeRepository interface {
 
 	// DeleteHardExpired deletes expired/declined challenges older than the given unix timestamp
 	DeleteHardExpired(olderThan int64) error
+
+	// FindExpiredForPlayer returns expired challenges visible to this player (as inviter or invitee)
+	// within the last 24 hours (still shown in UI before auto-deletion)
+	FindExpiredForPlayer(playerID UserID) ([]*DuelChallenge, error)
 }
 
 // ReferralRepository defines the interface for referral persistence

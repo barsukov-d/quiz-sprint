@@ -165,6 +165,7 @@ type GetDuelStatusOutput struct {
 	PendingChallenges  []ChallengeDTO  `json:"pendingChallenges"`
 	OutgoingChallenges []ChallengeDTO  `json:"outgoingChallenges"`
 	AcceptedChallenges []ChallengeDTO  `json:"acceptedChallenges"` // F1: added
+	ExpiredChallenges  []ChallengeDTO  `json:"expiredChallenges"`  // B9: expired challenges visible in lobby
 	SeasonID           string          `json:"seasonId"`
 	SeasonEndsAt       int64           `json:"seasonEndsAt"`
 }
