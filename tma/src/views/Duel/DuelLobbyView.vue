@@ -71,12 +71,6 @@ const directChallenge = computed(() => {
 	return pendingChallenges.value.find((c) => c.id === directChallengeId.value) ?? null
 })
 
-const directChallengeNotFound = computed(
-	() =>
-		directChallengeId.value !== null &&
-		!isLoadingStatus.value &&
-		directChallenge.value === null,
-)
 const showConfirmModal = ref(false)
 const pendingLinkCode = ref<string | null>(null)
 
@@ -272,7 +266,10 @@ onMounted(async () => {
 		<!-- Direct Challenge Hero Banner -->
 		<template v-if="directChallengeId">
 			<!-- Loading state -->
-			<div v-if="isLoadingStatus" class="mb-4 rounded-2xl bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-700 p-5">
+			<div
+				v-if="isLoadingStatus"
+				class="mb-4 rounded-2xl bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-700 p-5"
+			>
 				<div class="animate-pulse space-y-3">
 					<div class="h-5 bg-primary-200 dark:bg-primary-700 rounded w-2/3" />
 					<div class="h-4 bg-primary-100 dark:bg-primary-800 rounded w-1/2" />
@@ -295,7 +292,11 @@ onMounted(async () => {
 							{{ t('duel.incomingChallenge') }}
 						</h2>
 						<p class="text-sm text-gray-600 dark:text-gray-400">
-							{{ t('duel.challengerInvites', { name: directChallenge.challengerUsername || t('duel.friend') }) }}
+							{{
+								t('duel.challengerInvites', {
+									name: directChallenge.challengerUsername || t('duel.friend'),
+								})
+							}}
 						</p>
 					</div>
 				</div>
@@ -304,6 +305,8 @@ onMounted(async () => {
 						color="primary"
 						block
 						size="lg"
+						:loading="isLoading"
+						:disabled="isLoading"
 						@click="handleDirectAccept"
 					>
 						{{ t('duel.acceptChallenge') }}
@@ -313,6 +316,8 @@ onMounted(async () => {
 						variant="soft"
 						block
 						size="lg"
+						:loading="isLoading"
+						:disabled="isLoading"
 						@click="handleDirectDecline"
 					>
 						{{ t('duel.decline') }}
@@ -322,7 +327,7 @@ onMounted(async () => {
 
 			<!-- Not found / expired state -->
 			<div
-				v-else-if="directChallengeNotFound"
+				v-else
 				class="mb-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5"
 			>
 				<div class="flex items-center justify-between">
@@ -332,7 +337,13 @@ onMounted(async () => {
 							{{ t('duel.challengeNotFound') }}
 						</p>
 					</div>
-					<UButton size="xs" color="gray" variant="ghost" icon="i-heroicons-x-mark" @click="dismissDirectChallenge" />
+					<UButton
+						size="xs"
+						color="gray"
+						variant="ghost"
+						icon="i-heroicons-x-mark"
+						@click="dismissDirectChallenge"
+					/>
 				</div>
 			</div>
 		</template>
