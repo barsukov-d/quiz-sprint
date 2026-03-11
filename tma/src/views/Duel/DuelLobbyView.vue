@@ -61,6 +61,19 @@ const showChallengeLink = ref(false)
 const challengeLink = ref('')
 const deepLinkChallenge = ref<string | null>(null)
 const deepLinkError = ref<string | null>(null)
+
+// Direct challenge deep link state
+const directChallengeId = ref<string | null>(null)
+
+const directChallenge = computed(() => {
+	if (!directChallengeId.value) return null
+	return pendingChallenges.value.find((c) => c.id === directChallengeId.value) ?? null
+})
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const directChallengeNotFound = computed(
+	() => directChallengeId.value !== null && !isLoading.value && directChallenge.value === null,
+)
 const showConfirmModal = ref(false)
 const pendingLinkCode = ref<string | null>(null)
 
@@ -75,6 +88,29 @@ function setActiveTab(tab: string) {
 function dismissDeepLinkError() {
 	deepLinkError.value = null
 	router.replace({ name: 'duel-lobby' })
+}
+
+const dismissDirectChallenge = () => {
+	directChallengeId.value = null
+	router.replace({ name: 'duel-lobby' })
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const handleDirectAccept = async () => {
+	if (!directChallenge.value?.id) return
+	await respondChallenge(directChallenge.value.id, 'accept')
+	dismissDirectChallenge()
+	await refetchStatus()
+	if (hasActiveDuel.value && activeGameId.value) {
+		goToActiveDuel()
+	}
+}
+
+// eslint-disable-next-line @typescript-eslint/no-unused-vars
+const handleDirectDecline = async () => {
+	if (!directChallenge.value?.id) return
+	await respondChallenge(directChallenge.value.id, 'decline')
+	dismissDirectChallenge()
 }
 
 // ===========================
@@ -194,6 +230,14 @@ const handleAcceptByLinkCode = async (linkCode: string) => {
 
 onMounted(async () => {
 	await refetchStatus()
+
+	// Check for direct challenge deep link (from Telegram notification)
+	const directChallengeParam = route.query.directChallenge as string | undefined
+	if (directChallengeParam) {
+		directChallengeId.value = directChallengeParam
+		window.scrollTo(0, 0)
+	}
+
 	await refetchLeaderboard()
 	await refetchHistory()
 	await refetchRivals()
@@ -494,7 +538,11 @@ onMounted(async () => {
 						<p class="font-medium">{{ t('duel.waitingForResponse') }}</p>
 					</div>
 					<p class="text-sm text-gray-500 dark:text-gray-400">
-						{{ t('duel.linkExpiresIn', { time: formatExpiresIn(challenge.expiresIn ?? 0) }) }}
+						{{
+							t('duel.linkExpiresIn', {
+								time: formatExpiresIn(challenge.expiresIn ?? 0),
+							})
+						}}
 					</p>
 				</UCard>
 			</div>
