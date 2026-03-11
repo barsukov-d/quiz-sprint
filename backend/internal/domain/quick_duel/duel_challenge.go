@@ -6,7 +6,7 @@ import (
 
 // Challenge expiry constants
 const (
-	DirectChallengeExpirySeconds = 60       // 60 seconds for online friend
+	DirectChallengeExpirySeconds = 3600     // 1 hour — time to open Telegram notification
 	PushChallengeExpirySeconds   = 300      // 5 minutes if push notification sent
 	LinkChallengeExpirySeconds   = 86400    // 24 hours for link-based challenges
 )
