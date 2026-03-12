@@ -1,5 +1,6 @@
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
+import { useLobbyWebSocket } from '@/composables/useLobbyWebSocket'
 import { shareURL } from '@tma.js/sdk'
 import {
 	useGetDuelStatus,
@@ -25,6 +26,11 @@ import {
  */
 export function usePvPDuel(playerId: string) {
 	const router = useRouter()
+
+	// ===========================
+	// Lobby WebSocket
+	// ===========================
+	const lobbyWs = useLobbyWebSocket(playerId)
 
 	// ===========================
 	// Local UI State
@@ -212,6 +218,36 @@ export function usePvPDuel(playerId: string) {
 		{ immediate: true },
 	)
 
+	// WS event handlers: refetch state and navigate on game_ready
+	lobbyWs.on('challenge_accepted', async () => {
+		await refetchStatus()
+	})
+
+	lobbyWs.on('challenge_declined', async () => {
+		await refetchStatus()
+		await refetchRivals()
+	})
+
+	lobbyWs.on('challenge_expired', async () => {
+		await refetchStatus()
+	})
+
+	lobbyWs.on('game_ready', (data) => {
+		const gameId = data?.gameId as string | undefined
+		if (gameId) {
+			router.push({ name: 'duel-play', params: { duelId: gameId } })
+		} else {
+			refetchStatus().then(() => {
+				if (hasActiveDuel.value && activeGameId.value) goToActiveDuel()
+			})
+		}
+	})
+
+	lobbyWs.on('queue_matched', (data) => {
+		const gameId = data?.gameId as string | undefined
+		if (gameId) router.push({ name: 'duel-play', params: { duelId: gameId } })
+	})
+
 	onUnmounted(() => {
 		stopOutgoingPoll()
 	})
@@ -306,7 +342,7 @@ export function usePvPDuel(playerId: string) {
 				return
 			}
 
-			setTimeout(poll, 1000)
+			setTimeout(poll, lobbyWs.isPollingFallback.value ? 3000 : 1000)
 		}
 
 		poll()
@@ -542,5 +578,8 @@ export function usePvPDuel(playerId: string) {
 		refetchLeaderboard,
 		refetchHistory,
 		refetchRivals,
+
+		// Lobby WebSocket
+		lobbyWs,
 	}
 }
