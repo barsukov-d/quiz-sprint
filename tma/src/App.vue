@@ -35,6 +35,12 @@ const { mutateAsync: registerUser } = usePostUserRegister()
 
 // Handle deep link navigation
 const handleDeepLink = (startParam: string) => {
+	// Inviter returns to lobby: lobby
+	if (startParam === 'lobby') {
+		router.push({ name: 'duel-lobby' })
+		return
+	}
+
 	// Direct challenge notification: challenge_<uuid>
 	if (startParam.startsWith('challenge_')) {
 		const challengeId = startParam.slice('challenge_'.length)
