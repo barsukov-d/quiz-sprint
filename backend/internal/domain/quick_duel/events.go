@@ -508,6 +508,22 @@ func (e ChallengeExpiredEvent) ChallengeID() ChallengeID { return e.challengeID 
 func (e ChallengeExpiredEvent) ChallengerID() UserID     { return e.challengerID }
 func (e ChallengeExpiredEvent) ChallengedID() *UserID    { return e.challengedID }
 
+// GameReadyEvent fired when the inviter starts the challenge game and the invitee should navigate to it.
+type GameReadyEvent struct {
+	playerID   *UserID // invitee who should receive the notification
+	gameID     string
+	occurredAt int64
+}
+
+func NewGameReadyEvent(playerID *UserID, gameID string, occurredAt int64) GameReadyEvent {
+	return GameReadyEvent{playerID: playerID, gameID: gameID, occurredAt: occurredAt}
+}
+
+func (e GameReadyEvent) EventType() string { return "game_ready" }
+func (e GameReadyEvent) OccurredAt() int64 { return e.occurredAt }
+func (e GameReadyEvent) PlayerID() *UserID { return e.playerID }
+func (e GameReadyEvent) GameID() string    { return e.gameID }
+
 // Referral Events
 
 // ReferralCreatedEvent fired when a referral is created
