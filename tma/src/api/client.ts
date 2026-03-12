@@ -64,7 +64,11 @@ apiClient.interceptors.request.use(
 
 // Response interceptor (обработка ошибок)
 apiClient.interceptors.response.use(
-	(response) => response,
+	(response) => {
+		// Reset reload counter on successful request
+		sessionStorage.removeItem('auth_reload_attempts')
+		return response
+	},
 	(error) => {
 		// Log detailed error info for debugging
 		if (error.response) {
@@ -74,6 +78,20 @@ apiClient.interceptors.response.use(
 				data: error.response.data,
 				url: error.config?.url,
 			})
+
+			// Auto-recover from expired Telegram init data
+			if (error.response.status === 401) {
+				const attempts = parseInt(sessionStorage.getItem('auth_reload_attempts') || '0')
+				if (attempts < 2) {
+					console.warn(
+						`TMA: 401 received, clearing auth cache and reloading (attempt ${attempts + 1})`,
+					)
+					sessionStorage.setItem('auth_reload_attempts', String(attempts + 1))
+					localStorage.removeItem('tma_init_data_raw')
+					window.location.reload()
+					return new Promise(() => {}) // suspend — reload happens
+				}
+			}
 		} else if (error.request) {
 			// Request made but no response received
 			console.error('API Network Error:', {

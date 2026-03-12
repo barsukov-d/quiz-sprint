@@ -173,7 +173,9 @@ const goHome = () => {
 					<UCard>
 						<div class="text-center py-4">
 							<div class="text-3xl font-bold mb-2">{{ results.session.score }}</div>
-							<div class="text-sm text-gray-600">{{ t('quiz.pointsEarnedLabel') }}</div>
+							<div class="text-sm text-gray-600">
+								{{ t('quiz.pointsEarnedLabel') }}
+							</div>
 						</div>
 					</UCard>
 
@@ -205,7 +207,9 @@ const goHome = () => {
 
 				<!-- Actions -->
 				<div class="space-y-3">
-					<UButton size="xl" color="primary" block @click="tryAgain"> {{ t('quiz.tryAgainBtn') }} </UButton>
+					<UButton size="xl" color="primary" block @click="tryAgain">
+						{{ t('quiz.tryAgainBtn') }}
+					</UButton>
 					<UButton
 						size="xl"
 						color="gray"

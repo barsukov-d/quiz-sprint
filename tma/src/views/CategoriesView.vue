@@ -81,7 +81,17 @@ const getCategoryIcon = (categoryName: string): string => {
 				:title="t('categories.loadError')"
 				:description="error?.error.message || t('categories.loadFailed')"
 			/>
-			<UButton color="red" class="mt-2" @click="refetch()"> {{ t('categories.tryAgain') }} </UButton>
+			<UButton
+				color="red"
+				class="mt-2"
+				@click="
+					() => {
+						refetch()
+					}
+				"
+			>
+				{{ t('categories.tryAgain') }}
+			</UButton>
 		</div>
 
 		<!-- Success state with data -->
@@ -90,7 +100,7 @@ const getCategoryIcon = (categoryName: string): string => {
 				v-for="category in categories.data"
 				:key="category.id"
 				class="hover:shadow-lg transition-all cursor-pointer hover:scale-[1.02]"
-				@click="navigateToQuizzes(category.id, category.name)"
+				@click="() => navigateToQuizzes(category.id, category.name)"
 			>
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-4 flex-1">
@@ -101,7 +111,11 @@ const getCategoryIcon = (categoryName: string): string => {
 						<div class="flex-1">
 							<h3 class="text-lg font-semibold mb-1">{{ category.name }}</h3>
 							<p class="text-sm text-gray-500">
-								{{ t('categories.exploreDesc', { name: category.name.toLowerCase() }) }}
+								{{
+									t('categories.exploreDesc', {
+										name: category.name.toLowerCase(),
+									})
+								}}
 							</p>
 						</div>
 					</div>

@@ -17,6 +17,16 @@ type DuelGameRepository interface {
 
 	// Delete removes a duel game
 	Delete(id GameID) error
+
+	// FindRecentOpponents returns unique opponents from completed games, most recent first
+	FindRecentOpponents(playerID UserID, limit int) ([]RecentOpponentEntry, error)
+}
+
+// RecentOpponentEntry represents a recent opponent with game count
+type RecentOpponentEntry struct {
+	OpponentID   UserID
+	GamesCount   int
+	LastPlayedAt int64
 }
 
 // MatchmakingQueue defines the interface for matchmaking queue operations
@@ -87,11 +97,25 @@ type ChallengeRepository interface {
 	// FindPendingByChallenger retrieves pending challenges sent by a player
 	FindPendingByChallenger(playerID UserID) ([]*DuelChallenge, error)
 
+	// FindAcceptedWaitingForPlayer retrieves challenges where the player is the invitee
+	// and the challenge status is accepted_waiting_inviter (game not yet started).
+	FindAcceptedWaitingForPlayer(playerID UserID) ([]*DuelChallenge, error)
+
 	// Delete removes a challenge
 	Delete(id ChallengeID) error
 
 	// DeleteExpired removes all expired pending challenges
 	DeleteExpired(currentTime int64) error
+
+	// FindPendingExpiredWithMessageID returns pending challenges that expired and have a telegram message to edit
+	FindPendingExpiredWithMessageID(currentTime int64) ([]*DuelChallenge, error)
+
+	// DeleteHardExpired deletes expired/declined challenges older than the given unix timestamp
+	DeleteHardExpired(olderThan int64) error
+
+	// FindExpiredForPlayer returns expired challenges visible to this player (as inviter or invitee)
+	// within the last 24 hours (still shown in UI before auto-deletion)
+	FindExpiredForPlayer(playerID UserID) ([]*DuelChallenge, error)
 }
 
 // ReferralRepository defines the interface for referral persistence

@@ -18,10 +18,13 @@ type DuelHandler struct {
 	sendChallengeUC      *appDuel.SendChallengeUseCase
 	respondChallengeUC   *appDuel.RespondChallengeUseCase
 	acceptByLinkCodeUC   *appDuel.AcceptByLinkCodeUseCase
+	startChallengeUC     *appDuel.StartChallengeUseCase
 	createLinkUC         *appDuel.CreateChallengeLinkUseCase
 	getHistoryUC         *appDuel.GetGameHistoryUseCase
 	getLeaderboardUC     *appDuel.GetLeaderboardUseCase
 	requestRematchUC     *appDuel.RequestRematchUseCase
+	getGameResultUC      *appDuel.GetGameResultUseCase
+	getRivalsUC          *appDuel.GetRivalsUseCase
 }
 
 func NewDuelHandler(
@@ -31,10 +34,13 @@ func NewDuelHandler(
 	sendChallengeUC *appDuel.SendChallengeUseCase,
 	respondChallengeUC *appDuel.RespondChallengeUseCase,
 	acceptByLinkCodeUC *appDuel.AcceptByLinkCodeUseCase,
+	startChallengeUC *appDuel.StartChallengeUseCase,
 	createLinkUC *appDuel.CreateChallengeLinkUseCase,
 	getHistoryUC *appDuel.GetGameHistoryUseCase,
 	getLeaderboardUC *appDuel.GetLeaderboardUseCase,
 	requestRematchUC *appDuel.RequestRematchUseCase,
+	getGameResultUC *appDuel.GetGameResultUseCase,
+	getRivalsUC *appDuel.GetRivalsUseCase,
 ) *DuelHandler {
 	return &DuelHandler{
 		getStatusUC:          getStatusUC,
@@ -43,10 +49,13 @@ func NewDuelHandler(
 		sendChallengeUC:      sendChallengeUC,
 		respondChallengeUC:   respondChallengeUC,
 		acceptByLinkCodeUC:   acceptByLinkCodeUC,
+		startChallengeUC:     startChallengeUC,
 		createLinkUC:         createLinkUC,
 		getHistoryUC:         getHistoryUC,
 		getLeaderboardUC:     getLeaderboardUC,
 		requestRematchUC:     requestRematchUC,
+		getGameResultUC:      getGameResultUC,
+		getRivalsUC:          getRivalsUC,
 	}
 }
 
@@ -409,6 +418,83 @@ func (h *DuelHandler) RequestRematch(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": output})
 }
 
+// GetGameResult handles GET /api/v1/duel/game/:gameId
+// @Summary Get game result
+// @Description Get full result of a finished duel game
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Param gameId path string true "Game ID"
+// @Param playerId query string true "Player ID"
+// @Success 200 {object} GetGameResultResponse "Game result"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 404 {object} ErrorResponse "Game not found"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /duel/game/{gameId} [get]
+func (h *DuelHandler) GetGameResult(c fiber.Ctx) error {
+	gameID := c.Params("gameId")
+	if _, err := uuid.Parse(gameID); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid game ID format")
+	}
+
+	playerID := c.Query("playerId")
+	if playerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+
+	output, err := h.getGameResultUC.Execute(appDuel.GetGameResultInput{
+		PlayerID: playerID,
+		GameID:   gameID,
+	})
+	if err != nil {
+		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
+}
+
+// StartChallenge handles POST /api/v1/duel/challenge/:challengeId/start
+// @Summary Start the duel after invitee accepted
+// @Description Inviter confirms game start after invitee accepted via link
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Param challengeId path string true "Challenge ID"
+// @Param request body StartChallengeRequest true "Start request"
+// @Success 200 {object} StartChallengeResponse "Game started"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 404 {object} ErrorResponse "Challenge not found"
+// @Failure 409 {object} ErrorResponse "Challenge not in accepted_waiting_inviter state"
+// @Router /duel/challenge/{challengeId}/start [post]
+func (h *DuelHandler) StartChallenge(c fiber.Ctx) error {
+	challengeID := c.Params("challengeId")
+	if _, err := uuid.Parse(challengeID); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid challenge ID format")
+	}
+
+	var req StartChallengeRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+	if req.PlayerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+
+	if h.startChallengeUC == nil {
+		return fiber.NewError(fiber.StatusServiceUnavailable, "Service not available")
+	}
+
+	output, err := h.startChallengeUC.Execute(appDuel.StartChallengeInput{
+		PlayerID:    req.PlayerID,
+		ChallengeID: challengeID,
+	})
+	if err != nil {
+		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
+}
+
 // mapDuelError maps domain errors to HTTP errors
 func mapDuelError(err error) error {
 	switch err {
@@ -426,11 +512,44 @@ func mapDuelError(err error) error {
 		return fiber.NewError(fiber.StatusConflict, "Already in an active game")
 	case domainDuel.ErrFriendBusy:
 		return fiber.NewError(fiber.StatusConflict, "Friend is already in a game")
+	case domainDuel.ErrChallengeAlreadySent:
+		return fiber.NewError(fiber.StatusConflict, "Challenge already sent to this player")
 	case domainDuel.ErrInsufficientTickets:
 		return fiber.NewError(fiber.StatusBadRequest, "Insufficient tickets")
 	case domainDuel.ErrCannotChallengeSelf:
 		return fiber.NewError(fiber.StatusBadRequest, "Cannot challenge yourself")
+	case domainDuel.ErrChallengeNotPending:
+		return fiber.NewError(fiber.StatusConflict, "Challenge is no longer pending")
+	case domainDuel.ErrNotChallengedPlayer:
+		return fiber.NewError(fiber.StatusForbidden, "Not the challenged player")
 	default:
 		return fiber.NewError(fiber.StatusInternalServerError, "Internal server error")
 	}
+}
+
+// GetRivals handles GET /api/v1/duel/rivals
+// @Summary Get recent rivals
+// @Description Get list of recent unique opponents the player has faced
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Param playerId query string true "Player ID"
+// @Success 200 {object} GetRivalsResponse "Rivals list"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /duel/rivals [get]
+func (h *DuelHandler) GetRivals(c fiber.Ctx) error {
+	playerID := c.Query("playerId")
+	if playerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+
+	output, err := h.getRivalsUC.Execute(appDuel.GetRivalsInput{
+		PlayerID: playerID,
+	})
+	if err != nil {
+		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
 }

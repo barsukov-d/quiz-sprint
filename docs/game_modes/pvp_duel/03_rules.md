@@ -15,8 +15,8 @@ func CalculateMMRChange(winnerMMR, loserMMR int, result GameResult) (winnerDelta
     actualWinner := 1.0  // Win = 1
     actualLoser := 0.0   // Lose = 0
 
-    winnerDelta = int(float64(K) * (actualWinner - expectedWinner))
-    loserDelta = int(float64(K) * (actualLoser - expectedLoser))
+    winnerDelta = int(math.Round(float64(K) * (actualWinner - expectedWinner)))
+    loserDelta = int(math.Round(float64(K) * (actualLoser - expectedLoser)))
 
     // Minimum change
     if winnerDelta < 10 {
@@ -37,7 +37,7 @@ func CalculateMMRChange(winnerMMR, loserMMR int, result GameResult) (winnerDelta
 | 1500 | 1500 | +16 | -16 |
 | 1500 | 1700 | +24 | -24 |
 | 1700 | 1500 | +10 | -10 |
-| 1500 | 2000 | +28 | -28 |
+| 1500 | 2000 | +30 | -30 |
 | 2000 | 1500 | +10 | -10 |
 
 ### Initial MMR
@@ -256,16 +256,13 @@ func HandleTimeout(playerID string) {
 
 ### Ticket Consumption
 ```go
+// Tickets are consumed BEFORE game start:
+// - Random queue: consumed at JoinQueue()
+// - Friend challenge (challenger): consumed at CreateChallenge()
+// - Friend challenge (challengee): consumed at AcceptChallenge()
+// StartDuel() assumes tickets already consumed and validated.
 func StartDuel(player1, player2 *Player) error {
-    // Consume tickets
-    if err := player1.ConsumeTicket(); err != nil {
-        return ErrInsufficientTickets
-    }
-    if err := player2.ConsumeTicket(); err != nil {
-        player1.RefundTicket()  // Rollback
-        return ErrInsufficientTickets
-    }
-
+    // Tickets already consumed upstream. Nothing to do here.
     return nil
 }
 ```

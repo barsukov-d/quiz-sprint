@@ -1,8 +1,9 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePvPDuel } from '@/composables/usePvPDuel'
+import { useGetDuelGameGameid } from '@/api/generated/hooks/duelController/useGetDuelGameGameid'
 import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
@@ -13,12 +14,12 @@ const duelId = computed(() => route.params.duelId as string)
 const playerId = computed(() => currentUser.value?.id ?? '')
 const { t } = useI18n()
 
-const {
-  gameHistory,
-  requestRematch,
-  refetchHistory,
-  isLoading,
-} = usePvPDuel(playerId.value)
+const { requestRematch, isLoading } = usePvPDuel(playerId.value)
+
+const { data: gameResult } = useGetDuelGameGameid(
+	{ gameId: duelId },
+	computed(() => ({ playerId: playerId.value })),
+)
 
 // ===========================
 // State
@@ -31,27 +32,24 @@ const rematchError = ref<string | null>(null)
 // Computed
 // ===========================
 
-// Find this game in history
-const gameData = computed(() => {
-  return gameHistory.value.find((g) => g.gameId === duelId.value)
-})
+const gameData = computed(() => gameResult.value?.data)
 
 const didWin = computed(() => gameData.value?.result === 'win')
 const isDraw = computed(() => gameData.value?.result === 'draw')
 
 const resultIcon = computed(() => {
-  if (isDraw.value) return 'i-heroicons-minus-circle'
-  return didWin.value ? 'i-heroicons-trophy' : 'i-heroicons-x-circle'
+	if (isDraw.value) return 'i-heroicons-minus-circle'
+	return didWin.value ? 'i-heroicons-trophy' : 'i-heroicons-x-circle'
 })
 
 const resultColor = computed(() => {
-  if (isDraw.value) return 'text-gray-500'
-  return didWin.value ? 'text-yellow-500' : 'text-red-500'
+	if (isDraw.value) return 'text-gray-500'
+	return didWin.value ? 'text-yellow-500' : 'text-red-500'
 })
 
 const resultText = computed(() => {
-  if (isDraw.value) return t('duel.draw')
-  return didWin.value ? t('duel.victory') : t('duel.defeat')
+	if (isDraw.value) return t('duel.draw')
+	return didWin.value ? t('duel.victory') : t('duel.defeat')
 })
 
 const mmrChange = computed(() => gameData.value?.mmrChange ?? 0)
@@ -62,174 +60,152 @@ const mmrChangeColor = computed(() => (mmrChange.value >= 0 ? 'text-green-600' :
 // ===========================
 
 const handleRematch = async () => {
-  try {
-    rematchStatus.value = 'pending'
-    rematchError.value = null
+	try {
+		rematchStatus.value = 'pending'
+		rematchError.value = null
 
-    const result = await requestRematch(duelId.value)
+		const result = await requestRematch(duelId.value)
 
-    if (result?.status === 'accepted') {
-      rematchStatus.value = 'accepted'
-      // Will be redirected by the composable
-    } else {
-      rematchStatus.value = 'pending'
-    }
-  } catch (error) {
-    console.error('Rematch failed:', error)
-    rematchStatus.value = 'idle'
-    rematchError.value = 'Failed to request rematch'
-  }
+		if (result?.status === 'accepted') {
+			rematchStatus.value = 'accepted'
+			// Will be redirected by the composable
+		} else {
+			rematchStatus.value = 'pending'
+		}
+	} catch (error) {
+		console.error('Rematch failed:', error)
+		rematchStatus.value = 'idle'
+		rematchError.value = 'Failed to request rematch'
+	}
 }
 
 const handleBackToLobby = () => {
-  router.push({ name: 'duel-lobby' })
+	router.push({ name: 'duel-lobby' })
 }
 
 const handleHome = () => {
-  router.push({ name: 'home' })
+	router.push({ name: 'home' })
 }
 
 const handleShare = () => {
-  // TODO: Share victory card
-  const text = didWin.value
-    ? `I just won a PvP Duel! ${gameData.value?.playerScore} - ${gameData.value?.opponentScore}`
-    : `Just finished a PvP Duel: ${gameData.value?.playerScore} - ${gameData.value?.opponentScore}`
+	// TODO: Share victory card
+	const text = didWin.value
+		? `I just won a PvP Duel! ${gameData.value?.playerScore} - ${gameData.value?.opponentScore}`
+		: `Just finished a PvP Duel: ${gameData.value?.playerScore} - ${gameData.value?.opponentScore}`
 
-  if (navigator.share) {
-    navigator.share({
-      title: 'Quiz Sprint Duel',
-      text,
-    })
-  }
+	if (navigator.share) {
+		navigator.share({
+			title: 'Quiz Sprint Duel',
+			text,
+		})
+	}
 }
-
-// ===========================
-// Lifecycle
-// ===========================
-
-onMounted(async () => {
-  await refetchHistory()
-})
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-    <!-- Header -->
-    <div class="px-4 py-3 flex items-center justify-between">
-      <button class="p-2 -ml-2" @click="handleHome">
-        <UIcon name="i-heroicons-x-mark" class="size-6" />
-      </button>
-      <h1 class="text-lg font-semibold">{{ t('duel.gameResult') }}</h1>
-      <div class="w-10" />
-    </div>
+	<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+		<!-- Header -->
+		<div class="px-4 py-3 flex items-center justify-between">
+			<button class="p-2 -ml-2" @click="handleHome">
+				<UIcon name="i-heroicons-x-mark" class="size-6" />
+			</button>
+			<h1 class="text-lg font-semibold">{{ t('duel.gameResult') }}</h1>
+			<div class="w-10" />
+		</div>
 
-    <!-- Result Hero -->
-    <div class="flex-1 flex flex-col items-center justify-center p-6">
-      <!-- Result Icon -->
-      <div class="mb-6">
-        <UIcon :name="resultIcon" :class="resultColor" class="size-24" />
-      </div>
+		<!-- Result Hero -->
+		<div class="flex-1 flex flex-col items-center justify-center p-6">
+			<!-- Result Icon -->
+			<div class="mb-6">
+				<UIcon :name="resultIcon" :class="resultColor" class="size-24" />
+			</div>
 
-      <!-- Result Text -->
-      <h2 class="text-4xl font-bold mb-4">{{ resultText }}</h2>
+			<!-- Result Text -->
+			<h2 class="text-4xl font-bold mb-4">{{ resultText }}</h2>
 
-      <!-- Score -->
-      <div class="flex items-center gap-6 mb-6">
-        <div class="text-center">
-          <p class="text-sm text-gray-500 dark:text-gray-400">{{ t('duel.you') }}</p>
-          <p class="text-5xl font-bold text-primary">
-            {{ gameData?.playerScore ?? 0 }}
-          </p>
-        </div>
-        <span class="text-2xl text-gray-400">-</span>
-        <div class="text-center">
-          <p class="text-sm text-gray-500 dark:text-gray-400">
-            {{ gameData?.opponent ?? t('duel.opponent') }}
-          </p>
-          <p class="text-5xl font-bold text-orange-500">
-            {{ gameData?.opponentScore ?? 0 }}
-          </p>
-        </div>
-      </div>
+			<!-- Score -->
+			<div class="flex items-center gap-6 mb-6">
+				<div class="text-center">
+					<p class="text-sm text-gray-500 dark:text-gray-400">{{ t('duel.you') }}</p>
+					<p class="text-5xl font-bold text-primary">
+						{{ gameData?.playerScore ?? 0 }}
+					</p>
+				</div>
+				<span class="text-2xl text-gray-400">-</span>
+				<div class="text-center">
+					<p class="text-sm text-gray-500 dark:text-gray-400">
+						{{ gameData?.opponent?.username ?? t('duel.opponent') }}
+					</p>
+					<p class="text-5xl font-bold text-orange-500">
+						{{ gameData?.opponentScore ?? 0 }}
+					</p>
+				</div>
+			</div>
 
-      <!-- MMR Change -->
-      <div class="mb-8">
-        <p :class="mmrChangeColor" class="text-2xl font-bold">
-          {{ t('duel.mmrChange', { sign: mmrChange >= 0 ? '+' : '', amount: mmrChange }) }}
-        </p>
-      </div>
+			<!-- MMR Change -->
+			<div class="mb-8">
+				<p :class="mmrChangeColor" class="text-2xl font-bold">
+					{{
+						t('duel.mmrChange', { sign: mmrChange >= 0 ? '+' : '', amount: mmrChange })
+					}}
+				</p>
+			</div>
+		</div>
 
-      <!-- Friend Game Badge -->
-      <UBadge
-        v-if="gameData?.isFriendGame"
-        color="blue"
-        variant="soft"
-        size="lg"
-        class="mb-6"
-      >
-        {{ t('duel.friendGame') }}
-      </UBadge>
-    </div>
+		<!-- Actions -->
+		<div class="p-4 space-y-3">
+			<!-- Rematch Button -->
+			<UButton
+				v-if="rematchStatus === 'idle'"
+				icon="i-heroicons-arrow-path"
+				color="primary"
+				size="xl"
+				block
+				:loading="isLoading"
+				@click="handleRematch"
+			>
+				{{ t('duel.requestRematch') }}
+			</UButton>
 
-    <!-- Actions -->
-    <div class="p-4 space-y-3">
-      <!-- Rematch Button -->
-      <UButton
-        v-if="rematchStatus === 'idle'"
-        icon="i-heroicons-arrow-path"
-        color="primary"
-        size="xl"
-        block
-        :loading="isLoading"
-        @click="handleRematch"
-      >
-        {{ t('duel.requestRematch') }}
-      </UButton>
+			<UButton
+				v-else-if="rematchStatus === 'pending'"
+				icon="i-heroicons-clock"
+				color="gray"
+				variant="soft"
+				size="xl"
+				block
+				disabled
+			>
+				{{ t('duel.waitingOpponent') }}
+			</UButton>
 
-      <UButton
-        v-else-if="rematchStatus === 'pending'"
-        icon="i-heroicons-clock"
-        color="gray"
-        variant="soft"
-        size="xl"
-        block
-        disabled
-      >
-        {{ t('duel.waitingOpponent') }}
-      </UButton>
+			<UAlert v-if="rematchError" color="red" variant="soft" class="mb-2">
+				{{ rematchError }}
+			</UAlert>
 
-      <UAlert
-        v-if="rematchError"
-        color="red"
-        variant="soft"
-        class="mb-2"
-      >
-        {{ rematchError }}
-      </UAlert>
+			<!-- Share Button -->
+			<UButton
+				icon="i-heroicons-share"
+				color="gray"
+				variant="soft"
+				size="lg"
+				block
+				@click="handleShare"
+			>
+				{{ t('duel.shareResult') }}
+			</UButton>
 
-      <!-- Share Button -->
-      <UButton
-        icon="i-heroicons-share"
-        color="gray"
-        variant="soft"
-        size="lg"
-        block
-        @click="handleShare"
-      >
-        {{ t('duel.shareResult') }}
-      </UButton>
-
-      <!-- Back to Lobby -->
-      <UButton
-        icon="i-heroicons-arrow-left"
-        color="gray"
-        variant="ghost"
-        size="lg"
-        block
-        @click="handleBackToLobby"
-      >
-        {{ t('duel.backToLobby') }}
-      </UButton>
-    </div>
-  </div>
+			<!-- Back to Lobby -->
+			<UButton
+				icon="i-heroicons-arrow-left"
+				color="gray"
+				variant="ghost"
+				size="lg"
+				block
+				@click="handleBackToLobby"
+			>
+				{{ t('duel.backToLobby') }}
+			</UButton>
+		</div>
+	</div>
 </template>

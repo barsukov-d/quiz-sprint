@@ -1,6 +1,7 @@
 package quick_duel
 
 import (
+	"errors"
 	"testing"
 	"time"
 
@@ -82,6 +83,36 @@ func TestGetDuelStatus_WithPendingChallenge(t *testing.T) {
 	}
 }
 
+func TestGetDuelStatus_IncludesOutgoingChallenges(t *testing.T) {
+	f := setupFixture(t)
+
+	// Create a link challenge sent by player1
+	challenge, err := quick_duel.NewLinkChallenge(
+		mustUserID(testPlayer1ID),
+		time.Now().UTC().Unix(),
+	)
+	if err != nil {
+		t.Fatalf("failed to create link challenge: %v", err)
+	}
+	f.challengeRepo.Save(challenge)
+
+	uc := f.newGetDuelStatusUC()
+	output, err := uc.Execute(GetDuelStatusInput{PlayerID: testPlayer1ID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(output.OutgoingChallenges) != 1 {
+		t.Fatalf("OutgoingChallenges = %d, want 1", len(output.OutgoingChallenges))
+	}
+	if output.OutgoingChallenges[0].Type != "link" {
+		t.Errorf("Type = %s, want link", output.OutgoingChallenges[0].Type)
+	}
+	if output.OutgoingChallenges[0].Status != "pending" {
+		t.Errorf("Status = %s, want pending", output.OutgoingChallenges[0].Status)
+	}
+}
+
 func TestGetDuelStatus_InvalidPlayer(t *testing.T) {
 	f := setupFixture(t)
 	uc := f.newGetDuelStatusUC()
@@ -89,6 +120,30 @@ func TestGetDuelStatus_InvalidPlayer(t *testing.T) {
 	_, err := uc.Execute(GetDuelStatusInput{PlayerID: ""})
 	if err == nil {
 		t.Error("expected error for empty player ID")
+	}
+}
+
+func TestGetDuelStatus_WithAcceptedChallenge(t *testing.T) {
+	f := setupFixture(t)
+	now := time.Now().UTC().Unix()
+
+	// Create link challenge and have player1 accept it as invitee
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer2ID), now)
+	f.challengeRepo.Save(challenge)
+	_ = challenge.AcceptWaiting(mustUserID(testPlayer1ID), "Player1", now+10)
+	f.challengeRepo.Save(challenge)
+
+	uc := f.newGetDuelStatusUC()
+	output, err := uc.Execute(GetDuelStatusInput{PlayerID: testPlayer1ID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(output.AcceptedChallenges) != 1 {
+		t.Fatalf("AcceptedChallenges = %d, want 1", len(output.AcceptedChallenges))
+	}
+	if output.AcceptedChallenges[0].ChallengerID != testPlayer2ID {
+		t.Errorf("ChallengerID = %s, want %s", output.AcceptedChallenges[0].ChallengerID, testPlayer2ID)
 	}
 }
 
@@ -263,6 +318,29 @@ func TestSendChallenge_FriendInGame(t *testing.T) {
 	}
 }
 
+func TestSendChallenge_DuplicateChallenge(t *testing.T) {
+	f := setupFixture(t)
+	uc := f.newSendChallengeUC()
+
+	// First challenge — must succeed
+	_, err := uc.Execute(SendChallengeInput{
+		PlayerID: testPlayer1ID,
+		FriendID: testPlayer2ID,
+	})
+	if err != nil {
+		t.Fatalf("first challenge failed: %v", err)
+	}
+
+	// Second challenge to same friend — must fail
+	_, err = uc.Execute(SendChallengeInput{
+		PlayerID: testPlayer1ID,
+		FriendID: testPlayer2ID,
+	})
+	if err != quick_duel.ErrChallengeAlreadySent {
+		t.Errorf("expected ErrChallengeAlreadySent, got %v", err)
+	}
+}
+
 func TestSendChallenge_InvalidPlayer(t *testing.T) {
 	f := setupFixture(t)
 	uc := f.newSendChallengeUC()
@@ -286,6 +364,20 @@ func TestSendChallenge_InvalidFriend(t *testing.T) {
 	})
 	if err == nil {
 		t.Error("expected error for empty friend ID")
+	}
+}
+
+func TestSendChallenge_FailsIfChallengerInGame(t *testing.T) {
+	f := setupFixture(t)
+	f.startGame(t, testPlayer1ID, testPlayer2ID) // player1 is now in active game
+
+	uc := f.newSendChallengeUC()
+	_, err := uc.Execute(SendChallengeInput{
+		PlayerID: testPlayer1ID,
+		FriendID: testPlayer3ID,
+	})
+	if !errors.Is(err, quick_duel.ErrAlreadyInGame) {
+		t.Errorf("expected ErrAlreadyInGame, got %v", err)
 	}
 }
 
@@ -451,11 +543,11 @@ func TestAcceptByLinkCode_Success(t *testing.T) {
 	if !output.Success {
 		t.Error("Success should be true")
 	}
-	if output.ChallengerID != testPlayer1ID {
-		t.Errorf("ChallengerID = %s, want %s", output.ChallengerID, testPlayer1ID)
+	if output.ChallengeID == "" {
+		t.Error("ChallengeID should not be empty")
 	}
-	if output.TicketConsumed != true {
-		t.Error("TicketConsumed should be true")
+	if output.Status != "accepted_waiting_inviter" {
+		t.Errorf("Status = %s, want accepted_waiting_inviter", output.Status)
 	}
 }
 
@@ -490,6 +582,48 @@ func TestAcceptByLinkCode_NotFound(t *testing.T) {
 	})
 	if err != quick_duel.ErrChallengeNotFound {
 		t.Errorf("expected ErrChallengeNotFound, got %v", err)
+	}
+}
+
+func TestAcceptByLinkCode_FailsIfInviteeInGame(t *testing.T) {
+	f := setupFixture(t)
+	now := time.Now().UTC().Unix()
+
+	// Create a link challenge from player1
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), now)
+	f.challengeRepo.Save(challenge)
+
+	// player2 is already in an active game
+	f.startGame(t, testPlayer2ID, testPlayer3ID)
+
+	uc := f.newAcceptByLinkCodeUC()
+	_, err := uc.Execute(AcceptByLinkCodeInput{
+		PlayerID: testPlayer2ID,
+		LinkCode: challenge.ChallengeLink(),
+	})
+	if !errors.Is(err, quick_duel.ErrAlreadyInGame) {
+		t.Errorf("expected ErrAlreadyInGame, got %v", err)
+	}
+}
+
+func TestAcceptByLinkCode_ReturnsInviterName(t *testing.T) {
+	f := setupFixture(t)
+	now := time.Now().UTC().Unix()
+
+	// player1 (username "Player1") creates link challenge
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), now)
+	f.challengeRepo.Save(challenge)
+
+	uc := f.newAcceptByLinkCodeUC()
+	output, err := uc.Execute(AcceptByLinkCodeInput{
+		PlayerID: testPlayer2ID,
+		LinkCode: challenge.ChallengeLink(),
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if output.InviterName != "Player1" {
+		t.Errorf("InviterName = %q, want %q", output.InviterName, "Player1")
 	}
 }
 
@@ -558,6 +692,40 @@ func TestStartGame_InvalidPlayer2(t *testing.T) {
 }
 
 // ========================================
+// GetDomainPlayerOrder Tests
+// ========================================
+
+func TestGetDomainPlayerOrder_ReturnsCorrectOrder(t *testing.T) {
+	f := setupFixture(t)
+
+	// Start game: player1=testPlayer1ID (challenger), player2=testPlayer2ID (accepter)
+	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
+
+	uc := f.newStartGameUC()
+	p1ID, p2ID, err := uc.GetDomainPlayerOrder(gameOutput.GameID)
+
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if p1ID != testPlayer1ID {
+		t.Errorf("Player1ID = %s, want %s", p1ID, testPlayer1ID)
+	}
+	if p2ID != testPlayer2ID {
+		t.Errorf("Player2ID = %s, want %s", p2ID, testPlayer2ID)
+	}
+}
+
+func TestGetDomainPlayerOrder_GameNotFound(t *testing.T) {
+	f := setupFixture(t)
+	uc := f.newStartGameUC()
+
+	_, _, err := uc.GetDomainPlayerOrder("nonexistent-game-id")
+	if err == nil {
+		t.Error("expected error for nonexistent game, got nil")
+	}
+}
+
+// ========================================
 // SubmitDuelAnswer Tests
 // ========================================
 
@@ -565,20 +733,21 @@ func TestSubmitDuelAnswer_Success(t *testing.T) {
 	f := setupFixture(t)
 
 	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
-	game, _ := f.duelGameRepo.FindByID(quick_duel.NewGameIDFromString(gameOutput.GameID))
 
 	uc := f.newSubmitDuelAnswerUC()
 	output, err := uc.Execute(SubmitDuelAnswerInput{
-		PlayerID:   testPlayer1ID,
-		GameID:     gameOutput.GameID,
-		QuestionID: game.QuestionIDs()[0].String(),
-		AnswerID:   "answer1",
-		TimeTaken:  2000,
+		PlayerID:  testPlayer1ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.correctAnswerID(0),
+		TimeTaken: 2000,
 	})
 	if err != nil {
 		t.Fatalf("unexpected error: %v", err)
 	}
 
+	if !output.IsCorrect {
+		t.Error("IsCorrect should be true for correct answer")
+	}
 	if output.PointsEarned == 0 {
 		t.Error("PointsEarned should not be 0 for correct answer")
 	}
@@ -594,29 +763,26 @@ func TestSubmitDuelAnswer_RoundComplete(t *testing.T) {
 	f := setupFixture(t)
 
 	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
-	game, _ := f.duelGameRepo.FindByID(quick_duel.NewGameIDFromString(gameOutput.GameID))
 
 	uc := f.newSubmitDuelAnswerUC()
 
-	// Player1 answers
+	// Player1 answers correctly
 	_, err := uc.Execute(SubmitDuelAnswerInput{
-		PlayerID:   testPlayer1ID,
-		GameID:     gameOutput.GameID,
-		QuestionID: game.QuestionIDs()[0].String(),
-		AnswerID:   "answer1",
-		TimeTaken:  2000,
+		PlayerID:  testPlayer1ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.correctAnswerID(0),
+		TimeTaken: 2000,
 	})
 	if err != nil {
 		t.Fatalf("player1 answer error: %v", err)
 	}
 
-	// Player2 answers
+	// Player2 answers (wrong)
 	output, err := uc.Execute(SubmitDuelAnswerInput{
-		PlayerID:   testPlayer2ID,
-		GameID:     gameOutput.GameID,
-		QuestionID: game.QuestionIDs()[0].String(),
-		AnswerID:   "answer2",
-		TimeTaken:  3000,
+		PlayerID:  testPlayer2ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.wrongAnswerID(0),
+		TimeTaken: 3000,
 	})
 	if err != nil {
 		t.Fatalf("player2 answer error: %v", err)
@@ -647,15 +813,13 @@ func TestSubmitDuelAnswer_PlayerNotInGame(t *testing.T) {
 	f := setupFixture(t)
 
 	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
-	game, _ := f.duelGameRepo.FindByID(quick_duel.NewGameIDFromString(gameOutput.GameID))
 
 	uc := f.newSubmitDuelAnswerUC()
 	_, err := uc.Execute(SubmitDuelAnswerInput{
-		PlayerID:   testPlayer3ID,
-		GameID:     gameOutput.GameID,
-		QuestionID: game.QuestionIDs()[0].String(),
-		AnswerID:   "answer1",
-		TimeTaken:  2000,
+		PlayerID:  testPlayer3ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.correctAnswerID(0),
+		TimeTaken: 2000,
 	})
 	if err != quick_duel.ErrGameNotFound {
 		t.Errorf("expected ErrGameNotFound, got %v", err)
@@ -663,27 +827,18 @@ func TestSubmitDuelAnswer_PlayerNotInGame(t *testing.T) {
 }
 
 func TestSubmitDuelAnswer_BothPlayersAnswer(t *testing.T) {
-	// NOTE: The use case tracks rounds in its own map (uc.roundAnswers) but
-	// game.CurrentRound() doesn't advance because the use case doesn't call
-	// the domain's SubmitAnswer. This means all answers go to round 1 and
-	// gameComplete triggers when roundAnswers >= 2 on the last round tracked.
-	// This test verifies current behavior; full game completion would require
-	// the domain integration path.
 	f := setupFixture(t)
 
 	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
-	game, _ := f.duelGameRepo.FindByID(quick_duel.NewGameIDFromString(gameOutput.GameID))
 
 	uc := f.newSubmitDuelAnswerUC()
-	qID := game.QuestionIDs()[0].String()
 
-	// Player1 answers
+	// Player1 answers correctly
 	out1, err := uc.Execute(SubmitDuelAnswerInput{
-		PlayerID:   testPlayer1ID,
-		GameID:     gameOutput.GameID,
-		QuestionID: qID,
-		AnswerID:   "answer1",
-		TimeTaken:  2000,
+		PlayerID:  testPlayer1ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.correctAnswerID(0),
+		TimeTaken: 2000,
 	})
 	if err != nil {
 		t.Fatalf("player1 error: %v", err)
@@ -692,13 +847,12 @@ func TestSubmitDuelAnswer_BothPlayersAnswer(t *testing.T) {
 		t.Error("RoundComplete should be false after one player answers")
 	}
 
-	// Player2 answers
+	// Player2 answers (wrong)
 	out2, err := uc.Execute(SubmitDuelAnswerInput{
-		PlayerID:   testPlayer2ID,
-		GameID:     gameOutput.GameID,
-		QuestionID: qID,
-		AnswerID:   "answer2",
-		TimeTaken:  3000,
+		PlayerID:  testPlayer2ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.wrongAnswerID(0),
+		TimeTaken: 3000,
 	})
 	if err != nil {
 		t.Fatalf("player2 error: %v", err)
@@ -707,9 +861,98 @@ func TestSubmitDuelAnswer_BothPlayersAnswer(t *testing.T) {
 		t.Error("RoundComplete should be true after both players answer")
 	}
 
-	// Both scores should be aggregated
-	if out2.Player1Score == 0 && out2.Player2Score == 0 {
-		t.Error("scores should not both be 0 after answers")
+	// Player1 answered correctly so score > 0; player2 answered wrong so 0
+	if out2.Player1Score == 0 {
+		t.Error("Player1Score should be > 0 after a correct answer")
+	}
+	if out2.Player2Score != 0 {
+		t.Error("Player2Score should be 0 after a wrong answer")
+	}
+}
+
+// ========================================
+func TestSubmitDuelAnswer_WrongAnswer(t *testing.T) {
+	f := setupFixture(t)
+
+	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
+
+	uc := f.newSubmitDuelAnswerUC()
+	output, err := uc.Execute(SubmitDuelAnswerInput{
+		PlayerID:  testPlayer1ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.wrongAnswerID(0),
+		TimeTaken: 2000,
+	})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if output.IsCorrect {
+		t.Error("IsCorrect should be false for a wrong answer")
+	}
+	if output.PointsEarned != 0 {
+		t.Errorf("PointsEarned should be 0 for a wrong answer, got %d", output.PointsEarned)
+	}
+	if output.CorrectAnswerID == "" {
+		t.Error("CorrectAnswerID should be non-empty so client can show the correct answer")
+	}
+	if output.CorrectAnswerID == f.wrongAnswerID(0) {
+		t.Error("CorrectAnswerID should differ from the submitted wrong answer ID")
+	}
+}
+
+// ========================================
+// Score Ordering Regression Tests
+// ========================================
+
+// TestScoreOrdering_AccepterAnswersFirst verifies that when the accepter (domain player2)
+// answers correctly and the challenger (domain player1) answers wrong,
+// player1Score reflects domain player1's score (not the accepter's).
+// This catches the bug where hub WS-slot order could shadow domain player order.
+func TestScoreOrdering_AccepterAnswersFirst(t *testing.T) {
+	f := setupFixture(t)
+
+	// Challenger = player1 (domain), Accepter = player2 (domain)
+	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
+	uc := f.newSubmitDuelAnswerUC()
+
+	// Accepter (domain player2) answers CORRECTLY — simulates accepter connecting to WS first
+	out, err := uc.Execute(SubmitDuelAnswerInput{
+		PlayerID:  testPlayer2ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.correctAnswerID(0),
+		TimeTaken: 2000,
+	})
+	if err != nil {
+		t.Fatalf("accepter answer error: %v", err)
+	}
+
+	// Player2Score (accepter = domain player2) should be > 0
+	if out.Player2Score == 0 {
+		t.Error("accepter answered correctly: Player2Score should be > 0")
+	}
+	// Player1Score (challenger = domain player1) should still be 0
+	if out.Player1Score != 0 {
+		t.Errorf("challenger hasn't answered: Player1Score should be 0, got %d", out.Player1Score)
+	}
+
+	// Now challenger (domain player1) answers WRONG
+	out2, err := uc.Execute(SubmitDuelAnswerInput{
+		PlayerID:  testPlayer1ID,
+		GameID:    gameOutput.GameID,
+		AnswerID:  f.wrongAnswerID(0),
+		TimeTaken: 3000,
+	})
+	if err != nil {
+		t.Fatalf("challenger answer error: %v", err)
+	}
+
+	// After both answered: Player1Score = challenger (0, wrong), Player2Score = accepter (> 0, correct)
+	if out2.Player1Score != 0 {
+		t.Errorf("challenger answered wrong: Player1Score should be 0, got %d", out2.Player1Score)
+	}
+	if out2.Player2Score == 0 {
+		t.Error("accepter answered correctly: Player2Score should be > 0")
 	}
 }
 
@@ -1136,43 +1379,30 @@ func TestFullFlow_ChallengeAcceptAndPlay(t *testing.T) {
 	if !respondOutput.Success {
 		t.Error("respond should succeed")
 	}
-
-	// 4. Start the game
-	startUC := f.newStartGameUC()
-	gameOutput, err := startUC.Execute(StartGameInput{
-		Player1ID:       testPlayer1ID,
-		Player2ID:       testPlayer2ID,
-		Player1Username: "Player1",
-		Player2Username: "Player2",
-	})
-	if err != nil {
-		t.Fatalf("start game error: %v", err)
+	if respondOutput.GameID == nil {
+		t.Fatalf("respond should return GameID")
 	}
 
-	// 5. Play all rounds
-	game, _ := f.duelGameRepo.FindByID(quick_duel.NewGameIDFromString(gameOutput.GameID))
+	// 4. Play all rounds using the game created by RespondChallenge
+	gameID := *respondOutput.GameID
 	answerUC := f.newSubmitDuelAnswerUC()
 
 	for round := 0; round < quick_duel.QuestionsPerDuel; round++ {
-		qID := game.QuestionIDs()[round].String()
-
 		_, err := answerUC.Execute(SubmitDuelAnswerInput{
-			PlayerID:   testPlayer1ID,
-			GameID:     gameOutput.GameID,
-			QuestionID: qID,
-			AnswerID:   "a1",
-			TimeTaken:  2000,
+			PlayerID:  testPlayer1ID,
+			GameID:    gameID,
+			AnswerID:  f.correctAnswerID(round),
+			TimeTaken: 2000,
 		})
 		if err != nil {
 			t.Fatalf("round %d p1 error: %v", round+1, err)
 		}
 
 		_, err = answerUC.Execute(SubmitDuelAnswerInput{
-			PlayerID:   testPlayer2ID,
-			GameID:     gameOutput.GameID,
-			QuestionID: qID,
-			AnswerID:   "a2",
-			TimeTaken:  3000,
+			PlayerID:  testPlayer2ID,
+			GameID:    gameID,
+			AnswerID:  f.wrongAnswerID(round),
+			TimeTaken: 3000,
 		})
 		if err != nil {
 			t.Fatalf("round %d p2 error: %v", round+1, err)
@@ -1216,7 +1446,205 @@ func TestFullFlow_LinkChallengeAccept(t *testing.T) {
 	if !acceptOutput.Success {
 		t.Error("accept should succeed")
 	}
-	if acceptOutput.ChallengerID != testPlayer1ID {
-		t.Errorf("ChallengerID = %s, want %s", acceptOutput.ChallengerID, testPlayer1ID)
+	if acceptOutput.ChallengeID == "" {
+		t.Error("ChallengeID should not be empty after accept")
+	}
+}
+
+// ========================================
+// GetRivals Tests
+// ========================================
+
+func TestGetRivals_EmptyWhenNoGames(t *testing.T) {
+	f := setupFixture(t)
+	uc := f.newGetRivalsUC()
+
+	output, err := uc.Execute(GetRivalsInput{PlayerID: testPlayer1ID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(output.Rivals) != 0 {
+		t.Errorf("Rivals = %d, want 0", len(output.Rivals))
+	}
+}
+
+func TestGetRivals_ReturnsOpponentsFromCompletedGames(t *testing.T) {
+	f := setupFixture(t)
+
+	// Play a game between player1 and player2
+	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
+
+	// Force-complete the game by submitting all answers
+	submitUC := f.newSubmitDuelAnswerUC()
+	for i := 0; i < 7; i++ {
+		submitUC.Execute(SubmitDuelAnswerInput{
+			PlayerID:   testPlayer1ID,
+			GameID:     gameOutput.GameID,
+			QuestionID: f.questionRepo.questions[i].ID,
+			AnswerID:   f.correctAnswerID(i),
+			TimeTaken:  3000,
+		})
+		submitUC.Execute(SubmitDuelAnswerInput{
+			PlayerID:   testPlayer2ID,
+			GameID:     gameOutput.GameID,
+			QuestionID: f.questionRepo.questions[i].ID,
+			AnswerID:   f.correctAnswerID(i),
+			TimeTaken:  4000,
+		})
+	}
+
+	uc := f.newGetRivalsUC()
+	output, err := uc.Execute(GetRivalsInput{PlayerID: testPlayer1ID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+	if len(output.Rivals) != 1 {
+		t.Fatalf("Rivals = %d, want 1", len(output.Rivals))
+	}
+	if output.Rivals[0].ID != testPlayer2ID {
+		t.Errorf("Rivals[0].ID = %s, want %s", output.Rivals[0].ID, testPlayer2ID)
+	}
+	if output.Rivals[0].GamesCount != 1 {
+		t.Errorf("Rivals[0].GamesCount = %d, want 1", output.Rivals[0].GamesCount)
+	}
+}
+
+// ========================================
+// GetRivals Tests
+// ========================================
+
+func TestGetRivals_HasPendingChallenge(t *testing.T) {
+	f := setupFixture(t)
+
+	// Complete a game between player1 and player2 so player2 appears as rival
+	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
+	submitUC := f.newSubmitDuelAnswerUC()
+	for i := 0; i < 7; i++ {
+		submitUC.Execute(SubmitDuelAnswerInput{
+			PlayerID:   testPlayer1ID,
+			GameID:     gameOutput.GameID,
+			QuestionID: f.questionRepo.questions[i].ID,
+			AnswerID:   f.correctAnswerID(i),
+			TimeTaken:  3000,
+		})
+		submitUC.Execute(SubmitDuelAnswerInput{
+			PlayerID:   testPlayer2ID,
+			GameID:     gameOutput.GameID,
+			QuestionID: f.questionRepo.questions[i].ID,
+			AnswerID:   f.correctAnswerID(i),
+			TimeTaken:  4000,
+		})
+	}
+
+	// Player1 sends challenge to player2
+	sendUC := f.newSendChallengeUC()
+	_, err := sendUC.Execute(SendChallengeInput{
+		PlayerID: testPlayer1ID,
+		FriendID: testPlayer2ID,
+	})
+	if err != nil {
+		t.Fatalf("sendChallenge failed: %v", err)
+	}
+
+	uc := f.newGetRivalsUC()
+	output, err := uc.Execute(GetRivalsInput{PlayerID: testPlayer1ID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(output.Rivals) == 0 {
+		t.Fatal("expected at least one rival")
+	}
+
+	rival := output.Rivals[0]
+	if !rival.HasPendingChallenge {
+		t.Error("expected HasPendingChallenge=true for rival with pending challenge")
+	}
+}
+
+func TestGetRivals_NoPendingChallenge(t *testing.T) {
+	f := setupFixture(t)
+
+	// Complete a game between player1 and player2 so player2 appears as rival
+	gameOutput := f.startGame(t, testPlayer1ID, testPlayer2ID)
+	submitUC := f.newSubmitDuelAnswerUC()
+	for i := 0; i < 7; i++ {
+		submitUC.Execute(SubmitDuelAnswerInput{
+			PlayerID:   testPlayer1ID,
+			GameID:     gameOutput.GameID,
+			QuestionID: f.questionRepo.questions[i].ID,
+			AnswerID:   f.correctAnswerID(i),
+			TimeTaken:  3000,
+		})
+		submitUC.Execute(SubmitDuelAnswerInput{
+			PlayerID:   testPlayer2ID,
+			GameID:     gameOutput.GameID,
+			QuestionID: f.questionRepo.questions[i].ID,
+			AnswerID:   f.correctAnswerID(i),
+			TimeTaken:  4000,
+		})
+	}
+
+	uc := f.newGetRivalsUC()
+	output, err := uc.Execute(GetRivalsInput{PlayerID: testPlayer1ID})
+	if err != nil {
+		t.Fatalf("unexpected error: %v", err)
+	}
+
+	if len(output.Rivals) == 0 {
+		t.Fatal("expected at least one rival")
+	}
+
+	if output.Rivals[0].HasPendingChallenge {
+		t.Error("expected HasPendingChallenge=false when no challenge sent")
+	}
+}
+
+// ========================================
+// StartChallenge Tests
+// ========================================
+
+func TestStartChallenge_FailsIfInviterInGame(t *testing.T) {
+	f := setupFixture(t)
+	now := time.Now().UTC().Unix()
+
+	// Create link challenge and have invitee accept
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), now)
+	f.challengeRepo.Save(challenge)
+	_ = challenge.AcceptWaiting(mustUserID(testPlayer2ID), "Player2", now+10)
+	f.challengeRepo.Save(challenge)
+
+	// inviter (player1) joins another game
+	f.startGame(t, testPlayer1ID, testPlayer3ID)
+
+	uc := f.newStartChallengeUC()
+	_, err := uc.Execute(StartChallengeInput{
+		PlayerID:    testPlayer1ID,
+		ChallengeID: challenge.ID().String(),
+	})
+	if !errors.Is(err, quick_duel.ErrAlreadyInGame) {
+		t.Errorf("expected ErrAlreadyInGame, got %v", err)
+	}
+}
+
+func TestStartChallenge_FailsIfInviteeInGame(t *testing.T) {
+	f := setupFixture(t)
+	now := time.Now().UTC().Unix()
+
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), now)
+	f.challengeRepo.Save(challenge)
+	_ = challenge.AcceptWaiting(mustUserID(testPlayer2ID), "Player2", now+10)
+	f.challengeRepo.Save(challenge)
+
+	// invitee (player2) joins another game
+	f.startGame(t, testPlayer2ID, testPlayer3ID)
+
+	uc := f.newStartChallengeUC()
+	_, err := uc.Execute(StartChallengeInput{
+		PlayerID:    testPlayer1ID,
+		ChallengeID: challenge.ID().String(),
+	})
+	if !errors.Is(err, quick_duel.ErrAlreadyInGame) {
+		t.Errorf("expected ErrAlreadyInGame, got %v", err)
 	}
 }

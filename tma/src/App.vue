@@ -13,7 +13,7 @@ import * as nuxtLocales from '@nuxt/ui/locale'
 
 const { t, locale } = useI18n()
 const nuxtLocale = computed(
-  () => nuxtLocales[locale.value as keyof typeof nuxtLocales] ?? nuxtLocales.en,
+	() => nuxtLocales[locale.value as keyof typeof nuxtLocales] ?? nuxtLocales.en,
 )
 
 const route = useRoute()
@@ -35,6 +35,17 @@ const { mutateAsync: registerUser } = usePostUserRegister()
 
 // Handle deep link navigation
 const handleDeepLink = (startParam: string) => {
+	// Direct challenge notification: challenge_<uuid>
+	if (startParam.startsWith('challenge_')) {
+		const challengeId = startParam.slice('challenge_'.length)
+		console.log('⚔️ Direct challenge deep link, navigating to lobby')
+		router.push({
+			name: 'duel-lobby',
+			query: { directChallenge: challengeId },
+		})
+		return
+	}
+
 	// Duel challenge link: duel_abc12345
 	if (startParam.startsWith('duel_')) {
 		console.log('🎮 Duel challenge detected, redirecting to lobby')

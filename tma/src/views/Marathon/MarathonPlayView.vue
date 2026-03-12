@@ -72,10 +72,50 @@ const feedbackShieldConsumed = ref(false)
 const answerLabels = ['A', 'B', 'C', 'D']
 
 const bonusButtons = [
-	{ type: 'shield' as BonusType, key: 'shield' as const, get label() { return t('daily.shieldName') }, icon: 'i-heroicons-shield-check', color: 'blue' as const, activeColor: 'text-blue-500', canUse: canUseShield },
-	{ type: 'fifty_fifty' as BonusType, key: 'fiftyFifty' as const, get label() { return t('daily.fiftyfiftyName') }, icon: 'i-heroicons-scissors', color: 'yellow' as const, activeColor: 'text-yellow-500', canUse: canUseFiftyFifty },
-	{ type: 'skip' as BonusType, key: 'skip' as const, get label() { return t('daily.skipName') }, icon: 'i-heroicons-forward', color: 'green' as const, activeColor: 'text-green-500', canUse: canUseSkip },
-	{ type: 'freeze' as BonusType, key: 'freeze' as const, get label() { return t('daily.freezeName') }, icon: 'i-heroicons-clock', color: 'cyan' as const, activeColor: 'text-cyan-500', canUse: canUseFreeze },
+	{
+		type: 'shield' as BonusType,
+		key: 'shield' as const,
+		get label() {
+			return t('daily.shieldName')
+		},
+		icon: 'i-heroicons-shield-check',
+		color: 'blue' as const,
+		activeColor: 'text-blue-500',
+		canUse: canUseShield,
+	},
+	{
+		type: 'fifty_fifty' as BonusType,
+		key: 'fiftyFifty' as const,
+		get label() {
+			return t('daily.fiftyfiftyName')
+		},
+		icon: 'i-heroicons-scissors',
+		color: 'yellow' as const,
+		activeColor: 'text-yellow-500',
+		canUse: canUseFiftyFifty,
+	},
+	{
+		type: 'skip' as BonusType,
+		key: 'skip' as const,
+		get label() {
+			return t('daily.skipName')
+		},
+		icon: 'i-heroicons-forward',
+		color: 'green' as const,
+		activeColor: 'text-green-500',
+		canUse: canUseSkip,
+	},
+	{
+		type: 'freeze' as BonusType,
+		key: 'freeze' as const,
+		get label() {
+			return t('daily.freezeName')
+		},
+		icon: 'i-heroicons-clock',
+		color: 'cyan' as const,
+		activeColor: 'text-cyan-500',
+		canUse: canUseFreeze,
+	},
 ]
 
 const currentQuestion = computed(() => state.value.currentQuestion)
@@ -153,7 +193,10 @@ const handleTimeout = async () => {
 		isSubmitting.value = true
 
 		try {
-			const answerData = await submitAnswer(selectedAnswerId.value, state.value.timeLimit * 1000)
+			const answerData = await submitAnswer(
+				selectedAnswerId.value,
+				state.value.timeLimit * 1000,
+			)
 
 			feedbackIsCorrect.value = answerData.isCorrect
 			feedbackCorrectAnswerId.value = answerData.correctAnswerId
@@ -207,7 +250,9 @@ const handleUseBonus = async (bonusType: BonusType) => {
 	try {
 		// Trigger activation animation
 		activatedBonus.value = bonusType
-		setTimeout(() => { activatedBonus.value = null }, 600)
+		setTimeout(() => {
+			activatedBonus.value = null
+		}, 600)
 
 		await useBonus(bonusType)
 
@@ -298,9 +343,11 @@ onUnmounted(() => {
 							v-for="(filled, index) in livesDisplay"
 							:key="index"
 							class="h-[10px] w-[14px] rounded-[3px] transition-all duration-300"
-							:class="filled
-								? 'bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.55)]'
-								: 'bg-gray-700'"
+							:class="
+								filled
+									? 'bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.55)]'
+									: 'bg-gray-700'
+							"
 						/>
 					</div>
 					<!-- +1 animation -->
@@ -308,7 +355,8 @@ onUnmounted(() => {
 						<span
 							v-if="showLifeRestoredAnim"
 							class="absolute -top-5 left-0 text-xs font-bold text-amber-400 pointer-events-none select-none"
-						>+1⚡</span>
+							>+1⚡</span
+						>
 					</Transition>
 				</div>
 
@@ -316,13 +364,15 @@ onUnmounted(() => {
 				<span
 					v-if="state.score > 0"
 					class="shrink-0 text-sm font-semibold text-primary tabular-nums"
-				>{{ state.score }}</span>
+					>{{ state.score }}</span
+				>
 
 				<!-- Streak counter (only show when streak >= 2) -->
 				<span
 					v-if="streakCount >= 2"
 					class="shrink-0 text-xs font-medium text-orange-500 tabular-nums"
-				>🔥 {{ streakCount }}</span>
+					>🔥 {{ streakCount }}</span
+				>
 
 				<!-- Shield indicator -->
 				<UIcon
@@ -351,7 +401,12 @@ onUnmounted(() => {
 				v-if="state.milestone && state.milestone.next > 0"
 				class="text-xs text-center text-gray-500 dark:text-gray-400"
 			>
-				{{ t('marathon.nextMilestone', { next: state.milestone.next, remaining: state.milestone.remaining }) }}
+				{{
+					t('marathon.nextMilestone', {
+						next: state.milestone.next,
+						remaining: state.milestone.remaining,
+					})
+				}}
 			</div>
 
 			<!-- Question -->
@@ -368,7 +423,12 @@ onUnmounted(() => {
 					:key="answer.id"
 					:answer="answer"
 					:selected="selectedAnswerId === answer.id"
-					:disabled="isSubmitting || showFeedback || timerRef?.remainingTime === 0 || answer.hidden"
+					:disabled="
+						isSubmitting ||
+						showFeedback ||
+						timerRef?.remainingTime === 0 ||
+						answer.hidden
+					"
 					:show-feedback="getAnswerFeedback(answer.id).showFeedback"
 					:is-correct="getAnswerFeedback(answer.id).isCorrect"
 					:label="answerLabels[index]"
@@ -387,14 +447,16 @@ onUnmounted(() => {
 						b.canUse.value
 							? 'bg-gray-100 dark:bg-gray-800 hover:scale-105 active:scale-95 cursor-pointer'
 							: 'bg-gray-100/50 dark:bg-gray-800/30 opacity-35 cursor-not-allowed',
-						activatedBonus === b.type ? 'bonus-activated ring-2 ring-offset-1 ring-offset-transparent' : '',
+						activatedBonus === b.type
+							? 'bonus-activated ring-2 ring-offset-1 ring-offset-transparent'
+							: '',
 						activatedBonus === b.type && b.color === 'blue' ? 'ring-blue-500' : '',
 						activatedBonus === b.type && b.color === 'yellow' ? 'ring-yellow-500' : '',
 						activatedBonus === b.type && b.color === 'green' ? 'ring-green-500' : '',
 						activatedBonus === b.type && b.color === 'cyan' ? 'ring-cyan-500' : '',
 					]"
 					:disabled="!b.canUse.value || isSubmitting || showFeedback"
-					@click="handleUseBonus(b.type)"
+					@click="() => handleUseBonus(b.type)"
 				>
 					<UIcon
 						:name="b.icon"
@@ -403,13 +465,21 @@ onUnmounted(() => {
 					/>
 					<span
 						class="text-[10px] font-bold tabular-nums"
-						:class="b.canUse.value ? 'text-gray-900 dark:text-gray-100' : 'text-gray-400 dark:text-gray-600'"
+						:class="
+							b.canUse.value
+								? 'text-gray-900 dark:text-gray-100'
+								: 'text-gray-400 dark:text-gray-600'
+						"
 					>
 						{{ state.bonusInventory[b.key] }}
 					</span>
 					<span
 						class="text-[9px] leading-tight"
-						:class="b.canUse.value ? 'text-gray-500 dark:text-gray-400' : 'text-gray-400/60 dark:text-gray-600'"
+						:class="
+							b.canUse.value
+								? 'text-gray-500 dark:text-gray-400'
+								: 'text-gray-400/60 dark:text-gray-600'
+						"
 					>
 						{{ b.label }}
 					</span>
@@ -471,10 +541,18 @@ onUnmounted(() => {
 }
 
 @keyframes bonus-pulse {
-	0% { transform: scale(1); }
-	25% { transform: scale(1.2); }
-	50% { transform: scale(0.95); }
-	100% { transform: scale(1); }
+	0% {
+		transform: scale(1);
+	}
+	25% {
+		transform: scale(1.2);
+	}
+	50% {
+		transform: scale(0.95);
+	}
+	100% {
+		transform: scale(1);
+	}
 }
 
 .life-restore-enter-active {
@@ -482,9 +560,21 @@ onUnmounted(() => {
 }
 
 @keyframes life-restore-pop {
-	0%   { opacity: 0; transform: translateY(0); }
-	20%  { opacity: 1; transform: translateY(-8px); }
-	80%  { opacity: 1; transform: translateY(-14px); }
-	100% { opacity: 0; transform: translateY(-20px); }
+	0% {
+		opacity: 0;
+		transform: translateY(0);
+	}
+	20% {
+		opacity: 1;
+		transform: translateY(-8px);
+	}
+	80% {
+		opacity: 1;
+		transform: translateY(-14px);
+	}
+	100% {
+		opacity: 0;
+		transform: translateY(-20px);
+	}
 }
 </style>

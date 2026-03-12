@@ -10,6 +10,109 @@ Home → "Дуэль" → Shows:
 
 ---
 
+## Invite Link Flow (Friend Challenge по ссылке)
+
+### Технический механизм
+
+```
+POST /api/v1/duel/challenge/link → { challengeLink: "t.me/bot?startapp=duel_abc123" }
+Telegram share sheet → получатель кликает
+
+TMA открывается: SDK launchParams.startParam = "duel_abc123"
+useAuth.ts → сохраняет startParam в памяти
+
+App.vue (onMounted):
+  registerUser() → Welcome bonus +3 🎟️ (новый пользователь)
+  consumeStartParam() → "duel_abc123"
+  handleDeepLink() → router.push('/duel?challenge=duel_abc123')
+
+DuelLobbyView (onMounted):
+  route.query.challenge = "duel_abc123"
+  → Показывает модал подтверждения (НЕ принимает автоматически)
+
+Invitee нажимает "Принять вызов":
+  POST /duel/challenge/accept-by-code { linkCode: "duel_abc123" }
+  → { challengeId: "ch_xyz", status: "accepted_waiting_inviter" }
+  → Telegram Bot API отправляет сообщение инвайтеру: "Vasya принял твой вызов!"
+  → UI показывает "Ждём инвайтера..."
+
+Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /duel/status polling):
+  Нажимает "Начать дуэль →"
+  POST /duel/challenge/:challengeId/start { playerId: "user_456" }
+  → { gameId: "g_xyz" }
+  → Оба переходят в DuelPlay
+```
+
+### UX Flow — Invitee (принимающий)
+
+| Шаг | Экран | Действие |
+|-----|-------|---------|
+| 1 | Telegram чат | Кликает invite-ссылку |
+| 2 | TMA splash | Загрузка + Telegram Auth |
+| 3 | (фон) | `POST /user/register` → +3 🎟️ welcome bonus |
+| 4 | DuelLobby | **Модал подтверждения** "Тебя вызывают на дуэль!" |
+| 5 | (фон) | `POST /duel/challenge/accept-by-code` → статус `accepted_waiting_inviter` |
+| 6 | DuelLobby | "Ждём инвайтера..." |
+| 7 | DuelPlay | Инвайтер нажал "Начать" → игра |
+
+### UX Flow — Inviter (создавший ссылку)
+
+| Шаг | Экран | Действие |
+|-----|-------|---------|
+| 1 | DuelLobby | Карточка "✈ Ожидаем ответа..." (pending) |
+| 2 | (TG) | Получает уведомление: "Vasya принял твой вызов!" |
+| 3 | DuelLobby | Карточка меняется: "✅ Vasya готов к дуэли!" |
+| 4 | (тап) | Нажимает "Начать дуэль →" |
+| 5 | (фон) | `POST /duel/challenge/:id/start` → `{ gameId }` |
+| 6 | DuelPlay | 3...2...1 → игра |
+
+### Состояния модала подтверждения (Invitee)
+
+```
+┌───────────────────────────────────┐
+│  ⚔️  Тебя вызывают на дуэль!      │
+│                                   │
+│  Хочешь принять вызов?            │
+│                                   │
+│  [ Принять вызов ]                │
+│  [ Отклонить     ]                │
+└───────────────────────────────────┘
+
+┌───────────────────────────────────┐
+│  ✗  Ссылка устарела               │  ← 409 CHALLENGE_EXPIRED
+│     Попроси друга прислать новую  │
+│                          [Закрыть]│
+└───────────────────────────────────┘
+```
+
+### Карточки исходящих вызовов (Inviter, в DuelLobby)
+
+```
+┌──────────────────────────────────────┐
+│  ✅  @vasya готов к дуэли!            │  ← accepted_waiting_inviter
+│                                      │
+│  [ Начать дуэль →               ]    │
+└──────────────────────────────────────┘
+
+┌──────────────────────────────────────┐
+│  ✈ Ожидаем ответа...                 │  ← pending
+│  Ссылка истекает через: 23ч 45мин   │
+└──────────────────────────────────────┘
+```
+
+### Edge Cases
+
+| Ситуация | HTTP | UI |
+|----------|------|----|
+| Ссылка истекла | 409 | "Ссылка устарела. Попроси новую" |
+| Ссылка уже использована | 409 | "Вызов уже принят другим игроком" |
+| Inviter уже в игре | 409 | "Твой друг сейчас в игре" |
+| Inviter отменил ссылку | 404 | "Вызов отменён. Хочешь создать новый?" |
+| Себе отправил ссылку | 400 | "Нельзя вызвать самого себя" |
+| Уже в очереди | 409 | "Отмени поиск и попробуй снова" |
+
+---
+
 ## Game Flow
 
 ### 1. Pre-Game Screen
@@ -179,6 +282,12 @@ Home → "Дуэль" → Shows:
 - Do NOT show which answer they selected
 - Create tension without revealing strategy
 
+**Emotes (in-game reactions):**
+- Emote button in top corner → pick from unlocked set
+- Max 1 emote per question, max 3 per game
+- Appears briefly (~1.5s) on opponent's screen
+- Default: 👋. More unlocked via achievements (see `04_rewards.md`)
+
 ---
 
 ### 5. Answer Feedback (Brief)
@@ -272,9 +381,10 @@ Home → "Дуэль" → Shows:
 **Share link behavior:**
 - Clicking link → Opens TMA directly with `?startapp=duel_xxx` parameter
 - TMA extracts `startParam`, authenticates user, navigates to duel lobby
-- Deep link handler auto-accepts challenge via `POST /duel/challenge/accept-by-code`
-- New user → Registers first, then challenge is auto-accepted
-- Existing user → Direct to duel lobby
+- Deep link handler показывает **модал подтверждения** (не авто-принимает)
+- Пользователь подтверждает → `POST /duel/challenge/accept-by-code` → `accepted_waiting_inviter`
+- New user → Registers first, then sees confirmation modal
+- Existing user → Direct to duel lobby with modal
 
 ---
 
@@ -291,10 +401,6 @@ Home → "Дуэль" → Shows:
 │                                     │
 │  MMR: 1,650 → 1,625 (-25)           │
 │  Ранг: 🥇 Gold III                  │
-│                                     │
-│  💡 Совет: Быстрее отвечай на       │
-│  вопросы по науке — твоё слабое     │
-│  место.                             │
 │                                     │
 │  [  РЕВАНШ  ]  [  В МЕНЮ  ]         │
 └─────────────────────────────────────┘

@@ -23,31 +23,47 @@ const { state, isPlaying, isGameOver, isLoading, progressToRecord, initialize } 
 const bonusList = [
 	{
 		key: 'shield' as const,
-		get label() { return t('daily.shieldName') },
+		get label() {
+			return t('daily.shieldName')
+		},
 		icon: 'i-heroicons-shield-check',
 		color: 'text-blue-500',
-		get description() { return t('daily.shieldDesc') },
+		get description() {
+			return t('daily.shieldDesc')
+		},
 	},
 	{
 		key: 'fiftyFifty' as const,
-		get label() { return t('daily.fiftyfiftyName') },
+		get label() {
+			return t('daily.fiftyfiftyName')
+		},
 		icon: 'i-heroicons-scissors',
 		color: 'text-yellow-500',
-		get description() { return t('daily.fiftyfiftyDesc') },
+		get description() {
+			return t('daily.fiftyfiftyDesc')
+		},
 	},
 	{
 		key: 'skip' as const,
-		get label() { return t('daily.skipName') },
+		get label() {
+			return t('daily.skipName')
+		},
 		icon: 'i-heroicons-forward',
 		color: 'text-green-500',
-		get description() { return t('daily.skipDesc') },
+		get description() {
+			return t('daily.skipDesc')
+		},
 	},
 	{
 		key: 'freeze' as const,
-		get label() { return t('daily.freezeName') },
+		get label() {
+			return t('daily.freezeName')
+		},
 		icon: 'i-heroicons-clock',
 		color: 'text-cyan-500',
-		get description() { return t('daily.freezeDesc') },
+		get description() {
+			return t('daily.freezeDesc')
+		},
 	},
 ]
 
@@ -98,12 +114,16 @@ onMounted(async () => {
 			<!-- Current game stats -->
 			<div class="flex items-center justify-between">
 				<div class="text-center flex-1">
-					<p class="text-xs text-gray-500 dark:text-gray-400">{{ t('marathon.score') }}</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400">
+						{{ t('marathon.score') }}
+					</p>
 					<p class="text-2xl font-bold text-primary">{{ state.score }}</p>
 				</div>
 				<div class="w-px h-10 bg-gray-200 dark:bg-gray-700" />
 				<div class="text-center flex-1">
-					<p class="text-xs text-gray-500 dark:text-gray-400">{{ t('marathon.question') }}</p>
+					<p class="text-xs text-gray-500 dark:text-gray-400">
+						{{ t('marathon.question') }}
+					</p>
 					<p class="text-2xl font-bold text-gray-900 dark:text-gray-100">
 						{{ state.totalQuestions }}
 					</p>
@@ -114,7 +134,12 @@ onMounted(async () => {
 			<div v-if="state.personalBest && state.personalBest > 0">
 				<div class="flex justify-between text-xs mb-1">
 					<span class="text-gray-500 dark:text-gray-400">
-						{{ t('marathon.recordLabel', { score: state.score, best: state.personalBest }) }}
+						{{
+							t('marathon.recordLabel', {
+								score: state.score,
+								best: state.personalBest,
+							})
+						}}
 					</span>
 					<span
 						:class="
@@ -176,13 +201,17 @@ onMounted(async () => {
 				v-if="state.personalBest !== null && state.personalBest > 0"
 				class="flex items-center justify-between"
 			>
-				<span class="text-sm text-gray-500 dark:text-gray-400">{{ t('marathon.personalBest') }}</span>
+				<span class="text-sm text-gray-500 dark:text-gray-400">{{
+					t('marathon.personalBest')
+				}}</span>
 				<span class="font-bold text-yellow-500"> 🏆 {{ state.personalBest }} </span>
 			</div>
 
 			<!-- Bonuses available -->
 			<div>
-				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">{{ t('marathon.bonuses') }}</p>
+				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+					{{ t('marathon.bonuses') }}
+				</p>
 				<div class="flex gap-2">
 					<div
 						v-for="b in bonusList"

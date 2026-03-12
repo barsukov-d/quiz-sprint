@@ -95,7 +95,7 @@ func ToDuelQuestionDTO(question *quiz.Question, questionNum int, serverTime int6
 }
 
 // ToChallengeDTO converts domain DuelChallenge to DTO
-func ToChallengeDTO(challenge *quick_duel.DuelChallenge, now int64) ChallengeDTO {
+func ToChallengeDTO(challenge *quick_duel.DuelChallenge, now int64, challengerUsername string) ChallengeDTO {
 	var challengedID *string
 	if challenge.ChallengedID() != nil {
 		id := challenge.ChallengedID().String()
@@ -108,15 +108,16 @@ func ToChallengeDTO(challenge *quick_duel.DuelChallenge, now int64) ChallengeDTO
 	}
 
 	return ChallengeDTO{
-		ID:            challenge.ID().String(),
-		ChallengerID:  challenge.ChallengerID().String(),
-		ChallengedID:  challengedID,
-		Type:          string(challenge.Type()),
-		Status:        string(challenge.Status()),
-		ChallengeLink: challenge.ChallengeLink(),
-		ExpiresAt:     challenge.ExpiresAt(),
-		ExpiresIn:     expiresIn,
-		CreatedAt:     challenge.CreatedAt(),
+		ID:                 challenge.ID().String(),
+		ChallengerID:       challenge.ChallengerID().String(),
+		ChallengedID:       challengedID,
+		ChallengerUsername: challengerUsername,
+		Type:               string(challenge.Type()),
+		Status:             string(challenge.Status()),
+		ChallengeLink:      challenge.ChallengeLink(),
+		ExpiresAt:          challenge.ExpiresAt(),
+		ExpiresIn:          expiresIn,
+		CreatedAt:          challenge.CreatedAt(),
 	}
 }
 

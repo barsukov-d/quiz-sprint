@@ -1077,6 +1077,122 @@ const docTemplate = `{
                 }
             }
         },
+        "/duel/challenge/{challengeId}/start": {
+            "post": {
+                "description": "Inviter confirms game start after invitee accepted via link",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Start the duel after invitee accepted",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Challenge ID",
+                        "name": "challengeId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Start request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.StartChallengeRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Game started",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.StartChallengeResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Challenge not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Challenge not in accepted_waiting_inviter state",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/game/{gameId}": {
+            "get": {
+                "description": "Get full result of a finished duel game",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Get game result",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID",
+                        "name": "gameId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Game result",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetGameResultResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/duel/game/{gameId}/rematch": {
             "post": {
                 "description": "Request a rematch after a completed duel",
@@ -1339,6 +1455,50 @@ const docTemplate = `{
                         "description": "Left queue",
                         "schema": {
                             "$ref": "#/definitions/internal_infrastructure_http_handlers.LeaveQueueResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/rivals": {
+            "get": {
+                "description": "Get list of recent unique opponents the player has faced",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Get recent rivals",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Player ID",
+                        "name": "playerId",
+                        "in": "query",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Rivals list",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetRivalsResponse"
                         }
                     },
                     "400": {
@@ -2771,19 +2931,17 @@ const docTemplate = `{
                 "data": {
                     "type": "object",
                     "properties": {
-                        "challengerId": {
+                        "challengeId": {
                             "type": "string"
                         },
-                        "gameId": {
+                        "inviterName": {
+                            "description": "F2: added",
                             "type": "string"
                         },
-                        "startsIn": {
-                            "type": "integer"
+                        "status": {
+                            "type": "string"
                         },
                         "success": {
-                            "type": "boolean"
-                        },
-                        "ticketConsumed": {
                             "type": "boolean"
                         }
                     }
@@ -3482,6 +3640,9 @@ const docTemplate = `{
                 "challengerId": {
                     "type": "string"
                 },
+                "challengerUsername": {
+                    "type": "string"
+                },
                 "createdAt": {
                     "type": "integer"
                 },
@@ -3492,6 +3653,9 @@ const docTemplate = `{
                     "type": "integer"
                 },
                 "id": {
+                    "type": "string"
+                },
+                "inviteeName": {
                     "type": "string"
                 },
                 "status": {
@@ -3866,6 +4030,13 @@ const docTemplate = `{
                 "data": {
                     "type": "object",
                     "properties": {
+                        "acceptedChallenges": {
+                            "description": "F1: added",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO"
+                            }
+                        },
                         "activeGameId": {
                             "type": "string"
                         },
@@ -3877,6 +4048,12 @@ const docTemplate = `{
                         },
                         "hasActiveDuel": {
                             "type": "boolean"
+                        },
+                        "outgoingChallenges": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO"
+                            }
                         },
                         "pendingChallenges": {
                             "type": "array",
@@ -3917,6 +4094,70 @@ const docTemplate = `{
                         },
                         "total": {
                             "type": "integer"
+                        }
+                    }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetGameResultPlayerDTO": {
+            "type": "object",
+            "properties": {
+                "id": {
+                    "type": "string"
+                },
+                "league": {
+                    "type": "string"
+                },
+                "leagueIcon": {
+                    "type": "string"
+                },
+                "mmr": {
+                    "type": "integer"
+                },
+                "score": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetGameResultResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "canRematch": {
+                            "type": "boolean"
+                        },
+                        "gameId": {
+                            "type": "string"
+                        },
+                        "mmrChange": {
+                            "type": "integer"
+                        },
+                        "newDivision": {
+                            "type": "integer"
+                        },
+                        "newLeague": {
+                            "type": "string"
+                        },
+                        "newMmr": {
+                            "type": "integer"
+                        },
+                        "opponent": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetGameResultPlayerDTO"
+                        },
+                        "opponentScore": {
+                            "type": "integer"
+                        },
+                        "playerScore": {
+                            "type": "integer"
+                        },
+                        "result": {
+                            "description": "\"win\", \"loss\", \"draw\"",
+                            "type": "string"
                         }
                     }
                 }
@@ -4113,6 +4354,25 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.GetQuizDetailsData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetRivalsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "rivals"
+                    ],
+                    "properties": {
+                        "rivals": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.RivalItemDTO"
+                            }
+                        }
+                    }
                 }
             }
         },
@@ -4900,6 +5160,45 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.RivalItemDTO": {
+            "type": "object",
+            "required": [
+                "gamesCount",
+                "hasPendingChallenge",
+                "id",
+                "isOnline",
+                "league",
+                "leagueIcon",
+                "mmr",
+                "username"
+            ],
+            "properties": {
+                "gamesCount": {
+                    "type": "integer"
+                },
+                "hasPendingChallenge": {
+                    "type": "boolean"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "isOnline": {
+                    "type": "boolean"
+                },
+                "league": {
+                    "type": "string"
+                },
+                "leagueIcon": {
+                    "type": "string"
+                },
+                "mmr": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.SendChallengeRequest": {
             "type": "object",
             "required": [
@@ -5053,6 +5352,30 @@ const docTemplate = `{
                 },
                 "totalQuestions": {
                     "type": "integer"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.StartChallengeRequest": {
+            "type": "object",
+            "required": [
+                "playerId"
+            ],
+            "properties": {
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.StartChallengeResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "gameId": {
+                            "type": "string"
+                        }
+                    }
                 }
             }
         },

@@ -47,7 +47,9 @@ const goToQuizDetails = (quizId: string) => {
 			/>
 			<div>
 				<h1 class="text-3xl font-bold">{{ t('quiz.title') }}</h1>
-				<p v-if="categoryId" class="text-sm text-gray-500">{{ t('quiz.category', { name: categoryName }) }}</p>
+				<p v-if="categoryId" class="text-sm text-gray-500">
+					{{ t('quiz.category', { name: categoryName }) }}
+				</p>
 			</div>
 		</div>
 
@@ -65,7 +67,17 @@ const goToQuizDetails = (quizId: string) => {
 				:title="t('quiz.loadError')"
 				:description="error?.error.message || t('quiz.loadFailed')"
 			/>
-			<UButton color="red" class="mt-2" @click="refetch()"> {{ t('quiz.tryAgain') }} </UButton>
+			<UButton
+				color="red"
+				class="mt-2"
+				@click="
+					() => {
+						refetch()
+					}
+				"
+			>
+				{{ t('quiz.tryAgain') }}
+			</UButton>
 		</div>
 
 		<!-- Success state with data -->
@@ -82,14 +94,21 @@ const goToQuizDetails = (quizId: string) => {
 					<h3 class="text-xl font-semibold">{{ quiz.title || t('quiz.unnamed') }}</h3>
 				</template>
 
-				<p class="text-gray-600 text-sm mb-4">{{ quiz.description || t('quiz.noDescription') }}</p>
+				<p class="text-gray-600 text-sm mb-4">
+					{{ quiz.description || t('quiz.noDescription') }}
+				</p>
 
 				<div class="flex items-center justify-between text-sm text-gray-500 mb-4">
-					<span>📝 {{ t('quiz.questionsCount', { count: quiz.questionsCount || 0 }) }}</span>
+					<span
+						>📝
+						{{ t('quiz.questionsCount', { count: quiz.questionsCount || 0 }) }}</span
+					>
 					<span
 						>⏱️
 						{{
-							quiz.timeLimit ? t('quiz.timeLimit', { min: Math.floor(quiz.timeLimit / 60) }) : 'N/A'
+							quiz.timeLimit
+								? t('quiz.timeLimit', { min: Math.floor(quiz.timeLimit / 60) })
+								: 'N/A'
 						}}</span
 					>
 				</div>
@@ -99,7 +118,7 @@ const goToQuizDetails = (quizId: string) => {
 				</div>
 
 				<template #footer>
-					<UButton block color="primary" @click="goToQuizDetails(quiz.id)">
+					<UButton block color="primary" @click="() => goToQuizDetails(quiz.id)">
 						{{ t('quiz.viewQuiz') }}
 					</UButton>
 				</template>

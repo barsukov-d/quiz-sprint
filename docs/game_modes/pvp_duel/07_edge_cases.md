@@ -366,25 +366,7 @@ func validateClientTime(clientTime, serverTime int64) int64 {
 ```
 
 ### Answer replay attack
-**Prevention:**
-```go
-// Each answer has unique nonce
-type AnswerSubmission struct {
-    GameID     string
-    QuestionID string
-    AnswerID   string
-    Nonce      string
-    Signature  string
-}
-
-func validateSubmission(sub *AnswerSubmission) error {
-    if isNonceUsed(sub.Nonce) {
-        return ErrReplayAttack
-    }
-    markNonceUsed(sub.Nonce)
-    return nil
-}
-```
+**Prevention:** First answer wins. Server rejects subsequent submissions for the same question per game (see `isAlreadyAnswered` above). Game is server-authoritative via WebSocket — no client-side signature needed.
 
 ### WebSocket connection hijacking
 **Mitigation:**

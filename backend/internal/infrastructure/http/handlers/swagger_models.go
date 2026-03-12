@@ -1269,11 +1269,10 @@ type AcceptByLinkCodeRequest struct {
 // AcceptByLinkCodeResponse wraps the accept by link response
 type AcceptByLinkCodeResponse struct {
 	Data struct {
-		Success        bool    `json:"success"`
-		GameID         *string `json:"gameId,omitempty"`
-		TicketConsumed bool    `json:"ticketConsumed"`
-		StartsIn       *int    `json:"startsIn,omitempty"`
-		ChallengerID   string  `json:"challengerId"`
+		Success     bool   `json:"success"`
+		ChallengeID string `json:"challengeId"`
+		Status      string `json:"status"`
+		InviterName string `json:"inviterName"` // F2: added
 	} `json:"data"`
 }
 
@@ -1300,14 +1299,16 @@ type CreateChallengeLinkResponse struct {
 // GetDuelStatusResponse wraps the duel status response
 type GetDuelStatusResponse struct {
 	Data struct {
-		HasActiveDuel     bool                 `json:"hasActiveDuel"`
-		ActiveGameID      *string              `json:"activeGameId,omitempty"`
-		Player            DuelPlayerRatingDTO  `json:"player"`
-		Tickets           int                  `json:"tickets"`
-		FriendsOnline     []DuelFriendDTO      `json:"friendsOnline"`
-		PendingChallenges []DuelChallengeDTO   `json:"pendingChallenges"`
-		SeasonID          string               `json:"seasonId"`
-		SeasonEndsAt      int64                `json:"seasonEndsAt"`
+		HasActiveDuel      bool                `json:"hasActiveDuel"`
+		ActiveGameID       *string             `json:"activeGameId,omitempty"`
+		Player             DuelPlayerRatingDTO `json:"player"`
+		Tickets            int                 `json:"tickets"`
+		FriendsOnline      []DuelFriendDTO     `json:"friendsOnline"`
+		PendingChallenges  []DuelChallengeDTO  `json:"pendingChallenges"`
+		OutgoingChallenges []DuelChallengeDTO  `json:"outgoingChallenges"`
+		AcceptedChallenges []DuelChallengeDTO  `json:"acceptedChallenges"` // F1: added
+		SeasonID           string              `json:"seasonId"`
+		SeasonEndsAt       int64               `json:"seasonEndsAt"`
 	} `json:"data"`
 }
 
@@ -1347,15 +1348,17 @@ type DuelFriendDTO struct {
 
 // DuelChallengeDTO represents a pending challenge
 type DuelChallengeDTO struct {
-	ID            string  `json:"id"`
-	ChallengerID  string  `json:"challengerId"`
-	ChallengedID  *string `json:"challengedId,omitempty"`
-	Type          string  `json:"type"`
-	Status        string  `json:"status"`
-	ChallengeLink string  `json:"challengeLink,omitempty"`
-	ExpiresAt     int64   `json:"expiresAt"`
-	ExpiresIn     int     `json:"expiresIn"`
-	CreatedAt     int64   `json:"createdAt"`
+	ID                 string  `json:"id"`
+	ChallengerID       string  `json:"challengerId"`
+	ChallengedID       *string `json:"challengedId,omitempty"`
+	ChallengerUsername string  `json:"challengerUsername,omitempty"`
+	InviteeName        string  `json:"inviteeName,omitempty"`
+	Type               string  `json:"type"`
+	Status             string  `json:"status"`
+	ChallengeLink      string  `json:"challengeLink,omitempty"`
+	ExpiresAt          int64   `json:"expiresAt"`
+	ExpiresIn          int     `json:"expiresIn"`
+	CreatedAt          int64   `json:"createdAt"`
 }
 
 // @name DuelChallengeDTO
@@ -1433,3 +1436,72 @@ type RequestRematchResponse struct {
 }
 
 // @name RequestRematchResponse
+
+// GetGameResultPlayerDTO represents a player in the game result response
+type GetGameResultPlayerDTO struct {
+	ID         string `json:"id"`
+	Username   string `json:"username"`
+	MMR        int    `json:"mmr"`
+	League     string `json:"league"`
+	LeagueIcon string `json:"leagueIcon"`
+	Score      int    `json:"score"`
+}
+
+// @name GetGameResultPlayerDTO
+
+// StartChallengeRequest - request to start a challenge
+type StartChallengeRequest struct {
+	PlayerID string `json:"playerId" validate:"required"`
+}
+
+// @name StartChallengeRequest
+
+// StartChallengeResponse - game started
+type StartChallengeResponse struct {
+	Data struct {
+		GameID string `json:"gameId"`
+	} `json:"data"`
+}
+
+// @name StartChallengeResponse
+
+// GetGameResultResponse wraps the game result response
+type GetGameResultResponse struct {
+	Data struct {
+		GameID        string                 `json:"gameId"`
+		Result        string                 `json:"result"` // "win", "loss", "draw"
+		PlayerScore   int                    `json:"playerScore"`
+		OpponentScore int                    `json:"opponentScore"`
+		MMRChange     int                    `json:"mmrChange"`
+		NewMMR        int                    `json:"newMmr"`
+		NewLeague     string                 `json:"newLeague"`
+		NewDivision   int                    `json:"newDivision"`
+		Opponent      GetGameResultPlayerDTO `json:"opponent"`
+		CanRematch    bool                   `json:"canRematch"`
+	} `json:"data"`
+}
+
+// @name GetGameResultResponse
+
+// RivalItemDTO represents a rival in Swagger docs
+type RivalItemDTO struct {
+	ID         string `json:"id" validate:"required"`
+	Username   string `json:"username" validate:"required"`
+	MMR        int    `json:"mmr" validate:"required"`
+	League     string `json:"league" validate:"required"`
+	LeagueIcon string `json:"leagueIcon" validate:"required"`
+	IsOnline           bool   `json:"isOnline" validate:"required"`
+	GamesCount         int    `json:"gamesCount" validate:"required"`
+	HasPendingChallenge bool  `json:"hasPendingChallenge" validate:"required"`
+}
+
+// @name RivalItemDTO
+
+// GetRivalsResponse is the Swagger response model for GET /duel/rivals
+type GetRivalsResponse struct {
+	Data struct {
+		Rivals []RivalItemDTO `json:"rivals" validate:"required"`
+	} `json:"data"`
+}
+
+// @name GetRivalsResponse

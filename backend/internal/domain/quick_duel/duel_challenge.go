@@ -6,7 +6,7 @@ import (
 
 // Challenge expiry constants
 const (
-	DirectChallengeExpirySeconds = 60       // 60 seconds for online friend
+	DirectChallengeExpirySeconds = 3600     // 1 hour — time to open Telegram notification
 	PushChallengeExpirySeconds   = 300      // 5 minutes if push notification sent
 	LinkChallengeExpirySeconds   = 86400    // 24 hours for link-based challenges
 )
@@ -15,10 +15,11 @@ const (
 type ChallengeStatus string
 
 const (
-	ChallengeStatusPending  ChallengeStatus = "pending"
-	ChallengeStatusAccepted ChallengeStatus = "accepted"
-	ChallengeStatusDeclined ChallengeStatus = "declined"
-	ChallengeStatusExpired  ChallengeStatus = "expired"
+	ChallengeStatusPending               ChallengeStatus = "pending"
+	ChallengeStatusAccepted              ChallengeStatus = "accepted"
+	ChallengeStatusAcceptedWaitingInviter ChallengeStatus = "accepted_waiting_inviter"
+	ChallengeStatusDeclined              ChallengeStatus = "declined"
+	ChallengeStatusExpired               ChallengeStatus = "expired"
 )
 
 // ChallengeType represents the type of challenge
@@ -56,7 +57,9 @@ type DuelChallenge struct {
 	expiresAt     int64           // Unix timestamp
 	createdAt     int64
 	respondedAt   int64           // When accepted/declined (0 if pending)
-	matchID       *GameID         // Set when match starts
+	matchID           *GameID         // Set when match starts
+	inviteeName       string          // Display name of invitee (set when accepted_waiting_inviter)
+	telegramMessageID int64           // Bot message ID in invitee's chat (0 = not sent)
 
 	events []Event
 }
@@ -151,20 +154,50 @@ func ReconstructDuelChallenge(
 	createdAt int64,
 	respondedAt int64,
 	matchID *GameID,
+	inviteeName string,
+	telegramMessageID int64,
 ) *DuelChallenge {
 	return &DuelChallenge{
-		id:            id,
-		challengerID:  challengerID,
-		challengedID:  challengedID,
-		challengeType: challengeType,
-		status:        status,
-		challengeLink: challengeLink,
-		expiresAt:     expiresAt,
-		createdAt:     createdAt,
-		respondedAt:   respondedAt,
-		matchID:       matchID,
-		events:        make([]Event, 0),
+		id:                id,
+		challengerID:      challengerID,
+		challengedID:      challengedID,
+		challengeType:     challengeType,
+		status:            status,
+		challengeLink:     challengeLink,
+		expiresAt:         expiresAt,
+		createdAt:         createdAt,
+		respondedAt:       respondedAt,
+		matchID:           matchID,
+		inviteeName:       inviteeName,
+		telegramMessageID: telegramMessageID,
+		events:            make([]Event, 0),
 	}
+}
+
+// AcceptWaiting sets status to accepted_waiting_inviter (invitee accepted, waiting for inviter to start).
+// Used only for link-based challenges.
+func (dc *DuelChallenge) AcceptWaiting(accepterID UserID, inviteeName string, acceptedAt int64) error {
+	if dc.status != ChallengeStatusPending {
+		return ErrChallengeNotPending
+	}
+	if dc.IsExpired(acceptedAt) {
+		dc.status = ChallengeStatusExpired
+		return ErrChallengeExpired
+	}
+	if dc.challengeType != ChallengeTypeLink {
+		return ErrNotChallengedPlayer
+	}
+	if dc.challengerID.Equals(accepterID) {
+		return ErrCannotChallengeSelf
+	}
+	dc.challengedID = &accepterID
+	dc.inviteeName = inviteeName
+	dc.status = ChallengeStatusAcceptedWaitingInviter
+	dc.respondedAt = acceptedAt
+	dc.events = append(dc.events, NewChallengeAcceptedEvent(
+		dc.id, dc.challengerID, accepterID, acceptedAt,
+	))
+	return nil
 }
 
 // Accept accepts the challenge
@@ -235,6 +268,17 @@ func (dc *DuelChallenge) SetMatchID(matchID GameID) {
 	dc.matchID = &matchID
 }
 
+// MarkStarted transitions challenge from accepted_waiting_inviter to accepted.
+// Called when the inviter confirms game start via StartChallenge use case.
+func (dc *DuelChallenge) MarkStarted(matchID GameID) error {
+	if dc.status != ChallengeStatusAcceptedWaitingInviter {
+		return ErrChallengeNotPending
+	}
+	dc.matchID = &matchID
+	dc.status = ChallengeStatusAccepted
+	return nil
+}
+
 // Expire marks the challenge as expired
 func (dc *DuelChallenge) Expire(expiredAt int64) error {
 	if dc.status != ChallengeStatusPending {
@@ -275,6 +319,9 @@ func (dc *DuelChallenge) ExpiresAt() int64           { return dc.expiresAt }
 func (dc *DuelChallenge) CreatedAt() int64           { return dc.createdAt }
 func (dc *DuelChallenge) RespondedAt() int64         { return dc.respondedAt }
 func (dc *DuelChallenge) MatchID() *GameID           { return dc.matchID }
+func (dc *DuelChallenge) InviteeName() string              { return dc.inviteeName }
+func (dc *DuelChallenge) TelegramMessageID() int64        { return dc.telegramMessageID }
+func (dc *DuelChallenge) SetTelegramMessageID(id int64)   { dc.telegramMessageID = id }
 
 // Events returns collected domain events and clears them
 func (dc *DuelChallenge) Events() []Event {

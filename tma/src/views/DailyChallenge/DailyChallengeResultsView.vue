@@ -96,34 +96,59 @@ const chestColor = computed(() => {
 })
 
 // Bonus display mapping
-const bonusInfo: Record<string, { get label(): string; icon: string; color: string; get description(): string }> = {
+const bonusInfo: Record<
+	string,
+	{ get label(): string; icon: string; color: string; get description(): string }
+> = {
 	shield: {
-		get label() { return t('daily.shieldName') },
+		get label() {
+			return t('daily.shieldName')
+		},
 		icon: 'i-heroicons-shield-check',
 		color: 'text-blue-500',
-		get description() { return t('daily.shieldDesc') },
+		get description() {
+			return t('daily.shieldDesc')
+		},
 	},
 	fifty_fifty: {
-		get label() { return t('daily.fiftyfiftyName') },
+		get label() {
+			return t('daily.fiftyfiftyName')
+		},
 		icon: 'i-heroicons-scissors',
 		color: 'text-yellow-500',
-		get description() { return t('daily.fiftyfiftyDesc') },
+		get description() {
+			return t('daily.fiftyfiftyDesc')
+		},
 	},
 	skip: {
-		get label() { return t('daily.skipName') },
+		get label() {
+			return t('daily.skipName')
+		},
 		icon: 'i-heroicons-forward',
 		color: 'text-green-500',
-		get description() { return t('daily.skipDesc') },
+		get description() {
+			return t('daily.skipDesc')
+		},
 	},
 	freeze: {
-		get label() { return t('daily.freezeName') },
+		get label() {
+			return t('daily.freezeName')
+		},
 		icon: 'i-heroicons-clock',
 		color: 'text-cyan-500',
-		get description() { return t('daily.freezeDesc') },
+		get description() {
+			return t('daily.freezeDesc')
+		},
 	},
 }
 
-const getBonusInfo = (bonus: string) => bonusInfo[bonus] ?? { label: bonus, icon: 'i-heroicons-gift', color: 'text-gray-500', description: '' }
+const getBonusInfo = (bonus: string) =>
+	bonusInfo[bonus] ?? {
+		label: bonus,
+		icon: 'i-heroicons-gift',
+		color: 'text-gray-500',
+		description: '',
+	}
 
 // Score breakdown
 const streakMultiplier = computed(() => {
@@ -228,7 +253,12 @@ onMounted(async () => {
 						>
 							<span>{{ t('daily.baseScore', { score: results.baseScore }) }}</span>
 							<span v-if="hasStreakBonus" class="text-yellow-500 font-semibold">
-								{{ t('daily.streakBonus', { bonus: results.streakBonus, multiplier: streakMultiplier }) }}
+								{{
+									t('daily.streakBonus', {
+										bonus: results.streakBonus,
+										multiplier: streakMultiplier,
+									})
+								}}
 							</span>
 						</div>
 					</div>
@@ -243,8 +273,15 @@ onMounted(async () => {
 						<p
 							class="text-center text-sm text-gray-700 dark:text-gray-300 font-semibold"
 						>
-							{{ t('daily.correctOf', { correct: results.correctAnswers, total: results.totalQuestions }) }}
-							<span class="text-gray-500">{{ t('daily.scorePercent', { percent: scorePercentage }) }}</span>
+							{{
+								t('daily.correctOf', {
+									correct: results.correctAnswers,
+									total: results.totalQuestions,
+								})
+							}}
+							<span class="text-gray-500">{{
+								t('daily.scorePercent', { percent: scorePercentage })
+							}}</span>
 						</p>
 					</div>
 				</div>
@@ -278,7 +315,9 @@ onMounted(async () => {
 						<span class="text-5xl">{{ chestEmoji }}</span>
 						<div>
 							<h3 class="text-xl font-bold">{{ chestLabel }}</h3>
-							<p class="text-sm text-gray-500 dark:text-gray-400">{{ t('daily.yourRewards') }}</p>
+							<p class="text-sm text-gray-500 dark:text-gray-400">
+								{{ t('daily.yourRewards') }}
+							</p>
 						</div>
 					</div>
 
@@ -348,7 +387,9 @@ onMounted(async () => {
 									class="w-5 h-5 shrink-0"
 								/>
 								<div class="flex-1 min-w-0">
-									<div class="text-sm font-semibold text-gray-900 dark:text-gray-100">
+									<div
+										class="text-sm font-semibold text-gray-900 dark:text-gray-100"
+									>
 										{{ getBonusInfo(bonus).label }}
 									</div>
 									<div class="text-xs text-gray-500 dark:text-gray-400">
@@ -443,7 +484,9 @@ onMounted(async () => {
 							>
 								<div class="flex flex-col items-center gap-1">
 									<span class="font-bold">{{ t('daily.watchAd') }}</span>
-									<span class="text-xs opacity-80">{{ t('daily.freeRetry') }}</span>
+									<span class="text-xs opacity-80">{{
+										t('daily.freeRetry')
+									}}</span>
 								</div>
 							</UButton>
 						</div>

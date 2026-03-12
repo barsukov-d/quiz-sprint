@@ -38,10 +38,11 @@ Daily Challenge → Earn PvP Tickets → Enter Duel → Win/Lose → MMR Change 
 
 ### 2. ELO/MMR Rating System
 Skill-based matchmaking:
-- Win against stronger opponent → +25-40 MMR
-- Win against weaker opponent → +10-15 MMR
-- Lose to stronger opponent → -10-15 MMR
-- Lose to weaker opponent → -25-40 MMR
+- Win against stronger opponent → more MMR (up to ~+30)
+- Win against weaker opponent → less MMR (minimum +10)
+- Lose to stronger opponent → less MMR lost (minimum -10)
+- Lose to weaker opponent → more MMR lost (up to ~-30)
+- Exact values: ELO formula, K=32, min ±10. See `03_rules.md`.
 
 ### 3. League System
 
@@ -126,7 +127,7 @@ Player A → "Вызвать друга" → Share link → Friend opens → Ins
 |-----------|-------------------|-------------------|
 | Friend registers | 3 🎟️ + 100 coins | 3 🎟️ + 100 coins |
 | Friend plays 5 duels | 5 🎟️ + 300 coins | 200 coins |
-| Friend reaches Silver | 10 🎟️ + 500 coins + 🏷️ "Наставник" | 300 coins |
+| Friend reaches Silver | 10 🎟️ + 500 coins + 🏷️ "Гуру" badge | 300 coins |
 | Friend reaches Gold | 20 🎟️ + 1,000 coins + Exclusive avatar | 500 coins |
 | Friend reaches Platinum | 50 🎟️ + 3,000 coins + Legendary title | 1,000 coins |
 
@@ -175,29 +176,8 @@ After losing to a friend:
 
 Creates engagement loop: lose → revenge → rematch → repeat.
 
-### 6. Weekly Friend Tournaments
-**Every Sunday:** Mini-tournament among friends who played each other.
-- Auto-generated bracket from week's duels
-- Winner gets "Champion of Friends" badge
-- Shareable results
-
-### 7. "Bring a Friend" Events
-Monthly events:
-```
-🎉 НЕДЕЛЯ ДРУЖБЫ
-
-Сыграй 10 дуэлей с друзьями →
-Получи эксклюзивную рамку аватара!
-
-Прогресс: 4/10
-[ Пригласить друга ]
-```
-
-### 8. Spectator Mode (Future)
-Friends can watch live duels:
-- Real-time question + answers
-- React with emojis
-- Share ongoing game
+### 6. Spectator Mode (Future)
+Friends can watch live duels. Deferred to Phase 4+.
 
 ---
 

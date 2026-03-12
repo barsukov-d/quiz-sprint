@@ -36,15 +36,14 @@ definitions:
     properties:
       data:
         properties:
-          challengerId:
+          challengeId:
             type: string
-          gameId:
+          inviterName:
+            description: 'F2: added'
             type: string
-          startsIn:
-            type: integer
+          status:
+            type: string
           success:
-            type: boolean
-          ticketConsumed:
             type: boolean
         type: object
     type: object
@@ -515,6 +514,8 @@ definitions:
         type: string
       challengerId:
         type: string
+      challengerUsername:
+        type: string
       createdAt:
         type: integer
       expiresAt:
@@ -522,6 +523,8 @@ definitions:
       expiresIn:
         type: integer
       id:
+        type: string
+      inviteeName:
         type: string
       status:
         type: string
@@ -775,6 +778,11 @@ definitions:
     properties:
       data:
         properties:
+          acceptedChallenges:
+            description: 'F1: added'
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO'
+            type: array
           activeGameId:
             type: string
           friendsOnline:
@@ -783,6 +791,10 @@ definitions:
             type: array
           hasActiveDuel:
             type: boolean
+          outgoingChallenges:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO'
+            type: array
           pendingChallenges:
             items:
               $ref: '#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO'
@@ -809,6 +821,48 @@ definitions:
             type: boolean
           total:
             type: integer
+        type: object
+    type: object
+  internal_infrastructure_http_handlers.GetGameResultPlayerDTO:
+    properties:
+      id:
+        type: string
+      league:
+        type: string
+      leagueIcon:
+        type: string
+      mmr:
+        type: integer
+      score:
+        type: integer
+      username:
+        type: string
+    type: object
+  internal_infrastructure_http_handlers.GetGameResultResponse:
+    properties:
+      data:
+        properties:
+          canRematch:
+            type: boolean
+          gameId:
+            type: string
+          mmrChange:
+            type: integer
+          newDivision:
+            type: integer
+          newLeague:
+            type: string
+          newMmr:
+            type: integer
+          opponent:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetGameResultPlayerDTO'
+          opponentScore:
+            type: integer
+          playerScore:
+            type: integer
+          result:
+            description: '"win", "loss", "draw"'
+            type: string
         type: object
     type: object
   internal_infrastructure_http_handlers.GetGlobalLeaderboardResponse:
@@ -937,6 +991,18 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.GetQuizDetailsData'
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.GetRivalsResponse:
+    properties:
+      data:
+        properties:
+          rivals:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.RivalItemDTO'
+            type: array
+        required:
+        - rivals
+        type: object
     type: object
   internal_infrastructure_http_handlers.GetSessionResultsResponse:
     properties:
@@ -1475,6 +1541,34 @@ definitions:
     required:
     - data
     type: object
+  internal_infrastructure_http_handlers.RivalItemDTO:
+    properties:
+      gamesCount:
+        type: integer
+      hasPendingChallenge:
+        type: boolean
+      id:
+        type: string
+      isOnline:
+        type: boolean
+      league:
+        type: string
+      leagueIcon:
+        type: string
+      mmr:
+        type: integer
+      username:
+        type: string
+    required:
+    - gamesCount
+    - hasPendingChallenge
+    - id
+    - isOnline
+    - league
+    - leagueIcon
+    - mmr
+    - username
+    type: object
   internal_infrastructure_http_handlers.SendChallengeRequest:
     properties:
       friendId:
@@ -1584,6 +1678,21 @@ definitions:
     - sessionId
     - startedAt
     - totalQuestions
+    type: object
+  internal_infrastructure_http_handlers.StartChallengeRequest:
+    properties:
+      playerId:
+        type: string
+    required:
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.StartChallengeResponse:
+    properties:
+      data:
+        properties:
+          gameId:
+            type: string
+        type: object
     type: object
   internal_infrastructure_http_handlers.StartDailyChallengeData:
     properties:
@@ -2615,6 +2724,45 @@ paths:
       summary: Respond to challenge
       tags:
       - duel
+  /duel/challenge/{challengeId}/start:
+    post:
+      consumes:
+      - application/json
+      description: Inviter confirms game start after invitee accepted via link
+      parameters:
+      - description: Challenge ID
+        in: path
+        name: challengeId
+        required: true
+        type: string
+      - description: Start request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.StartChallengeRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Game started
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.StartChallengeResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Challenge not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "409":
+          description: Challenge not in accepted_waiting_inviter state
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Start the duel after invitee accepted
+      tags:
+      - duel
   /duel/challenge/accept-by-code:
     post:
       consumes:
@@ -2681,6 +2829,44 @@ paths:
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Create challenge link
+      tags:
+      - duel
+  /duel/game/{gameId}:
+    get:
+      consumes:
+      - application/json
+      description: Get full result of a finished duel game
+      parameters:
+      - description: Game ID
+        in: path
+        name: gameId
+        required: true
+        type: string
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Game result
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetGameResultResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Game not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get game result
       tags:
       - duel
   /duel/game/{gameId}/rematch:
@@ -2865,6 +3051,35 @@ paths:
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Leave matchmaking queue
+      tags:
+      - duel
+  /duel/rivals:
+    get:
+      consumes:
+      - application/json
+      description: Get list of recent unique opponents the player has faced
+      parameters:
+      - description: Player ID
+        in: query
+        name: playerId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Rivals list
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetRivalsResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get recent rivals
       tags:
       - duel
   /duel/status:

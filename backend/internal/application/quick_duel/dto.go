@@ -80,15 +80,17 @@ type LeaderboardEntryDTO struct {
 
 // ChallengeDTO represents a duel challenge
 type ChallengeDTO struct {
-	ID            string  `json:"id"`
-	ChallengerID  string  `json:"challengerId"`
-	ChallengedID  *string `json:"challengedId,omitempty"`
-	Type          string  `json:"type"`
-	Status        string  `json:"status"`
-	ChallengeLink string  `json:"challengeLink,omitempty"`
-	ExpiresAt     int64   `json:"expiresAt"`
-	ExpiresIn     int     `json:"expiresIn"`
-	CreatedAt     int64   `json:"createdAt"`
+	ID                 string  `json:"id"`
+	ChallengerID       string  `json:"challengerId"`
+	ChallengedID       *string `json:"challengedId,omitempty"`
+	ChallengerUsername string  `json:"challengerUsername,omitempty"`
+	InviteeName        string  `json:"inviteeName,omitempty"`
+	Type               string  `json:"type"`
+	Status             string  `json:"status"`
+	ChallengeLink      string  `json:"challengeLink,omitempty"`
+	ExpiresAt          int64   `json:"expiresAt"`
+	ExpiresIn          int     `json:"expiresIn"`
+	CreatedAt          int64   `json:"createdAt"`
 }
 
 // GameHistoryEntryDTO represents a game in history
@@ -134,6 +136,18 @@ type FriendDTO struct {
 	InGame   bool   `json:"inGame"`
 }
 
+// RivalDTO represents a recent opponent
+type RivalDTO struct {
+	ID         string `json:"id"`
+	Username   string `json:"username"`
+	MMR        int    `json:"mmr"`
+	League     string `json:"league"`
+	LeagueIcon string `json:"leagueIcon"`
+	IsOnline            bool   `json:"isOnline"`
+	GamesCount          int    `json:"gamesCount"`
+	HasPendingChallenge bool   `json:"hasPendingChallenge"`
+}
+
 // ========================================
 // GetDuelStatus Use Case
 // ========================================
@@ -143,14 +157,17 @@ type GetDuelStatusInput struct {
 }
 
 type GetDuelStatusOutput struct {
-	HasActiveDuel     bool              `json:"hasActiveDuel"`
-	ActiveGameID      *string           `json:"activeGameId,omitempty"`
-	Player            PlayerRatingDTO   `json:"player"`
-	Tickets           int               `json:"tickets"`
-	FriendsOnline     []FriendDTO       `json:"friendsOnline"`
-	PendingChallenges []ChallengeDTO    `json:"pendingChallenges"`
-	SeasonID          string            `json:"seasonId"`
-	SeasonEndsAt      int64             `json:"seasonEndsAt"`
+	HasActiveDuel      bool            `json:"hasActiveDuel"`
+	ActiveGameID       *string         `json:"activeGameId,omitempty"`
+	Player             PlayerRatingDTO `json:"player"`
+	Tickets            int             `json:"tickets"`
+	FriendsOnline      []FriendDTO     `json:"friendsOnline"`
+	PendingChallenges  []ChallengeDTO  `json:"pendingChallenges"`
+	OutgoingChallenges []ChallengeDTO  `json:"outgoingChallenges"`
+	AcceptedChallenges []ChallengeDTO  `json:"acceptedChallenges"` // F1: added
+	ExpiredChallenges  []ChallengeDTO  `json:"expiredChallenges"`  // B9: expired challenges visible in lobby
+	SeasonID           string          `json:"seasonId"`
+	SeasonEndsAt       int64           `json:"seasonEndsAt"`
 }
 
 // ========================================
@@ -226,11 +243,10 @@ type AcceptByLinkCodeInput struct {
 }
 
 type AcceptByLinkCodeOutput struct {
-	Success        bool    `json:"success"`
-	GameID         *string `json:"gameId,omitempty"`
-	TicketConsumed bool    `json:"ticketConsumed"`
-	StartsIn       *int    `json:"startsIn,omitempty"`
-	ChallengerID   string  `json:"challengerId"`
+	Success     bool   `json:"success"`
+	ChallengeID string `json:"challengeId"`
+	Status      string `json:"status"` // "accepted_waiting_inviter"
+	InviterName string `json:"inviterName"` // F2: added
 }
 
 // ========================================
@@ -370,6 +386,19 @@ type ClaimReferralRewardOutput struct {
 }
 
 // ========================================
+// StartChallenge Use Case
+// ========================================
+
+type StartChallengeInput struct {
+	PlayerID    string `json:"playerId"`
+	ChallengeID string `json:"challengeId"`
+}
+
+type StartChallengeOutput struct {
+	GameID string `json:"gameId"`
+}
+
+// ========================================
 // StartGame Use Case
 // ========================================
 
@@ -420,4 +449,16 @@ type SubmitDuelAnswerOutput struct {
 	Player2MMRChange int    `json:"player2MmrChange,omitempty"`
 	Player1NewMMR    int    `json:"player1NewMmr,omitempty"`
 	Player2NewMMR    int    `json:"player2NewMmr,omitempty"`
+}
+
+// ========================================
+// GetRivals Use Case
+// ========================================
+
+type GetRivalsInput struct {
+	PlayerID string `json:"playerId"`
+}
+
+type GetRivalsOutput struct {
+	Rivals []RivalDTO `json:"rivals"`
 }

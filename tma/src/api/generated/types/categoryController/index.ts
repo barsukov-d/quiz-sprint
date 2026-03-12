@@ -1,0 +1,2 @@
+export type { GetCategories200, GetCategories500, GetCategoriesQueryResponse, GetCategoriesQuery } from "./GetCategories.ts";
+export type { PostCategories201, PostCategories400, PostCategories500, PostCategoriesMutationRequest, PostCategoriesMutationResponse, PostCategoriesMutation } from "./PostCategories.ts";

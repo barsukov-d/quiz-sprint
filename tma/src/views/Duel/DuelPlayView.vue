@@ -3,7 +3,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useDuelWebSocket } from '@/composables/useDuelWebSocket'
-import { useGameTimer } from '@/composables/useGameTimer'
 import GameTimer from '@/components/shared/GameTimer.vue'
 import AnswerButton from '@/components/shared/AnswerButton.vue'
 import QuestionCard from '@/components/shared/QuestionCard.vue'
@@ -22,38 +21,39 @@ const { t } = useI18n()
 // ===========================
 
 const {
-  isConnected,
-  isReconnecting,
-  error,
-  connect,
-  game,
-  currentQuestion,
-  currentRound,
-  countdownSeconds,
-  opponentAnswered,
-  lastRoundResult,
-  myPlayer,
-  opponent,
-  myScore,
-  opponentScore,
-  isWaiting,
-  isCountdown,
-  isPlaying,
-  isFinished,
-  didWin,
-  myMmrChange,
-  sendAnswer,
+	isConnected,
+	isReconnecting,
+	error,
+	connect,
+	game,
+	currentQuestion,
+	currentRound,
+	countdownSeconds,
+	opponentAnswered,
+	lastRoundResult,
+	opponent,
+	myScore,
+	opponentScore,
+	isWaiting,
+	isCountdown,
+	isPlaying,
+	isFinished,
+	myAnswerCorrect,
+	myAnswerTime,
+	opponentAnswerTime,
+	opponentReconnecting,
+	opponentReconnectCountdown,
+	emotesLeft,
+	unlockedEmotes,
+	sendAnswer,
+	sendEmote,
 } = useDuelWebSocket(duelId.value, playerId.value)
 
 // ===========================
 // Timer
 // ===========================
 
-const timer = useGameTimer({
-  initialTime: 10,
-  autoStart: false,
-  onTimeout: () => handleTimeout(),
-})
+const timerRef = ref<InstanceType<typeof GameTimer> | null>(null)
 
 // ===========================
 // UI State
@@ -74,24 +74,24 @@ const answerLabels = ['A', 'B', 'C', 'D']
 
 // Cast question to expected DTO format
 const formattedQuestion = computed(() => {
-  if (!currentQuestion.value) return null
-  return {
-    id: currentQuestion.value.id,
-    text: currentQuestion.value.text,
-    answers: [],
-    points: 100,
-    position: currentRound.value,
-  }
+	if (!currentQuestion.value) return null
+	return {
+		id: currentQuestion.value.id,
+		text: currentQuestion.value.text,
+		answers: [],
+		points: 100,
+		position: currentRound.value,
+	}
 })
 
 // Format answers for AnswerButton component
 const formattedAnswers = computed(() => {
-  if (!currentQuestion.value) return []
-  return currentQuestion.value.answers.map((a, idx) => ({
-    id: a.id,
-    text: a.text,
-    position: idx,
-  }))
+	if (!currentQuestion.value) return []
+	return currentQuestion.value.answers.map((a, idx) => ({
+		id: a.id,
+		text: a.text,
+		position: idx,
+	}))
 })
 
 // ===========================
@@ -100,36 +100,33 @@ const formattedAnswers = computed(() => {
 
 // Watch for new round
 watch(currentQuestion, (newQuestion) => {
-  if (newQuestion) {
-    // Reset UI state for new round
-    selectedAnswerId.value = null
-    showFeedback.value = false
-    hasAnswered.value = false
-    answerStartTime.value = Date.now()
+	if (newQuestion) {
+		// Reset UI state for new round
+		selectedAnswerId.value = null
+		showFeedback.value = false
+		hasAnswered.value = false
+		answerStartTime.value = Date.now()
 
-    // Start timer
-    timer.reset()
-    timer.start()
-  }
+		// Start timer
+		timerRef.value?.reset()
+		timerRef.value?.start()
+	}
 })
 
-// Watch for round result
+// Watch for round result — only show feedback after player has answered
 watch(lastRoundResult, (result) => {
-  if (result) {
-    showFeedback.value = true
-    timer.stop()
-  }
+	if (result && hasAnswered.value) {
+		showFeedback.value = true
+		timerRef.value?.stop()
+	}
 })
 
 // Watch for match finished
 watch(isFinished, (finished) => {
-  if (finished) {
-    timer.stop()
-    // Navigate to results after short delay
-    setTimeout(() => {
-      router.push({ name: 'duel-results', params: { duelId: duelId.value } })
-    }, 2000)
-  }
+	if (finished) {
+		timerRef.value?.stop()
+		router.push({ name: 'duel-results', params: { duelId: duelId.value } })
+	}
 })
 
 // ===========================
@@ -137,28 +134,28 @@ watch(isFinished, (finished) => {
 // ===========================
 
 const handleAnswerSelect = async (answerId: string) => {
-  if (hasAnswered.value || showFeedback.value) return
+	if (hasAnswered.value || showFeedback.value) return
 
-  selectedAnswerId.value = answerId
-  hasAnswered.value = true
+	selectedAnswerId.value = answerId
+	hasAnswered.value = true
 
-  const timeTaken = Date.now() - answerStartTime.value
+	const timeTaken = Date.now() - answerStartTime.value
 
-  // Send answer via WebSocket
-  sendAnswer(answerId, timeTaken)
+	// Send answer via WebSocket
+	sendAnswer(answerId, timeTaken)
 }
 
 const handleTimeout = () => {
-  if (!hasAnswered.value) {
-    // Auto-submit empty answer on timeout
-    hasAnswered.value = true
-    sendAnswer('', 10000)
-  }
+	if (!hasAnswered.value) {
+		// Auto-submit empty answer on timeout
+		hasAnswered.value = true
+		sendAnswer('', 10000)
+	}
 }
 
 const isCorrectAnswer = (answerId: string) => {
-  if (!lastRoundResult.value) return false
-  return answerId === lastRoundResult.value.correctAnswerId
+	if (!lastRoundResult.value) return false
+	return answerId === lastRoundResult.value.correctAnswerId
 }
 
 // ===========================
@@ -166,149 +163,305 @@ const isCorrectAnswer = (answerId: string) => {
 // ===========================
 
 onMounted(() => {
-  connect()
+	connect()
 })
 </script>
 
 <template>
-  <div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
-    <!-- Connection Status -->
-    <div
-      v-if="!isConnected || isReconnecting"
-      class="bg-yellow-500 text-white text-center py-2 text-sm"
-    >
-      <UIcon name="i-heroicons-wifi" class="inline size-4 mr-1" />
-      {{ isReconnecting ? t('duel.reconnecting') : t('duel.connecting') }}
-    </div>
+	<div class="min-h-screen bg-gray-900 flex flex-col">
+		<!-- Connection Status -->
+		<div
+			v-if="!isConnected || isReconnecting"
+			class="bg-yellow-500 text-white text-center py-2 text-sm"
+		>
+			<UIcon name="i-heroicons-wifi" class="inline size-4 mr-1" />
+			{{ isReconnecting ? t('duel.reconnecting') : t('duel.connecting') }}
+		</div>
 
-    <!-- Error -->
-    <div v-if="error" class="bg-red-500 text-white text-center py-2 text-sm">
-      {{ error }}
-    </div>
+		<!-- Error (не показываем timeout-ошибку — таймер уже сигнализирует) -->
+		<div
+			v-if="error && !error.toLowerCase().includes('invalid answer')"
+			class="bg-red-500 text-white text-center py-2 text-sm"
+		>
+			{{ error }}
+		</div>
 
-    <!-- Waiting for Opponent -->
-    <div v-if="isWaiting" class="flex-1 flex items-center justify-center p-4">
-      <div class="text-center">
-        <div class="animate-pulse mb-4">
-          <UIcon name="i-heroicons-users" class="size-16 text-primary" />
-        </div>
-        <h2 class="text-xl font-bold mb-2">{{ t('duel.waitingOpponent') }}</h2>
-        <p class="text-gray-500">{{ t('duel.waitingDesc') }}</p>
-      </div>
-    </div>
+		<!-- Initial connecting / loading state -->
+		<div v-if="!game" class="flex-1 flex flex-col items-center justify-center gap-5">
+			<div class="relative flex items-center justify-center">
+				<div
+					class="absolute size-20 rounded-full border-2 border-primary/20 animate-ping"
+				/>
+				<UIcon name="i-heroicons-bolt" class="size-12 text-primary relative z-10" />
+			</div>
+			<div class="text-center">
+				<p class="text-white font-semibold text-lg">{{ t('duel.connecting') }}</p>
+			</div>
+		</div>
 
-    <!-- Countdown -->
-    <div v-else-if="isCountdown" class="flex-1 flex items-center justify-center p-4">
-      <div class="text-center">
-        <p class="text-gray-500 mb-2">{{ t('duel.getReady') }}</p>
-        <p class="text-8xl font-bold text-primary animate-pulse">
-          {{ countdownSeconds }}
-        </p>
-      </div>
-    </div>
+		<!-- Waiting for Opponent -->
+		<div
+			v-else-if="isWaiting"
+			class="flex-1 flex flex-col items-center justify-center gap-8 px-6"
+		>
+			<div class="flex items-center gap-8">
+				<!-- Me -->
+				<div class="flex flex-col items-center gap-2">
+					<UAvatar
+						:src="currentUser?.avatarUrl"
+						:alt="currentUser?.username"
+						size="xl"
+						class="ring-2 ring-primary/40"
+					/>
+					<p class="text-sm font-semibold text-gray-300">{{ t('duel.you') }}</p>
+				</div>
 
-    <!-- Playing -->
-    <template v-else-if="isPlaying && currentQuestion">
-      <!-- Header: Players & Scores -->
-      <div class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3">
-        <div class="flex items-center justify-between">
-          <!-- My Player -->
-          <div class="flex items-center gap-2">
-            <div class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center">
-              <span class="text-lg">{{ myPlayer?.leagueIcon }}</span>
-            </div>
-            <div>
-              <p class="font-medium text-sm">{{ t('duel.you') }}</p>
-              <p class="text-2xl font-bold text-primary">{{ myScore }}</p>
-            </div>
-          </div>
+				<span class="text-2xl font-black text-gray-600">VS</span>
 
-          <!-- VS / Round -->
-          <div class="text-center">
-            <p class="text-xs text-gray-500">{{ t('duel.round') }}</p>
-            <p class="font-bold">{{ t('duel.roundOf', { current: currentRound, total: totalRounds }) }}</p>
-          </div>
+				<!-- Unknown opponent -->
+				<div class="flex flex-col items-center gap-2">
+					<div
+						class="size-16 rounded-full bg-gray-700 border-2 border-dashed border-gray-600 flex items-center justify-center"
+					>
+						<UIcon
+							name="i-heroicons-question-mark-circle"
+							class="size-8 text-gray-500"
+						/>
+					</div>
+					<p class="text-sm font-semibold text-gray-600">?</p>
+				</div>
+			</div>
 
-          <!-- Opponent -->
-          <div class="flex items-center gap-2">
-            <div class="text-right">
-              <p class="font-medium text-sm">{{ opponent?.username }}</p>
-              <p class="text-2xl font-bold text-orange-500">{{ opponentScore }}</p>
-            </div>
-            <div class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center relative">
-              <span class="text-lg">{{ opponent?.leagueIcon }}</span>
-              <!-- Answered indicator -->
-              <div
-                v-if="opponentAnswered"
-                class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"
-              >
-                <UIcon name="i-heroicons-check" class="size-3 text-white" />
-              </div>
-            </div>
-          </div>
-        </div>
-      </div>
+			<div class="text-center">
+				<p class="text-white font-semibold mb-1">{{ t('duel.waitingOpponent') }}</p>
+				<p class="text-sm text-gray-500">{{ t('duel.waitingDesc') }}</p>
+			</div>
+		</div>
 
-      <!-- Timer -->
-      <div class="px-4 py-3">
-        <GameTimer
-          ref="timerRef"
-          :initial-time="10"
-          :auto-start="false"
-          :warning-threshold="3"
-          show-progress
-          size="lg"
-        />
-      </div>
+		<!-- Countdown -->
+		<div
+			v-else-if="isCountdown"
+			class="flex-1 flex flex-col items-center justify-center gap-10 px-6"
+		>
+			<!-- Both players -->
+			<div class="flex items-center gap-6 w-full max-w-xs">
+				<div class="flex-1 flex flex-col items-center gap-2">
+					<UAvatar
+						:src="currentUser?.avatarUrl"
+						:alt="currentUser?.username"
+						size="xl"
+						class="ring-2 ring-primary/40"
+					/>
+					<p
+						class="text-sm font-semibold text-gray-300 truncate max-w-[80px] text-center"
+					>
+						{{ t('duel.you') }}
+					</p>
+				</div>
 
-      <!-- Question -->
-      <div class="flex-1 px-4 py-2">
-        <QuestionCard
-          :question="formattedQuestion!"
-          :question-number="currentRound"
-          :total-questions="totalRounds"
-        />
+				<span class="text-xl font-black text-gray-600 shrink-0">VS</span>
 
-        <!-- Answers -->
-        <div class="mt-6 space-y-3">
-          <AnswerButton
-            v-for="(answer, index) in formattedAnswers"
-            :key="answer.id"
-            :answer="answer"
-            :label="answerLabels[index]"
-            :selected="selectedAnswerId === answer.id"
-            :disabled="hasAnswered"
-            :show-feedback="showFeedback"
-            :is-correct="isCorrectAnswer(answer.id)"
-            @click="handleAnswerSelect(answer.id)"
-          />
-        </div>
-      </div>
-    </template>
+				<div class="flex-1 flex flex-col items-center gap-2">
+					<UAvatar
+						:src="opponent?.avatar"
+						:alt="opponent?.username"
+						size="xl"
+						class="ring-2 ring-orange-500/40"
+					/>
+					<p
+						class="text-sm font-semibold text-gray-300 truncate max-w-[80px] text-center"
+					>
+						{{ opponent?.username || '...' }}
+					</p>
+				</div>
+			</div>
 
-    <!-- Match Finished (brief summary before redirect) -->
-    <div v-else-if="isFinished" class="flex-1 flex items-center justify-center p-4">
-      <div class="text-center">
-        <div class="mb-4">
-          <UIcon
-            :name="didWin ? 'i-heroicons-trophy' : 'i-heroicons-x-circle'"
-            :class="didWin ? 'text-yellow-500' : 'text-red-500'"
-            class="size-20"
-          />
-        </div>
-        <h2 class="text-3xl font-bold mb-2">
-          {{ didWin === null ? t('duel.draw') : didWin ? t('duel.victory') : t('duel.defeat') }}
-        </h2>
-        <p class="text-xl">
-          {{ myScore }} - {{ opponentScore }}
-        </p>
-        <p
-          :class="myMmrChange >= 0 ? 'text-green-600' : 'text-red-600'"
-          class="text-lg font-semibold mt-2"
-        >
-          {{ t('duel.mmrChange', { sign: myMmrChange >= 0 ? '+' : '', amount: myMmrChange }) }}
-        </p>
-      </div>
-    </div>
-  </div>
+			<!-- Countdown number -->
+			<div class="text-center">
+				<p class="text-xs uppercase tracking-widest text-gray-500 mb-2">
+					{{ t('duel.getReady') }}
+				</p>
+				<p class="text-9xl font-black text-primary tabular-nums leading-none">
+					{{ countdownSeconds }}
+				</p>
+			</div>
+		</div>
+
+		<!-- Playing -->
+		<template v-else-if="isPlaying && currentQuestion">
+			<!-- Header: Players & Scores + Timer -->
+			<div class="bg-gray-800 dark:bg-gray-900 border-b border-gray-700/50 shadow-md">
+				<!-- Round row -->
+				<div class="flex items-center justify-center gap-1.5 pt-2.5 pb-1">
+					<span class="text-[10px] uppercase tracking-widest text-gray-500">
+						{{ t('duel.round') }}
+					</span>
+					<span class="text-sm font-bold text-white tabular-nums">
+						{{ currentRound
+						}}<span class="text-gray-500 font-normal">/{{ totalRounds }}</span>
+					</span>
+				</div>
+
+				<!-- Players row -->
+				<div class="flex items-center px-4 pb-2 gap-3">
+					<!-- Me — left -->
+					<div class="flex items-center gap-2.5 flex-1 min-w-0">
+						<UAvatar
+							:src="currentUser?.avatarUrl"
+							:alt="currentUser?.username"
+							size="md"
+							class="ring-2 ring-primary/40 shrink-0"
+						/>
+						<div class="min-w-0">
+							<p
+								class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 truncate"
+							>
+								{{ t('duel.you') }}
+							</p>
+							<p class="text-3xl font-black text-primary tabular-nums leading-none">
+								{{ myScore }}
+							</p>
+						</div>
+					</div>
+
+					<!-- VS divider -->
+					<span class="text-xs font-bold text-gray-600 shrink-0">VS</span>
+
+					<!-- Opponent — right (mirrored) -->
+					<div class="flex items-center gap-2.5 flex-row-reverse flex-1 min-w-0">
+						<div class="relative shrink-0">
+							<UAvatar
+								:src="opponent?.avatar"
+								:alt="opponent?.username"
+								size="md"
+								class="ring-2 ring-orange-500/40"
+							/>
+							<div
+								v-if="opponentAnswered"
+								class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center shadow"
+							>
+								<UIcon name="i-heroicons-check" class="size-3 text-white" />
+							</div>
+						</div>
+						<div class="text-right min-w-0">
+							<p
+								class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 truncate"
+							>
+								{{ opponent?.username }}
+							</p>
+							<p
+								class="text-3xl font-black text-orange-500 tabular-nums leading-none"
+							>
+								{{ opponentScore }}
+							</p>
+						</div>
+					</div>
+				</div>
+
+				<!-- Timer row -->
+				<div class="px-4 pb-3">
+					<GameTimer
+						ref="timerRef"
+						:initial-time="10"
+						:auto-start="false"
+						:warning-threshold="3"
+						:on-timeout="handleTimeout"
+						show-progress
+						size="lg"
+					/>
+				</div>
+			</div>
+
+			<!-- Question -->
+			<div class="flex-1 px-4 py-2">
+				<QuestionCard
+					:question="formattedQuestion!"
+					:question-number="currentRound"
+					:total-questions="totalRounds"
+				/>
+
+				<!-- Answers -->
+				<div class="mt-6 space-y-3">
+					<AnswerButton
+						v-for="(answer, index) in formattedAnswers"
+						:key="answer.id"
+						:answer="answer"
+						:label="answerLabels[index]"
+						:selected="selectedAnswerId === answer.id"
+						:disabled="hasAnswered"
+						:show-feedback="showFeedback"
+						:is-correct="isCorrectAnswer(answer.id)"
+						@click="() => handleAnswerSelect(answer.id)"
+					/>
+				</div>
+
+				<!-- Answer Feedback (1.5s overlay after answering) -->
+				<Transition name="fade">
+					<div
+						v-if="showFeedback && myAnswerCorrect !== null"
+						class="mt-4 rounded-xl p-4 text-center"
+						:class="
+							myAnswerCorrect
+								? 'bg-green-100 dark:bg-green-900'
+								: 'bg-red-100 dark:bg-red-900'
+						"
+					>
+						<p class="text-lg font-bold mb-1">
+							{{
+								myAnswerCorrect
+									? '✅ ' + t('duel.correct')
+									: '❌ ' + t('duel.wrong')
+							}}
+						</p>
+						<div
+							class="flex justify-center gap-6 text-sm text-gray-600 dark:text-gray-300"
+						>
+							<span
+								>{{ t('duel.yourTime') }}:
+								{{ (myAnswerTime / 1000).toFixed(1) }}s</span
+							>
+							<span v-if="opponentAnswered">
+								{{ opponent?.username }}:
+								{{ (opponentAnswerTime / 1000).toFixed(1) }}s
+							</span>
+						</div>
+					</div>
+				</Transition>
+
+				<!-- Emote Bar -->
+				<div v-if="emotesLeft > 0" class="mt-3 flex items-center justify-center gap-2">
+					<button
+						v-for="emote in unlockedEmotes"
+						:key="emote"
+						class="text-2xl w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:scale-110 transition-transform"
+						@click="() => sendEmote(emote)"
+					>
+						{{ emote }}
+					</button>
+					<span class="text-xs text-gray-400">{{ emotesLeft }}/3</span>
+				</div>
+			</div>
+
+			<!-- Opponent Disconnect Overlay -->
+			<Transition name="fade">
+				<div
+					v-if="opponentReconnecting"
+					class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
+				>
+					<div
+						class="bg-white dark:bg-gray-800 rounded-2xl p-6 mx-4 text-center max-w-sm w-full"
+					>
+						<div class="text-4xl mb-3">🔄</div>
+						<h3 class="text-lg font-bold mb-1">
+							{{ opponent?.username }} {{ t('duel.reconnecting') }}
+						</h3>
+						<p class="text-gray-500 text-sm mb-3">{{ t('duel.reconnectingDesc') }}</p>
+						<div class="text-3xl font-bold text-primary">
+							{{ opponentReconnectCountdown }}s
+						</div>
+					</div>
+				</div>
+			</Transition>
+		</template>
+	</div>
 </template>

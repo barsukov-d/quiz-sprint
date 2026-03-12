@@ -33,6 +33,7 @@ var (
 	ErrNotChallengedPlayer  = errors.New("player is not the challenged player")
 	ErrCannotChallengeSelf  = errors.New("cannot challenge yourself")
 	ErrFriendBusy           = errors.New("friend is already in a game")
+	ErrChallengeAlreadySent = errors.New("challenge already sent to this player")
 	ErrAlreadyInQueue       = errors.New("already in matchmaking queue")
 	ErrAlreadyInGame        = errors.New("already in an active game")
 	ErrInsufficientTickets  = errors.New("insufficient tickets")

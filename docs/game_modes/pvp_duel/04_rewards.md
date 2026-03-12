@@ -42,22 +42,13 @@ Season 2: February 2026
 |------------------|----------------|----------------|
 | **Registers** | 3 🎟️ + 100 coins | 3 🎟️ + 100 coins |
 | **Plays 5 duels** | 5 🎟️ + 300 coins | 200 coins |
-| **Reaches Silver** | 10 🎟️ + 500 coins + 🏷️ "Наставник" badge | 300 coins |
+| **Reaches Silver** | 10 🎟️ + 500 coins + 🏷️ "Гуру" badge | 300 coins |
 | **Reaches Gold** | 20 🎟️ + 1,000 coins + Exclusive avatar | 500 coins |
 | **Reaches Platinum** | 50 🎟️ + 3,000 coins + Legendary title | 1,000 coins |
 
-### Referral Leaderboard (Monthly)
-
-| Rank | Referrals | Bonus Reward |
-|------|-----------|--------------|
-| #1 | Most refs | 10,000 coins + Unique "Рекрутер #1" title |
-| #2-5 | Top 5 | 5,000 coins + "Топ рекрутер" badge |
-| #6-20 | Top 20 | 2,000 coins |
-| 10+ refs | Anyone | Exclusive "Амбассадор" avatar frame |
-
 ---
 
-## Friend Duel Rewards
+## Friend Duel Rewards *(Phase 2+)*
 
 ### Weekly "Friend Wars"
 
@@ -157,7 +148,7 @@ Super revenge (3+ losses then win) → +100% coins + "Мстительный" ba
 
 ---
 
-## Share Rewards
+## Share Rewards *(Phase 2+)*
 
 ### Sharing Incentives
 

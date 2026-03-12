@@ -39,29 +39,37 @@ export function useAuth() {
 
 			// 🔍 DEBUG: Смотрим что вернул retrieveLaunchParams
 			console.log('🔍 Full launch params:', launchParams)
-			console.log('🔍 initDataRaw from SDK:', launchParams.initDataRaw)
-			console.log('🔍 initData from SDK:', launchParams.initData)
-			console.log('🔍 startParam from SDK:', launchParams.startParam)
+			// In @tma.js/sdk v3, startParam is named tgWebAppStartParam
+			console.log('🔍 tgWebAppStartParam from SDK:', launchParams.tgWebAppStartParam)
 
 			// Extract startParam for deep linking (from ?startapp=xxx)
-			if (launchParams.startParam) {
-				startParam.value = launchParams.startParam as string
+			// In @tma.js/sdk v3, the property is tgWebAppStartParam (not startParam)
+			if (launchParams.tgWebAppStartParam) {
+				startParam.value = launchParams.tgWebAppStartParam
 				console.log('✅ Deep link startParam:', startParam.value)
 			}
 
-			let rawData: string | undefined = launchParams.initDataRaw as string | undefined
-			let parsedData: ParsedInitData | undefined = launchParams.initData as
-				| ParsedInitData
-				| undefined
+			let rawData: string | undefined = undefined
+			let parsedData: ParsedInitData | undefined = undefined
 
-			// 🔧 WORKAROUND: Если SDK не вернул initDataRaw, парсим из hash вручную
+			// 🔧 WORKAROUND: Парсим из hash вручную
 			// Telegram Desktop передает данные в hash параметрах
-			if (!rawData && typeof window !== 'undefined') {
+			if (typeof window !== 'undefined') {
 				const hash = window.location.hash
 				console.log('🔧 Trying to parse from hash:', hash)
 
 				// Извлекаем tgWebAppData из hash
 				const hashParams = new URLSearchParams(hash.substring(1)) // убираем #
+
+				// Also extract startParam from hash as fallback
+				if (!startParam.value) {
+					const hashStartParam = hashParams.get('tgWebAppStartParam')
+					if (hashStartParam) {
+						startParam.value = hashStartParam
+						console.log('✅ Deep link startParam from hash:', startParam.value)
+					}
+				}
+
 				const tgWebAppData = hashParams.get('tgWebAppData')
 
 				if (tgWebAppData) {
@@ -91,6 +99,52 @@ export function useAuth() {
 							queryId: initParams.get('query_id'),
 						}
 						console.log('✅ Parsed user data:', parsedData)
+					}
+				}
+			}
+
+			// Fallback: try localStorage (app resume after background reload)
+			if (!rawData && typeof localStorage !== 'undefined') {
+				const cached = localStorage.getItem('tma_init_data_raw')
+				if (cached) {
+					// Validate cache age — backend rejects init data older than 1 hour
+					const cachedParams = new URLSearchParams(cached)
+					const authDateSec = parseInt(cachedParams.get('auth_date') || '0')
+					const ageMs = Date.now() - authDateSec * 1000
+					if (ageMs > 55 * 60 * 1000) {
+						console.warn(
+							'TMA: Cached init data expired (age:',
+							Math.round(ageMs / 60000),
+							'min), discarding',
+						)
+						localStorage.removeItem('tma_init_data_raw')
+					} else {
+						rawData = cached
+						console.log('✅ Using cached init data from localStorage (app resume)')
+
+						// Parse user from cached raw data
+						const initParams = new URLSearchParams(rawData)
+						const userJson = initParams.get('user')
+						if (userJson) {
+							const user = JSON.parse(userJson)
+							parsedData = {
+								user: {
+									id: user.id,
+									first_name: user.first_name,
+									last_name: user.last_name,
+									username: user.username,
+									language_code: user.language_code,
+									is_premium: user.is_premium || false,
+									allows_write_to_pm: user.allows_write_to_pm || false,
+									photo_url: user.photo_url,
+								} as TelegramUser,
+								authDate: new Date(
+									parseInt(initParams.get('auth_date') || '0') * 1000,
+								),
+								hash: initParams.get('hash') || '',
+								queryId: initParams.get('query_id'),
+							}
+						}
 					}
 				}
 			}

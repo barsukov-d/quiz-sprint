@@ -1,6 +1,7 @@
 package quick_duel
 
 import (
+	"context"
 	"fmt"
 	"testing"
 
@@ -77,6 +78,56 @@ func (m *mockDuelGameRepo) Delete(id quick_duel.GameID) error {
 	return nil
 }
 
+func (m *mockDuelGameRepo) FindRecentOpponents(playerID quick_duel.UserID, limit int) ([]quick_duel.RecentOpponentEntry, error) {
+	seen := make(map[string]int)
+	lastPlayed := make(map[string]int64)
+
+	for _, g := range m.games {
+		if g.Status() != quick_duel.GameStatusFinished {
+			continue
+		}
+		var opponentID string
+		if g.Player1().UserID().Equals(playerID) {
+			opponentID = g.Player2().UserID().String()
+		} else if g.Player2().UserID().Equals(playerID) {
+			opponentID = g.Player1().UserID().String()
+		} else {
+			continue
+		}
+		seen[opponentID]++
+		if g.StartedAt() > lastPlayed[opponentID] {
+			lastPlayed[opponentID] = g.StartedAt()
+		}
+	}
+
+	var result []quick_duel.RecentOpponentEntry
+	for idStr, count := range seen {
+		id, err := shared.NewUserID(idStr)
+		if err != nil {
+			continue
+		}
+		result = append(result, quick_duel.RecentOpponentEntry{
+			OpponentID:   id,
+			GamesCount:   count,
+			LastPlayedAt: lastPlayed[idStr],
+		})
+	}
+
+	// Sort by LastPlayedAt desc
+	for i := 0; i < len(result); i++ {
+		for j := i + 1; j < len(result); j++ {
+			if result[j].LastPlayedAt > result[i].LastPlayedAt {
+				result[i], result[j] = result[j], result[i]
+			}
+		}
+	}
+
+	if limit > 0 && len(result) > limit {
+		result = result[:limit]
+	}
+	return result, nil
+}
+
 // mockChallengeRepo is an in-memory challenge repository
 type mockChallengeRepo struct {
 	challenges map[string]*quick_duel.DuelChallenge
@@ -143,8 +194,40 @@ func (m *mockChallengeRepo) Delete(id quick_duel.ChallengeID) error {
 	return nil
 }
 
+func (m *mockChallengeRepo) FindAcceptedWaitingForPlayer(playerID quick_duel.UserID) ([]*quick_duel.DuelChallenge, error) {
+	var result []*quick_duel.DuelChallenge
+	for _, c := range m.challenges {
+		if c.Status() == quick_duel.ChallengeStatusAcceptedWaitingInviter {
+			if c.ChallengedID() != nil && c.ChallengedID().Equals(playerID) {
+				result = append(result, c)
+			}
+		}
+	}
+	return result, nil
+}
+
 func (m *mockChallengeRepo) DeleteExpired(_ int64) error {
 	return nil
+}
+
+func (m *mockChallengeRepo) FindPendingExpiredWithMessageID(_ int64) ([]*quick_duel.DuelChallenge, error) {
+	return nil, nil
+}
+
+func (m *mockChallengeRepo) DeleteHardExpired(_ int64) error {
+	return nil
+}
+
+func (m *mockChallengeRepo) FindExpiredForPlayer(playerID quick_duel.UserID) ([]*quick_duel.DuelChallenge, error) {
+	var result []*quick_duel.DuelChallenge
+	for _, c := range m.challenges {
+		if c.Status() == quick_duel.ChallengeStatusExpired {
+			if c.ChallengerID().Equals(playerID) || (c.ChallengedID() != nil && c.ChallengedID().Equals(playerID)) {
+				result = append(result, c)
+			}
+		}
+	}
+	return result, nil
 }
 
 // mockPlayerRatingRepo is an in-memory player rating repository
@@ -510,6 +593,35 @@ func (m *mockQuestionRepo) FindRandomByDifficulty(count int, _ string) ([]Questi
 	return m.questions[:count], nil
 }
 
+func (m *mockQuestionRepo) FindByID(questionID quiz.QuestionID) (*quiz.Question, error) {
+	for _, qd := range m.questions {
+		if qd.ID == questionID.String() {
+			qText, _ := quiz.NewQuestionText(qd.Text)
+			pts, _ := quiz.NewPoints(100)
+			q, err := quiz.NewQuestion(questionID, qText, pts, 0)
+			if err != nil {
+				return nil, err
+			}
+			for i, ad := range qd.Answers {
+				aID, err := quiz.NewAnswerIDFromString(ad.ID)
+				if err != nil {
+					return nil, err
+				}
+				aText, _ := quiz.NewAnswerText(ad.Text)
+				ans, err := quiz.NewAnswer(aID, aText, ad.IsCorrect, i)
+				if err != nil {
+					return nil, err
+				}
+				if err := q.AddAnswer(*ans); err != nil {
+					return nil, err
+				}
+			}
+			return q, nil
+		}
+	}
+	return nil, fmt.Errorf("question not found: %s", questionID.String())
+}
+
 // mockUserRepo for user lookups
 type mockUserRepo struct {
 	users map[string]*domainUser.User
@@ -620,7 +732,7 @@ func setupFixture(t *testing.T) *duelFixture {
 func (f *duelFixture) newGetDuelStatusUC() *GetDuelStatusUseCase {
 	return NewGetDuelStatusUseCase(
 		f.playerRatingRepo, f.duelGameRepo, f.challengeRepo,
-		f.seasonRepo, f.userRepo,
+		f.seasonRepo, f.userRepo, f.onlineTracker,
 	)
 }
 
@@ -635,20 +747,42 @@ func (f *duelFixture) newLeaveQueueUC() *LeaveQueueUseCase {
 }
 
 func (f *duelFixture) newSendChallengeUC() *SendChallengeUseCase {
-	return NewSendChallengeUseCase(f.challengeRepo, f.duelGameRepo, f.eventBus)
+	return NewSendChallengeUseCase(f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus)
 }
 
 func (f *duelFixture) newRespondChallengeUC() *RespondChallengeUseCase {
 	return NewRespondChallengeUseCase(
 		f.challengeRepo, f.duelGameRepo, f.playerRatingRepo,
-		f.seasonRepo, f.eventBus,
+		f.seasonRepo, f.questionRepo, f.userRepo, &noOpNotifier{}, f.eventBus,
 	)
 }
 
 func (f *duelFixture) newAcceptByLinkCodeUC() *AcceptByLinkCodeUseCase {
 	return NewAcceptByLinkCodeUseCase(
+		f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus,
+	)
+}
+
+// noOpNotifier satisfies TelegramNotifier in tests
+type noOpNotifier struct{}
+
+func (n *noOpNotifier) NotifyChallengeAccepted(_ context.Context, _ int64, _ string, _ string) error {
+	return nil
+}
+func (n *noOpNotifier) NotifyInviterWaiting(_ context.Context, _ int64, _ string, _ string) error {
+	return nil
+}
+func (n *noOpNotifier) NotifyChallengeReceived(_ context.Context, _ int64, _ string, _ string) (int64, error) {
+	return 0, nil
+}
+func (n *noOpNotifier) EditChallengeMessage(_ context.Context, _ int64, _ int64, _ string) error {
+	return nil
+}
+
+func (f *duelFixture) newStartChallengeUC() *StartChallengeUseCase {
+	return NewStartChallengeUseCase(
 		f.challengeRepo, f.duelGameRepo, f.playerRatingRepo,
-		f.seasonRepo, f.eventBus,
+		f.seasonRepo, f.questionRepo, f.userRepo, f.eventBus,
 	)
 }
 
@@ -677,6 +811,7 @@ func (f *duelFixture) newSubmitDuelAnswerUC() *SubmitDuelAnswerUseCase {
 	return NewSubmitDuelAnswerUseCase(
 		f.duelGameRepo, f.playerRatingRepo, f.questionRepo,
 		f.seasonRepo, f.eventBus,
+		NewMemoryRoundCache(),
 	)
 }
 
@@ -686,6 +821,32 @@ func (f *duelFixture) newRequestRematchUC() *RequestRematchUseCase {
 
 func (f *duelFixture) newGetOnlineFriendsUC() *GetOnlineFriendsUseCase {
 	return NewGetOnlineFriendsUseCase(f.onlineTracker, f.userRepo)
+}
+
+func (f *duelFixture) newGetRivalsUC() *GetRivalsUseCase {
+	return NewGetRivalsUseCase(
+		f.duelGameRepo, f.playerRatingRepo, f.userRepo, f.onlineTracker, f.challengeRepo,
+	)
+}
+
+// correctAnswerID returns the correct answer ID for the question at the given index.
+func (f *duelFixture) correctAnswerID(questionIdx int) string {
+	for _, a := range f.questionRepo.questions[questionIdx].Answers {
+		if a.IsCorrect {
+			return a.ID
+		}
+	}
+	panic("no correct answer found")
+}
+
+// wrongAnswerID returns a wrong (incorrect) answer ID for the question at the given index.
+func (f *duelFixture) wrongAnswerID(questionIdx int) string {
+	for _, a := range f.questionRepo.questions[questionIdx].Answers {
+		if !a.IsCorrect {
+			return a.ID
+		}
+	}
+	panic("no wrong answer found")
 }
 
 // questionIDs returns QuestionIDs from the mock question repo for building test games

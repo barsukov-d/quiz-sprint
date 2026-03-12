@@ -290,6 +290,29 @@ func TestDuelGame_PlayerScores(t *testing.T) {
 	}
 }
 
+// TestDuelChallenge_AcceptWaiting tests the accepted_waiting_inviter status
+func TestDuelChallenge_AcceptWaiting(t *testing.T) {
+	challengerID, _ := shared.NewUserID("challenger-uuid-1234")
+	now := int64(1706429000)
+	challenge, _ := NewLinkChallenge(challengerID, now)
+
+	accepterID, _ := shared.NewUserID("accepter-uuid-5678")
+	err := challenge.AcceptWaiting(accepterID, "Vasya", now+10)
+
+	if err != nil {
+		t.Fatalf("Expected no error, got %v", err)
+	}
+	if challenge.Status() != ChallengeStatusAcceptedWaitingInviter {
+		t.Errorf("Status = %v, want %v", challenge.Status(), ChallengeStatusAcceptedWaitingInviter)
+	}
+	if challenge.InviteeName() != "Vasya" {
+		t.Errorf("InviteeName = %v, want Vasya", challenge.InviteeName())
+	}
+	if challenge.ChallengedID() == nil {
+		t.Error("ChallengedID should not be nil")
+	}
+}
+
 // TestDuelGame_ReconstructDuelGame tests reconstruction from persistence
 func TestDuelGame_ReconstructDuelGame(t *testing.T) {
 	player1ID, _ := shared.NewUserID("player1")
