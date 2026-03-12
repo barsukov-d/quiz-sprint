@@ -572,10 +572,12 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 	}
 
 	gameID := game.ID().String()
+	zero := 0
 	return RespondChallengeOutput{
 		Success:        true,
 		GameID:         &gameID,
 		TicketConsumed: true,
+		StartsIn:       &zero,
 	}, nil
 }
 

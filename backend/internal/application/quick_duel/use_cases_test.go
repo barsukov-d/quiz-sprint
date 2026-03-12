@@ -1379,26 +1379,18 @@ func TestFullFlow_ChallengeAcceptAndPlay(t *testing.T) {
 	if !respondOutput.Success {
 		t.Error("respond should succeed")
 	}
-
-	// 4. Start the game
-	startUC := f.newStartGameUC()
-	gameOutput, err := startUC.Execute(StartGameInput{
-		Player1ID:       testPlayer1ID,
-		Player2ID:       testPlayer2ID,
-		Player1Username: "Player1",
-		Player2Username: "Player2",
-	})
-	if err != nil {
-		t.Fatalf("start game error: %v", err)
+	if respondOutput.GameID == nil {
+		t.Fatalf("respond should return GameID")
 	}
 
-	// 5. Play all rounds - use real answer IDs from mock repo
+	// 4. Play all rounds using the game created by RespondChallenge
+	gameID := *respondOutput.GameID
 	answerUC := f.newSubmitDuelAnswerUC()
 
 	for round := 0; round < quick_duel.QuestionsPerDuel; round++ {
 		_, err := answerUC.Execute(SubmitDuelAnswerInput{
 			PlayerID:  testPlayer1ID,
-			GameID:    gameOutput.GameID,
+			GameID:    gameID,
 			AnswerID:  f.correctAnswerID(round),
 			TimeTaken: 2000,
 		})
@@ -1408,7 +1400,7 @@ func TestFullFlow_ChallengeAcceptAndPlay(t *testing.T) {
 
 		_, err = answerUC.Execute(SubmitDuelAnswerInput{
 			PlayerID:  testPlayer2ID,
-			GameID:    gameOutput.GameID,
+			GameID:    gameID,
 			AnswerID:  f.wrongAnswerID(round),
 			TimeTaken: 3000,
 		})
