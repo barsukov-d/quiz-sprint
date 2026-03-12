@@ -1834,6 +1834,11 @@ func (uc *StartChallengeUseCase) Execute(input StartChallengeInput) (StartChalle
 		return StartChallengeOutput{}, err
 	}
 
+	// Notify invitee via lobby WS that game is ready
+	inviteeID := challenge.ChallengedID()
+	gameIDStr := game.ID().String()
+	uc.eventBus.Publish(quick_duel.NewGameReadyEvent(inviteeID, gameIDStr, now))
+
 	// Transition challenge to accepted — removes it from lobby outgoing cards
 	if err := challenge.MarkStarted(game.ID()); err != nil {
 		return StartChallengeOutput{}, err
