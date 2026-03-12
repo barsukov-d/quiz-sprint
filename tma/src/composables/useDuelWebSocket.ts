@@ -60,6 +60,10 @@ type WebSocketMessage =
 				gameId: string
 				player1Id: string
 				player2Id: string
+				player1Username: string
+				player1Avatar: string
+				player2Username: string
+				player2Avatar: string
 				startsIn: number
 				totalRounds: number
 			}
@@ -284,7 +288,8 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
 					status: 'countdown',
 					player1: {
 						id: message.data.player1Id,
-						username: '',
+						username: message.data.player1Username || '',
+						avatar: message.data.player1Avatar || undefined,
 						mmr: 0,
 						league: '',
 						leagueIcon: '',
@@ -293,7 +298,8 @@ export function useDuelWebSocket(gameId: string, playerId: string) {
 					},
 					player2: {
 						id: message.data.player2Id,
-						username: '',
+						username: message.data.player2Username || '',
+						avatar: message.data.player2Avatar || undefined,
 						mmr: 0,
 						league: '',
 						leagueIcon: '',

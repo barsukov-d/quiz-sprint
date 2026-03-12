@@ -3,7 +3,6 @@ import { computed, onMounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useDuelWebSocket } from '@/composables/useDuelWebSocket'
-import { useGameTimer } from '@/composables/useGameTimer'
 import GameTimer from '@/components/shared/GameTimer.vue'
 import AnswerButton from '@/components/shared/AnswerButton.vue'
 import QuestionCard from '@/components/shared/QuestionCard.vue'
@@ -32,7 +31,6 @@ const {
 	countdownSeconds,
 	opponentAnswered,
 	lastRoundResult,
-	myPlayer,
 	opponent,
 	myScore,
 	opponentScore,
@@ -55,11 +53,7 @@ const {
 // Timer
 // ===========================
 
-const timer = useGameTimer({
-	initialTime: 10,
-	autoStart: false,
-	onTimeout: () => handleTimeout(),
-})
+const timerRef = ref<InstanceType<typeof GameTimer> | null>(null)
 
 // ===========================
 // UI State
@@ -114,8 +108,8 @@ watch(currentQuestion, (newQuestion) => {
 		answerStartTime.value = Date.now()
 
 		// Start timer
-		timer.reset()
-		timer.start()
+		timerRef.value?.reset()
+		timerRef.value?.start()
 	}
 })
 
@@ -123,14 +117,14 @@ watch(currentQuestion, (newQuestion) => {
 watch(lastRoundResult, (result) => {
 	if (result && hasAnswered.value) {
 		showFeedback.value = true
-		timer.stop()
+		timerRef.value?.stop()
 	}
 })
 
 // Watch for match finished
 watch(isFinished, (finished) => {
 	if (finished) {
-		timer.stop()
+		timerRef.value?.stop()
 		router.push({ name: 'duel-results', params: { duelId: duelId.value } })
 	}
 })
@@ -184,8 +178,11 @@ onMounted(() => {
 			{{ isReconnecting ? t('duel.reconnecting') : t('duel.connecting') }}
 		</div>
 
-		<!-- Error -->
-		<div v-if="error" class="bg-red-500 text-white text-center py-2 text-sm">
+		<!-- Error (не показываем timeout-ошибку — таймер уже сигнализирует) -->
+		<div
+			v-if="error && !error.toLowerCase().includes('invalid answer')"
+			class="bg-red-500 text-white text-center py-2 text-sm"
+		>
 			{{ error }}
 		</div>
 
@@ -222,62 +219,87 @@ onMounted(() => {
 
 		<!-- Playing -->
 		<template v-else-if="isPlaying && currentQuestion">
-			<!-- Header: Players & Scores -->
-			<div class="bg-white dark:bg-gray-800 shadow-sm px-4 py-3">
-				<div class="flex items-center justify-between">
-					<!-- My Player -->
-					<div class="flex items-center gap-2">
-						<div
-							class="w-10 h-10 rounded-full bg-primary-100 dark:bg-primary-900 flex items-center justify-center"
-						>
-							<span class="text-lg">{{ myPlayer?.leagueIcon }}</span>
-						</div>
-						<div>
-							<p class="font-medium text-sm">{{ t('duel.you') }}</p>
-							<p class="text-2xl font-bold text-primary">{{ myScore }}</p>
+			<!-- Header: Players & Scores + Timer -->
+			<div class="bg-gray-800 dark:bg-gray-900 border-b border-gray-700/50 shadow-md">
+				<!-- Round row -->
+				<div class="flex items-center justify-center gap-1.5 pt-2.5 pb-1">
+					<span class="text-[10px] uppercase tracking-widest text-gray-500">
+						{{ t('duel.round') }}
+					</span>
+					<span class="text-sm font-bold text-white tabular-nums">
+						{{ currentRound
+						}}<span class="text-gray-500 font-normal">/{{ totalRounds }}</span>
+					</span>
+				</div>
+
+				<!-- Players row -->
+				<div class="flex items-center px-4 pb-2 gap-3">
+					<!-- Me — left -->
+					<div class="flex items-center gap-2.5 flex-1 min-w-0">
+						<UAvatar
+							:src="currentUser?.avatarUrl"
+							:alt="currentUser?.username"
+							size="md"
+							class="ring-2 ring-primary/40 shrink-0"
+						/>
+						<div class="min-w-0">
+							<p
+								class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 truncate"
+							>
+								{{ t('duel.you') }}
+							</p>
+							<p class="text-3xl font-black text-primary tabular-nums leading-none">
+								{{ myScore }}
+							</p>
 						</div>
 					</div>
 
-					<!-- VS / Round -->
-					<div class="text-center">
-						<p class="text-xs text-gray-500">{{ t('duel.round') }}</p>
-						<p class="font-bold">
-							{{ t('duel.roundOf', { current: currentRound, total: totalRounds }) }}
-						</p>
-					</div>
+					<!-- VS divider -->
+					<span class="text-xs font-bold text-gray-600 shrink-0">VS</span>
 
-					<!-- Opponent -->
-					<div class="flex items-center gap-2">
-						<div class="text-right">
-							<p class="font-medium text-sm">{{ opponent?.username }}</p>
-							<p class="text-2xl font-bold text-orange-500">{{ opponentScore }}</p>
-						</div>
-						<div
-							class="w-10 h-10 rounded-full bg-orange-100 dark:bg-orange-900 flex items-center justify-center relative"
-						>
-							<span class="text-lg">{{ opponent?.leagueIcon }}</span>
-							<!-- Answered indicator -->
+					<!-- Opponent — right (mirrored) -->
+					<div class="flex items-center gap-2.5 flex-row-reverse flex-1 min-w-0">
+						<div class="relative shrink-0">
+							<UAvatar
+								:src="opponent?.avatar"
+								:alt="opponent?.username"
+								size="md"
+								class="ring-2 ring-orange-500/40"
+							/>
 							<div
 								v-if="opponentAnswered"
-								class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center"
+								class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center shadow"
 							>
 								<UIcon name="i-heroicons-check" class="size-3 text-white" />
 							</div>
 						</div>
+						<div class="text-right min-w-0">
+							<p
+								class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 truncate"
+							>
+								{{ opponent?.username }}
+							</p>
+							<p
+								class="text-3xl font-black text-orange-500 tabular-nums leading-none"
+							>
+								{{ opponentScore }}
+							</p>
+						</div>
 					</div>
 				</div>
-			</div>
 
-			<!-- Timer -->
-			<div class="px-4 py-3">
-				<GameTimer
-					ref="timerRef"
-					:initial-time="10"
-					:auto-start="false"
-					:warning-threshold="3"
-					show-progress
-					size="lg"
-				/>
+				<!-- Timer row -->
+				<div class="px-4 pb-3">
+					<GameTimer
+						ref="timerRef"
+						:initial-time="10"
+						:auto-start="false"
+						:warning-threshold="3"
+						:on-timeout="handleTimeout"
+						show-progress
+						size="lg"
+					/>
+				</div>
 			</div>
 
 			<!-- Question -->

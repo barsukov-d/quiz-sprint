@@ -10,6 +10,7 @@ import (
 
 	appDuel "github.com/barsukov/quiz-sprint/backend/internal/application/quick_duel"
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quick_duel"
+	domainUser "github.com/barsukov/quiz-sprint/backend/internal/domain/user"
 )
 
 // DuelWebSocketHub manages WebSocket connections for real-time duels
@@ -21,6 +22,9 @@ type DuelWebSocketHub struct {
 	// Use cases
 	startGameUC    *appDuel.StartGameUseCase
 	submitAnswerUC *appDuel.SubmitDuelAnswerUseCase
+
+	// Repositories
+	userRepo domainUser.UserRepository
 }
 
 // DuelGame represents an active duel game with two players
@@ -61,11 +65,13 @@ type DuelSubmitAnswerData struct {
 func NewDuelWebSocketHub(
 	startGameUC *appDuel.StartGameUseCase,
 	submitAnswerUC *appDuel.SubmitDuelAnswerUseCase,
+	userRepo domainUser.UserRepository,
 ) *DuelWebSocketHub {
 	return &DuelWebSocketHub{
 		games:          make(map[string]*DuelGame),
 		startGameUC:    startGameUC,
 		submitAnswerUC: submitAnswerUC,
+		userRepo:       userRepo,
 	}
 }
 
@@ -296,6 +302,22 @@ func (h *DuelWebSocketHub) handleDisconnectGracePeriod(gameID, playerID string) 
 	}
 }
 
+// fetchPlayerInfo returns username and avatarURL for a player, empty strings on error.
+func (h *DuelWebSocketHub) fetchPlayerInfo(playerID string) (username, avatarURL string) {
+	if h.userRepo == nil || playerID == "" {
+		return "", ""
+	}
+	uid, err := domainUser.NewUserID(playerID)
+	if err != nil {
+		return "", ""
+	}
+	u, err := h.userRepo.FindByID(uid)
+	if err != nil || u == nil {
+		return "", ""
+	}
+	return u.Username().String(), u.AvatarURL().String()
+}
+
 func (h *DuelWebSocketHub) notifyBothPlayersReady(game *DuelGame) {
 	// Use domain player order so game_ready.player1Id matches answer_result.player1Score.
 	// Domain order: player1 = challenger (set at game creation), player2 = accepter.
@@ -311,14 +333,22 @@ func (h *DuelWebSocketHub) notifyBothPlayersReady(game *DuelGame) {
 		}
 	}
 
+	// Fetch player info (username + avatar) for display in the UI
+	p1Username, p1Avatar := h.fetchPlayerInfo(domainPlayer1ID)
+	p2Username, p2Avatar := h.fetchPlayerInfo(domainPlayer2ID)
+
 	readyMsg := map[string]interface{}{
 		"type": "game_ready",
 		"data": map[string]interface{}{
-			"gameId":      game.ID,
-			"player1Id":   domainPlayer1ID,
-			"player2Id":   domainPlayer2ID,
-			"startsIn":    3,
-			"totalRounds": quick_duel.QuestionsPerDuel,
+			"gameId":          game.ID,
+			"player1Id":       domainPlayer1ID,
+			"player2Id":       domainPlayer2ID,
+			"player1Username": p1Username,
+			"player1Avatar":   p1Avatar,
+			"player2Username": p2Username,
+			"player2Avatar":   p2Avatar,
+			"startsIn":        3,
+			"totalRounds":     quick_duel.QuestionsPerDuel,
 		},
 	}
 
