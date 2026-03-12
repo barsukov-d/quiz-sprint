@@ -133,6 +133,7 @@ export function usePvPDuel(playerId: string) {
 	const friendsOnline = computed(() => statusData.value?.data?.friendsOnline ?? [])
 	const pendingChallenges = computed(() => statusData.value?.data?.pendingChallenges ?? [])
 	const outgoingChallenges = computed(() => statusData.value?.data?.outgoingChallenges ?? [])
+	const acceptedChallenges = computed(() => statusData.value?.data?.acceptedChallenges ?? [])
 
 	const outgoingReadyChallenges = computed(() =>
 		outgoingChallenges.value.filter((c) => c.status === 'accepted_waiting_inviter'),
@@ -489,6 +490,7 @@ export function usePvPDuel(playerId: string) {
 		friendsOnline,
 		pendingChallenges,
 		outgoingChallenges,
+		acceptedChallenges,
 		outgoingReadyChallenges,
 		outgoingPendingChallenges,
 		seasonId,
