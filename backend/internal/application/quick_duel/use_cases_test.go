@@ -89,6 +89,7 @@ func TestGetDuelStatus_IncludesOutgoingChallenges(t *testing.T) {
 	// Create a link challenge sent by player1
 	challenge, err := quick_duel.NewLinkChallenge(
 		mustUserID(testPlayer1ID),
+		"quiz_sprint_test_bot",
 		time.Now().UTC().Unix(),
 	)
 	if err != nil {
@@ -128,7 +129,7 @@ func TestGetDuelStatus_WithAcceptedChallenge(t *testing.T) {
 	now := time.Now().UTC().Unix()
 
 	// Create link challenge and have player1 accept it as invitee
-	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer2ID), now)
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer2ID), "quiz_sprint_test_bot", now)
 	f.challengeRepo.Save(challenge)
 	_ = challenge.AcceptWaiting(mustUserID(testPlayer1ID), "Player1", now+10)
 	f.challengeRepo.Save(challenge)
@@ -590,7 +591,7 @@ func TestAcceptByLinkCode_FailsIfInviteeInGame(t *testing.T) {
 	now := time.Now().UTC().Unix()
 
 	// Create a link challenge from player1
-	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), now)
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), "quiz_sprint_test_bot", now)
 	f.challengeRepo.Save(challenge)
 
 	// player2 is already in an active game
@@ -611,7 +612,7 @@ func TestAcceptByLinkCode_ReturnsInviterName(t *testing.T) {
 	now := time.Now().UTC().Unix()
 
 	// player1 (username "Player1") creates link challenge
-	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), now)
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), "quiz_sprint_test_bot", now)
 	f.challengeRepo.Save(challenge)
 
 	uc := f.newAcceptByLinkCodeUC()
@@ -1609,7 +1610,7 @@ func TestStartChallenge_FailsIfInviterInGame(t *testing.T) {
 	now := time.Now().UTC().Unix()
 
 	// Create link challenge and have invitee accept
-	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), now)
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), "quiz_sprint_test_bot", now)
 	f.challengeRepo.Save(challenge)
 	_ = challenge.AcceptWaiting(mustUserID(testPlayer2ID), "Player2", now+10)
 	f.challengeRepo.Save(challenge)
@@ -1631,7 +1632,7 @@ func TestStartChallenge_FailsIfInviteeInGame(t *testing.T) {
 	f := setupFixture(t)
 	now := time.Now().UTC().Unix()
 
-	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), now)
+	challenge, _ := quick_duel.NewLinkChallenge(mustUserID(testPlayer1ID), "quiz_sprint_test_bot", now)
 	f.challengeRepo.Save(challenge)
 	_ = challenge.AcceptWaiting(mustUserID(testPlayer2ID), "Player2", now+10)
 	f.challengeRepo.Save(challenge)

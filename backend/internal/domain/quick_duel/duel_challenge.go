@@ -107,6 +107,7 @@ func NewDirectChallenge(
 // NewLinkChallenge creates a shareable link challenge
 func NewLinkChallenge(
 	challengerID UserID,
+	botUsername string,
 	createdAt int64,
 ) (*DuelChallenge, error) {
 	if challengerID.IsZero() {
@@ -114,7 +115,7 @@ func NewLinkChallenge(
 	}
 
 	challengeID := NewChallengeID()
-	link := "https://t.me/quiz_sprint_dev_bot?startapp=duel_" + challengeID.String()[:8]
+	link := "https://t.me/" + botUsername + "?startapp=duel_" + challengeID.String()[:8]
 
 	challenge := &DuelChallenge{
 		id:            challengeID,

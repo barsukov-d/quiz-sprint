@@ -27,7 +27,7 @@ func TestMarkStarted_TransitionsToAccepted(t *testing.T) {
 	challengerID, _ := shared.NewUserID("user-challenger-001")
 	now := int64(1700000000)
 
-	challenge, err := quick_duel.NewLinkChallenge(challengerID, now)
+	challenge, err := quick_duel.NewLinkChallenge(challengerID, "quiz_sprint_test_bot", now)
 	if err != nil {
 		t.Fatal(err)
 	}
@@ -60,7 +60,7 @@ func TestMarkStarted_FailsIfNotWaitingInviter(t *testing.T) {
 	challengerID, _ := shared.NewUserID("user-challenger-001")
 	now := int64(1700000000)
 
-	challenge, err := quick_duel.NewLinkChallenge(challengerID, now)
+	challenge, err := quick_duel.NewLinkChallenge(challengerID, "quiz_sprint_test_bot", now)
 	if err != nil {
 		t.Fatal(err)
 	}

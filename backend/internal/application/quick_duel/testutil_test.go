@@ -747,19 +747,19 @@ func (f *duelFixture) newLeaveQueueUC() *LeaveQueueUseCase {
 }
 
 func (f *duelFixture) newSendChallengeUC() *SendChallengeUseCase {
-	return NewSendChallengeUseCase(f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus)
+	return NewSendChallengeUseCase(f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot")
 }
 
 func (f *duelFixture) newRespondChallengeUC() *RespondChallengeUseCase {
 	return NewRespondChallengeUseCase(
 		f.challengeRepo, f.duelGameRepo, f.playerRatingRepo,
-		f.seasonRepo, f.questionRepo, f.userRepo, &noOpNotifier{}, f.eventBus,
+		f.seasonRepo, f.questionRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot",
 	)
 }
 
 func (f *duelFixture) newAcceptByLinkCodeUC() *AcceptByLinkCodeUseCase {
 	return NewAcceptByLinkCodeUseCase(
-		f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus,
+		f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot",
 	)
 }
 
@@ -787,7 +787,7 @@ func (f *duelFixture) newStartChallengeUC() *StartChallengeUseCase {
 }
 
 func (f *duelFixture) newCreateChallengeLinkUC() *CreateChallengeLinkUseCase {
-	return NewCreateChallengeLinkUseCase(f.challengeRepo, f.eventBus)
+	return NewCreateChallengeLinkUseCase(f.challengeRepo, f.eventBus, "quiz_sprint_test_bot")
 }
 
 func (f *duelFixture) newGetGameHistoryUC() *GetGameHistoryUseCase {
