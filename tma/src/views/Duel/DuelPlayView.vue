@@ -168,7 +168,7 @@ onMounted(() => {
 </script>
 
 <template>
-	<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+	<div class="min-h-screen bg-gray-900 flex flex-col">
 		<!-- Connection Status -->
 		<div
 			v-if="!isConnected || isReconnecting"
@@ -187,31 +187,86 @@ onMounted(() => {
 		</div>
 
 		<!-- Initial connecting / loading state -->
-		<div v-if="!game" class="flex-1 flex items-center justify-center p-4">
+		<div v-if="!game" class="flex-1 flex flex-col items-center justify-center gap-5">
+			<div class="relative flex items-center justify-center">
+				<div class="absolute size-20 rounded-full border-2 border-primary/20 animate-ping" />
+				<UIcon name="i-heroicons-bolt" class="size-12 text-primary relative z-10" />
+			</div>
 			<div class="text-center">
-				<div class="animate-pulse mb-4">
-					<UIcon name="i-heroicons-bolt" class="size-16 text-primary" />
-				</div>
-				<h2 class="text-xl font-bold mb-2">{{ t('duel.connecting') }}</h2>
+				<p class="text-white font-semibold text-lg">{{ t('duel.connecting') }}</p>
 			</div>
 		</div>
 
 		<!-- Waiting for Opponent -->
-		<div v-else-if="isWaiting" class="flex-1 flex items-center justify-center p-4">
-			<div class="text-center">
-				<div class="animate-pulse mb-4">
-					<UIcon name="i-heroicons-users" class="size-16 text-primary" />
+		<div v-else-if="isWaiting" class="flex-1 flex flex-col items-center justify-center gap-8 px-6">
+			<div class="flex items-center gap-8">
+				<!-- Me -->
+				<div class="flex flex-col items-center gap-2">
+					<UAvatar
+						:src="currentUser?.avatarUrl"
+						:alt="currentUser?.username"
+						size="xl"
+						class="ring-2 ring-primary/40"
+					/>
+					<p class="text-sm font-semibold text-gray-300">{{ t('duel.you') }}</p>
 				</div>
-				<h2 class="text-xl font-bold mb-2">{{ t('duel.waitingOpponent') }}</h2>
-				<p class="text-gray-500">{{ t('duel.waitingDesc') }}</p>
+
+				<span class="text-2xl font-black text-gray-600">VS</span>
+
+				<!-- Unknown opponent -->
+				<div class="flex flex-col items-center gap-2">
+					<div
+						class="size-16 rounded-full bg-gray-700 border-2 border-dashed border-gray-600 flex items-center justify-center"
+					>
+						<UIcon name="i-heroicons-question-mark-circle" class="size-8 text-gray-500" />
+					</div>
+					<p class="text-sm font-semibold text-gray-600">?</p>
+				</div>
+			</div>
+
+			<div class="text-center">
+				<p class="text-white font-semibold mb-1">{{ t('duel.waitingOpponent') }}</p>
+				<p class="text-sm text-gray-500">{{ t('duel.waitingDesc') }}</p>
 			</div>
 		</div>
 
 		<!-- Countdown -->
-		<div v-else-if="isCountdown" class="flex-1 flex items-center justify-center p-4">
+		<div v-else-if="isCountdown" class="flex-1 flex flex-col items-center justify-center gap-10 px-6">
+			<!-- Both players -->
+			<div class="flex items-center gap-6 w-full max-w-xs">
+				<div class="flex-1 flex flex-col items-center gap-2">
+					<UAvatar
+						:src="currentUser?.avatarUrl"
+						:alt="currentUser?.username"
+						size="xl"
+						class="ring-2 ring-primary/40"
+					/>
+					<p class="text-sm font-semibold text-gray-300 truncate max-w-[80px] text-center">
+						{{ t('duel.you') }}
+					</p>
+				</div>
+
+				<span class="text-xl font-black text-gray-600 shrink-0">VS</span>
+
+				<div class="flex-1 flex flex-col items-center gap-2">
+					<UAvatar
+						:src="opponent?.avatar"
+						:alt="opponent?.username"
+						size="xl"
+						class="ring-2 ring-orange-500/40"
+					/>
+					<p class="text-sm font-semibold text-gray-300 truncate max-w-[80px] text-center">
+						{{ opponent?.username || '...' }}
+					</p>
+				</div>
+			</div>
+
+			<!-- Countdown number -->
 			<div class="text-center">
-				<p class="text-gray-500 mb-2">{{ t('duel.getReady') }}</p>
-				<p class="text-8xl font-bold text-primary animate-pulse">
+				<p class="text-xs uppercase tracking-widest text-gray-500 mb-2">
+					{{ t('duel.getReady') }}
+				</p>
+				<p class="text-9xl font-black text-primary tabular-nums leading-none">
 					{{ countdownSeconds }}
 				</p>
 			</div>
