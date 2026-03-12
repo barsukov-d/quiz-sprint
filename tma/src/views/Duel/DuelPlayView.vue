@@ -189,7 +189,9 @@ onMounted(() => {
 		<!-- Initial connecting / loading state -->
 		<div v-if="!game" class="flex-1 flex flex-col items-center justify-center gap-5">
 			<div class="relative flex items-center justify-center">
-				<div class="absolute size-20 rounded-full border-2 border-primary/20 animate-ping" />
+				<div
+					class="absolute size-20 rounded-full border-2 border-primary/20 animate-ping"
+				/>
 				<UIcon name="i-heroicons-bolt" class="size-12 text-primary relative z-10" />
 			</div>
 			<div class="text-center">
@@ -198,7 +200,10 @@ onMounted(() => {
 		</div>
 
 		<!-- Waiting for Opponent -->
-		<div v-else-if="isWaiting" class="flex-1 flex flex-col items-center justify-center gap-8 px-6">
+		<div
+			v-else-if="isWaiting"
+			class="flex-1 flex flex-col items-center justify-center gap-8 px-6"
+		>
 			<div class="flex items-center gap-8">
 				<!-- Me -->
 				<div class="flex flex-col items-center gap-2">
@@ -218,7 +223,10 @@ onMounted(() => {
 					<div
 						class="size-16 rounded-full bg-gray-700 border-2 border-dashed border-gray-600 flex items-center justify-center"
 					>
-						<UIcon name="i-heroicons-question-mark-circle" class="size-8 text-gray-500" />
+						<UIcon
+							name="i-heroicons-question-mark-circle"
+							class="size-8 text-gray-500"
+						/>
 					</div>
 					<p class="text-sm font-semibold text-gray-600">?</p>
 				</div>
@@ -231,7 +239,10 @@ onMounted(() => {
 		</div>
 
 		<!-- Countdown -->
-		<div v-else-if="isCountdown" class="flex-1 flex flex-col items-center justify-center gap-10 px-6">
+		<div
+			v-else-if="isCountdown"
+			class="flex-1 flex flex-col items-center justify-center gap-10 px-6"
+		>
 			<!-- Both players -->
 			<div class="flex items-center gap-6 w-full max-w-xs">
 				<div class="flex-1 flex flex-col items-center gap-2">
@@ -241,7 +252,9 @@ onMounted(() => {
 						size="xl"
 						class="ring-2 ring-primary/40"
 					/>
-					<p class="text-sm font-semibold text-gray-300 truncate max-w-[80px] text-center">
+					<p
+						class="text-sm font-semibold text-gray-300 truncate max-w-[80px] text-center"
+					>
 						{{ t('duel.you') }}
 					</p>
 				</div>
@@ -255,7 +268,9 @@ onMounted(() => {
 						size="xl"
 						class="ring-2 ring-orange-500/40"
 					/>
-					<p class="text-sm font-semibold text-gray-300 truncate max-w-[80px] text-center">
+					<p
+						class="text-sm font-semibold text-gray-300 truncate max-w-[80px] text-center"
+					>
 						{{ opponent?.username || '...' }}
 					</p>
 				</div>

@@ -114,7 +114,6 @@ const searchTimeFormatted = computed(() => {
 	return `${minutes}:${seconds.toString().padStart(2, '0')}`
 })
 
-
 // ===========================
 // Actions
 // ===========================
