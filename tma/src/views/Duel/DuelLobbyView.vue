@@ -19,6 +19,7 @@ const {
 	pendingChallenges,
 	acceptedChallenges,
 	outgoingReadyChallenges,
+	lobbyWs,
 	hasActiveDuel,
 	activeGameId,
 	mmr,
@@ -237,6 +238,12 @@ onMounted(async () => {
 	nowInterval = setInterval(() => {
 		now.value = Math.floor(Date.now() / 1000)
 	}, 1000)
+	if (playerId.value) {
+		lobbyWs.connect()
+		lobbyWs.setupVisibilityHandler(async () => {
+			await refetchStatus()
+		})
+	}
 	await refetchStatus()
 
 	// Check for direct challenge deep link (from Telegram notification)
@@ -276,7 +283,18 @@ onMounted(async () => {
 				<UIcon name="i-heroicons-arrow-left" class="size-6" />
 			</button>
 			<h1 class="text-xl font-bold">{{ t('duel.title') }}</h1>
-			<div class="w-10" />
+			<div class="w-10 flex items-center justify-end">
+				<span
+					v-if="!lobbyWs.isConnected.value && !lobbyWs.isPollingFallback.value"
+					class="w-2 h-2 rounded-full bg-yellow-400"
+					title="Connecting..."
+				/>
+				<span
+					v-if="lobbyWs.isPollingFallback.value"
+					class="w-2 h-2 rounded-full bg-red-400"
+					title="No connection, using polling"
+				/>
+			</div>
 		</div>
 
 		<!-- Direct Challenge Hero Banner -->
