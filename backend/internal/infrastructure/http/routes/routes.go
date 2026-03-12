@@ -102,14 +102,15 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 	// Duel (PvP) repositories: only available with PostgreSQL
 	var (
-		duelGameRepo     domainDuel.DuelGameRepository
-		playerRatingRepo domainDuel.PlayerRatingRepository
-		challengeRepo    domainDuel.ChallengeRepository
-		referralRepo     domainDuel.ReferralRepository
-		seasonRepo       domainDuel.SeasonRepository
-		matchmakingQueue domainDuel.MatchmakingQueue
-		duelRoundCache   appDuel.DuelRoundCache
+		duelGameRepo      domainDuel.DuelGameRepository
+		playerRatingRepo  domainDuel.PlayerRatingRepository
+		challengeRepo     domainDuel.ChallengeRepository
+		referralRepo      domainDuel.ReferralRepository
+		seasonRepo        domainDuel.SeasonRepository
+		matchmakingQueue  domainDuel.MatchmakingQueue
+		duelRoundCache    appDuel.DuelRoundCache
 		duelOnlineTracker appDuel.OnlineTracker
+		lobbyHub          *handlers.DuelLobbyHub
 	)
 	if db != nil {
 		duelGameRepo = postgres.NewDuelGameRepository(db)
@@ -123,11 +124,13 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		if err != nil {
 			log.Printf("⚠️ Redis not available, using in-memory fallbacks: %v", err)
 			duelRoundCache = appDuel.NewMemoryRoundCache()
+			lobbyHub = handlers.NewDuelLobbyHub(nil)
 		} else {
 			log.Println("✅ Connected to Redis for matchmaking queue and round-answer cache")
 			matchmakingQueue = redisStore.NewMatchmakingQueue(redisClient)
 			duelRoundCache = redisStore.NewDuelRoundCache(redisClient)
 			duelOnlineTracker = redisStore.NewOnlineTracker(redisClient)
+			lobbyHub = handlers.NewDuelLobbyHub(redisStore.NewLobbyEventBuffer(redisClient))
 		}
 	}
 
@@ -377,7 +380,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	)
 
 	if duelGameRepo != nil && playerRatingRepo != nil && challengeRepo != nil && referralRepo != nil && seasonRepo != nil && userRepo != nil {
-		duelEventBus := appDuel.NewNoOpEventBus() // Simple event bus for now
+		duelEventBus := messaging.NewLobbyEventBus(lobbyHub)
 
 		var telegramNotifier appDuel.TelegramNotifier = telegram.NewNoOpNotifier()
 		if token := os.Getenv("TELEGRAM_BOT_TOKEN"); token != "" {
@@ -664,6 +667,12 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 	// Duel WebSocket (if database available)
 	if duelGameRepo != nil {
+		// Lobby WebSocket — must be registered BEFORE /duel/:gameId to avoid route conflict
+		if lobbyHub != nil {
+			lobbyWsHandler := handlers.NewDuelLobbyWebSocketHandler(lobbyHub)
+			ws.Get("/duel/lobby", websocket.New(lobbyWsHandler.HandleLobbyWebSocket))
+		}
+
 		// startGameUC and submitDuelAnswerUC require a duel-specific QuestionRepository
 		// adapter (appDuel.QuestionRepository) that does not exist yet. They will be nil
 		// until that adapter is implemented; the hub handles nil use cases gracefully.
