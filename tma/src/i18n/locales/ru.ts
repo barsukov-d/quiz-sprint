@@ -317,6 +317,9 @@ export default {
 		friendReady: 'Друг готов к дуэли! →',
 		challengerInvites: '{name} бросает тебе вызов',
 		challengeNotFound: 'Вызов истёк или уже принят',
+		waitingForInviter: 'Ждём, когда запустит игру',
+		inviterWillStart: '{name} должен нажать «Начать»',
+		expiresIn: 'до истечения',
 	},
 	shared: {
 		questionOf: 'Вопрос {current} / {total}',

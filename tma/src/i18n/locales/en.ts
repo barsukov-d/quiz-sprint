@@ -317,6 +317,9 @@ export default {
 		friendReady: 'Friend ready to duel! →',
 		challengerInvites: '{name} challenges you to a duel',
 		challengeNotFound: 'Challenge expired or already accepted',
+		waitingForInviter: 'Waiting for the game to start',
+		inviterWillStart: '{name} needs to press "Start"',
+		expiresIn: 'expires in',
 	},
 	shared: {
 		questionOf: 'Question {current} / {total}',

@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref } from 'vue'
+import { computed, onMounted, onUnmounted, ref } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { usePvPDuel } from '@/composables/usePvPDuel'
@@ -17,6 +17,7 @@ const { t } = useI18n()
 const {
 	tickets,
 	pendingChallenges,
+	acceptedChallenges,
 	outgoingReadyChallenges,
 	hasActiveDuel,
 	activeGameId,
@@ -209,10 +210,33 @@ const handleAcceptByLinkCode = async (linkCode: string) => {
 }
 
 // ===========================
+// Countdown for acceptedChallenges
+// ===========================
+
+const now = ref(Math.floor(Date.now() / 1000))
+let nowInterval: ReturnType<typeof setInterval> | null = null
+
+onUnmounted(() => {
+	if (nowInterval) clearInterval(nowInterval)
+})
+
+function formatCountdown(expiresAt: number): string {
+	const secs = Math.max(0, expiresAt - now.value)
+	const m = Math.floor(secs / 60)
+		.toString()
+		.padStart(2, '0')
+	const s = (secs % 60).toString().padStart(2, '0')
+	return `${m}:${s}`
+}
+
+// ===========================
 // Lifecycle
 // ===========================
 
 onMounted(async () => {
+	nowInterval = setInterval(() => {
+		now.value = Math.floor(Date.now() / 1000)
+	}, 1000)
 	await refetchStatus()
 
 	// Check for direct challenge deep link (from Telegram notification)
@@ -336,6 +360,37 @@ onMounted(async () => {
 						icon="i-heroicons-x-mark"
 						@click="dismissDirectChallenge"
 					/>
+				</div>
+			</div>
+		</template>
+
+		<!-- Invitee Accepted Banner — waiting for inviter to start -->
+		<template v-if="acceptedChallenges.length > 0 && !hasActiveDuel">
+			<div
+				v-for="challenge in acceptedChallenges"
+				:key="challenge.id"
+				class="mb-4 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-600 p-5"
+			>
+				<div class="flex items-center gap-3 mb-1">
+					<span class="text-3xl">⏳</span>
+					<div>
+						<h2 class="text-base font-bold text-blue-700 dark:text-blue-300">
+							{{ t('duel.waitingForInviter') }}
+						</h2>
+						<p class="text-sm text-gray-600 dark:text-gray-400">
+							{{
+								t('duel.inviterWillStart', {
+									name: challenge.challengerUsername || t('duel.friend'),
+								})
+							}}
+						</p>
+					</div>
+					<div class="ml-auto text-right">
+						<p class="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
+							{{ formatCountdown(challenge.expiresAt!) }}
+						</p>
+						<p class="text-xs text-gray-400">{{ t('duel.expiresIn') }}</p>
+					</div>
 				</div>
 			</div>
 		</template>
