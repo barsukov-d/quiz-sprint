@@ -294,7 +294,7 @@ func TestDuelGame_PlayerScores(t *testing.T) {
 func TestDuelChallenge_AcceptWaiting(t *testing.T) {
 	challengerID, _ := shared.NewUserID("challenger-uuid-1234")
 	now := int64(1706429000)
-	challenge, _ := NewLinkChallenge(challengerID, now)
+	challenge, _ := NewLinkChallenge(challengerID, "quiz_sprint_test_bot", now)
 
 	accepterID, _ := shared.NewUserID("accepter-uuid-5678")
 	err := challenge.AcceptWaiting(accepterID, "Vasya", now+10)

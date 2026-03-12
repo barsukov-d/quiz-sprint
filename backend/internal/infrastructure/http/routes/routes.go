@@ -384,6 +384,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			telegramNotifier = telegram.NewHTTPNotifier(token)
 		}
 
+		botUsername := os.Getenv("TELEGRAM_BOT_USERNAME")
+
 		getDuelStatusUC = appDuel.NewGetDuelStatusUseCase(
 			playerRatingRepo,
 			duelGameRepo,
@@ -409,6 +411,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			userRepo,
 			telegramNotifier,
 			duelEventBus,
+			botUsername,
 		)
 		acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
 			challengeRepo,
@@ -416,6 +419,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			userRepo,
 			telegramNotifier,
 			duelEventBus,
+			botUsername,
 		)
 		// Build duel question adapter if questionRepo is available
 		if questionRepo != nil {
@@ -429,6 +433,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				userRepo,
 				telegramNotifier,
 				duelEventBus,
+				botUsername,
 			)
 			startGameUC = appDuel.NewStartGameUseCase(
 				duelGameRepo,
@@ -458,6 +463,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		createChallengeLinkUC = appDuel.NewCreateChallengeLinkUseCase(
 			challengeRepo,
 			duelEventBus,
+			botUsername,
 		)
 		getGameHistoryUC = appDuel.NewGetGameHistoryUseCase(
 			duelGameRepo,

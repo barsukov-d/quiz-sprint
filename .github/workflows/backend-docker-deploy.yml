@@ -105,6 +105,7 @@ jobs:
             DB_NAME=quiz_sprint_staging
             CORS_ORIGINS=https://staging.quiz-sprint-tma.online
             TELEGRAM_BOT_TOKEN=${{ secrets.STAGING_TELEGRAM_BOT_TOKEN }}
+            TELEGRAM_BOT_USERNAME=${{ secrets.STAGING_TELEGRAM_BOT_USERNAME }}
             ADMIN_API_KEY=${{ secrets.STAGING_ADMIN_API_KEY }}
             EOF
 
@@ -256,6 +257,7 @@ jobs:
             DB_NAME=quiz_sprint_production
             CORS_ORIGINS=https://quiz-sprint-tma.online
             TELEGRAM_BOT_TOKEN=${{ secrets.TELEGRAM_BOT_TOKEN }}
+            TELEGRAM_BOT_USERNAME=${{ secrets.TELEGRAM_BOT_USERNAME }}
             EOF
             fi
 

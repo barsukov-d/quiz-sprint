@@ -313,6 +313,7 @@ type SendChallengeUseCase struct {
 	userRepo      domainUser.UserRepository
 	notifier      TelegramNotifier
 	eventBus      EventBus
+	botUsername   string
 }
 
 func NewSendChallengeUseCase(
@@ -321,6 +322,7 @@ func NewSendChallengeUseCase(
 	userRepo domainUser.UserRepository,
 	notifier TelegramNotifier,
 	eventBus EventBus,
+	botUsername string,
 ) *SendChallengeUseCase {
 	return &SendChallengeUseCase{
 		challengeRepo: challengeRepo,
@@ -328,6 +330,7 @@ func NewSendChallengeUseCase(
 		userRepo:      userRepo,
 		notifier:      notifier,
 		eventBus:      eventBus,
+		botUsername:   botUsername,
 	}
 }
 
@@ -392,7 +395,7 @@ func (uc *SendChallengeUseCase) Execute(input SendChallengeInput) (SendChallenge
 				inviterName = n
 			}
 		}
-		deepLink := "https://t.me/quiz_sprint_dev_bot?startapp=challenge_" + challenge.ID().String()
+		deepLink := "https://t.me/" + uc.botUsername + "?startapp=challenge_" + challenge.ID().String()
 		if msgID, err := uc.notifier.NotifyChallengeReceived(context.Background(), inviteeTgID, inviterName, deepLink); err == nil && msgID > 0 {
 			challenge.SetTelegramMessageID(msgID)
 			_ = uc.challengeRepo.Save(challenge) // save messageID (best-effort)
@@ -420,6 +423,7 @@ type RespondChallengeUseCase struct {
 	userRepo         domainUser.UserRepository
 	notifier         TelegramNotifier
 	eventBus         EventBus
+	botUsername      string
 }
 
 func NewRespondChallengeUseCase(
@@ -431,6 +435,7 @@ func NewRespondChallengeUseCase(
 	userRepo domainUser.UserRepository,
 	notifier TelegramNotifier,
 	eventBus EventBus,
+	botUsername string,
 ) *RespondChallengeUseCase {
 	return &RespondChallengeUseCase{
 		challengeRepo:    challengeRepo,
@@ -441,6 +446,7 @@ func NewRespondChallengeUseCase(
 		userRepo:         userRepo,
 		notifier:         notifier,
 		eventBus:         eventBus,
+		botUsername:      botUsername,
 	}
 }
 
@@ -603,6 +609,7 @@ type AcceptByLinkCodeUseCase struct {
 	userRepo      domainUser.UserRepository
 	notifier      TelegramNotifier
 	eventBus      EventBus
+	botUsername   string
 }
 
 func NewAcceptByLinkCodeUseCase(
@@ -611,6 +618,7 @@ func NewAcceptByLinkCodeUseCase(
 	userRepo domainUser.UserRepository,
 	notifier TelegramNotifier,
 	eventBus EventBus,
+	botUsername string,
 ) *AcceptByLinkCodeUseCase {
 	return &AcceptByLinkCodeUseCase{
 		challengeRepo: challengeRepo,
@@ -618,6 +626,7 @@ func NewAcceptByLinkCodeUseCase(
 		userRepo:      userRepo,
 		notifier:      notifier,
 		eventBus:      eventBus,
+		botUsername:   botUsername,
 	}
 }
 
@@ -688,7 +697,7 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 	// Notify inviter via Telegram (best-effort — do not fail if notification errors)
 	challengerID := challenge.ChallengerID()
 	if tgID, err := strconv.ParseInt(challengerID.String(), 10, 64); err == nil && tgID > 0 {
-		lobbyURL := "https://t.me/quiz_sprint_dev_bot?startapp=lobby"
+		lobbyURL := "https://t.me/" + uc.botUsername + "?startapp=lobby"
 		_ = uc.notifier.NotifyChallengeAccepted(context.Background(), tgID, inviteeName, lobbyURL)
 	}
 
@@ -717,15 +726,18 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 type CreateChallengeLinkUseCase struct {
 	challengeRepo quick_duel.ChallengeRepository
 	eventBus      EventBus
+	botUsername   string
 }
 
 func NewCreateChallengeLinkUseCase(
 	challengeRepo quick_duel.ChallengeRepository,
 	eventBus EventBus,
+	botUsername string,
 ) *CreateChallengeLinkUseCase {
 	return &CreateChallengeLinkUseCase{
 		challengeRepo: challengeRepo,
 		eventBus:      eventBus,
+		botUsername:   botUsername,
 	}
 }
 
@@ -738,7 +750,7 @@ func (uc *CreateChallengeLinkUseCase) Execute(input CreateChallengeLinkInput) (C
 	}
 
 	// Create link challenge
-	challenge, err := quick_duel.NewLinkChallenge(playerID, now)
+	challenge, err := quick_duel.NewLinkChallenge(playerID, uc.botUsername, now)
 	if err != nil {
 		return CreateChallengeLinkOutput{}, err
 	}
