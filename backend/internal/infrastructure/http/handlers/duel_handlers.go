@@ -8,6 +8,7 @@ import (
 
 	appDuel "github.com/barsukov/quiz-sprint/backend/internal/application/quick_duel"
 	domainDuel "github.com/barsukov/quiz-sprint/backend/internal/domain/quick_duel"
+	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/middleware"
 )
 
 // DuelHandler handles HTTP requests for PvP Duel game mode
@@ -62,6 +63,14 @@ func NewDuelHandler(
 	}
 }
 
+func getAuthPlayerID(c fiber.Ctx) (string, error) {
+	initData := middleware.GetTelegramInitData(c)
+	if initData == nil {
+		return "", fiber.NewError(fiber.StatusUnauthorized, "Authentication required")
+	}
+	return strconv.FormatInt(initData.User.ID, 10), nil
+}
+
 // GetDuelStatus handles GET /api/v1/duel/status
 // @Summary Get duel status
 // @Description Get player's duel status, MMR, pending challenges
@@ -74,9 +83,9 @@ func NewDuelHandler(
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/status [get]
 func (h *DuelHandler) GetDuelStatus(c fiber.Ctx) error {
-	playerID := c.Query("playerId")
-	if playerID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
 	}
 
 	output, err := h.getStatusUC.Execute(appDuel.GetDuelStatusInput{
@@ -102,17 +111,13 @@ func (h *DuelHandler) GetDuelStatus(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/queue/join [post]
 func (h *DuelHandler) JoinQueue(c fiber.Ctx) error {
-	var req JoinQueueRequest
-	if err := c.Bind().Body(&req); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
-	}
-
-	if req.PlayerID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
 	}
 
 	output, err := h.joinQueueUC.Execute(appDuel.JoinQueueInput{
-		PlayerID: req.PlayerID,
+		PlayerID: playerID,
 	})
 	if err != nil {
 		return mapDuelError(err)
@@ -133,9 +138,9 @@ func (h *DuelHandler) JoinQueue(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/queue/leave [delete]
 func (h *DuelHandler) LeaveQueue(c fiber.Ctx) error {
-	playerID := c.Query("playerId")
-	if playerID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
 	}
 
 	output, err := h.leaveQueueUC.Execute(appDuel.LeaveQueueInput{
@@ -161,17 +166,22 @@ func (h *DuelHandler) LeaveQueue(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/challenge [post]
 func (h *DuelHandler) SendChallenge(c fiber.Ctx) error {
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
+	}
+
 	var req SendChallengeRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	if req.PlayerID == "" || req.FriendID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId and friendId are required")
+	if req.FriendID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "friendId is required")
 	}
 
 	output, err := h.sendChallengeUC.Execute(appDuel.SendChallengeInput{
-		PlayerID: req.PlayerID,
+		PlayerID: playerID,
 		FriendID: req.FriendID,
 	})
 	if err != nil {
@@ -196,6 +206,11 @@ func (h *DuelHandler) SendChallenge(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/challenge/{challengeId}/respond [post]
 func (h *DuelHandler) RespondChallenge(c fiber.Ctx) error {
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
+	}
+
 	challengeID := c.Params("challengeId")
 	if _, err := uuid.Parse(challengeID); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid challenge ID format")
@@ -206,8 +221,8 @@ func (h *DuelHandler) RespondChallenge(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	if req.PlayerID == "" || req.Action == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId and action are required")
+	if req.Action == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "action is required")
 	}
 
 	if req.Action != "accept" && req.Action != "decline" {
@@ -215,7 +230,7 @@ func (h *DuelHandler) RespondChallenge(c fiber.Ctx) error {
 	}
 
 	output, err := h.respondChallengeUC.Execute(appDuel.RespondChallengeInput{
-		PlayerID:    req.PlayerID,
+		PlayerID:    playerID,
 		ChallengeID: challengeID,
 		Action:      req.Action,
 	})
@@ -240,17 +255,22 @@ func (h *DuelHandler) RespondChallenge(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/challenge/accept-by-code [post]
 func (h *DuelHandler) AcceptByLinkCode(c fiber.Ctx) error {
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
+	}
+
 	var req AcceptByLinkCodeRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	if req.PlayerID == "" || req.LinkCode == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId and linkCode are required")
+	if req.LinkCode == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "linkCode is required")
 	}
 
 	output, err := h.acceptByLinkCodeUC.Execute(appDuel.AcceptByLinkCodeInput{
-		PlayerID: req.PlayerID,
+		PlayerID: playerID,
 		LinkCode: req.LinkCode,
 	})
 	if err != nil {
@@ -272,17 +292,13 @@ func (h *DuelHandler) AcceptByLinkCode(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/challenge/link [post]
 func (h *DuelHandler) CreateChallengeLink(c fiber.Ctx) error {
-	var req CreateChallengeLinkRequest
-	if err := c.Bind().Body(&req); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
-	}
-
-	if req.PlayerID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
 	}
 
 	output, err := h.createLinkUC.Execute(appDuel.CreateChallengeLinkInput{
-		PlayerID: req.PlayerID,
+		PlayerID: playerID,
 	})
 	if err != nil {
 		return mapDuelError(err)
@@ -306,9 +322,9 @@ func (h *DuelHandler) CreateChallengeLink(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/history [get]
 func (h *DuelHandler) GetGameHistory(c fiber.Ctx) error {
-	playerID := c.Query("playerId")
-	if playerID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
 	}
 
 	limit := 20
@@ -352,9 +368,9 @@ func (h *DuelHandler) GetGameHistory(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/leaderboard [get]
 func (h *DuelHandler) GetDuelLeaderboard(c fiber.Ctx) error {
-	playerID := c.Query("playerId")
-	if playerID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
 	}
 
 	leaderboardType := c.Query("type", "seasonal")
@@ -401,17 +417,13 @@ func (h *DuelHandler) RequestRematch(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid game ID format")
 	}
 
-	var req RequestRematchRequest
-	if err := c.Bind().Body(&req); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
-	}
-
-	if req.PlayerID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
 	}
 
 	output, err := h.requestRematchUC.Execute(appDuel.RequestRematchInput{
-		PlayerID: req.PlayerID,
+		PlayerID: playerID,
 		GameID:   gameID,
 	})
 	if err != nil {
@@ -435,14 +447,14 @@ func (h *DuelHandler) RequestRematch(c fiber.Ctx) error {
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/game/{gameId} [get]
 func (h *DuelHandler) GetGameResult(c fiber.Ctx) error {
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
+	}
+
 	gameID := c.Params("gameId")
 	if _, err := uuid.Parse(gameID); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid game ID format")
-	}
-
-	playerID := c.Query("playerId")
-	if playerID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
 	}
 
 	output, err := h.getGameResultUC.Execute(appDuel.GetGameResultInput{
@@ -470,17 +482,14 @@ func (h *DuelHandler) GetGameResult(c fiber.Ctx) error {
 // @Failure 409 {object} ErrorResponse "Challenge not in accepted_waiting_inviter state"
 // @Router /duel/challenge/{challengeId}/start [post]
 func (h *DuelHandler) StartChallenge(c fiber.Ctx) error {
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
+	}
+
 	challengeID := c.Params("challengeId")
 	if _, err := uuid.Parse(challengeID); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid challenge ID format")
-	}
-
-	var req StartChallengeRequest
-	if err := c.Bind().Body(&req); err != nil {
-		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
-	}
-	if req.PlayerID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
 	}
 
 	if h.startChallengeUC == nil {
@@ -488,7 +497,7 @@ func (h *DuelHandler) StartChallenge(c fiber.Ctx) error {
 	}
 
 	output, err := h.startChallengeUC.Execute(appDuel.StartChallengeInput{
-		PlayerID:    req.PlayerID,
+		PlayerID:    playerID,
 		ChallengeID: challengeID,
 	})
 	if err != nil {
@@ -514,17 +523,22 @@ func (h *DuelHandler) PrepareShare(c fiber.Ctx) error {
 		return fiber.NewError(fiber.StatusNotImplemented, "Prepare share not available")
 	}
 
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
+	}
+
 	var req PrepareShareRequest
 	if err := c.Bind().Body(&req); err != nil {
 		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
 	}
 
-	if req.PlayerID == "" || req.ChallengeLink == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId and challengeLink are required")
+	if req.ChallengeLink == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "challengeLink is required")
 	}
 
 	output, err := h.prepareShareUC.Execute(c.Context(), appDuel.PrepareShareInput{
-		PlayerID:      req.PlayerID,
+		PlayerID:      playerID,
 		ChallengeLink: req.ChallengeLink,
 	})
 	if err != nil {
@@ -578,9 +592,9 @@ func mapDuelError(err error) error {
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/rivals [get]
 func (h *DuelHandler) GetRivals(c fiber.Ctx) error {
-	playerID := c.Query("playerId")
-	if playerID == "" {
-		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
 	}
 
 	output, err := h.getRivalsUC.Execute(appDuel.GetRivalsInput{

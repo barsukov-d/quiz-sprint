@@ -114,17 +114,17 @@ onMounted(async () => {
 			<!-- Current game stats -->
 			<div class="flex items-center justify-between">
 				<div class="text-center flex-1">
-					<p class="text-xs text-gray-500 dark:text-gray-400">
+					<p class="text-xs text-(--ui-text-dimmed)">
 						{{ t('marathon.score') }}
 					</p>
 					<p class="text-2xl font-bold text-primary">{{ state.score }}</p>
 				</div>
-				<div class="w-px h-10 bg-gray-200 dark:bg-gray-700" />
+				<div class="w-px h-10 bg-(--ui-border)" />
 				<div class="text-center flex-1">
-					<p class="text-xs text-gray-500 dark:text-gray-400">
+					<p class="text-xs text-(--ui-text-dimmed)">
 						{{ t('marathon.question') }}
 					</p>
-					<p class="text-2xl font-bold text-gray-900 dark:text-gray-100">
+					<p class="text-2xl font-bold text-(--ui-text-highlighted)">
 						{{ state.totalQuestions }}
 					</p>
 				</div>
@@ -133,7 +133,7 @@ onMounted(async () => {
 			<!-- Progress to record (if has personal best) -->
 			<div v-if="state.personalBest && state.personalBest > 0">
 				<div class="flex justify-between text-xs mb-1">
-					<span class="text-gray-500 dark:text-gray-400">
+					<span class="text-(--ui-text-dimmed)">
 						{{
 							t('marathon.recordLabel', {
 								score: state.score,
@@ -145,7 +145,7 @@ onMounted(async () => {
 						:class="
 							progressToRecord >= 100
 								? 'text-green-500 font-semibold'
-								: 'text-gray-500 dark:text-gray-400'
+								: 'text-(--ui-text-dimmed)'
 						"
 					>
 						{{ progressToRecord }}%
@@ -166,13 +166,13 @@ onMounted(async () => {
 					class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs"
 					:class="
 						state.bonusInventory[b.key] > 0
-							? 'bg-gray-50 dark:bg-gray-800'
-							: 'bg-gray-50/50 dark:bg-gray-800/50 opacity-40'
+							? 'bg-(--ui-bg-muted)'
+							: 'bg-(--ui-bg-muted) opacity-40'
 					"
 					:title="b.label"
 				>
 					<UIcon :name="b.icon" :class="b.color" class="w-4 h-4" />
-					<span class="font-semibold text-gray-900 dark:text-gray-100">
+					<span class="font-semibold text-(--ui-text-highlighted)">
 						{{ state.bonusInventory[b.key] }}
 					</span>
 				</div>
@@ -184,9 +184,9 @@ onMounted(async () => {
 		<!-- ==================== -->
 		<div v-else-if="isGameOver" class="space-y-4">
 			<div class="text-center">
-				<p class="text-sm text-gray-500 dark:text-gray-400">{{ t('marathon.gameOver') }}</p>
+				<p class="text-sm text-(--ui-text-dimmed)">{{ t('marathon.gameOver') }}</p>
 				<p class="text-3xl font-bold text-primary mt-1">{{ state.score }}</p>
-				<p class="text-xs text-gray-500 dark:text-gray-400 mt-1">
+				<p class="text-xs text-(--ui-text-dimmed) mt-1">
 					{{ t('marathon.questionsAnswered', { count: state.totalQuestions }) }}
 				</p>
 			</div>
@@ -201,7 +201,7 @@ onMounted(async () => {
 				v-if="state.personalBest !== null && state.personalBest > 0"
 				class="flex items-center justify-between"
 			>
-				<span class="text-sm text-gray-500 dark:text-gray-400">{{
+				<span class="text-sm text-(--ui-text-dimmed)">{{
 					t('marathon.personalBest')
 				}}</span>
 				<span class="font-bold text-yellow-500"> 🏆 {{ state.personalBest }} </span>
@@ -209,7 +209,7 @@ onMounted(async () => {
 
 			<!-- Bonuses available -->
 			<div>
-				<p class="text-xs text-gray-500 dark:text-gray-400 mb-2">
+				<p class="text-xs text-(--ui-text-dimmed) mb-2">
 					{{ t('marathon.bonuses') }}
 				</p>
 				<div class="flex gap-2">
@@ -219,13 +219,13 @@ onMounted(async () => {
 						class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
 						:class="
 							state.bonusInventory[b.key] > 0
-								? 'bg-gray-50 dark:bg-gray-800'
-								: 'bg-gray-50/50 dark:bg-gray-800/50 opacity-40'
+								? 'bg-(--ui-bg-muted)'
+								: 'bg-(--ui-bg-muted) opacity-40'
 						"
 						:title="b.description"
 					>
 						<UIcon :name="b.icon" :class="b.color" class="w-4 h-4" />
-						<span class="font-semibold text-gray-900 dark:text-gray-100">
+						<span class="font-semibold text-(--ui-text-highlighted)">
 							{{ state.bonusInventory[b.key] }}
 						</span>
 					</div>
@@ -235,7 +235,7 @@ onMounted(async () => {
 			<!-- Rules hint (only when no personal best = likely new player) -->
 			<div
 				v-if="state.personalBest === null || state.personalBest === 0"
-				class="text-xs text-gray-500 dark:text-gray-400 space-y-1"
+				class="text-xs text-(--ui-text-dimmed) space-y-1"
 			>
 				<p>{{ t('marathon.energyRule1') }}</p>
 				<p>{{ t('marathon.energyRule2') }}</p>

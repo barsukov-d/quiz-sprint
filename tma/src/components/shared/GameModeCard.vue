@@ -43,10 +43,8 @@ const handleClick = () => {
 			<!-- Icon -->
 			<div
 				:class="[
-					'flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center text-2xl',
-					disabled
-						? 'bg-gray-100 dark:bg-gray-800'
-						: 'bg-primary-100 dark:bg-primary-900/30',
+					'flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl',
+					disabled ? 'bg-(--ui-bg-accented)' : 'bg-indigo-100 dark:bg-indigo-900/20',
 				]"
 			>
 				<UIcon v-if="icon.startsWith('i-')" :name="icon" class="size-6" />
@@ -56,12 +54,14 @@ const handleClick = () => {
 			<!-- Content -->
 			<div class="flex-1 min-w-0">
 				<div class="flex items-center gap-2 mb-1">
-					<h4 class="font-semibold text-base">{{ title }}</h4>
+					<h4 class="font-semibold text-base text-(--ui-text-highlighted)">
+						{{ title }}
+					</h4>
 					<UBadge v-if="badge" :color="badgeColor" size="xs" variant="subtle">
 						{{ badge }}
 					</UBadge>
 				</div>
-				<p class="text-sm text-gray-500 dark:text-gray-400">
+				<p class="text-sm text-(--ui-text-muted)">
 					{{ description }}
 				</p>
 
@@ -84,7 +84,7 @@ const handleClick = () => {
 			<UIcon
 				v-if="!disabled"
 				name="i-heroicons-chevron-right"
-				class="flex-shrink-0 size-5 text-gray-400"
+				class="flex-shrink-0 size-5 text-(--ui-text-dimmed)"
 			/>
 		</div>
 	</UCard>

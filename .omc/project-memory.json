@@ -128,39 +128,45 @@
   "hotPaths": [
     {
       "path": "backend/internal/application/quick_duel/use_cases.go",
-      "accessCount": 42,
-      "lastAccessed": 1773426664045,
-      "type": "file"
-    },
-    {
-      "path": "tma/src/composables/useLobbyWebSocket.ts",
-      "accessCount": 17,
-      "lastAccessed": 1773426672128,
-      "type": "file"
-    },
-    {
-      "path": "tma/src/views/Duel/DuelLobbyView.vue",
-      "accessCount": 17,
-      "lastAccessed": 1773426672829,
+      "accessCount": 65,
+      "lastAccessed": 1773428442598,
       "type": "file"
     },
     {
       "path": "tma/src/composables/usePvPDuel.ts",
-      "accessCount": 15,
-      "lastAccessed": 1773426665576,
+      "accessCount": 49,
+      "lastAccessed": 1773428404432,
+      "type": "file"
+    },
+    {
+      "path": "tma/src/views/Duel/DuelLobbyView.vue",
+      "accessCount": 32,
+      "lastAccessed": 1773433010706,
+      "type": "file"
+    },
+    {
+      "path": "tma/src/composables/useLobbyWebSocket.ts",
+      "accessCount": 21,
+      "lastAccessed": 1773427997671,
       "type": "file"
     },
     {
       "path": "backend",
-      "accessCount": 14,
-      "lastAccessed": 1773426694246,
+      "accessCount": 15,
+      "lastAccessed": 1773427223504,
       "type": "directory"
     },
     {
       "path": "tma/src/views/Duel/DuelPlayView.vue",
-      "accessCount": 12,
-      "lastAccessed": 1773426679971,
+      "accessCount": 15,
+      "lastAccessed": 1773432959085,
       "type": "file"
+    },
+    {
+      "path": "backend/internal/domain/quick_duel",
+      "accessCount": 12,
+      "lastAccessed": 1773427234591,
+      "type": "directory"
     },
     {
       "path": "tma/src",
@@ -169,15 +175,15 @@
       "type": "directory"
     },
     {
-      "path": "backend/internal/domain/quick_duel",
-      "accessCount": 9,
-      "lastAccessed": 1773426182925,
+      "path": "backend/internal/infrastructure/http/routes/routes.go",
+      "accessCount": 11,
+      "lastAccessed": 1773427368762,
       "type": "directory"
     },
     {
       "path": "backend/internal/infrastructure/http/handlers/duel_lobby_websocket_handler.go",
-      "accessCount": 9,
-      "lastAccessed": 1773426685068,
+      "accessCount": 10,
+      "lastAccessed": 1773427185922,
       "type": "file"
     },
     {
@@ -187,10 +193,34 @@
       "type": "file"
     },
     {
-      "path": "backend/internal/infrastructure/http/routes/routes.go",
+      "path": "tma/src/views/Duel/DuelResultsView.vue",
+      "accessCount": 9,
+      "lastAccessed": 1773432982878,
+      "type": "file"
+    },
+    {
+      "path": "backend/internal/infrastructure/telegram/notifier.go",
       "accessCount": 8,
-      "lastAccessed": 1773426719783,
+      "lastAccessed": 1773427360002,
+      "type": "file"
+    },
+    {
+      "path": "backend/internal/infrastructure/http/handlers/duel_lobby_hub.go",
+      "accessCount": 7,
+      "lastAccessed": 1773427351897,
+      "type": "file"
+    },
+    {
+      "path": "backend/internal/application/quick_duel/testutil_test.go",
+      "accessCount": 7,
+      "lastAccessed": 1773427397092,
       "type": "directory"
+    },
+    {
+      "path": "backend/internal/infrastructure/persistence/postgres/challenge_repository.go",
+      "accessCount": 7,
+      "lastAccessed": 1773427880445,
+      "type": "file"
     },
     {
       "path": "backend/internal/infrastructure/http/handlers/duel_handlers.go",
@@ -205,22 +235,16 @@
       "type": "directory"
     },
     {
-      "path": "backend/internal/infrastructure/persistence/postgres/challenge_repository.go",
-      "accessCount": 6,
-      "lastAccessed": 1773426657579,
-      "type": "file"
-    },
-    {
-      "path": "backend/internal/infrastructure/telegram/notifier.go",
-      "accessCount": 6,
-      "lastAccessed": 1773426657712,
-      "type": "file"
-    },
-    {
       "path": "backend/internal/application/quick_duel",
       "accessCount": 6,
       "lastAccessed": 1773426694966,
       "type": "directory"
+    },
+    {
+      "path": "backend/internal/application/quick_duel/dto.go",
+      "accessCount": 6,
+      "lastAccessed": 1773427909485,
+      "type": "file"
     },
     {
       "path": "tma/src/api/client.ts",
@@ -235,33 +259,21 @@
       "type": "directory"
     },
     {
-      "path": "backend/internal/application/quick_duel/dto.go",
-      "accessCount": 5,
-      "lastAccessed": 1773426636730,
-      "type": "file"
-    },
-    {
       "path": "backend/internal/domain/quick_duel/repository.go",
       "accessCount": 5,
       "lastAccessed": 1773426649145,
       "type": "file"
     },
     {
-      "path": "backend/internal/infrastructure/http/handlers/duel_lobby_hub.go",
+      "path": "tma/src/components/Duel/DuelCard.vue",
       "accessCount": 5,
-      "lastAccessed": 1773426683996,
+      "lastAccessed": 1773433087393,
       "type": "file"
     },
     {
       "path": "tma/src/views/Duel",
       "accessCount": 4,
       "lastAccessed": 1773425403394,
-      "type": "directory"
-    },
-    {
-      "path": "backend/internal/application/quick_duel/testutil_test.go",
-      "accessCount": 4,
-      "lastAccessed": 1773425698780,
       "type": "directory"
     },
     {
@@ -283,15 +295,15 @@
       "type": "file"
     },
     {
-      "path": "tma/src/views/Duel/DuelResultsView.vue",
+      "path": "tma/src/composables/useDuelWebSocket.ts",
       "accessCount": 4,
-      "lastAccessed": 1773426672988,
+      "lastAccessed": 1773427225036,
       "type": "file"
     },
     {
-      "path": "tma/src/composables/useDuelWebSocket.ts",
-      "accessCount": 3,
-      "lastAccessed": 1773425347371,
+      "path": "tma/src/router/index.ts",
+      "accessCount": 4,
+      "lastAccessed": 1773432486249,
       "type": "file"
     },
     {
@@ -304,12 +316,6 @@
       "path": "backend/internal/application/quick_duel/event_bus.go",
       "accessCount": 3,
       "lastAccessed": 1773426174534,
-      "type": "file"
-    },
-    {
-      "path": "tma/src/router/index.ts",
-      "accessCount": 3,
-      "lastAccessed": 1773426199452,
       "type": "file"
     },
     {
@@ -334,6 +340,12 @@
       "path": "backend/internal/domain/quick_duel/errors.go",
       "accessCount": 2,
       "lastAccessed": 1773425321781,
+      "type": "file"
+    },
+    {
+      "path": "backend/internal/infrastructure/persistence/postgres/duel_game_repository.go",
+      "accessCount": 2,
+      "lastAccessed": 1773427923915,
       "type": "file"
     },
     {
@@ -364,12 +376,6 @@
       "path": "tma/src/api/generated/hooks/duelController/usePostDuelChallengeAcceptByCode.ts",
       "accessCount": 1,
       "lastAccessed": 1773425109048,
-      "type": "file"
-    },
-    {
-      "path": "tma/src/components/Duel/DuelCard.vue",
-      "accessCount": 1,
-      "lastAccessed": 1773425111399,
       "type": "file"
     },
     {
@@ -406,12 +412,6 @@
       "path": "backend/internal/domain/quick_duel/duel_game_aggregate.go",
       "accessCount": 1,
       "lastAccessed": 1773425385115,
-      "type": "file"
-    },
-    {
-      "path": "backend/internal/infrastructure/persistence/postgres/duel_game_repository.go",
-      "accessCount": 1,
-      "lastAccessed": 1773425404035,
       "type": "file"
     },
     {

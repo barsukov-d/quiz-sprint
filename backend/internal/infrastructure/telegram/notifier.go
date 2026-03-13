@@ -130,6 +130,14 @@ func (n *HTTPNotifier) sendMessage(ctx context.Context, chatID int64, text strin
 		return err
 	}
 	defer resp.Body.Close()
+
+	var result sendMessageResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result); err != nil {
+		return fmt.Errorf("telegram sendMessage: failed to decode response: %w", err)
+	}
+	if !result.OK {
+		return fmt.Errorf("telegram sendMessage: API returned ok=false for chat_id=%d", chatID)
+	}
 	return nil
 }
 

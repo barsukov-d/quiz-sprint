@@ -1,4 +1,5 @@
 <script setup lang="ts">
+import { computed } from 'vue'
 import { useAuth } from '@/composables/useAuth'
 import DailyChallengeCard from '@/components/DailyChallenge/DailyChallengeCard.vue'
 import MarathonCard from '@/components/Marathon/MarathonCard.vue'
@@ -10,72 +11,55 @@ const { t } = useI18n()
 
 const { currentUser, isAuthenticated } = useAuth()
 
-// Player ID для composables (из auth)
 const playerId = currentUser.value?.id || 'guest'
+
+const greeting = computed(() => {
+	const hour = new Date().getHours()
+	if (hour < 6) return t('home.greetingNight')
+	if (hour < 12) return t('home.greetingMorning')
+	if (hour < 18) return t('home.greetingDay')
+	return t('home.greetingEvening')
+})
 </script>
 
 <template>
-	<div class="mx-auto max-w-[800px]">
-		<!-- User Info (optional) -->
-		<div
-			v-if="isAuthenticated && currentUser"
-			class="mb-6 p-4 bg-gray-50 dark:bg-gray-800/50 rounded-lg"
-		>
-			<UUser
-				:name="currentUser.username"
-				:description="currentUser.telegramUsername"
-				:avatar="{ src: currentUser.avatarUrl, alt: currentUser.username }"
-				size="lg"
-			/>
+	<div class="mx-auto max-w-[800px] space-y-5">
+		<!-- Greeting -->
+		<div v-if="isAuthenticated && currentUser" class="flex items-center gap-3">
+			<UAvatar :src="currentUser.avatarUrl" :alt="currentUser.username" size="lg" />
+			<div>
+				<p class="text-lg font-bold text-(--ui-text-highlighted)">
+					{{ greeting }}, {{ currentUser.username }}!
+				</p>
+				<p class="text-sm text-(--ui-text-dimmed)">{{ t('home.subtitle') }}</p>
+			</div>
 		</div>
 
-		<!-- ========================================
-         ZONE 1: Daily Challenge
-         ======================================== -->
-		<section class="mb-8">
-			<h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-				<UIcon name="i-heroicons-calendar-days" class="size-6 text-primary" />
-				{{ t('home.todaysChallenge') }}
-			</h2>
-			<DailyChallengeCard :player-id="playerId" />
-		</section>
+		<!-- Daily Challenge — featured card -->
+		<DailyChallengeCard :player-id="playerId" />
 
-		<!-- ========================================
-         ZONE 2: Game Modes
-         ======================================== -->
-		<section class="mb-8">
-			<h2 class="text-xl font-bold mb-4 flex items-center gap-2">
-				<UIcon name="i-heroicons-puzzle-piece" class="size-6 text-primary" />
-				{{ t('home.gameModes') }}
-			</h2>
+		<!-- Game Modes -->
+		<div class="space-y-3">
+			<MarathonCard :player-id="playerId" />
+			<DuelCard :player-id="playerId" />
 
-			<div class="space-y-3">
-				<!-- Solo Marathon -->
-				<MarathonCard :player-id="playerId" />
+			<GameModeCard
+				:title="t('home.partyMode')"
+				icon="i-heroicons-user-group"
+				:description="t('home.partyModeDesc')"
+				:disabled="true"
+				:badge="t('home.comingSoon')"
+				badge-color="yellow"
+			/>
 
-				<!-- PvP Duel -->
-				<DuelCard :player-id="playerId" />
-
-				<!-- Coming Soon: Party Mode -->
-				<GameModeCard
-					:title="t('home.partyMode')"
-					icon="i-heroicons-user-group"
-					:description="t('home.partyModeDesc')"
-					:disabled="true"
-					:badge="t('home.comingSoon')"
-					badge-color="yellow"
-				/>
-
-				<!-- Coming Soon: Tournament -->
-				<GameModeCard
-					:title="t('home.tournament')"
-					icon="i-heroicons-trophy"
-					:description="t('home.tournamentDesc')"
-					:disabled="true"
-					:badge="t('home.comingSoon')"
-					badge-color="yellow"
-				/>
-			</div>
-		</section>
+			<GameModeCard
+				:title="t('home.tournament')"
+				icon="i-heroicons-trophy"
+				:description="t('home.tournamentDesc')"
+				:disabled="true"
+				:badge="t('home.comingSoon')"
+				badge-color="yellow"
+			/>
+		</div>
 	</div>
 </template>

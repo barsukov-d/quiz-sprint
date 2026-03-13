@@ -59,6 +59,7 @@ type PlayerRatingDTO struct {
 	PeakLeague   string  `json:"peakLeague"`
 	SeasonWins   int     `json:"seasonWins"`
 	SeasonLosses int     `json:"seasonLosses"`
+	SeasonDraws  int     `json:"seasonDraws"`
 	WinRate      float64 `json:"winRate"`
 	GamesAtRank  int     `json:"gamesAtRank"`
 	CanDemote    bool    `json:"canDemote"`
@@ -75,6 +76,7 @@ type LeaderboardEntryDTO struct {
 	LeagueIcon string  `json:"leagueIcon"`
 	Wins       int     `json:"wins"`
 	Losses     int     `json:"losses"`
+	Draws      int     `json:"draws"`
 	WinRate    float64 `json:"winRate"`
 }
 

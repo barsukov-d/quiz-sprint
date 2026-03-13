@@ -45,24 +45,28 @@ const isCurrentPlayer = (playerId: string) => {
 </script>
 
 <template>
-	<div class="leaderboard">
-		<div class="leaderboard-header">
-			<h3 class="text-lg font-semibold flex items-center gap-2">
+	<div class="flex flex-col gap-4">
+		<div class="pb-2 border-b border-(--ui-border)">
+			<h3 class="text-lg font-semibold flex items-center gap-2 text-(--ui-text-highlighted)">
 				<UIcon name="i-heroicons-trophy" class="size-5 text-yellow-500" />
 				{{ t('daily.topPlayers') }}
 			</h3>
-			<p class="text-sm text-gray-500 dark:text-gray-400">{{ t('daily.todaysChallenge') }}</p>
+			<p class="text-sm text-(--ui-text-muted)">{{ t('daily.todaysChallenge') }}</p>
 		</div>
 
-		<div class="leaderboard-list">
+		<div class="flex flex-col gap-2">
 			<div
 				v-for="entry in displayedLeaderboard"
 				:key="entry.userId"
-				class="leaderboard-entry"
-				:class="{ 'current-player': isCurrentPlayer(entry.userId) }"
+				class="flex items-center gap-4 px-3 py-3 rounded-lg transition-all duration-200"
+				:class="
+					isCurrentPlayer(entry.userId)
+						? 'bg-(--ui-primary)/10 border-2 border-(--ui-primary)/40'
+						: 'bg-(--ui-bg-muted) hover:bg-(--ui-bg-elevated) border-2 border-transparent'
+				"
 			>
 				<!-- Rank -->
-				<div class="entry-rank">
+				<div class="shrink-0 min-w-12 flex justify-center">
 					<UBadge
 						v-if="showRank"
 						:color="getRankBadgeColor(entry.rank)"
@@ -77,10 +81,12 @@ const isCurrentPlayer = (playerId: string) => {
 				</div>
 
 				<!-- Avatar & Name -->
-				<div class="entry-player">
+				<div class="flex-1 flex items-center gap-3 min-w-0">
 					<UAvatar :alt="entry.username" size="md" />
-					<div class="player-info">
-						<p class="player-name">
+					<div class="flex-1 min-w-0">
+						<p
+							class="font-semibold text-(--ui-text-highlighted) overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-2"
+						>
 							{{ entry.username }}
 							<UBadge v-if="isCurrentPlayer(entry.userId)" color="primary" size="xs">
 								{{ t('daily.youBadge') }}
@@ -90,11 +96,11 @@ const isCurrentPlayer = (playerId: string) => {
 				</div>
 
 				<!-- Score -->
-				<div class="entry-score">
-					<div class="score-value">
+				<div class="shrink-0 text-right">
+					<div class="text-lg font-bold text-(--ui-primary) sm:text-base">
 						{{ entry.score }}
 					</div>
-					<div class="score-label">{{ t('daily.points') }}</div>
+					<div class="text-xs text-(--ui-text-dimmed)">{{ t('daily.points') }}</div>
 				</div>
 			</div>
 
@@ -108,132 +114,3 @@ const isCurrentPlayer = (playerId: string) => {
 		</div>
 	</div>
 </template>
-
-<style scoped>
-.leaderboard {
-	display: flex;
-	flex-direction: column;
-	gap: 1rem;
-}
-
-.leaderboard-header {
-	padding-bottom: 0.5rem;
-	border-bottom: 1px solid rgb(var(--color-gray-200));
-}
-
-.leaderboard-list {
-	display: flex;
-	flex-direction: column;
-	gap: 0.5rem;
-}
-
-.leaderboard-entry {
-	display: flex;
-	align-items: center;
-	gap: 1rem;
-	padding: 0.75rem;
-	border-radius: 0.5rem;
-	background: rgb(var(--color-gray-50));
-	transition: all 0.2s;
-}
-
-.leaderboard-entry:hover {
-	background: rgb(var(--color-gray-100));
-}
-
-.leaderboard-entry.current-player {
-	background: rgb(var(--color-primary-50));
-	border: 2px solid rgb(var(--color-primary-200));
-}
-
-.entry-rank {
-	flex-shrink: 0;
-	min-width: 3rem;
-	display: flex;
-	justify-content: center;
-}
-
-.entry-player {
-	flex: 1;
-	display: flex;
-	align-items: center;
-	gap: 0.75rem;
-	min-width: 0;
-}
-
-.player-info {
-	flex: 1;
-	min-width: 0;
-}
-
-.player-name {
-	font-weight: 600;
-	color: rgb(var(--color-gray-900));
-	overflow: hidden;
-	text-overflow: ellipsis;
-	white-space: nowrap;
-	display: flex;
-	align-items: center;
-	gap: 0.5rem;
-}
-
-.entry-score {
-	flex-shrink: 0;
-	text-align: right;
-}
-
-.score-value {
-	font-size: 1.125rem;
-	font-weight: 700;
-	color: rgb(var(--color-primary-600));
-}
-
-.score-label {
-	font-size: 0.75rem;
-	color: rgb(var(--color-gray-500));
-}
-
-/* Dark mode */
-@media (prefers-color-scheme: dark) {
-	.leaderboard-header {
-		border-bottom-color: rgb(var(--color-gray-700));
-	}
-
-	.leaderboard-entry {
-		background: rgb(var(--color-gray-800));
-	}
-
-	.leaderboard-entry:hover {
-		background: rgb(var(--color-gray-700));
-	}
-
-	.leaderboard-entry.current-player {
-		background: rgb(var(--color-primary-900) / 0.3);
-		border-color: rgb(var(--color-primary-700));
-	}
-
-	.player-name {
-		color: rgb(var(--color-gray-100));
-	}
-
-	.score-value {
-		color: rgb(var(--color-primary-400));
-	}
-}
-
-/* Mobile optimizations */
-@media (max-width: 640px) {
-	.leaderboard-entry {
-		padding: 0.5rem;
-		gap: 0.75rem;
-	}
-
-	.entry-rank {
-		min-width: 2.5rem;
-	}
-
-	.score-value {
-		font-size: 1rem;
-	}
-}
-</style>

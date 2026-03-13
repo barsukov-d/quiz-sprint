@@ -1,5 +1,15 @@
 package quick_duel
 
+import (
+	"context"
+	"database/sql"
+)
+
+// TxManager provides database transaction support
+type TxManager interface {
+	RunInTx(ctx context.Context, fn func(tx *sql.Tx) error) error
+}
+
 // LobbyEvent is a real-time lobby notification sent to a player via WebSocket.
 type LobbyEvent struct {
 	Type string      `json:"type"`

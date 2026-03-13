@@ -1,2 +1,82 @@
 @import 'tailwindcss';
 @import '@nuxt/ui';
+
+/*
+ * Quiz Sprint TMA — Design System Overrides
+ * Built on Nuxt UI v4 CSS variables
+ */
+
+/* ─── Light Theme ─── */
+:root {
+	--ui-primary: var(--ui-color-primary-600);
+
+	/* Refined backgrounds */
+	--ui-bg: #fcfcfd;
+	--ui-bg-muted: var(--ui-color-neutral-50);
+	--ui-bg-elevated: white;
+	--ui-bg-accented: var(--ui-color-neutral-100);
+
+	/* Softer borders */
+	--ui-border: var(--ui-color-neutral-200);
+	--ui-border-muted: var(--ui-color-neutral-100);
+	--ui-border-accented: var(--ui-color-neutral-300);
+
+	/* Text hierarchy */
+	--ui-text: var(--ui-color-neutral-700);
+	--ui-text-highlighted: var(--ui-color-neutral-950);
+	--ui-text-muted: var(--ui-color-neutral-500);
+	--ui-text-dimmed: var(--ui-color-neutral-400);
+	--ui-text-toned: var(--ui-color-neutral-600);
+}
+
+/* ─── Dark Theme ─── */
+.dark {
+	--ui-primary: var(--ui-color-primary-400);
+
+	/* Deep dark backgrounds */
+	--ui-bg: #0c0e14;
+	--ui-bg-muted: #12141c;
+	--ui-bg-elevated: #181a24;
+	--ui-bg-accented: #1e2130;
+
+	/* Subtle borders */
+	--ui-border: #252836;
+	--ui-border-muted: #1e2130;
+	--ui-border-accented: #2e3248;
+
+	/* Crisp text */
+	--ui-text: var(--ui-color-neutral-300);
+	--ui-text-highlighted: var(--ui-color-neutral-50);
+	--ui-text-muted: var(--ui-color-neutral-400);
+	--ui-text-dimmed: var(--ui-color-neutral-500);
+	--ui-text-toned: var(--ui-color-neutral-400);
+}
+
+/* ─── Global Styles ─── */
+body {
+	font-family:
+		'Inter',
+		ui-sans-serif,
+		system-ui,
+		-apple-system,
+		sans-serif;
+	-webkit-font-smoothing: antialiased;
+	-moz-osx-font-smoothing: grayscale;
+	background-color: var(--ui-bg);
+	color: var(--ui-text);
+}
+
+/* Smooth theme transitions */
+*,
+*::before,
+*::after {
+	transition-property: background-color, border-color;
+	transition-duration: 150ms;
+	transition-timing-function: ease;
+}
+
+/* Disable transition on elements that animate differently */
+[class*='animate-'],
+.transition-none {
+	transition-property: none !important;
+}

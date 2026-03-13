@@ -136,79 +136,34 @@ onMounted(async () => {
 <template>
 	<UApp :locale="nuxtLocale">
 		<!-- Экран загрузки -->
-		<div v-if="isLoading" class="loading-screen">
-			<div class="loading-content">
-				<div class="spinner"></div>
-				<p>{{ t('app.loading') }}</p>
+		<div v-if="isLoading" class="flex items-center justify-center min-h-svh p-5 bg-(--ui-bg)">
+			<div class="text-center space-y-4">
+				<div
+					class="w-10 h-10 mx-auto border-3 border-(--ui-border-accented) border-t-(--ui-primary) rounded-full animate-spin"
+				/>
+				<p class="text-sm text-(--ui-text-muted)">{{ t('app.loading') }}</p>
 			</div>
 		</div>
 
 		<!-- Экран ошибки -->
-		<div v-else-if="error" class="error-screen">
-			<div class="error-content">
-				<h2>{{ t('app.error') }}</h2>
-				<p>{{ error }}</p>
-				<p class="hint">{{ t('app.openInTelegramHint') }}</p>
+		<div v-else-if="error" class="flex items-center justify-center min-h-svh p-5 bg-(--ui-bg)">
+			<div class="text-center max-w-sm space-y-3">
+				<UIcon
+					name="i-heroicons-exclamation-triangle"
+					class="size-12 text-(--ui-error) mx-auto"
+				/>
+				<h2 class="text-xl font-semibold text-(--ui-text-highlighted)">
+					{{ t('app.error') }}
+				</h2>
+				<p class="text-(--ui-text)">{{ error }}</p>
+				<p class="text-sm text-(--ui-text-dimmed)">{{ t('app.openInTelegramHint') }}</p>
 			</div>
 		</div>
 
 		<!-- Основное приложение -->
-		<div v-else class="app-container p-4 pt-4 pb-20 sm:p-3 sm:pt-20">
+		<div v-else class="min-h-svh bg-(--ui-bg) p-4 pt-4 pb-20 sm:p-3 sm:pt-20">
 			<RouterView />
 			<BottomTabBar v-if="showBottomNav" />
 		</div>
 	</UApp>
 </template>
-
-<style scoped>
-.loading-screen,
-.error-screen {
-	display: flex;
-	align-items: center;
-	justify-content: center;
-	min-height: 100vh;
-	padding: 20px;
-}
-
-.loading-content,
-.error-content {
-	text-align: center;
-}
-
-.spinner {
-	width: 48px;
-	height: 48px;
-	margin: 0 auto 16px;
-	border: 4px solid rgba(0, 0, 0, 0.1);
-	border-left-color: var(--color-primary, #007aff);
-	border-radius: 50%;
-	animation: spin 1s linear infinite;
-}
-
-@keyframes spin {
-	to {
-		transform: rotate(360deg);
-	}
-}
-
-.error-content h2 {
-	font-size: 24px;
-	margin-bottom: 12px;
-	color: #ff3b30;
-}
-
-.error-content p {
-	margin-bottom: 8px;
-	color: #333;
-}
-
-.error-content .hint {
-	font-size: 14px;
-	color: #999;
-}
-
-.app-container {
-	min-height: 100vh;
-	position: relative;
-}
-</style>

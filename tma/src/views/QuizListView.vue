@@ -46,8 +46,10 @@ const goToQuizDetails = (quizId: string) => {
 				@click="goBackToCategories"
 			/>
 			<div>
-				<h1 class="text-3xl font-bold">{{ t('quiz.title') }}</h1>
-				<p v-if="categoryId" class="text-sm text-gray-500">
+				<h1 class="text-3xl font-bold text-(--ui-text-highlighted)">
+					{{ t('quiz.title') }}
+				</h1>
+				<p v-if="categoryId" class="text-sm text-(--ui-text-dimmed)">
 					{{ t('quiz.category', { name: categoryName }) }}
 				</p>
 			</div>
@@ -94,11 +96,11 @@ const goToQuizDetails = (quizId: string) => {
 					<h3 class="text-xl font-semibold">{{ quiz.title || t('quiz.unnamed') }}</h3>
 				</template>
 
-				<p class="text-gray-600 text-sm mb-4">
+				<p class="text-(--ui-text-muted) text-sm mb-4">
 					{{ quiz.description || t('quiz.noDescription') }}
 				</p>
 
-				<div class="flex items-center justify-between text-sm text-gray-500 mb-4">
+				<div class="flex items-center justify-between text-sm text-(--ui-text-dimmed) mb-4">
 					<span
 						>📝
 						{{ t('quiz.questionsCount', { count: quiz.questionsCount || 0 }) }}</span
@@ -113,7 +115,7 @@ const goToQuizDetails = (quizId: string) => {
 					>
 				</div>
 
-				<div class="flex items-center text-sm text-gray-500 mb-4">
+				<div class="flex items-center text-sm text-(--ui-text-dimmed) mb-4">
 					<span>{{ t('quiz.passingScore', { score: quiz.passingScore || 0 }) }}</span>
 				</div>
 
@@ -126,7 +128,7 @@ const goToQuizDetails = (quizId: string) => {
 		</div>
 
 		<!-- Empty state -->
-		<div v-else class="text-center py-12 text-gray-500">
+		<div v-else class="text-center py-12 text-(--ui-text-dimmed)">
 			<div class="text-6xl mb-4">📋</div>
 			<p class="text-lg font-semibold mb-2">{{ t('quiz.notFound') }}</p>
 			<p class="text-sm mb-4">{{ t('quiz.notFoundDesc') }}</p>

@@ -381,6 +381,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	)
 
 	if duelGameRepo != nil && playerRatingRepo != nil && challengeRepo != nil && referralRepo != nil && seasonRepo != nil && userRepo != nil {
+		txManager := postgres.NewTxManager(db)
 		duelEventBus := messaging.NewLobbyEventBus(lobbyHub)
 
 		var telegramNotifier appDuel.TelegramNotifier = telegram.NewNoOpNotifier()
@@ -419,11 +420,12 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		)
 		acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
 			challengeRepo,
-			duelGameRepo, // B2: added
+			duelGameRepo,
 			userRepo,
 			telegramNotifier,
 			duelEventBus,
 			botUsername,
+			txManager,
 		)
 		// Build duel question adapter if questionRepo is available
 		if questionRepo != nil {
@@ -438,6 +440,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				telegramNotifier,
 				duelEventBus,
 				botUsername,
+				txManager,
 			)
 			startGameUC = appDuel.NewStartGameUseCase(
 				duelGameRepo,
@@ -454,6 +457,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				duelQuestionRepo,
 				userRepo,
 				duelEventBus,
+				telegramNotifier,
+				botUsername,
 			)
 			submitDuelAnswerUC = appDuel.NewSubmitDuelAnswerUseCase(
 				duelGameRepo,
@@ -510,18 +515,58 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			for {
 				select {
 				case <-minuteTicker.C:
-					now := time.Now().UTC().Unix()
-					expiring, err := challengeRepo.FindPendingExpiredWithMessageID(now)
+					now := time.Now().UTC()
+					nowUnix := now.Unix()
+
+					// Edit Telegram messages for expiring challenges
+					expiring, err := challengeRepo.FindPendingExpiredWithMessageID(nowUnix)
 					if err == nil {
 						for _, c := range expiring {
 							if c.TelegramMessageID() > 0 && c.ChallengedID() != nil {
-								if tgID, err := strconv.ParseInt(c.ChallengedID().String(), 10, 64); err == nil {
+								challengedUser, err := userRepo.FindByID(*c.ChallengedID())
+								if err != nil {
+									continue
+								}
+								if tgID, err := strconv.ParseInt(challengedUser.ID().String(), 10, 64); err == nil && tgID > 0 {
 									_ = telegramNotifier.EditChallengeMessage(context.Background(), tgID, c.TelegramMessageID(), "⏰ Время истекло")
 								}
 							}
 						}
 					}
-					_ = challengeRepo.DeleteExpired(now)
+
+					// Expire pending challenges via domain (publishes events)
+					if expired, err := challengeRepo.FindPendingExpired(nowUnix); err == nil {
+						for _, c := range expired {
+							if c.Expire(nowUnix) == nil {
+								_ = challengeRepo.Save(c)
+								for _, event := range c.Events() {
+									duelEventBus.Publish(event)
+								}
+							}
+						}
+					}
+
+					// Expire waiting challenges and notify invitee
+					if waitingExpired, err := challengeRepo.FindWaitingExpired(nowUnix); err == nil {
+						for _, c := range waitingExpired {
+							if c.ExpireWaiting(nowUnix) == nil {
+								_ = challengeRepo.Save(c)
+								for _, event := range c.Events() {
+									duelEventBus.Publish(event)
+								}
+							}
+						}
+					}
+
+					// Safety net: bulk-expire any remaining stale challenges
+					_ = challengeRepo.DeleteExpired(nowUnix)
+
+					// Auto-abandon stale games (older than 10 minutes)
+					cutoff := nowUnix - 600
+					if count, err := duelGameRepo.AbandonStaleGames(cutoff); err == nil && count > 0 {
+						log.Printf("[Cleanup] Abandoned %d stale games", count)
+					}
+
 				case <-hourTicker.C:
 					oneDayAgo := time.Now().UTC().Unix() - 86400
 					_ = challengeRepo.DeleteHardExpired(oneDayAgo)
@@ -728,7 +773,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 	// Duel (PvP) routes (only if database is available)
 	if duelHandler != nil {
-		duel := v1.Group("/duel")
+		duel := v1.Group("/duel", middleware.TelegramAuthMiddleware())
 		duel.Get("/status", duelHandler.GetDuelStatus)
 		duel.Post("/queue/join", duelHandler.JoinQueue)
 		duel.Delete("/queue/leave", duelHandler.LeaveQueue)

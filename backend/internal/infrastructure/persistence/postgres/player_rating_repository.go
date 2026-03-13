@@ -21,8 +21,8 @@ func (r *PlayerRatingRepository) Save(rating *quick_duel.PlayerRating) error {
 		INSERT INTO player_ratings (
 			player_id, mmr, league, division,
 			peak_mmr, peak_league, peak_division,
-			games_at_rank, season_id, season_wins, season_losses, updated_at
-		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12)
+			games_at_rank, season_id, season_wins, season_losses, season_draws, updated_at
+		) VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9, $10, $11, $12, $13)
 		ON CONFLICT (player_id) DO UPDATE SET
 			mmr = EXCLUDED.mmr,
 			league = EXCLUDED.league,
@@ -34,6 +34,7 @@ func (r *PlayerRatingRepository) Save(rating *quick_duel.PlayerRating) error {
 			season_id = EXCLUDED.season_id,
 			season_wins = EXCLUDED.season_wins,
 			season_losses = EXCLUDED.season_losses,
+			season_draws = EXCLUDED.season_draws,
 			updated_at = EXCLUDED.updated_at
 	`
 
@@ -49,6 +50,7 @@ func (r *PlayerRatingRepository) Save(rating *quick_duel.PlayerRating) error {
 		rating.SeasonID(),
 		rating.SeasonWins(),
 		rating.SeasonLosses(),
+		rating.SeasonDraws(),
 		rating.UpdatedAt(),
 	)
 
@@ -59,7 +61,7 @@ func (r *PlayerRatingRepository) FindByPlayerID(playerID quick_duel.UserID) (*qu
 	query := `
 		SELECT player_id, mmr, league, division,
 			peak_mmr, peak_league, peak_division,
-			games_at_rank, season_id, season_wins, season_losses, updated_at
+			games_at_rank, season_id, season_wins, season_losses, season_draws, updated_at
 		FROM player_ratings
 		WHERE player_id = $1
 	`
@@ -67,24 +69,25 @@ func (r *PlayerRatingRepository) FindByPlayerID(playerID quick_duel.UserID) (*qu
 	row := r.db.QueryRow(query, playerID.String())
 
 	var (
-		playerIDStr    string
-		mmr            int
-		leagueStr      string
-		division       int
-		peakMMR        int
-		peakLeagueStr  string
-		peakDivision   int
-		gamesAtRank    int
-		seasonID       string
-		seasonWins     int
-		seasonLosses   int
-		updatedAt      int64
+		playerIDStr   string
+		mmr           int
+		leagueStr     string
+		division      int
+		peakMMR       int
+		peakLeagueStr string
+		peakDivision  int
+		gamesAtRank   int
+		seasonID      string
+		seasonWins    int
+		seasonLosses  int
+		seasonDraws   int
+		updatedAt     int64
 	)
 
 	err := row.Scan(
 		&playerIDStr, &mmr, &leagueStr, &division,
 		&peakMMR, &peakLeagueStr, &peakDivision,
-		&gamesAtRank, &seasonID, &seasonWins, &seasonLosses, &updatedAt,
+		&gamesAtRank, &seasonID, &seasonWins, &seasonLosses, &seasonDraws, &updatedAt,
 	)
 
 	if errors.Is(err, sql.ErrNoRows) {
@@ -110,6 +113,7 @@ func (r *PlayerRatingRepository) FindByPlayerID(playerID quick_duel.UserID) (*qu
 		seasonID,
 		seasonWins,
 		seasonLosses,
+		seasonDraws,
 		updatedAt,
 	), nil
 }
@@ -137,7 +141,7 @@ func (r *PlayerRatingRepository) GetLeaderboard(seasonID string, limit int, offs
 	query := `
 		SELECT player_id, mmr, league, division,
 			peak_mmr, peak_league, peak_division,
-			games_at_rank, season_id, season_wins, season_losses, updated_at
+			games_at_rank, season_id, season_wins, season_losses, season_draws, updated_at
 		FROM player_ratings
 		WHERE season_id = $1
 		ORDER BY mmr DESC
@@ -153,24 +157,25 @@ func (r *PlayerRatingRepository) GetLeaderboard(seasonID string, limit int, offs
 	var ratings []*quick_duel.PlayerRating
 	for rows.Next() {
 		var (
-			playerIDStr    string
-			mmr            int
-			leagueStr      string
-			division       int
-			peakMMR        int
-			peakLeagueStr  string
-			peakDivision   int
-			gamesAtRank    int
-			sid            string
-			seasonWins     int
-			seasonLosses   int
-			updatedAt      int64
+			playerIDStr   string
+			mmr           int
+			leagueStr     string
+			division      int
+			peakMMR       int
+			peakLeagueStr string
+			peakDivision  int
+			gamesAtRank   int
+			sid           string
+			seasonWins    int
+			seasonLosses  int
+			seasonDraws   int
+			updatedAt     int64
 		)
 
 		err := rows.Scan(
 			&playerIDStr, &mmr, &leagueStr, &division,
 			&peakMMR, &peakLeagueStr, &peakDivision,
-			&gamesAtRank, &sid, &seasonWins, &seasonLosses, &updatedAt,
+			&gamesAtRank, &sid, &seasonWins, &seasonLosses, &seasonDraws, &updatedAt,
 		)
 		if err != nil {
 			return nil, err
@@ -183,7 +188,7 @@ func (r *PlayerRatingRepository) GetLeaderboard(seasonID string, limit int, offs
 		ratings = append(ratings, quick_duel.ReconstructPlayerRating(
 			pid, mmr, league, quick_duel.Division(division),
 			peakMMR, peakLeague, quick_duel.Division(peakDivision),
-			gamesAtRank, sid, seasonWins, seasonLosses, updatedAt,
+			gamesAtRank, sid, seasonWins, seasonLosses, seasonDraws, updatedAt,
 		))
 	}
 

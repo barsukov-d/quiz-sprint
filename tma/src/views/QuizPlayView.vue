@@ -360,7 +360,7 @@ const getAnswerButtonClass = (answerId: string) => {
 			<!-- Header with progress -->
 			<div class="mb-6">
 				<div class="flex justify-between items-center mb-2">
-					<span class="text-sm font-semibold text-gray-600">{{
+					<span class="text-sm font-semibold text-(--ui-text-muted)">{{
 						t('quiz.questionOf', {
 							current: currentQuestionIndex,
 							total: totalQuestions,
@@ -382,7 +382,7 @@ const getAnswerButtonClass = (answerId: string) => {
 							<span class="text-sm font-semibold">{{ timeRemaining }}s</span>
 						</div>
 						<!-- Score -->
-						<span class="text-sm font-semibold text-gray-600">{{
+						<span class="text-sm font-semibold text-(--ui-text-muted)">{{
 							t('quiz.score', { score: session.score })
 						}}</span>
 					</div>
@@ -393,9 +393,9 @@ const getAnswerButtonClass = (answerId: string) => {
 			<!-- Streak Indicator -->
 			<div
 				v-if="answerResult && answerResult.currentStreak > 0"
-				class="mb-4 p-3 bg-orange-50 border-2 border-orange-300 rounded-lg text-center"
+				class="mb-4 p-3 bg-orange-50 dark:bg-orange-950/30 border-2 border-orange-300 dark:border-orange-700 rounded-lg text-center"
 			>
-				<span class="text-orange-700 font-bold">
+				<span class="text-orange-700 dark:text-orange-400 font-bold">
 					{{ t('quiz.streakLabel', { count: answerResult.currentStreak }) }}
 				</span>
 			</div>
@@ -498,7 +498,7 @@ const getAnswerButtonClass = (answerId: string) => {
 			</UButton>
 
 			<!-- Next question indicator -->
-			<div v-else class="text-center text-gray-500">
+			<div v-else class="text-center text-(--ui-text-dimmed)">
 				<UProgress animation="carousel" size="sm" />
 				<p class="mt-2">{{ t('quiz.loadingNext') }}</p>
 			</div>
@@ -526,7 +526,7 @@ const getAnswerButtonClass = (answerId: string) => {
 				</template>
 
 				<div class="space-y-4">
-					<p class="text-gray-700">{{ t('quiz.activeSessionDesc') }}</p>
+					<p class="text-(--ui-text)">{{ t('quiz.activeSessionDesc') }}</p>
 
 					<!-- Error message -->
 					<UAlert v-if="errorMessage" color="red" :title="errorMessage" />

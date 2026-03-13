@@ -20,6 +20,7 @@ const {
 	acceptedChallenges,
 	outgoingReadyChallenges,
 	outgoingPendingChallenges,
+	outgoingLinkChallenges,
 	lobbyWs,
 	hasActiveDuel,
 	activeGameId,
@@ -28,6 +29,7 @@ const {
 	leagueIcon,
 	seasonWins,
 	seasonLosses,
+	seasonDraws,
 	winRate,
 	leaderboard,
 	playerRank,
@@ -49,7 +51,7 @@ const {
 	refetchLeaderboard,
 	refetchHistory,
 	refetchRivals,
-} = usePvPDuel(playerId.value)
+} = usePvPDuel(playerId)
 
 // Accept by link code mutation
 const { mutateAsync: acceptByLinkCode, isPending: isAcceptingChallenge } =
@@ -60,9 +62,6 @@ const { mutateAsync: acceptByLinkCode, isPending: isAcceptingChallenge } =
 // ===========================
 
 const activeTab = ref('play')
-const showChallengeLink = ref(false)
-const challengeLink = ref('')
-const deepLinkChallenge = ref<string | null>(null)
 const deepLinkError = ref<string | null>(null)
 const skippedRedirect = ref(false)
 
@@ -131,15 +130,13 @@ const handleFindMatch = async () => {
 }
 
 const handleAcceptChallenge = async (challengeId: string) => {
+	if (!challengeId) return
 	await respondChallenge(challengeId, 'accept')
 }
 
 const handleDeclineChallenge = async (challengeId: string) => {
+	if (!challengeId) return
 	await respondChallenge(challengeId, 'decline')
-}
-
-const handleCopyLink = () => {
-	navigator.clipboard.writeText(challengeLink.value)
 }
 
 const isSharing = ref(false)
@@ -149,8 +146,8 @@ const handleShareToTelegram = async () => {
 	try {
 		isSharing.value = true
 		await shareChallengeToTelegram()
-	} catch (error) {
-		console.error('Failed to share:', error)
+	} catch {
+		// sharing errors are non-critical; shareChallengeToTelegram logs internally
 	} finally {
 		isSharing.value = false
 	}
@@ -167,8 +164,8 @@ const handleChallengeFriend = async (friendId: string) => {
 
 const handleConfirmChallenge = async () => {
 	if (!pendingLinkCode.value) return
-	showConfirmModal.value = false
 	await handleAcceptByLinkCode(pendingLinkCode.value)
+	showConfirmModal.value = false
 	pendingLinkCode.value = null
 }
 
@@ -189,7 +186,6 @@ const handleAcceptByLinkCode = async (linkCode: string) => {
 	}
 
 	try {
-		console.log('[DuelLobby] Accepting challenge by link code:', linkCode)
 		const response = await acceptByLinkCode({
 			data: {
 				playerId: playerId.value,
@@ -198,8 +194,6 @@ const handleAcceptByLinkCode = async (linkCode: string) => {
 		})
 
 		if (response.data?.success) {
-			console.log('[DuelLobby] Challenge accepted, waiting for inviter to start...')
-			deepLinkChallenge.value = null
 			router.replace({ name: 'duel-lobby' })
 			await refetchStatus()
 			if (hasActiveDuel.value && activeGameId.value) {
@@ -207,7 +201,6 @@ const handleAcceptByLinkCode = async (linkCode: string) => {
 			}
 		}
 	} catch (error: unknown) {
-		console.error('[DuelLobby] Failed to accept challenge:', error)
 		deepLinkError.value = t('duel.acceptFailed')
 	}
 }
@@ -271,24 +264,20 @@ onMounted(async () => {
 		window.scrollTo(0, 0)
 	}
 
-	await refetchLeaderboard()
-	await refetchHistory()
-	await refetchRivals()
-
-	// Check for deep link challenge
+	// Check for deep link challenge — process immediately, don't block on secondary fetches
 	const challengeCode = route.query.challenge as string
 	if (challengeCode) {
-		console.log('[DuelLobby] Deep link challenge detected:', challengeCode)
-		deepLinkChallenge.value = challengeCode
-		// Show confirmation modal instead of auto-accepting
 		pendingLinkCode.value = challengeCode
 		showConfirmModal.value = true
 	}
+
+	// Fetch secondary data in parallel (non-blocking)
+	Promise.all([refetchLeaderboard(), refetchHistory(), refetchRivals()])
 })
 </script>
 
 <template>
-	<div class="min-h-screen bg-gray-50 dark:bg-gray-900 p-4">
+	<div class="min-h-screen bg-(--ui-bg) p-4">
 		<!-- Header -->
 		<div class="flex items-center justify-between mb-6">
 			<button class="p-2 -ml-2" @click="navigateToHome">
@@ -329,7 +318,13 @@ onMounted(async () => {
 				<UButton color="primary" block size="lg" @click="goToActiveDuel">
 					{{ t('duel.returnToGame') }}
 				</UButton>
-				<UButton color="gray" variant="soft" block size="lg" @click="skippedRedirect = false">
+				<UButton
+					color="gray"
+					variant="soft"
+					block
+					size="lg"
+					@click="skippedRedirect = false"
+				>
 					{{ t('duel.stayInLobby') }}
 				</UButton>
 			</div>
@@ -354,8 +349,14 @@ onMounted(async () => {
 					</div>
 					<div class="flex items-center gap-1.5 shrink-0">
 						<div class="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
-						<div class="w-2 h-2 rounded-full bg-purple-400 animate-pulse" style="animation-delay: 0.2s" />
-						<div class="w-2 h-2 rounded-full bg-purple-400 animate-pulse" style="animation-delay: 0.4s" />
+						<div
+							class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"
+							style="animation-delay: 0.2s"
+						/>
+						<div
+							class="w-2 h-2 rounded-full bg-purple-400 animate-pulse"
+							style="animation-delay: 0.4s"
+						/>
 					</div>
 				</div>
 			</div>
@@ -471,7 +472,7 @@ onMounted(async () => {
 						<p class="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
 							{{ formatCountdown(challenge.expiresAt!) }}
 						</p>
-						<p class="text-xs text-gray-400">{{ t('duel.expiresIn') }}</p>
+						<p class="text-xs text-(--ui-text-dimmed)">{{ t('duel.expiresIn') }}</p>
 					</div>
 				</div>
 			</div>
@@ -562,23 +563,41 @@ onMounted(async () => {
 
 			<!-- Stats -->
 			<div
-				class="grid grid-cols-3 gap-4 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
+				class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
 			>
 				<div class="text-center">
-					<p class="text-lg font-bold text-green-600 dark:text-green-400">
-						{{ seasonWins }}
+					<p class="text-xl font-bold text-green-500">{{ seasonWins }}</p>
+					<p
+						class="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400"
+					>
+						{{ t('duel.wins') }}
 					</p>
-					<p class="text-xs text-gray-500 dark:text-gray-400">{{ t('duel.wins') }}</p>
 				</div>
 				<div class="text-center">
-					<p class="text-lg font-bold text-red-600 dark:text-red-400">
-						{{ seasonLosses }}
+					<p class="text-xl font-bold text-amber-500">{{ seasonDraws }}</p>
+					<p
+						class="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400"
+					>
+						{{ t('duel.draws') }}
 					</p>
-					<p class="text-xs text-gray-500 dark:text-gray-400">{{ t('duel.losses') }}</p>
 				</div>
 				<div class="text-center">
-					<p class="text-lg font-bold">{{ Math.round(winRate) }}%</p>
-					<p class="text-xs text-gray-500 dark:text-gray-400">{{ t('duel.winRate') }}</p>
+					<p class="text-xl font-bold text-red-500">{{ seasonLosses }}</p>
+					<p
+						class="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400"
+					>
+						{{ t('duel.losses') }}
+					</p>
+				</div>
+				<div class="text-center">
+					<p class="text-xl font-bold text-(--ui-text-highlighted)">
+						{{ Math.round(winRate) }}%
+					</p>
+					<p
+						class="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400"
+					>
+						{{ t('duel.winRate') }}
+					</p>
 				</div>
 			</div>
 		</UCard>
@@ -621,7 +640,9 @@ onMounted(async () => {
 						<UButton
 							color="green"
 							block
-							@click="() => handleAcceptChallenge(challenge.id!)"
+							:disabled="isLoading"
+							:loading="isLoading"
+							@click="() => handleAcceptChallenge(challenge.id ?? '')"
 						>
 							{{ t('duel.accept') }}
 						</UButton>
@@ -629,7 +650,8 @@ onMounted(async () => {
 							color="red"
 							variant="soft"
 							block
-							@click="() => handleDeclineChallenge(challenge.id!)"
+							:disabled="isLoading"
+							@click="() => handleDeclineChallenge(challenge.id ?? '')"
 						>
 							{{ t('duel.decline') }}
 						</UButton>
@@ -723,7 +745,7 @@ onMounted(async () => {
 						block
 						@click="
 							() => {
-								startChallenge(challenge.id!)
+								if (challenge.id) startChallenge(challenge.id)
 							}
 						"
 					>
@@ -772,7 +794,7 @@ onMounted(async () => {
 							@click="
 								() => {
 									if (!rival.hasPendingChallenge && !sendingChallengeId)
-										handleChallengeFriend(rival.id!)
+										if (rival.id) handleChallengeFriend(rival.id)
 								}
 							"
 						>
@@ -793,7 +815,7 @@ onMounted(async () => {
 				<!-- Divider -->
 				<div class="flex items-center gap-3 my-3">
 					<div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
-					<span class="text-xs text-gray-400">{{ t('duel.orInvite') }}</span>
+					<span class="text-xs text-(--ui-text-dimmed)">{{ t('duel.orInvite') }}</span>
 					<div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
 				</div>
 
@@ -807,21 +829,6 @@ onMounted(async () => {
 				>
 					{{ t('duel.inviteFriend') }}
 				</UButton>
-
-				<div
-					v-if="showChallengeLink"
-					class="mt-3 p-3 bg-gray-100 dark:bg-gray-800 rounded-lg"
-				>
-					<p class="text-xs text-gray-500 mb-2">{{ t('duel.shareLink') }}</p>
-					<div class="flex gap-2">
-						<input
-							:value="challengeLink"
-							readonly
-							class="flex-1 text-sm bg-white dark:bg-gray-700 border border-gray-300 dark:border-gray-600 rounded px-2 py-1"
-						/>
-						<UButton size="xs" @click="handleCopyLink">{{ t('duel.copy') }}</UButton>
-					</div>
-				</div>
 			</UCard>
 		</div>
 
@@ -857,14 +864,16 @@ onMounted(async () => {
 							<span class="text-lg">{{ entry.leagueIcon ?? '' }}</span>
 							<div>
 								<p class="font-medium">{{ entry.username ?? 'Player' }}</p>
-								<p class="text-xs text-gray-500">{{ entry.mmr ?? 0 }} MMR</p>
+								<p class="text-xs text-(--ui-text-dimmed)">
+									{{ entry.mmr ?? 0 }} MMR
+								</p>
 							</div>
 						</div>
 						<div class="text-right text-sm">
 							<span class="text-green-600"
 								>{{ entry.wins ?? 0 }}{{ t('duel.wIndicator') }}</span
 							>
-							<span class="text-gray-400 mx-1">/</span>
+							<span class="text-(--ui-text-dimmed) mx-1">/</span>
 							<span class="text-red-600"
 								>{{ entry.losses ?? 0 }}{{ t('duel.lIndicator') }}</span
 							>
@@ -876,7 +885,7 @@ onMounted(async () => {
 
 		<!-- History Tab -->
 		<div v-else-if="activeTab === 'history'">
-			<div v-if="gameHistory.length === 0" class="text-center py-8 text-gray-500">
+			<div v-if="gameHistory.length === 0" class="text-center py-8 text-(--ui-text-dimmed)">
 				{{ t('duel.noGames') }}
 			</div>
 			<div v-else class="space-y-2">
@@ -896,7 +905,7 @@ onMounted(async () => {
 								<p class="font-medium">
 									{{ t('duel.vsOpponent', { name: game.opponent }) }}
 								</p>
-								<p class="text-xs text-gray-500">
+								<p class="text-xs text-(--ui-text-dimmed)">
 									{{ game.playerScore }} - {{ game.opponentScore }}
 								</p>
 							</div>

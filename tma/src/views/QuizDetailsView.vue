@@ -75,8 +75,10 @@ const formatTime = (seconds: number) => {
 			<!-- Quiz Header -->
 			<div class="text-center mb-8">
 				<div class="text-6xl mb-4">🧠</div>
-				<h1 class="text-3xl font-bold mb-4">{{ quizData.data.quiz.title }}</h1>
-				<p class="text-gray-600">{{ quizData.data.quiz.description }}</p>
+				<h1 class="text-3xl font-bold mb-4 text-(--ui-text-highlighted)">
+					{{ quizData.data.quiz.title }}
+				</h1>
+				<p class="text-(--ui-text-muted)">{{ quizData.data.quiz.description }}</p>
 			</div>
 
 			<!-- Quiz Stats Card -->
@@ -87,19 +89,21 @@ const formatTime = (seconds: number) => {
 
 				<div class="space-y-3">
 					<div class="flex justify-between items-center">
-						<span class="text-gray-600">{{ t('quiz.questions') }}</span>
+						<span class="text-(--ui-text-muted)">{{ t('quiz.questions') }}</span>
 						<span class="font-semibold">{{
 							quizData.data.quiz.questions?.length || 0
 						}}</span>
 					</div>
 					<div class="flex justify-between items-center">
-						<span class="text-gray-600">{{ t('quiz.timeLimitLabel') }}</span>
+						<span class="text-(--ui-text-muted)">{{ t('quiz.timeLimitLabel') }}</span>
 						<span class="font-semibold">{{
 							formatTime(quizData.data.quiz.timeLimit || 0)
 						}}</span>
 					</div>
 					<div class="flex justify-between items-center">
-						<span class="text-gray-600">{{ t('quiz.passingScoreLabel') }}</span>
+						<span class="text-(--ui-text-muted)">{{
+							t('quiz.passingScoreLabel')
+						}}</span>
 						<span class="font-semibold"
 							>{{ quizData.data.quiz.passingScore || 0 }}%</span
 						>
@@ -124,9 +128,9 @@ const formatTime = (seconds: number) => {
 						:key="entry.userId"
 						class="flex items-center justify-between p-3 rounded-lg"
 						:class="{
-							'bg-yellow-50': index === 0,
-							'bg-gray-50': index === 1,
-							'bg-orange-50': index === 2,
+							'bg-yellow-50 dark:bg-yellow-950/30': index === 0,
+							'bg-(--ui-bg-muted)': index === 1,
+							'bg-orange-50 dark:bg-orange-950/30': index === 2,
 						}"
 					>
 						<div class="flex items-center gap-3">
@@ -137,7 +141,7 @@ const formatTime = (seconds: number) => {
 								<div class="font-semibold">
 									{{ entry.username || t('quiz.anonymous') }}
 								</div>
-								<div class="text-sm text-gray-500">
+								<div class="text-sm text-(--ui-text-dimmed)">
 									{{ new Date(entry.completedAt * 1000).toLocaleDateString() }}
 								</div>
 							</div>

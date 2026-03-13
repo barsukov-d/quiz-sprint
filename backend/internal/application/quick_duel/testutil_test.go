@@ -2,6 +2,7 @@ package quick_duel
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"testing"
 
@@ -71,6 +72,10 @@ func (m *mockDuelGameRepo) FindByPlayerPaginated(playerID quick_duel.UserID, lim
 		result = result[:limit]
 	}
 	return result, total, nil
+}
+
+func (m *mockDuelGameRepo) AbandonStaleGames(_ int64) (int, error) {
+	return 0, nil
 }
 
 func (m *mockDuelGameRepo) Delete(id quick_duel.GameID) error {
@@ -160,7 +165,7 @@ func (m *mockChallengeRepo) FindByLink(link string) (*quick_duel.DuelChallenge, 
 
 func (m *mockChallengeRepo) FindByLinkCode(code string) (*quick_duel.DuelChallenge, error) {
 	for _, c := range m.challenges {
-		if c.ChallengeLink() == code {
+		if c.LinkCode() == code {
 			return c, nil
 		}
 	}
@@ -187,6 +192,14 @@ func (m *mockChallengeRepo) FindPendingByChallenger(playerID quick_duel.UserID) 
 		}
 	}
 	return result, nil
+}
+
+func (m *mockChallengeRepo) FindPendingExpired(_ int64) ([]*quick_duel.DuelChallenge, error) {
+	return nil, nil
+}
+
+func (m *mockChallengeRepo) FindWaitingExpired(_ int64) ([]*quick_duel.DuelChallenge, error) {
+	return nil, nil
 }
 
 func (m *mockChallengeRepo) Delete(id quick_duel.ChallengeID) error {
@@ -216,6 +229,23 @@ func (m *mockChallengeRepo) FindPendingExpiredWithMessageID(_ int64) ([]*quick_d
 
 func (m *mockChallengeRepo) DeleteHardExpired(_ int64) error {
 	return nil
+}
+
+func (m *mockChallengeRepo) FindByIDForUpdate(_ *sql.Tx, id quick_duel.ChallengeID) (*quick_duel.DuelChallenge, error) {
+	return m.FindByID(id)
+}
+
+func (m *mockChallengeRepo) FindByLinkCodeForUpdate(_ *sql.Tx, code string) (*quick_duel.DuelChallenge, error) {
+	for _, c := range m.challenges {
+		if c.LinkCode() == code && c.Status() == quick_duel.ChallengeStatusPending {
+			return c, nil
+		}
+	}
+	return nil, quick_duel.ErrChallengeNotFound
+}
+
+func (m *mockChallengeRepo) SaveInTx(_ *sql.Tx, c *quick_duel.DuelChallenge) error {
+	return m.Save(c)
 }
 
 func (m *mockChallengeRepo) FindExpiredForPlayer(playerID quick_duel.UserID) ([]*quick_duel.DuelChallenge, error) {
@@ -511,6 +541,13 @@ func (m *mockReferralRepo) GetPlayerReferralRank(inviterID quick_duel.UserID) (i
 	return 1, nil
 }
 
+// mockTxManager executes the function directly without a real transaction
+type mockTxManager struct{}
+
+func (m *mockTxManager) RunInTx(_ context.Context, fn func(tx *sql.Tx) error) error {
+	return fn(nil)
+}
+
 // mockOnlineTracker is an in-memory online tracker
 type mockOnlineTracker struct {
 	online  map[string]bool
@@ -759,12 +796,14 @@ func (f *duelFixture) newRespondChallengeUC() *RespondChallengeUseCase {
 	return NewRespondChallengeUseCase(
 		f.challengeRepo, f.duelGameRepo, f.playerRatingRepo,
 		f.seasonRepo, f.questionRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot",
+		&mockTxManager{},
 	)
 }
 
 func (f *duelFixture) newAcceptByLinkCodeUC() *AcceptByLinkCodeUseCase {
 	return NewAcceptByLinkCodeUseCase(
 		f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot",
+		&mockTxManager{},
 	)
 }
 
@@ -791,6 +830,7 @@ func (f *duelFixture) newStartChallengeUC() *StartChallengeUseCase {
 	return NewStartChallengeUseCase(
 		f.challengeRepo, f.duelGameRepo, f.playerRatingRepo,
 		f.seasonRepo, f.questionRepo, f.userRepo, f.eventBus,
+		&noOpNotifier{}, "quiz_sprint_test_bot",
 	)
 }
 

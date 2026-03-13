@@ -19,6 +19,7 @@ func ToPlayerRatingDTO(rating *quick_duel.PlayerRating) PlayerRatingDTO {
 		PeakLeague:   rating.PeakLeague().String(),
 		SeasonWins:   rating.SeasonWins(),
 		SeasonLosses: rating.SeasonLosses(),
+		SeasonDraws:  rating.SeasonDraws(),
 		WinRate:      rating.WinRate(),
 		GamesAtRank:  rating.GamesAtRank(),
 		CanDemote:    rating.CanDemote(),
@@ -102,9 +103,18 @@ func ToChallengeDTO(challenge *quick_duel.DuelChallenge, now int64, challengerUs
 		challengedID = &id
 	}
 
-	expiresIn := int(challenge.ExpiresAt() - now)
+	expiresAt := challenge.ExpiresAt()
+	expiresIn := int(expiresAt - now)
 	if expiresIn < 0 {
 		expiresIn = 0
+	}
+
+	if challenge.Status() == quick_duel.ChallengeStatusAcceptedWaitingInviter && challenge.RespondedAt() > 0 {
+		expiresAt = challenge.RespondedAt() + quick_duel.AcceptedWaitingExpirySeconds
+		expiresIn = int(expiresAt - now)
+		if expiresIn < 0 {
+			expiresIn = 0
+		}
 	}
 
 	return ChallengeDTO{
@@ -115,7 +125,7 @@ func ToChallengeDTO(challenge *quick_duel.DuelChallenge, now int64, challengerUs
 		Type:               string(challenge.Type()),
 		Status:             string(challenge.Status()),
 		ChallengeLink:      challenge.ChallengeLink(),
-		ExpiresAt:          challenge.ExpiresAt(),
+		ExpiresAt:          expiresAt,
 		ExpiresIn:          expiresIn,
 		CreatedAt:          challenge.CreatedAt(),
 	}
@@ -134,12 +144,14 @@ func ToGameHistoryEntryDTO(game *quick_duel.DuelGame, playerID string, opponentU
 		playerScore = game.Player1().Score()
 		opponentScore = game.Player2().Score()
 		opponentMMR = game.Player2().Elo().Rating()
-		mmrChange = game.Player1().Elo().Rating() - game.Player1().Elo().Rating() // TODO: store before/after
+		// TODO: mmrChange requires eloBefore stored in DuelPlayer (Phase 5 migration).
+		// Currently Elo().Rating() is post-game rating, no pre-game value available.
+		mmrChange = 0
 	} else {
 		playerScore = game.Player2().Score()
 		opponentScore = game.Player1().Score()
 		opponentMMR = game.Player1().Elo().Rating()
-		mmrChange = game.Player2().Elo().Rating() - game.Player2().Elo().Rating()
+		mmrChange = 0
 	}
 
 	if playerScore > opponentScore {
@@ -175,6 +187,7 @@ func ToLeaderboardEntryDTO(rating *quick_duel.PlayerRating, rank int, username s
 		LeagueIcon: rating.League().Icon(),
 		Wins:       rating.SeasonWins(),
 		Losses:     rating.SeasonLosses(),
+		Draws:      rating.SeasonDraws(),
 		WinRate:    rating.WinRate(),
 	}
 }

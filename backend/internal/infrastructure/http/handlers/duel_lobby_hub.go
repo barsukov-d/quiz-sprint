@@ -59,14 +59,13 @@ func (h *DuelLobbyHub) IsConnected(playerID string) bool {
 
 // Notify implements appDuel.LobbyHub.
 func (h *DuelLobbyHub) Notify(playerID string, event appDuel.LobbyEvent) {
-	if h.buffer != nil {
-		_ = h.buffer.Push(playerID, event)
-	}
 	h.mu.RLock()
 	conn, ok := h.connections[playerID]
 	h.mu.RUnlock()
 	if ok {
 		_ = conn.WriteJSON(event)
+	} else if h.buffer != nil {
+		_ = h.buffer.Push(playerID, event)
 	}
 }
 

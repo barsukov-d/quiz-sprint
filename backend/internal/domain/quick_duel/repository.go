@@ -1,5 +1,7 @@
 package quick_duel
 
+import "database/sql"
+
 // DuelGameRepository defines the interface for duel game persistence
 type DuelGameRepository interface {
 	// Save persists a duel game
@@ -17,6 +19,10 @@ type DuelGameRepository interface {
 
 	// Delete removes a duel game
 	Delete(id GameID) error
+
+	// AbandonStaleGames marks games stuck in waiting_start/in_progress as abandoned
+	// if their started_at is before cutoffTime (unix timestamp).
+	AbandonStaleGames(cutoffTime int64) (int, error)
 
 	// FindRecentOpponents returns unique opponents from completed games, most recent first
 	FindRecentOpponents(playerID UserID, limit int) ([]RecentOpponentEntry, error)
@@ -104,6 +110,13 @@ type ChallengeRepository interface {
 	// Delete removes a challenge
 	Delete(id ChallengeID) error
 
+	// FindPendingExpired returns pending challenges whose expires_at <= currentTime
+	FindPendingExpired(currentTime int64) ([]*DuelChallenge, error)
+
+	// FindWaitingExpired returns accepted_waiting_inviter challenges
+	// whose responded_at + AcceptedWaitingExpirySeconds <= currentTime
+	FindWaitingExpired(currentTime int64) ([]*DuelChallenge, error)
+
 	// DeleteExpired removes all expired pending challenges
 	DeleteExpired(currentTime int64) error
 
@@ -116,6 +129,15 @@ type ChallengeRepository interface {
 	// FindExpiredForPlayer returns expired challenges visible to this player (as inviter or invitee)
 	// within the last 24 hours (still shown in UI before auto-deletion)
 	FindExpiredForPlayer(playerID UserID) ([]*DuelChallenge, error)
+
+	// FindByIDForUpdate retrieves a challenge by ID with a row-level lock (SELECT FOR UPDATE).
+	FindByIDForUpdate(tx *sql.Tx, id ChallengeID) (*DuelChallenge, error)
+
+	// FindByLinkCodeForUpdate retrieves a pending challenge by link code with a row-level lock.
+	FindByLinkCodeForUpdate(tx *sql.Tx, code string) (*DuelChallenge, error)
+
+	// SaveInTx persists a challenge within an existing transaction.
+	SaveInTx(tx *sql.Tx, challenge *DuelChallenge) error
 }
 
 // ReferralRepository defines the interface for referral persistence

@@ -2,8 +2,10 @@ package quick_duel
 
 import (
 	"context"
+	"database/sql"
 	"fmt"
 	"strconv"
+	"strings"
 	"time"
 
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quick_duel"
@@ -418,12 +420,13 @@ type RespondChallengeUseCase struct {
 	challengeRepo    quick_duel.ChallengeRepository
 	duelGameRepo     quick_duel.DuelGameRepository
 	playerRatingRepo quick_duel.PlayerRatingRepository
-	questionRepo     QuestionRepository // nil if questions DB unavailable
+	questionRepo     QuestionRepository
 	seasonRepo       quick_duel.SeasonRepository
 	userRepo         domainUser.UserRepository
 	notifier         TelegramNotifier
 	eventBus         EventBus
 	botUsername      string
+	txManager        TxManager
 }
 
 func NewRespondChallengeUseCase(
@@ -436,6 +439,7 @@ func NewRespondChallengeUseCase(
 	notifier TelegramNotifier,
 	eventBus EventBus,
 	botUsername string,
+	txManager TxManager,
 ) *RespondChallengeUseCase {
 	return &RespondChallengeUseCase{
 		challengeRepo:    challengeRepo,
@@ -447,6 +451,7 @@ func NewRespondChallengeUseCase(
 		notifier:         notifier,
 		eventBus:         eventBus,
 		botUsername:      botUsername,
+		txManager:        txManager,
 	}
 }
 
@@ -494,22 +499,11 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 		}, nil
 	}
 
-	// Accept challenge
-	err = challenge.Accept(playerID, now)
-	if err != nil {
-		return RespondChallengeOutput{}, err
-	}
-
-	// Publish events
-	for _, event := range challenge.Events() {
-		uc.eventBus.Publish(event)
-	}
-
 	if uc.questionRepo == nil {
 		return RespondChallengeOutput{}, fmt.Errorf("question repository unavailable")
 	}
 
-	// Create game immediately for direct challenge
+	// Prepare data needed for game creation before entering tx
 	challengerID := challenge.ChallengerID()
 	accepterID := playerID
 
@@ -561,25 +555,58 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 	if err := game.Start(now); err != nil {
 		return RespondChallengeOutput{}, err
 	}
-	if err := uc.duelGameRepo.Save(game); err != nil {
+
+	var events []quick_duel.Event
+	var telegramMsgID int64
+
+	err = uc.txManager.RunInTx(context.Background(), func(tx *sql.Tx) error {
+		locked, err := uc.challengeRepo.FindByIDForUpdate(tx, challengeID)
+		if err != nil {
+			return err
+		}
+
+		if err := locked.Accept(playerID, now); err != nil {
+			return err
+		}
+
+		if err := uc.duelGameRepo.Save(game); err != nil {
+			return err
+		}
+
+		locked.SetMatchID(game.ID())
+		if err := uc.challengeRepo.SaveInTx(tx, locked); err != nil {
+			return err
+		}
+
+		events = locked.Events()
+		telegramMsgID = locked.TelegramMessageID()
+		return nil
+	})
+	if err != nil {
 		return RespondChallengeOutput{}, err
 	}
 
-	challenge.SetMatchID(game.ID())
-	if err := uc.challengeRepo.Save(challenge); err != nil {
-		return RespondChallengeOutput{}, err
+	// Publish events AFTER transaction commits
+	for _, event := range events {
+		uc.eventBus.Publish(event)
 	}
 
 	// Edit Telegram notification in invitee's chat (best-effort)
-	if challenge.TelegramMessageID() > 0 {
+	if telegramMsgID > 0 {
 		if tgID, err := strconv.ParseInt(playerID.String(), 10, 64); err == nil {
-			_ = uc.notifier.EditChallengeMessage(context.Background(), tgID, challenge.TelegramMessageID(), "✅ Вызов принят — удачи!")
+			_ = uc.notifier.EditChallengeMessage(context.Background(), tgID, telegramMsgID, "✅ Вызов принят — удачи!")
 		}
+	}
+
+	// Notify challenger via Telegram in case they are offline (best-effort)
+	if challengerTgID, err := strconv.ParseInt(challengerID.String(), 10, 64); err == nil && challengerTgID > 0 {
+		lobbyURL := "https://t.me/" + uc.botUsername + "?startapp=lobby"
+		_ = uc.notifier.NotifyChallengeAccepted(context.Background(), challengerTgID, accepterName, lobbyURL)
 	}
 
 	gameID := game.ID().String()
 
-	// Notify challenger via lobby WS that game is ready (mirrors StartChallengeUseCase for invitee)
+	// Notify challenger via lobby WS that game is ready
 	uc.eventBus.Publish(quick_duel.NewGameReadyEvent(&challengerID, gameID, now))
 
 	zero := 0
@@ -610,20 +637,22 @@ type TelegramNotifier interface {
 
 type AcceptByLinkCodeUseCase struct {
 	challengeRepo quick_duel.ChallengeRepository
-	duelGameRepo  quick_duel.DuelGameRepository // B2: added
+	duelGameRepo  quick_duel.DuelGameRepository
 	userRepo      domainUser.UserRepository
 	notifier      TelegramNotifier
 	eventBus      EventBus
 	botUsername   string
+	txManager    TxManager
 }
 
 func NewAcceptByLinkCodeUseCase(
 	challengeRepo quick_duel.ChallengeRepository,
-	duelGameRepo quick_duel.DuelGameRepository, // B2: added
+	duelGameRepo quick_duel.DuelGameRepository,
 	userRepo domainUser.UserRepository,
 	notifier TelegramNotifier,
 	eventBus EventBus,
 	botUsername string,
+	txManager TxManager,
 ) *AcceptByLinkCodeUseCase {
 	return &AcceptByLinkCodeUseCase{
 		challengeRepo: challengeRepo,
@@ -632,6 +661,7 @@ func NewAcceptByLinkCodeUseCase(
 		notifier:      notifier,
 		eventBus:      eventBus,
 		botUsername:   botUsername,
+		txManager:    txManager,
 	}
 }
 
@@ -643,16 +673,19 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 		return AcceptByLinkCodeOutput{}, err
 	}
 
-	// Find challenge by link code
-	challenge, err := uc.challengeRepo.FindByLinkCode(input.LinkCode)
+	// Extract code part: "duel_abc123" -> "abc123"
+	code := input.LinkCode
+	if i := strings.LastIndex(code, "_"); i >= 0 {
+		code = code[i+1:]
+	}
+
+	// Idempotency check outside tx (read-only, no lock needed)
+	challenge, err := uc.challengeRepo.FindByLinkCode(code)
 	if err != nil {
 		return AcceptByLinkCodeOutput{}, err
 	}
-
-	// Idempotency: if already accepted_waiting_inviter by this player, return success
 	if challenge.Status() == quick_duel.ChallengeStatusAcceptedWaitingInviter {
 		if challenged := challenge.ChallengedID(); challenged != nil && challenged.Equals(accepterID) {
-			// F2: Resolve inviter name for idempotent response
 			idempotentInviterName := challenge.ChallengerID().String()
 			if u, err := uc.userRepo.FindByID(challenge.ChallengerID()); err == nil && u != nil {
 				if n := u.TelegramUsername().String(); n != "" {
@@ -671,7 +704,7 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 		return AcceptByLinkCodeOutput{}, quick_duel.ErrChallengeNotPending
 	}
 
-	// B2: Check if accepter is already in a game
+	// Check if accepter is already in a game
 	if activeGame, err := uc.duelGameRepo.FindActiveByPlayer(accepterID); err == nil && activeGame != nil {
 		return AcceptByLinkCodeOutput{}, quick_duel.ErrAlreadyInGame
 	}
@@ -686,27 +719,47 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 		}
 	}
 
-	// Set status to accepted_waiting_inviter
-	if err := challenge.AcceptWaiting(accepterID, inviteeName, now); err != nil {
+	var result AcceptByLinkCodeOutput
+	var events []quick_duel.Event
+
+	err = uc.txManager.RunInTx(context.Background(), func(tx *sql.Tx) error {
+		locked, err := uc.challengeRepo.FindByLinkCodeForUpdate(tx, code)
+		if err != nil {
+			return err
+		}
+
+		if err := locked.AcceptWaiting(accepterID, inviteeName, now); err != nil {
+			return err
+		}
+
+		if err := uc.challengeRepo.SaveInTx(tx, locked); err != nil {
+			return err
+		}
+
+		events = locked.Events()
+		result = AcceptByLinkCodeOutput{
+			Success:     true,
+			ChallengeID: locked.ID().String(),
+			Status:      string(quick_duel.ChallengeStatusAcceptedWaitingInviter),
+		}
+		return nil
+	})
+	if err != nil {
 		return AcceptByLinkCodeOutput{}, err
 	}
 
-	if err := uc.challengeRepo.Save(challenge); err != nil {
-		return AcceptByLinkCodeOutput{}, err
-	}
-
-	for _, event := range challenge.Events() {
+	for _, event := range events {
 		uc.eventBus.Publish(event)
 	}
 
-	// Notify inviter via Telegram (best-effort — do not fail if notification errors)
+	// Notify inviter via Telegram (best-effort)
 	challengerID := challenge.ChallengerID()
 	if tgID, err := strconv.ParseInt(challengerID.String(), 10, 64); err == nil && tgID > 0 {
 		lobbyURL := "https://t.me/" + uc.botUsername + "?startapp=lobby"
 		_ = uc.notifier.NotifyChallengeAccepted(context.Background(), tgID, inviteeName, lobbyURL)
 	}
 
-	// F2: Resolve inviter's display name
+	// Resolve inviter's display name
 	inviterName := challengerID.String()
 	if u, err := uc.userRepo.FindByID(challengerID); err == nil && u != nil {
 		if n := u.TelegramUsername().String(); n != "" {
@@ -715,13 +768,9 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 			inviterName = n
 		}
 	}
+	result.InviterName = inviterName
 
-	return AcceptByLinkCodeOutput{
-		Success:     true,
-		ChallengeID: challenge.ID().String(),
-		Status:      string(quick_duel.ChallengeStatusAcceptedWaitingInviter),
-		InviterName: inviterName,
-	}, nil
+	return result, nil
 }
 
 // ========================================
@@ -1596,8 +1645,12 @@ func (uc *RequestRematchUseCase) Execute(input RequestRematchInput) (RequestRema
 			// If opponent sent a rematch challenge to this player
 			if c.ChallengedID() != nil && c.ChallengedID().String() == input.PlayerID {
 				// Auto-accept the rematch
-				c.Accept(playerID, now)
-				uc.challengeRepo.Save(c)
+				if err := c.Accept(playerID, now); err != nil {
+					continue // expired or invalid state, skip
+				}
+				if err := uc.challengeRepo.Save(c); err != nil {
+					return RequestRematchOutput{}, err
+				}
 
 				for _, event := range c.Events() {
 					uc.eventBus.Publish(event)
@@ -1724,6 +1777,8 @@ type StartChallengeUseCase struct {
 	questionRepo     QuestionRepository
 	userRepo         domainUser.UserRepository
 	eventBus         EventBus
+	notifier         TelegramNotifier
+	botUsername       string
 }
 
 func NewStartChallengeUseCase(
@@ -1734,6 +1789,8 @@ func NewStartChallengeUseCase(
 	questionRepo QuestionRepository,
 	userRepo domainUser.UserRepository,
 	eventBus EventBus,
+	notifier TelegramNotifier,
+	botUsername string,
 ) *StartChallengeUseCase {
 	return &StartChallengeUseCase{
 		challengeRepo:    challengeRepo,
@@ -1743,6 +1800,8 @@ func NewStartChallengeUseCase(
 		questionRepo:     questionRepo,
 		userRepo:         userRepo,
 		eventBus:         eventBus,
+		notifier:         notifier,
+		botUsername:       botUsername,
 	}
 }
 
@@ -1840,17 +1899,25 @@ func (uc *StartChallengeUseCase) Execute(input StartChallengeInput) (StartChalle
 		return StartChallengeOutput{}, err
 	}
 
-	// Notify invitee via lobby WS that game is ready
-	inviteeID := challenge.ChallengedID()
-	gameIDStr := game.ID().String()
-	uc.eventBus.Publish(quick_duel.NewGameReadyEvent(inviteeID, gameIDStr, now))
-
-	// Transition challenge to accepted — removes it from lobby outgoing cards
+	// Transition challenge to started — removes it from lobby outgoing cards
 	if err := challenge.MarkStarted(game.ID()); err != nil {
 		return StartChallengeOutput{}, err
 	}
 	if err := uc.challengeRepo.Save(challenge); err != nil {
 		return StartChallengeOutput{}, err
+	}
+
+	// Notify invitee via lobby WS that game is ready (after all persistence succeeded)
+	inviteeID := challenge.ChallengedID()
+	gameIDStr := game.ID().String()
+	uc.eventBus.Publish(quick_duel.NewGameReadyEvent(inviteeID, gameIDStr, now))
+
+	// Notify invitee via Telegram in case they are offline (best-effort)
+	if inviteeID != nil {
+		if inviteeTgID, err := strconv.ParseInt(inviteeID.String(), 10, 64); err == nil && inviteeTgID > 0 {
+			lobbyURL := "https://t.me/" + uc.botUsername + "?startapp=lobby"
+			_ = uc.notifier.NotifyInviterWaiting(context.Background(), inviteeTgID, inviterName, lobbyURL)
+		}
 	}
 
 	return StartChallengeOutput{GameID: game.ID().String()}, nil

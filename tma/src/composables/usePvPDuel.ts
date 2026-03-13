@@ -1,4 +1,4 @@
-import { computed, ref, watch, onUnmounted } from 'vue'
+import { type MaybeRef, computed, ref, toValue, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLobbyWebSocket } from '@/composables/useLobbyWebSocket'
 import { shareURL, shareMessage } from '@tma.js/sdk'
@@ -25,13 +25,24 @@ import {
  * - Frontend fetches fresh data from API
  * - Real-time updates via WebSocket (when in game)
  */
-export function usePvPDuel(playerId: string) {
+
+const DEBUG = import.meta.env.DEV
+const log = (...args: unknown[]) => {
+	if (DEBUG) console.log('[usePvPDuel]', ...args)
+}
+const logError = (...args: unknown[]) => {
+	if (DEBUG) console.error('[usePvPDuel]', ...args)
+}
+
+let pollTimeout: ReturnType<typeof setTimeout> | null = null
+
+export function usePvPDuel(playerIdRef: MaybeRef<string>) {
 	const router = useRouter()
 
 	// ===========================
 	// Lobby WebSocket
 	// ===========================
-	const lobbyWs = useLobbyWebSocket(playerId)
+	const lobbyWs = useLobbyWebSocket(toValue(playerIdRef))
 
 	// ===========================
 	// Local UI State
@@ -83,10 +94,10 @@ export function usePvPDuel(playerId: string) {
 		refetch: refetchStatus,
 		isLoading: isLoadingStatus,
 	} = useGetDuelStatus(
-		computed(() => ({ playerId })),
+		computed(() => ({ playerId: toValue(playerIdRef) })),
 		{
 			query: {
-				enabled: computed(() => !!playerId),
+				enabled: computed(() => !!toValue(playerIdRef)),
 				refetchOnWindowFocus: true,
 				staleTime: 0,
 				retry: false,
@@ -97,10 +108,10 @@ export function usePvPDuel(playerId: string) {
 
 	// Leaderboard
 	const { data: leaderboardData, refetch: refetchLeaderboard } = useGetDuelLeaderboard(
-		computed(() => ({ playerId, type: 'seasonal', limit: 20 })),
+		computed(() => ({ playerId: toValue(playerIdRef), type: 'seasonal', limit: 20 })),
 		{
 			query: {
-				enabled: computed(() => !!playerId),
+				enabled: computed(() => !!toValue(playerIdRef)),
 				staleTime: 60000, // 1 minute cache
 			},
 		},
@@ -108,10 +119,10 @@ export function usePvPDuel(playerId: string) {
 
 	// Match history
 	const { data: historyData, refetch: refetchHistory } = useGetDuelHistory(
-		computed(() => ({ playerId, limit: 20, offset: 0, filter: 'all' })),
+		computed(() => ({ playerId: toValue(playerIdRef), limit: 20, offset: 0, filter: 'all' })),
 		{
 			query: {
-				enabled: computed(() => !!playerId),
+				enabled: computed(() => !!toValue(playerIdRef)),
 				staleTime: 30000, // 30 seconds cache
 			},
 		},
@@ -119,10 +130,10 @@ export function usePvPDuel(playerId: string) {
 
 	// Rivals (recent opponents)
 	const { data: rivalsData, refetch: refetchRivals } = useGetDuelRivals(
-		computed(() => ({ playerId })),
+		computed(() => ({ playerId: toValue(playerIdRef) })),
 		{
 			query: {
-				enabled: computed(() => !!playerId),
+				enabled: computed(() => !!toValue(playerIdRef)),
 				staleTime: 30000,
 			},
 		},
@@ -147,7 +158,11 @@ export function usePvPDuel(playerId: string) {
 	)
 
 	const outgoingPendingChallenges = computed(() =>
-		outgoingChallenges.value.filter((c) => c.status === 'pending'),
+		outgoingChallenges.value.filter((c) => c.status === 'pending' && c.type === 'direct'),
+	)
+
+	const outgoingLinkChallenges = computed(() =>
+		outgoingChallenges.value.filter((c) => c.status === 'pending' && c.type === 'link'),
 	)
 
 	const seasonId = computed(() => statusData.value?.data?.seasonId ?? '')
@@ -161,6 +176,7 @@ export function usePvPDuel(playerId: string) {
 	const division = computed(() => player.value?.division ?? 4)
 	const seasonWins = computed(() => player.value?.seasonWins ?? 0)
 	const seasonLosses = computed(() => player.value?.seasonLosses ?? 0)
+	const seasonDraws = computed(() => player.value?.seasonDraws ?? 0)
 	const winRate = computed(() => player.value?.winRate ?? 0)
 
 	// Leaderboard - handle both array and object response formats
@@ -226,6 +242,9 @@ export function usePvPDuel(playerId: string) {
 
 	lobbyWs.on('challenge_accepted', async () => {
 		await refetchStatus()
+		if (hasActiveDuel.value && activeGameId.value) {
+			router.push({ name: 'duel-play', params: { duelId: activeGameId.value } })
+		}
 	})
 
 	lobbyWs.on('challenge_declined', async () => {
@@ -250,13 +269,19 @@ export function usePvPDuel(playerId: string) {
 		}
 	})
 
-	lobbyWs.on('queue_matched', (data) => {
-		const gameId = data?.gameId as string | undefined
-		if (gameId) router.push({ name: 'duel-play', params: { duelId: gameId } })
+	lobbyWs.on('queue_matched', async () => {
+		await refetchStatus()
+		if (hasActiveDuel.value && activeGameId.value) {
+			router.push({ name: 'duel-play', params: { duelId: activeGameId.value } })
+		}
 	})
 
 	onUnmounted(() => {
 		stopOutgoingPoll()
+		if (pollTimeout) {
+			clearTimeout(pollTimeout)
+			pollTimeout = null
+		}
 	})
 
 	// ===========================
@@ -268,7 +293,7 @@ export function usePvPDuel(playerId: string) {
 	 */
 	const joinQueue = async () => {
 		try {
-			console.log('[usePvPDuel] Joining queue...')
+			log('Joining queue...')
 
 			isSearching.value = true
 			searchTime.value = 0
@@ -279,17 +304,17 @@ export function usePvPDuel(playerId: string) {
 			}, 1000)
 
 			const response = await joinQueueMutation.mutateAsync({
-				data: { playerId },
+				data: { playerId: toValue(playerIdRef) },
 			})
 
-			console.log('[usePvPDuel] Joined queue:', response.data)
+			log('Joined queue:', response.data)
 
 			// Poll for match found
 			pollForMatch()
 
 			return response.data
 		} catch (error) {
-			console.error('[usePvPDuel] Failed to join queue:', error)
+			logError('Failed to join queue:', error)
 			stopSearching()
 			throw error
 		}
@@ -300,16 +325,16 @@ export function usePvPDuel(playerId: string) {
 	 */
 	const leaveQueue = async () => {
 		try {
-			console.log('[usePvPDuel] Leaving queue...')
+			log('Leaving queue...')
 
 			await leaveQueueMutation.mutateAsync({
-				params: { playerId },
+				params: { playerId: toValue(playerIdRef) },
 			})
 
 			stopSearching()
 			await refetchStatus()
 		} catch (error) {
-			console.error('[usePvPDuel] Failed to leave queue:', error)
+			logError('Failed to leave queue:', error)
 			stopSearching()
 			throw error
 		}
@@ -324,6 +349,10 @@ export function usePvPDuel(playerId: string) {
 		if (searchInterval.value) {
 			clearInterval(searchInterval.value)
 			searchInterval.value = null
+		}
+		if (pollTimeout) {
+			clearTimeout(pollTimeout)
+			pollTimeout = null
 		}
 	}
 
@@ -349,7 +378,7 @@ export function usePvPDuel(playerId: string) {
 				return
 			}
 
-			setTimeout(poll, lobbyWs.isPollingFallback.value ? 3000 : 1000)
+			pollTimeout = setTimeout(poll, lobbyWs.isPollingFallback.value ? 3000 : 1000)
 		}
 
 		poll()
@@ -360,19 +389,19 @@ export function usePvPDuel(playerId: string) {
 	 */
 	const sendChallenge = async (friendId: string) => {
 		try {
-			console.log('[usePvPDuel] Sending challenge to:', friendId)
+			log('Sending challenge to:', friendId)
 
 			const response = await sendChallengeMutation.mutateAsync({
-				data: { playerId, friendId },
+				data: { playerId: toValue(playerIdRef), friendId },
 			})
 
-			console.log('[usePvPDuel] Challenge sent:', response.data)
+			log('Challenge sent:', response.data)
 			await refetchStatus()
 			await refetchRivals()
 
 			return response.data
 		} catch (error) {
-			console.error('[usePvPDuel] Failed to send challenge:', error)
+			logError('Failed to send challenge:', error)
 			throw error
 		}
 	}
@@ -382,14 +411,14 @@ export function usePvPDuel(playerId: string) {
 	 */
 	const respondChallenge = async (challengeId: string, action: 'accept' | 'decline') => {
 		try {
-			console.log('[usePvPDuel] Responding to challenge:', { challengeId, action })
+			log('Responding to challenge:', { challengeId, action })
 
 			const response = await respondChallengeMutation.mutateAsync({
 				challengeId,
-				data: { playerId, action },
+				data: { playerId: toValue(playerIdRef), action },
 			})
 
-			console.log('[usePvPDuel] Challenge response:', response.data)
+			log('Challenge response:', response.data)
 			await refetchStatus()
 
 			// If accepted and game started, navigate to play
@@ -399,7 +428,7 @@ export function usePvPDuel(playerId: string) {
 
 			return response.data
 		} catch (error) {
-			console.error('[usePvPDuel] Failed to respond to challenge:', error)
+			logError('Failed to respond to challenge:', error)
 			throw error
 		}
 	}
@@ -409,17 +438,17 @@ export function usePvPDuel(playerId: string) {
 	 */
 	const createChallengeLink = async () => {
 		try {
-			console.log('[usePvPDuel] Creating challenge link...')
+			log('Creating challenge link...')
 
 			const response = await createLinkMutation.mutateAsync({
-				data: { playerId },
+				data: { playerId: toValue(playerIdRef) },
 			})
 
-			console.log('[usePvPDuel] Challenge link created:', response.data)
+			log('Challenge link created:', response.data)
 
 			return response.data
 		} catch (error) {
-			console.error('[usePvPDuel] Failed to create challenge link:', error)
+			logError('Failed to create challenge link:', error)
 			throw error
 		}
 	}
@@ -432,7 +461,7 @@ export function usePvPDuel(playerId: string) {
 	 */
 	const shareChallengeToTelegram = async (message?: string) => {
 		try {
-			console.log('[usePvPDuel] Sharing challenge to Telegram...')
+			log('Sharing challenge to Telegram...')
 
 			// Create a new challenge link
 			const result = await createChallengeLink()
@@ -449,24 +478,30 @@ export function usePvPDuel(playerId: string) {
 					const { data } = await apiClient.post<{
 						data: { preparedMessageId: string; expiresAt: number }
 					}>('/duel/challenge/prepare-share', {
-						playerId,
+						playerId: toValue(playerIdRef),
 						challengeLink: result.challengeLink,
 					})
 					shareMessage(data.data.preparedMessageId)
-					console.log('[usePvPDuel] Challenge shared via shareMessage:', data.data.preparedMessageId)
+					log(
+						'[usePvPDuel] Challenge shared via shareMessage:',
+						data.data.preparedMessageId,
+					)
 					return result
 				} catch (prepareErr) {
-					console.warn('[usePvPDuel] shareMessage prepare failed, falling back to shareURL:', prepareErr)
+					log(
+						'[usePvPDuel] shareMessage prepare failed, falling back to shareURL:',
+						prepareErr,
+					)
 				}
 			}
 
 			// Fallback for older clients
 			shareURL(result.challengeLink, shareText)
-			console.log('[usePvPDuel] Challenge shared via shareURL:', result.challengeLink)
+			log('Challenge shared via shareURL:', result.challengeLink)
 
 			return result
 		} catch (error) {
-			console.error('[usePvPDuel] Failed to share challenge:', error)
+			logError('Failed to share challenge:', error)
 			throw error
 		}
 	}
@@ -476,14 +511,14 @@ export function usePvPDuel(playerId: string) {
 	 */
 	const requestRematch = async (gameId: string) => {
 		try {
-			console.log('[usePvPDuel] Requesting rematch for:', gameId)
+			log('Requesting rematch for:', gameId)
 
 			const response = await rematchMutation.mutateAsync({
 				gameId,
-				data: { playerId },
+				data: { playerId: toValue(playerIdRef) },
 			})
 
-			console.log('[usePvPDuel] Rematch response:', response.data)
+			log('Rematch response:', response.data)
 
 			// If rematch auto-accepted (opponent already requested)
 			if (response.data?.status === 'accepted' && response.data?.gameId) {
@@ -492,7 +527,7 @@ export function usePvPDuel(playerId: string) {
 
 			return response.data
 		} catch (error) {
-			console.error('[usePvPDuel] Failed to request rematch:', error)
+			logError('Failed to request rematch:', error)
 			throw error
 		}
 	}
@@ -502,14 +537,14 @@ export function usePvPDuel(playerId: string) {
 	 */
 	const startChallenge = async (challengeId: string) => {
 		try {
-			console.log('[usePvPDuel] Starting challenge:', challengeId)
+			log('Starting challenge:', challengeId)
 
 			const response = await startChallengeMutation.mutateAsync({
 				challengeId,
-				data: { playerId },
+				data: { playerId: toValue(playerIdRef) },
 			})
 
-			console.log('[usePvPDuel] Challenge started:', response)
+			log('Challenge started:', response)
 
 			if (response?.data?.gameId) {
 				router.push({ name: 'duel-play', params: { duelId: response.data.gameId } })
@@ -517,7 +552,7 @@ export function usePvPDuel(playerId: string) {
 
 			return response
 		} catch (error) {
-			console.error('[usePvPDuel] Failed to start challenge:', error)
+			logError('Failed to start challenge:', error)
 			throw error
 		}
 	}
@@ -535,7 +570,7 @@ export function usePvPDuel(playerId: string) {
 	 * Initialize (load data)
 	 */
 	const initialize = async () => {
-		console.log('[usePvPDuel] Initializing...')
+		log('Initializing...')
 		await refetchStatus()
 	}
 
@@ -555,6 +590,7 @@ export function usePvPDuel(playerId: string) {
 		acceptedChallenges,
 		outgoingReadyChallenges,
 		outgoingPendingChallenges,
+		outgoingLinkChallenges,
 		seasonId,
 		seasonEndsAt,
 
@@ -566,6 +602,7 @@ export function usePvPDuel(playerId: string) {
 		division,
 		seasonWins,
 		seasonLosses,
+		seasonDraws,
 		winRate,
 
 		// Leaderboard

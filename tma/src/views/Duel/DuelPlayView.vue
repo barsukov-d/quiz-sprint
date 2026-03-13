@@ -207,8 +207,13 @@ onUnmounted(() => {
 		<!-- Initial connecting / loading state -->
 		<div v-if="!game" class="flex-1 flex flex-col items-center justify-center gap-6 px-6">
 			<div class="relative flex items-center justify-center">
-				<div class="absolute size-24 rounded-full border-2 border-primary/20 animate-ping" />
-				<div class="absolute size-16 rounded-full border border-primary/10 animate-ping" style="animation-delay: 0.3s" />
+				<div
+					class="absolute size-24 rounded-full border-2 border-primary/20 animate-ping"
+				/>
+				<div
+					class="absolute size-16 rounded-full border border-primary/10 animate-ping"
+					style="animation-delay: 0.3s"
+				/>
 				<UIcon name="i-heroicons-bolt" class="size-14 text-primary relative z-10" />
 			</div>
 			<div class="text-center space-y-1">

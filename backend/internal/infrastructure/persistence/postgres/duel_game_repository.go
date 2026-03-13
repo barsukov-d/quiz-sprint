@@ -188,6 +188,19 @@ func (r *DuelGameRepository) FindByPlayerPaginated(playerID quick_duel.UserID, l
 	return games, total, nil
 }
 
+func (r *DuelGameRepository) AbandonStaleGames(cutoffTime int64) (int, error) {
+	result, err := r.db.Exec(`
+		UPDATE duel_matches SET status = 'abandoned'
+		WHERE status IN ('waiting_start', 'in_progress')
+		AND started_at < $1
+	`, cutoffTime)
+	if err != nil {
+		return 0, err
+	}
+	rows, _ := result.RowsAffected()
+	return int(rows), nil
+}
+
 func (r *DuelGameRepository) Delete(id quick_duel.GameID) error {
 	query := `DELETE FROM duel_matches WHERE id = $1`
 	_, err := r.db.Exec(query, id.String())

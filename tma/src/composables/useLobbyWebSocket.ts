@@ -48,7 +48,8 @@ export function useLobbyWebSocket(playerId: string) {
 	}
 
 	const connect = () => {
-		if (ws && ws.readyState === WebSocket.OPEN) return
+		if (ws && (ws.readyState === WebSocket.OPEN || ws.readyState === WebSocket.CONNECTING))
+			return
 		if (!playerId) return
 
 		const url = `${getWsBase()}/ws/duel/lobby?playerId=${playerId}`
@@ -120,6 +121,7 @@ export function useLobbyWebSocket(playerId: string) {
 			if (document.hidden) {
 				disconnect()
 			} else {
+				reconnectAttempts = 0
 				connect()
 				onVisible()
 			}

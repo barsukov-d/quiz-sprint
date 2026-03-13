@@ -2,8 +2,8 @@
 import { computed, ref } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
-import { usePvPDuel } from '@/composables/usePvPDuel'
 import { useGetDuelGameGameid } from '@/api/generated/hooks/duelController/useGetDuelGameGameid'
+import { usePostDuelGameGameidRematch } from '@/api/generated'
 import { useI18n } from 'vue-i18n'
 
 const route = useRoute()
@@ -14,7 +14,8 @@ const duelId = computed(() => route.params.duelId as string)
 const playerId = computed(() => currentUser.value?.id ?? '')
 const { t } = useI18n()
 
-const { requestRematch, isLoading } = usePvPDuel(playerId.value)
+const rematchMutation = usePostDuelGameGameidRematch()
+const isRematchLoading = computed(() => rematchMutation.isPending.value)
 
 const { data: gameResult } = useGetDuelGameGameid(
 	{ gameId: duelId },
@@ -43,7 +44,7 @@ const resultIcon = computed(() => {
 })
 
 const resultColor = computed(() => {
-	if (isDraw.value) return 'text-gray-500'
+	if (isDraw.value) return 'text-gray-500 dark:text-gray-400'
 	return didWin.value ? 'text-yellow-500' : 'text-red-500'
 })
 
@@ -53,7 +54,9 @@ const resultText = computed(() => {
 })
 
 const mmrChange = computed(() => gameData.value?.mmrChange ?? 0)
-const mmrChangeColor = computed(() => (mmrChange.value >= 0 ? 'text-green-600' : 'text-red-600'))
+const mmrChangeColor = computed(() =>
+	mmrChange.value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
+)
 
 // ===========================
 // Actions
@@ -64,13 +67,18 @@ const handleRematch = async () => {
 		rematchStatus.value = 'pending'
 		rematchError.value = null
 
-		await requestRematch(duelId.value)
+		const response = await rematchMutation.mutateAsync({
+			gameId: duelId.value,
+			data: { playerId: playerId.value },
+		})
 
+		if (response?.data?.status === 'accepted' && response?.data?.gameId) {
+			router.push({ name: 'duel-play', params: { duelId: response.data.gameId } })
+		} else {
+			router.push({ name: 'duel-lobby' })
+		}
+	} catch {
 		router.push({ name: 'duel-lobby' })
-	} catch (error) {
-		console.error('Rematch failed:', error)
-		rematchStatus.value = 'idle'
-		rematchError.value = 'Failed to request rematch'
 	}
 }
 
@@ -98,7 +106,7 @@ const handleShare = () => {
 </script>
 
 <template>
-	<div class="min-h-screen bg-gray-50 dark:bg-gray-900 flex flex-col">
+	<div class="min-h-screen bg-(--ui-bg) flex flex-col">
 		<!-- Header -->
 		<div class="px-4 py-3 flex items-center justify-between">
 			<button class="p-2 -ml-2" @click="handleHome">
@@ -126,7 +134,7 @@ const handleShare = () => {
 						{{ gameData?.playerScore ?? 0 }}
 					</p>
 				</div>
-				<span class="text-2xl text-gray-400">-</span>
+				<span class="text-2xl text-(--ui-text-dimmed)">-</span>
 				<div class="text-center">
 					<p class="text-sm text-gray-500 dark:text-gray-400">
 						{{ gameData?.opponent?.username ?? t('duel.opponent') }}
@@ -156,7 +164,7 @@ const handleShare = () => {
 				color="primary"
 				size="xl"
 				block
-				:loading="isLoading"
+				:loading="isRematchLoading"
 				@click="handleRematch"
 			>
 				{{ t('duel.requestRematch') }}

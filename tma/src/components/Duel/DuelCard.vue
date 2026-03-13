@@ -117,7 +117,7 @@ onMounted(async () => {
 					<span class="text-2xl">{{ leagueIcon }}</span>
 					<div>
 						<p class="font-semibold">{{ leagueLabel }}</p>
-						<p class="text-sm text-gray-500 dark:text-gray-400">
+						<p class="text-sm text-(--ui-text-dimmed)">
 							{{ t('duel.mmrValue', { mmr }) }}
 						</p>
 					</div>
@@ -127,21 +127,21 @@ onMounted(async () => {
 						<span class="text-green-600 dark:text-green-400"
 							>{{ seasonWins }}{{ t('duel.wIndicator') }}</span
 						>
-						<span class="text-gray-400 mx-1">/</span>
+						<span class="text-(--ui-text-dimmed) mx-1">/</span>
 						<span class="text-red-600 dark:text-red-400"
 							>{{ seasonLosses }}{{ t('duel.lIndicator') }}</span
 						>
 					</p>
-					<p class="text-xs text-gray-500 dark:text-gray-400">
+					<p class="text-xs text-(--ui-text-dimmed)">
 						{{ winRateFormatted }} {{ t('duel.winRate') }}
 					</p>
 				</div>
 			</div>
 
 			<!-- Meta Info -->
-			<div class="grid grid-cols-2 gap-4 pt-3 border-t border-gray-200 dark:border-gray-700">
+			<div class="grid grid-cols-2 gap-4 pt-3 border-t border-(--ui-border)">
 				<div class="text-center">
-					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+					<p class="text-xs text-(--ui-text-dimmed) mb-1">
 						{{ t('duel.tickets') }}
 					</p>
 					<p class="text-sm font-semibold">
@@ -151,7 +151,7 @@ onMounted(async () => {
 				</div>
 
 				<div class="text-center">
-					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
+					<p class="text-xs text-(--ui-text-dimmed) mb-1">
 						{{ t('duel.thisSeason') }}
 					</p>
 					<p class="text-sm font-semibold">

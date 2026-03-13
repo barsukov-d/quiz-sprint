@@ -57,15 +57,17 @@ const getCategoryIcon = (categoryName: string): string => {
 				/>
 				<div>
 					<h2 class="text-xl font-semibold">{{ currentUser.username }}</h2>
-					<p v-if="currentUser.telegramUsername" class="text-sm text-gray-500">
+					<p v-if="currentUser.telegramUsername" class="text-sm text-(--ui-text-dimmed)">
 						{{ currentUser.telegramUsername }}
 					</p>
 				</div>
 			</div>
 		</UCard>
 
-		<h1 class="text-3xl font-bold mb-2">{{ t('categories.title') }}</h1>
-		<p class="text-gray-600 mb-8">{{ t('categories.subtitle') }}</p>
+		<h1 class="text-3xl font-bold mb-2 text-(--ui-text-highlighted)">
+			{{ t('categories.title') }}
+		</h1>
+		<p class="text-(--ui-text-muted) mb-8">{{ t('categories.subtitle') }}</p>
 
 		<!-- Loading state -->
 		<div v-if="isLoading" class="flex justify-center items-center py-12">
@@ -110,7 +112,7 @@ const getCategoryIcon = (categoryName: string): string => {
 						<!-- Category Info -->
 						<div class="flex-1">
 							<h3 class="text-lg font-semibold mb-1">{{ category.name }}</h3>
-							<p class="text-sm text-gray-500">
+							<p class="text-sm text-(--ui-text-dimmed)">
 								{{
 									t('categories.exploreDesc', {
 										name: category.name.toLowerCase(),
@@ -121,7 +123,7 @@ const getCategoryIcon = (categoryName: string): string => {
 					</div>
 
 					<!-- Arrow indicator -->
-					<div class="text-gray-400">
+					<div class="text-(--ui-text-dimmed)">
 						<svg
 							xmlns="http://www.w3.org/2000/svg"
 							class="h-6 w-6"
@@ -142,7 +144,7 @@ const getCategoryIcon = (categoryName: string): string => {
 		</div>
 
 		<!-- Empty state -->
-		<div v-else class="text-center py-12 text-gray-500">
+		<div v-else class="text-center py-12 text-(--ui-text-dimmed)">
 			<div class="text-6xl mb-4">📂</div>
 			<p class="text-lg font-semibold mb-2">{{ t('categories.empty') }}</p>
 			<p class="text-sm">{{ t('categories.emptyDesc') }}</p>

@@ -10,7 +10,19 @@ import { visualizer } from 'rollup-plugin-visualizer'
 export default defineConfig({
 	plugins: [
 		vue(),
-		ui(),
+		ui({
+			ui: {
+				colors: {
+					primary: 'indigo',
+					secondary: 'violet',
+					success: 'emerald',
+					warning: 'amber',
+					error: 'rose',
+					info: 'sky',
+					neutral: 'slate',
+				},
+			},
+		}),
 		// vueDevTools(),
 		visualizer({
 			open: false,

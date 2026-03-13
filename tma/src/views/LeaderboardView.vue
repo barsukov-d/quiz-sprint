@@ -108,7 +108,7 @@ const isCurrentUser = (userId: string) => {
 			<!-- Header -->
 			<div class="mb-6 mx-auto text-center">
 				<h1 class="text-3xl font-bold mb-2">{{ t('leaderboard.title') }}</h1>
-				<p class="text-gray-600">{{ t('leaderboard.subtitle') }}</p>
+				<p class="text-(--ui-text-muted)">{{ t('leaderboard.subtitle') }}</p>
 			</div>
 
 			<!-- Loading -->
@@ -142,19 +142,29 @@ const isCurrentUser = (userId: string) => {
 			<div v-else-if="entries.length === 0" class="text-center py-12">
 				<div class="text-6xl mb-4">🏆</div>
 				<h2 class="text-2xl font-bold mb-2">{{ t('leaderboard.empty') }}</h2>
-				<p class="text-gray-600">{{ t('leaderboard.emptyDesc') }}</p>
+				<p class="text-(--ui-text-muted)">{{ t('leaderboard.emptyDesc') }}</p>
 			</div>
 
 			<!-- Leaderboard Table -->
 			<div v-else>
 				<!-- Current user rank badge (if not in top 10) -->
-				<UCard v-if="currentUserRank && currentUserRank > 10" class="mb-4 bg-blue-50">
+				<UCard
+					v-if="currentUserRank && currentUserRank > 10"
+					class="mb-4 bg-indigo-50 dark:bg-indigo-950/30"
+				>
 					<div class="flex items-center justify-between">
 						<div>
-							<p class="text-sm text-gray-600">{{ t('leaderboard.yourRank') }}</p>
-							<p class="text-2xl font-bold text-blue-600">#{{ currentUserRank }}</p>
+							<p class="text-sm text-(--ui-text-muted)">
+								{{ t('leaderboard.yourRank') }}
+							</p>
+							<p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+								#{{ currentUserRank }}
+							</p>
 						</div>
-						<UIcon name="i-heroicons-star" class="text-4xl text-blue-600" />
+						<UIcon
+							name="i-heroicons-star"
+							class="text-4xl text-indigo-600 dark:text-indigo-400"
+						/>
 					</div>
 				</UCard>
 
@@ -163,17 +173,25 @@ const isCurrentUser = (userId: string) => {
 					<div class="overflow-x-auto">
 						<table class="w-full">
 							<thead>
-								<tr class="border-b border-gray-200">
-									<th class="text-left py-3 px-4 font-semibold text-gray-700">
+								<tr class="border-b border-(--ui-border)">
+									<th
+										class="text-left py-3 px-4 font-semibold text-(--ui-text-toned)"
+									>
 										{{ t('leaderboard.colRank') }}
 									</th>
-									<th class="text-left py-3 px-4 font-semibold text-gray-700">
+									<th
+										class="text-left py-3 px-4 font-semibold text-(--ui-text-toned)"
+									>
 										{{ t('leaderboard.colPlayer') }}
 									</th>
-									<th class="text-right py-3 px-4 font-semibold text-gray-700">
+									<th
+										class="text-right py-3 px-4 font-semibold text-(--ui-text-toned)"
+									>
 										{{ t('leaderboard.colScore') }}
 									</th>
-									<th class="text-right py-3 px-4 font-semibold text-gray-700">
+									<th
+										class="text-right py-3 px-4 font-semibold text-(--ui-text-toned)"
+									>
 										{{ t('leaderboard.colDate') }}
 									</th>
 								</tr>
@@ -183,10 +201,10 @@ const isCurrentUser = (userId: string) => {
 									v-for="entry in entries"
 									:key="entry.userId"
 									:class="[
-										'border-b border-gray-100 transition-colors',
+										'border-b border-(--ui-border-muted) transition-colors',
 										isCurrentUser(entry.userId)
-											? 'bg-blue-50 hover:bg-blue-100'
-											: 'hover:bg-gray-50',
+											? 'current-user-row bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/30'
+											: 'hover:bg-(--ui-bg-muted)',
 									]"
 								>
 									<!-- Rank -->
@@ -195,7 +213,7 @@ const isCurrentUser = (userId: string) => {
 											<span v-if="entry.rank <= 3" class="text-2xl">
 												{{ getMedalEmoji(entry.rank) }}
 											</span>
-											<span class="font-semibold text-gray-700">
+											<span class="font-semibold text-(--ui-text-toned)">
 												{{ entry.rank }}
 											</span>
 										</div>
@@ -210,21 +228,21 @@ const isCurrentUser = (userId: string) => {
 											<UIcon
 												v-if="isCurrentUser(entry.userId)"
 												name="i-heroicons-star-solid"
-												class="text-blue-600"
+												class="text-indigo-600 dark:text-indigo-400"
 											/>
 										</div>
 									</td>
 
 									<!-- Score -->
 									<td class="py-3 px-4 text-right">
-										<span class="font-bold text-gray-900">{{
+										<span class="font-bold text-(--ui-text-highlighted)">{{
 											entry.totalScore
 										}}</span>
 									</td>
 
-									Date
+									<!-- Date -->
 									<td class="py-3 px-4 text-right">
-										<span class="text-sm text-gray-500">
+										<span class="text-sm text-(--ui-text-dimmed)">
 											{{ formatDate(entry.rank) }}
 										</span>
 									</td>
@@ -235,7 +253,7 @@ const isCurrentUser = (userId: string) => {
 				</UCard>
 
 				<!-- Stats footer -->
-				<div class="mt-4 text-center text-sm text-gray-500">
+				<div class="mt-4 text-center text-sm text-(--ui-text-dimmed)">
 					{{ t('leaderboard.showingTop', { count: entries.length }) }}
 				</div>
 			</div>
@@ -248,18 +266,33 @@ const isCurrentUser = (userId: string) => {
 	max-width: 1200px;
 }
 
-/* Highlight animation for current user */
+/* Highlight animation for current user — light mode */
 @keyframes highlight-pulse {
 	0%,
 	100% {
-		background-color: rgb(239 246 255);
+		background-color: rgb(238 242 255);
 	}
 	50% {
-		background-color: rgb(219 234 254);
+		background-color: rgb(199 210 254);
 	}
 }
 
-.bg-blue-50 {
+/* Dark mode override using Tailwind's .dark class strategy */
+:global(.dark) .current-user-row {
+	animation: highlight-pulse-dark 2s ease-in-out infinite;
+}
+
+@keyframes highlight-pulse-dark {
+	0%,
+	100% {
+		background-color: rgb(49 46 129 / 0.3);
+	}
+	50% {
+		background-color: rgb(49 46 129 / 0.5);
+	}
+}
+
+.current-user-row {
 	animation: highlight-pulse 2s ease-in-out infinite;
 }
 </style>

@@ -1,14 +1,17 @@
 package quick_duel
 
 import (
+	"crypto/rand"
+
 	"github.com/google/uuid"
 )
 
 // Challenge expiry constants
 const (
-	DirectChallengeExpirySeconds = 3600     // 1 hour — time to open Telegram notification
-	PushChallengeExpirySeconds   = 300      // 5 minutes if push notification sent
-	LinkChallengeExpirySeconds   = 86400    // 24 hours for link-based challenges
+	DirectChallengeExpirySeconds   = 3600  // 1 hour — time to open Telegram notification
+	PushChallengeExpirySeconds     = 300   // 5 minutes if push notification sent
+	LinkChallengeExpirySeconds     = 86400 // 24 hours for link-based challenges
+	AcceptedWaitingExpirySeconds   = 1800  // 30 minutes — invitee accepted, waiting for inviter
 )
 
 // ChallengeStatus represents the current state of a challenge
@@ -53,7 +56,8 @@ type DuelChallenge struct {
 	challengedID  *UserID         // Who is challenged (nil for link-based)
 	challengeType ChallengeType
 	status        ChallengeStatus
-	challengeLink string          // For link-based challenges
+	challengeLink string          // For link-based challenges (full URL)
+	linkCode      string          // Short code for indexed lookup
 	expiresAt     int64           // Unix timestamp
 	createdAt     int64
 	respondedAt   int64           // When accepted/declined (0 if pending)
@@ -62,6 +66,18 @@ type DuelChallenge struct {
 	telegramMessageID int64           // Bot message ID in invitee's chat (0 = not sent)
 
 	events []Event
+}
+
+func generateLinkCode() string {
+	const charset = "abcdefghijkmnpqrstuvwxyz23456789"
+	b := make([]byte, 12)
+	if _, err := rand.Read(b); err != nil {
+		return ""
+	}
+	for i := range b {
+		b[i] = charset[b[i]%byte(len(charset))]
+	}
+	return string(b)
 }
 
 // NewDirectChallenge creates a direct challenge to a specific friend
@@ -115,7 +131,11 @@ func NewLinkChallenge(
 	}
 
 	challengeID := NewChallengeID()
-	link := "https://t.me/" + botUsername + "?startapp=duel_" + challengeID.String()[:8]
+	code := generateLinkCode()
+	if code == "" {
+		code = challengeID.String()[:8]
+	}
+	link := "https://t.me/" + botUsername + "?startapp=duel_" + code
 
 	challenge := &DuelChallenge{
 		id:            challengeID,
@@ -124,6 +144,7 @@ func NewLinkChallenge(
 		challengeType: ChallengeTypeLink,
 		status:        ChallengeStatusPending,
 		challengeLink: link,
+		linkCode:      code,
 		expiresAt:     createdAt + LinkChallengeExpirySeconds,
 		createdAt:     createdAt,
 		respondedAt:   0,
@@ -151,6 +172,7 @@ func ReconstructDuelChallenge(
 	challengeType ChallengeType,
 	status ChallengeStatus,
 	challengeLink string,
+	linkCode string,
 	expiresAt int64,
 	createdAt int64,
 	respondedAt int64,
@@ -165,6 +187,7 @@ func ReconstructDuelChallenge(
 		challengeType:     challengeType,
 		status:            status,
 		challengeLink:     challengeLink,
+		linkCode:          linkCode,
 		expiresAt:         expiresAt,
 		createdAt:         createdAt,
 		respondedAt:       respondedAt,
@@ -251,6 +274,13 @@ func (dc *DuelChallenge) Decline(declinerID UserID, declinedAt int64) error {
 		}
 	}
 
+	// For link challenges, only the challenger (creator) can cancel
+	if dc.challengeType == ChallengeTypeLink {
+		if !dc.challengerID.Equals(declinerID) {
+			return ErrNotChallengedPlayer
+		}
+	}
+
 	dc.status = ChallengeStatusDeclined
 	dc.respondedAt = declinedAt
 
@@ -299,6 +329,24 @@ func (dc *DuelChallenge) Expire(expiredAt int64) error {
 	return nil
 }
 
+// ExpireWaiting marks an accepted_waiting_inviter challenge as expired
+func (dc *DuelChallenge) ExpireWaiting(expiredAt int64) error {
+	if dc.status != ChallengeStatusAcceptedWaitingInviter {
+		return ErrChallengeNotPending
+	}
+
+	dc.status = ChallengeStatusExpired
+
+	dc.events = append(dc.events, NewChallengeExpiredEvent(
+		dc.id,
+		dc.challengerID,
+		dc.challengedID,
+		expiredAt,
+	))
+
+	return nil
+}
+
 // IsExpired checks if challenge has expired
 func (dc *DuelChallenge) IsExpired(currentTime int64) bool {
 	return currentTime >= dc.expiresAt
@@ -316,6 +364,7 @@ func (dc *DuelChallenge) ChallengedID() *UserID      { return dc.challengedID }
 func (dc *DuelChallenge) Type() ChallengeType        { return dc.challengeType }
 func (dc *DuelChallenge) Status() ChallengeStatus    { return dc.status }
 func (dc *DuelChallenge) ChallengeLink() string      { return dc.challengeLink }
+func (dc *DuelChallenge) LinkCode() string            { return dc.linkCode }
 func (dc *DuelChallenge) ExpiresAt() int64           { return dc.expiresAt }
 func (dc *DuelChallenge) CreatedAt() int64           { return dc.createdAt }
 func (dc *DuelChallenge) RespondedAt() int64         { return dc.respondedAt }

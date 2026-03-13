@@ -77,12 +77,6 @@ const buttonColor = computed(() => {
 	return 'primary'
 })
 
-const statusIcon = computed(() => {
-	if (hasPlayed.value) return 'i-heroicons-check-circle'
-	if (isPlaying.value) return 'i-heroicons-clock'
-	return null
-})
-
 const questionProgress = computed(() =>
 	Math.round((questionIndex.value / totalQuestions.value) * 100),
 )
@@ -127,80 +121,104 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-	<UCard>
-		<!-- Header -->
+	<UCard class="overflow-hidden">
+		<!-- Gradient accent bar -->
 		<template #header>
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-2.5">
-					<UIcon name="i-heroicons-calendar-days" class="size-5 text-primary" />
-					<h3 class="text-base font-semibold">{{ t('daily.title') }}</h3>
+					<div
+						class="flex items-center justify-center size-9 rounded-lg bg-indigo-100 dark:bg-indigo-900/30"
+					>
+						<UIcon
+							name="i-heroicons-calendar-days"
+							class="size-5 text-indigo-600 dark:text-indigo-400"
+						/>
+					</div>
+					<div>
+						<h3 class="text-base font-bold text-(--ui-text-highlighted)">
+							{{ t('daily.title') }}
+						</h3>
+						<p class="text-xs text-(--ui-text-dimmed)">
+							{{ t('daily.questionsInfo') }}
+						</p>
+					</div>
 				</div>
-				<UIcon
-					v-if="statusIcon"
-					:name="statusIcon"
-					:class="['size-5', hasPlayed ? 'text-green-500' : 'text-blue-500']"
-				/>
+				<UBadge v-if="hasPlayed" color="green" variant="subtle" size="sm">
+					<UIcon name="i-heroicons-check-circle" class="size-3.5 mr-0.5" />
+					{{ t('daily.completedBadge') }}
+				</UBadge>
+				<UBadge v-else-if="isPlaying" color="blue" variant="subtle" size="sm">
+					<UIcon name="i-heroicons-play-circle" class="size-3.5 mr-0.5" />
+					{{ t('daily.inProgressBadge') }}
+				</UBadge>
 			</div>
 		</template>
 
-		<!-- Body -->
 		<div class="space-y-4">
-			<!-- Completed State: Score + Streak -->
-			<div v-if="hasPlayed && game" class="text-center space-y-2 py-2">
-				<p class="text-3xl font-bold text-green-600 dark:text-green-400">
-					{{ game.finalScore || 0 }} points
-				</p>
-				<p v-if="streak" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					{{ streaks.formattedStreak.value }}
-				</p>
+			<!-- Completed State -->
+			<div v-if="hasPlayed && game" class="flex items-center justify-between">
+				<div>
+					<p class="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+						{{ game.finalScore || 0 }}
+						<span class="text-sm font-medium text-(--ui-text-dimmed)">{{
+							t('daily.points')
+						}}</span>
+					</p>
+					<p v-if="streak" class="text-sm text-(--ui-text-muted) mt-0.5">
+						{{ streaks.formattedStreak.value }}
+					</p>
+				</div>
+				<div class="text-right">
+					<p class="text-xs text-(--ui-text-dimmed)">{{ t('daily.resetsIn') }}</p>
+					<p class="text-sm font-mono font-semibold tabular-nums">
+						{{ timeToExpireFormatted }}
+					</p>
+				</div>
 			</div>
 
-			<!-- In Progress State: Question Progress -->
-			<div v-else-if="isPlaying" class="space-y-2">
+			<!-- In Progress State -->
+			<div v-else-if="isPlaying" class="space-y-3">
 				<div class="flex justify-between text-sm">
-					<span class="font-medium"
-						>Question {{ questionIndex + 1 }}/{{ totalQuestions }}</span
-					>
-					<span class="text-gray-500 dark:text-gray-400">{{ questionProgress }}%</span>
+					<span class="font-medium text-(--ui-text-highlighted)">
+						{{
+							t('shared.questionOf', {
+								current: questionIndex + 1,
+								total: totalQuestions,
+							})
+						}}
+					</span>
+					<span class="text-(--ui-text-dimmed)">{{ questionProgress }}%</span>
 				</div>
 				<UProgress v-model="questionProgress" color="primary" size="sm" />
 			</div>
 
-			<!-- Not Played State: Info + Streak -->
-			<div v-else class="space-y-2 py-1">
-				<p class="text-sm text-gray-700 dark:text-gray-300">
-					{{ t('daily.questionsInfo') }}
-				</p>
-				<p v-if="streak" class="text-sm font-medium text-gray-700 dark:text-gray-300">
-					{{ streaks.formattedStreak.value }}
-				</p>
-			</div>
-
-			<!-- Meta Info (always shown) -->
-			<div class="grid grid-cols-2 gap-4 pt-3 border-t border-gray-200 dark:border-gray-700">
-				<div class="text-center">
-					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-						{{ t('daily.resetsIn') }}
-					</p>
-					<p class="text-sm font-mono font-semibold tabular-nums">
-						<UIcon name="i-heroicons-clock" class="inline size-3.5" />
-						{{ timeToExpireFormatted }}
-					</p>
+			<!-- Not Played State -->
+			<div v-else>
+				<div class="flex items-center justify-between">
+					<div>
+						<p v-if="streak" class="text-sm font-medium text-(--ui-text)">
+							{{ streaks.formattedStreak.value }}
+						</p>
+						<p v-else class="text-sm text-(--ui-text-muted)">
+							{{ t('daily.startStreakHint') }}
+						</p>
+					</div>
+					<div class="text-right">
+						<p class="text-xs text-(--ui-text-dimmed)">{{ t('daily.resetsIn') }}</p>
+						<p class="text-sm font-mono font-semibold tabular-nums">
+							{{ timeToExpireFormatted }}
+						</p>
+					</div>
 				</div>
-
-				<div class="text-center">
-					<p class="text-xs text-gray-500 dark:text-gray-400 mb-1">
-						{{ t('daily.playersToday') }}
-					</p>
-					<p class="text-sm font-semibold">
+				<div v-if="totalPlayers > 0" class="mt-3 pt-3 border-t border-(--ui-border-muted)">
+					<p class="text-xs text-(--ui-text-dimmed)">
 						<UIcon name="i-heroicons-user-group" class="inline size-3.5" />
-						{{ totalPlayers }}
+						{{ t('daily.playersCount', { count: totalPlayers }) }}
 					</p>
 				</div>
 			</div>
 		</div>
 
-		<!-- Footer -->
 		<template #footer>
 			<UButton
 				:icon="buttonIcon"

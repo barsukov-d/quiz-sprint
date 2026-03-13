@@ -25,6 +25,7 @@ type PlayerRating struct {
 	seasonID      string
 	seasonWins    int
 	seasonLosses  int
+	seasonDraws   int
 	updatedAt     int64
 
 	events []Event
@@ -46,6 +47,7 @@ func NewPlayerRating(playerID UserID, seasonID string, createdAt int64) *PlayerR
 		seasonID:     seasonID,
 		seasonWins:   0,
 		seasonLosses: 0,
+		seasonDraws:  0,
 		updatedAt:    createdAt,
 		events:       make([]Event, 0),
 	}
@@ -64,6 +66,7 @@ func ReconstructPlayerRating(
 	seasonID string,
 	seasonWins int,
 	seasonLosses int,
+	seasonDraws int,
 	updatedAt int64,
 ) *PlayerRating {
 	return &PlayerRating{
@@ -78,6 +81,7 @@ func ReconstructPlayerRating(
 		seasonID:     seasonID,
 		seasonWins:   seasonWins,
 		seasonLosses: seasonLosses,
+		seasonDraws:  seasonDraws,
 		updatedAt:    updatedAt,
 		events:       make([]Event, 0),
 	}
@@ -86,6 +90,7 @@ func ReconstructPlayerRating(
 // GameResult represents the result of a duel game for rating calculation
 type GameResult struct {
 	Won         bool
+	Draw        bool
 	OpponentMMR int
 	GameTime    int64
 }
@@ -103,6 +108,9 @@ func (pr *PlayerRating) ApplyGameResult(result GameResult) {
 	if result.Won {
 		actualScore = 1.0
 		pr.seasonWins++
+	} else if result.Draw {
+		actualScore = 0.5
+		pr.seasonDraws++
 	} else {
 		actualScore = 0.0
 		pr.seasonLosses++
@@ -228,6 +236,7 @@ func (pr *PlayerRating) SeasonReset(newSeasonID string, resetTime int64) {
 	pr.seasonID = newSeasonID
 	pr.seasonWins = 0
 	pr.seasonLosses = 0
+	pr.seasonDraws = 0
 	pr.gamesAtRank = 0
 	pr.updatedAt = resetTime
 
@@ -279,6 +288,7 @@ func (pr *PlayerRating) GamesAtRank() int       { return pr.gamesAtRank }
 func (pr *PlayerRating) SeasonID() string       { return pr.seasonID }
 func (pr *PlayerRating) SeasonWins() int        { return pr.seasonWins }
 func (pr *PlayerRating) SeasonLosses() int      { return pr.seasonLosses }
+func (pr *PlayerRating) SeasonDraws() int       { return pr.seasonDraws }
 func (pr *PlayerRating) UpdatedAt() int64       { return pr.updatedAt }
 
 // Events returns collected domain events and clears them

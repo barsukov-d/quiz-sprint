@@ -52,11 +52,16 @@ func (b *LobbyEventBus) Publish(event domainDuel.Event) {
 		})
 
 	case domainDuel.ChallengeExpiredEvent:
-		// Notify challenger if connected
 		b.hub.Notify(e.ChallengerID().String(), appDuel.LobbyEvent{
 			Type: "challenge_expired",
 			Data: map[string]interface{}{"challengeId": e.ChallengeID().String()},
 		})
+		if e.ChallengedID() != nil {
+			b.hub.Notify(e.ChallengedID().String(), appDuel.LobbyEvent{
+				Type: "challenge_expired",
+				Data: map[string]interface{}{"challengeId": e.ChallengeID().String()},
+			})
+		}
 
 	case domainDuel.GameReadyEvent:
 		if e.PlayerID() != nil {

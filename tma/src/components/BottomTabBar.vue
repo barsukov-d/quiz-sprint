@@ -49,93 +49,24 @@ const navigateTo = (tab: Tab) => {
 </script>
 
 <template>
-	<div class="bottom-tab-bar">
-		<div class="tab-bar-container">
+	<div
+		class="fixed bottom-0 inset-x-0 z-50 bg-(--ui-bg-elevated) border-t border-(--ui-border) pb-[env(safe-area-inset-bottom)]"
+	>
+		<div class="flex justify-around items-center h-16 max-w-[1200px] mx-auto">
 			<button
 				v-for="tab in tabs"
 				:key="tab.name"
-				:class="['tab-button', { active: currentTab === tab.name }]"
+				class="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors"
+				:class="
+					currentTab === tab.name
+						? 'text-(--ui-primary)'
+						: 'text-(--ui-text-dimmed) hover:text-(--ui-text-muted)'
+				"
 				@click="() => navigateTo(tab)"
 			>
-				<UIcon :name="tab.icon" class="tab-icon" />
-				<span class="tab-label">{{ tab.label }}</span>
+				<UIcon :name="tab.icon" class="size-6" />
+				<span class="text-xs font-medium">{{ tab.label }}</span>
 			</button>
 		</div>
 	</div>
 </template>
-
-<style scoped>
-.bottom-tab-bar {
-	position: fixed;
-	bottom: 0;
-	left: 0;
-	right: 0;
-	background: white;
-	border-top: 1px solid #e5e7eb;
-	padding-bottom: env(safe-area-inset-bottom);
-	z-index: 50;
-}
-
-.tab-bar-container {
-	display: flex;
-	justify-content: space-around;
-	align-items: center;
-	height: 64px;
-	max-width: 1200px;
-	margin: 0 auto;
-}
-
-.tab-button {
-	flex: 1;
-	display: flex;
-	flex-direction: column;
-	align-items: center;
-	justify-content: center;
-	gap: 4px;
-	padding: 8px;
-	border: none;
-	background: transparent;
-	cursor: pointer;
-	transition: all 0.2s;
-	color: #6b7280;
-}
-
-.tab-button:hover {
-	color: #374151;
-}
-
-.tab-button.active {
-	color: #3b82f6;
-}
-
-.tab-icon {
-	font-size: 24px;
-	width: 24px;
-	height: 24px;
-}
-
-.tab-label {
-	font-size: 12px;
-	font-weight: 500;
-}
-
-/* Dark mode support */
-@media (prefers-color-scheme: dark) {
-	.bottom-tab-bar {
-		background: #1f2937;
-		border-top-color: #374151;
-	}
-
-	.tab-button {
-		color: #9ca3af;
-	}
-
-	.tab-button:hover {
-		color: #d1d5db;
-	}
-
-	.tab-button.active {
-		color: #60a5fa;
-	}
-}
-</style>

@@ -1,7 +1,0 @@
-{
-  "tool_name": "Read",
-  "tool_input_preview": "{\"file_path\":\"/Users/barsukov/.claude/plugins/cache/omc/oh-my-claudecode/4.8.0/skills/ultrawork/docs/shared/agent-tiers.md\"}",
-  "error": "File does not exist. Note: your current working directory is /Users/barsukov/projects/quiz-sprint.",
-  "timestamp": "2026-03-13T18:38:14.884Z",
-  "retry_count": 1
-}
