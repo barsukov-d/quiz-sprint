@@ -201,7 +201,7 @@ const handleAcceptByLinkCode = async (linkCode: string) => {
 				goToActiveDuel()
 			}
 		}
-	// eslint-disable-next-line @typescript-eslint/no-unused-vars
+		// eslint-disable-next-line @typescript-eslint/no-unused-vars
 	} catch (error) {
 		deepLinkError.value = t('duel.acceptFailed')
 	}
