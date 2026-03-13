@@ -93,11 +93,13 @@ apiClient.interceptors.response.use(
 				}
 			}
 		} else if (error.request) {
-			// Request made but no response received
-			console.error('API Network Error:', {
-				message: error.message,
-				url: error.config?.url,
-			})
+			// Skip logging for canceled requests — normal when component unmounts
+			if (error.message !== 'canceled') {
+				console.error('API Network Error:', {
+					message: error.message,
+					url: error.config?.url,
+				})
+			}
 		} else {
 			// Something else happened
 			console.error('API Error:', error.message)

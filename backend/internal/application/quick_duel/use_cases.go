@@ -51,9 +51,9 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 		return GetDuelStatusOutput{}, err
 	}
 
-	// Mark player as online (TTL=120s; refreshed on every status poll)
+	// Mark player as online (TTL=45s; refreshed on every status poll)
 	if uc.onlineTracker != nil {
-		_ = uc.onlineTracker.SetOnline(input.PlayerID, 120)
+		_ = uc.onlineTracker.SetOnline(input.PlayerID, 45)
 	}
 
 	// Get current season
@@ -578,6 +578,10 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 	}
 
 	gameID := game.ID().String()
+
+	// Notify challenger via lobby WS that game is ready (mirrors StartChallengeUseCase for invitee)
+	uc.eventBus.Publish(quick_duel.NewGameReadyEvent(&challengerID, gameID, now))
+
 	zero := 0
 	return RespondChallengeOutput{
 		Success:        true,
@@ -597,6 +601,7 @@ type TelegramNotifier interface {
 	NotifyInviterWaiting(ctx context.Context, inviteeTelegramID int64, inviterName string, lobbyURL string) error
 	NotifyChallengeReceived(ctx context.Context, inviteeTelegramID int64, inviterName string, deepLink string) (int64, error)
 	EditChallengeMessage(ctx context.Context, inviteeTelegramID int64, messageID int64, text string) error
+	SavePreparedInlineMessage(ctx context.Context, userID int64, challengeLink string, challengeText string) (string, int64, error)
 }
 
 // ========================================
@@ -1644,6 +1649,7 @@ type GetOnlineFriendsUseCase struct {
 // OnlineTracker interface for tracking online status
 type OnlineTracker interface {
 	SetOnline(playerID string, expiresInSeconds int) error
+	SetOffline(playerID string) error
 	IsOnline(playerID string) (bool, error)
 	GetOnlineFriends(playerID string, friendIDs []string) ([]string, error)
 	SetInGame(playerID string, gameID string) error
@@ -1934,4 +1940,34 @@ func (uc *GetRivalsUseCase) Execute(input GetRivalsInput) (GetRivalsOutput, erro
 	}
 
 	return GetRivalsOutput{Rivals: rivals}, nil
+}
+
+// ========================================
+// PrepareShare Use Case
+// ========================================
+
+type PrepareShareUseCase struct {
+	notifier TelegramNotifier
+}
+
+func NewPrepareShareUseCase(notifier TelegramNotifier) *PrepareShareUseCase {
+	return &PrepareShareUseCase{notifier: notifier}
+}
+
+func (uc *PrepareShareUseCase) Execute(ctx context.Context, input PrepareShareInput) (PrepareShareOutput, error) {
+	telegramUserID, err := strconv.ParseInt(input.PlayerID, 10, 64)
+	if err != nil || telegramUserID <= 0 {
+		return PrepareShareOutput{}, fmt.Errorf("invalid player ID: %s", input.PlayerID)
+	}
+
+	shareText := "⚔️ Вызываю тебя на дуэль в Quiz Sprint!"
+	preparedID, expiresAt, err := uc.notifier.SavePreparedInlineMessage(ctx, telegramUserID, input.ChallengeLink, shareText)
+	if err != nil {
+		return PrepareShareOutput{}, err
+	}
+
+	return PrepareShareOutput{
+		PreparedMessageID: preparedID,
+		ExpiresAt:         expiresAt,
+	}, nil
 }

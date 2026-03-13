@@ -1,0 +1,7 @@
+{
+  "tool_name": "Read",
+  "tool_input_preview": "{\"file_path\":\"/Users/barsukov/.claude/projects/-Users-barsukov-projects-quiz-sprint/d8250e2a-a3bd-4e18-9d08-a39b01ce91c4/tool-results/toolu_01GNZDVxFe5vx8ojZ3e1RAxg.txt\"}",
+  "error": "File content (27014 tokens) exceeds maximum allowed tokens (25000). Use offset and limit parameters to read specific portions of the file, or search for specific content instead of reading the whole file.",
+  "timestamp": "2026-03-13T12:44:08.320Z",
+  "retry_count": 1
+}

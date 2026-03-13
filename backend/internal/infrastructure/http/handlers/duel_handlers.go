@@ -25,6 +25,7 @@ type DuelHandler struct {
 	requestRematchUC     *appDuel.RequestRematchUseCase
 	getGameResultUC      *appDuel.GetGameResultUseCase
 	getRivalsUC          *appDuel.GetRivalsUseCase
+	prepareShareUC       *appDuel.PrepareShareUseCase
 }
 
 func NewDuelHandler(
@@ -41,6 +42,7 @@ func NewDuelHandler(
 	requestRematchUC *appDuel.RequestRematchUseCase,
 	getGameResultUC *appDuel.GetGameResultUseCase,
 	getRivalsUC *appDuel.GetRivalsUseCase,
+	prepareShareUC *appDuel.PrepareShareUseCase,
 ) *DuelHandler {
 	return &DuelHandler{
 		getStatusUC:          getStatusUC,
@@ -56,6 +58,7 @@ func NewDuelHandler(
 		requestRematchUC:     requestRematchUC,
 		getGameResultUC:      getGameResultUC,
 		getRivalsUC:          getRivalsUC,
+		prepareShareUC:       prepareShareUC,
 	}
 }
 
@@ -490,6 +493,42 @@ func (h *DuelHandler) StartChallenge(c fiber.Ctx) error {
 	})
 	if err != nil {
 		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
+}
+
+// PrepareShare handles POST /api/v1/duel/challenge/prepare-share
+// @Summary Prepare inline message for sharing challenge
+// @Description Creates a Telegram prepared inline message with an "Accept Challenge" button. Use the returned preparedMessageId with the TMA SDK shareMessage() call (Mini Apps v8.0+).
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Param request body PrepareShareRequest true "Prepare share request"
+// @Success 200 {object} PrepareShareResponse "Prepared message ID"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /duel/challenge/prepare-share [post]
+func (h *DuelHandler) PrepareShare(c fiber.Ctx) error {
+	if h.prepareShareUC == nil {
+		return fiber.NewError(fiber.StatusNotImplemented, "Prepare share not available")
+	}
+
+	var req PrepareShareRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if req.PlayerID == "" || req.ChallengeLink == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId and challengeLink are required")
+	}
+
+	output, err := h.prepareShareUC.Execute(c.Context(), appDuel.PrepareShareInput{
+		PlayerID:      req.PlayerID,
+		ChallengeLink: req.ChallengeLink,
+	})
+	if err != nil {
+		return fiber.NewError(fiber.StatusInternalServerError, err.Error())
 	}
 
 	return c.JSON(fiber.Map{"data": output})

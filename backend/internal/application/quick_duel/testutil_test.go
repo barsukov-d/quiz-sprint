@@ -529,6 +529,11 @@ func (m *mockOnlineTracker) SetOnline(playerID string, _ int) error {
 	return nil
 }
 
+func (m *mockOnlineTracker) SetOffline(playerID string) error {
+	delete(m.online, playerID)
+	return nil
+}
+
 func (m *mockOnlineTracker) IsOnline(playerID string) (bool, error) {
 	return m.online[playerID], nil
 }
@@ -777,6 +782,9 @@ func (n *noOpNotifier) NotifyChallengeReceived(_ context.Context, _ int64, _ str
 }
 func (n *noOpNotifier) EditChallengeMessage(_ context.Context, _ int64, _ int64, _ string) error {
 	return nil
+}
+func (n *noOpNotifier) SavePreparedInlineMessage(_ context.Context, _ int64, _ string, _ string) (string, int64, error) {
+	return "", 0, nil
 }
 
 func (f *duelFixture) newStartChallengeUC() *StartChallengeUseCase {

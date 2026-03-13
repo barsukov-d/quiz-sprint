@@ -19,6 +19,7 @@ const {
 	pendingChallenges,
 	acceptedChallenges,
 	outgoingReadyChallenges,
+	outgoingPendingChallenges,
 	lobbyWs,
 	hasActiveDuel,
 	activeGameId,
@@ -63,6 +64,7 @@ const showChallengeLink = ref(false)
 const challengeLink = ref('')
 const deepLinkChallenge = ref<string | null>(null)
 const deepLinkError = ref<string | null>(null)
+const skippedRedirect = ref(false)
 
 // Direct challenge deep link state
 const directChallengeId = ref<string | null>(null)
@@ -238,13 +240,29 @@ onMounted(async () => {
 	nowInterval = setInterval(() => {
 		now.value = Math.floor(Date.now() / 1000)
 	}, 1000)
+
+	// Fetch status FIRST — before connecting WS — to avoid stale game_ready events
+	// redirecting the user back into an already-finished game.
+	await refetchStatus()
+
+	// If user came from play screen with skipRedirect flag — don't auto-redirect,
+	// show an "active game" banner instead so they can choose to return or stay.
+	if (route.query.skipRedirect === '1') {
+		skippedRedirect.value = true
+		router.replace({ name: 'duel-lobby' })
+	} else if (hasActiveDuel.value && activeGameId.value) {
+		// If there is a genuinely active game, navigate immediately (no WS needed).
+		goToActiveDuel()
+		return
+	}
+
+	// Only connect WS after confirming there is no active game.
 	if (playerId.value) {
 		lobbyWs.connect()
 		lobbyWs.setupVisibilityHandler(async () => {
 			await refetchStatus()
 		})
 	}
-	await refetchStatus()
 
 	// Check for direct challenge deep link (from Telegram notification)
 	const directChallengeParam = route.query.directChallenge as string | undefined
@@ -256,12 +274,6 @@ onMounted(async () => {
 	await refetchLeaderboard()
 	await refetchHistory()
 	await refetchRivals()
-
-	// If has active duel, redirect
-	if (hasActiveDuel.value && activeGameId.value) {
-		goToActiveDuel()
-		return
-	}
 
 	// Check for deep link challenge
 	const challengeCode = route.query.challenge as string
@@ -296,6 +308,58 @@ onMounted(async () => {
 				/>
 			</div>
 		</div>
+
+		<!-- Active Game Banner (user returned from connecting screen) -->
+		<div
+			v-if="skippedRedirect && hasActiveDuel && activeGameId"
+			class="mb-4 rounded-2xl bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-300 dark:border-primary-700 p-5"
+		>
+			<div class="flex items-center gap-3 mb-4">
+				<span class="text-3xl">⚡</span>
+				<div>
+					<h2 class="text-base font-bold text-primary-700 dark:text-primary-300">
+						{{ t('duel.activeGameFound') }}
+					</h2>
+					<p class="text-sm text-gray-600 dark:text-gray-400">
+						{{ t('duel.activeGameFoundDesc') }}
+					</p>
+				</div>
+			</div>
+			<div class="grid grid-cols-2 gap-3">
+				<UButton color="primary" block size="lg" @click="goToActiveDuel">
+					{{ t('duel.returnToGame') }}
+				</UButton>
+				<UButton color="gray" variant="soft" block size="lg" @click="skippedRedirect = false">
+					{{ t('duel.stayInLobby') }}
+				</UButton>
+			</div>
+		</div>
+
+		<!-- Outgoing Pending Challenge Banner (waiting for opponent to accept rematch) -->
+		<template v-if="outgoingPendingChallenges.length > 0 && !hasActiveDuel">
+			<div
+				v-for="challenge in outgoingPendingChallenges"
+				:key="challenge.id"
+				class="mb-4 rounded-2xl bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-300 dark:border-purple-600 p-5"
+			>
+				<div class="flex items-center gap-3">
+					<span class="text-3xl">⚔️</span>
+					<div class="flex-1 min-w-0">
+						<h2 class="text-base font-bold text-purple-700 dark:text-purple-300">
+							{{ t('duel.waitingOpponentAccept') }}
+						</h2>
+						<p class="text-sm text-gray-600 dark:text-gray-400 truncate">
+							{{ challenge.inviteeName || t('duel.opponent') }}
+						</p>
+					</div>
+					<div class="flex items-center gap-1.5 shrink-0">
+						<div class="w-2 h-2 rounded-full bg-purple-400 animate-pulse" />
+						<div class="w-2 h-2 rounded-full bg-purple-400 animate-pulse" style="animation-delay: 0.2s" />
+						<div class="w-2 h-2 rounded-full bg-purple-400 animate-pulse" style="animation-delay: 0.4s" />
+					</div>
+				</div>
+			</div>
+		</template>
 
 		<!-- Direct Challenge Hero Banner -->
 		<template v-if="directChallengeId">

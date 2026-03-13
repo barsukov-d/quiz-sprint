@@ -377,6 +377,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		submitDuelAnswerUC     *appDuel.SubmitDuelAnswerUseCase
 		getGameResultUC        *appDuel.GetGameResultUseCase
 		getRivalsUC            *appDuel.GetRivalsUseCase
+		prepareShareUC         *appDuel.PrepareShareUseCase
 	)
 
 	if duelGameRepo != nil && playerRatingRepo != nil && challengeRepo != nil && referralRepo != nil && seasonRepo != nil && userRepo != nil {
@@ -496,6 +497,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			duelOnlineTracker, // nil if Redis unavailable
 			challengeRepo,
 		)
+		prepareShareUC = appDuel.NewPrepareShareUseCase(telegramNotifier)
 
 
 		// Start background challenge cleanup scheduler
@@ -613,6 +615,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			requestRematchUC,
 			getGameResultUC,
 			getRivalsUC,
+			prepareShareUC,
 		)
 	}
 
@@ -669,7 +672,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	if duelGameRepo != nil {
 		// Lobby WebSocket — must be registered BEFORE /duel/:gameId to avoid route conflict
 		if lobbyHub != nil {
-			lobbyWsHandler := handlers.NewDuelLobbyWebSocketHandler(lobbyHub)
+			lobbyWsHandler := handlers.NewDuelLobbyWebSocketHandler(lobbyHub, duelOnlineTracker)
 			ws.Get("/duel/lobby", websocket.New(lobbyWsHandler.HandleLobbyWebSocket))
 		}
 
@@ -731,6 +734,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		duel.Delete("/queue/leave", duelHandler.LeaveQueue)
 		duel.Post("/challenge", duelHandler.SendChallenge)
 		duel.Post("/challenge/link", duelHandler.CreateChallengeLink)
+		duel.Post("/challenge/prepare-share", duelHandler.PrepareShare)
 		duel.Post("/challenge/accept-by-code", duelHandler.AcceptByLinkCode)
 		duel.Post("/challenge/:challengeId/start", duelHandler.StartChallenge)
 		duel.Post("/challenge/:challengeId/respond", duelHandler.RespondChallenge)

@@ -1,0 +1,4 @@
+{"t":0,"agent":"af0f5ef","agent_type":"analyst","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"af0f5ef","agent_type":"analyst","event":"agent_stop","success":true,"duration_ms":161423}
+{"t":0,"agent":"a5289db","agent_type":"executor","event":"agent_start","parent_mode":"none"}
+{"t":0,"agent":"a5289db","agent_type":"executor","event":"agent_stop","success":true,"duration_ms":424598}

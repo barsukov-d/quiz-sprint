@@ -1,7 +1,8 @@
 import { computed, ref, watch, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useLobbyWebSocket } from '@/composables/useLobbyWebSocket'
-import { shareURL } from '@tma.js/sdk'
+import { shareURL, shareMessage } from '@tma.js/sdk'
+import { apiClient } from '@/api/client'
 import {
 	useGetDuelStatus,
 	useGetDuelLeaderboard,
@@ -219,6 +220,10 @@ export function usePvPDuel(playerId: string) {
 	)
 
 	// WS event handlers: refetch state and navigate on game_ready
+	lobbyWs.on('challenge_received', async () => {
+		await refetchStatus()
+	})
+
 	lobbyWs.on('challenge_accepted', async () => {
 		await refetchStatus()
 	})
@@ -232,14 +237,16 @@ export function usePvPDuel(playerId: string) {
 		await refetchStatus()
 	})
 
-	lobbyWs.on('game_ready', (data) => {
+	lobbyWs.on('game_ready', async (data) => {
 		const gameId = data?.gameId as string | undefined
-		if (gameId) {
-			router.push({ name: 'duel-play', params: { duelId: gameId } })
-		} else {
-			refetchStatus().then(() => {
-				if (hasActiveDuel.value && activeGameId.value) goToActiveDuel()
-			})
+		// Always verify with fresh status before navigating — stale WS events
+		// can arrive after a game is already finished and would redirect the user
+		// back into a dead game session.
+		await refetchStatus()
+		if (hasActiveDuel.value && activeGameId.value) {
+			if (!gameId || activeGameId.value === gameId) {
+				router.push({ name: 'duel-play', params: { duelId: activeGameId.value } })
+			}
 		}
 	})
 
@@ -419,7 +426,9 @@ export function usePvPDuel(playerId: string) {
 
 	/**
 	 * Share challenge link via Telegram
-	 * Creates a new challenge link and opens Telegram share dialog
+	 * Creates a new challenge link and opens Telegram share dialog.
+	 * Uses shareMessage (TMA v8.0+, sends message with inline button) when available,
+	 * falls back to shareURL for older clients.
 	 */
 	const shareChallengeToTelegram = async (message?: string) => {
 		try {
@@ -432,11 +441,28 @@ export function usePvPDuel(playerId: string) {
 				throw new Error('Failed to create challenge link')
 			}
 
-			// Share via Telegram using TMA SDK
-			const shareMessage = message ?? '⚔️ Вызываю тебя на дуэль в Quiz Sprint!'
-			shareURL(result.challengeLink, shareMessage)
+			const shareText = message ?? '⚔️ Вызываю тебя на дуэль в Quiz Sprint!'
 
-			console.log('[usePvPDuel] Challenge shared:', result.challengeLink)
+			// Try modern approach: shareMessage with inline keyboard (TMA v8.0+)
+			if (shareMessage.isSupported()) {
+				try {
+					const { data } = await apiClient.post<{
+						data: { preparedMessageId: string; expiresAt: number }
+					}>('/duel/challenge/prepare-share', {
+						playerId,
+						challengeLink: result.challengeLink,
+					})
+					shareMessage(data.data.preparedMessageId)
+					console.log('[usePvPDuel] Challenge shared via shareMessage:', data.data.preparedMessageId)
+					return result
+				} catch (prepareErr) {
+					console.warn('[usePvPDuel] shareMessage prepare failed, falling back to shareURL:', prepareErr)
+				}
+			}
+
+			// Fallback for older clients
+			shareURL(result.challengeLink, shareText)
+			console.log('[usePvPDuel] Challenge shared via shareURL:', result.challengeLink)
 
 			return result
 		} catch (error) {

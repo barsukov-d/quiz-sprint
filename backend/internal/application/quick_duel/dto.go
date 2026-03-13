@@ -462,3 +462,17 @@ type GetRivalsInput struct {
 type GetRivalsOutput struct {
 	Rivals []RivalDTO `json:"rivals"`
 }
+
+// ========================================
+// PrepareShare Use Case
+// ========================================
+
+type PrepareShareInput struct {
+	PlayerID      string `json:"playerId"`
+	ChallengeLink string `json:"challengeLink"`
+}
+
+type PrepareShareOutput struct {
+	PreparedMessageID string `json:"preparedMessageId"`
+	ExpiresAt         int64  `json:"expiresAt"`
+}

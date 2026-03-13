@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, onMounted, ref, watch } from 'vue'
+import { computed, onMounted, onUnmounted, ref, watch } from 'vue'
 import { useRoute, useRouter } from 'vue-router'
 import { useAuth } from '@/composables/useAuth'
 import { useDuelWebSocket } from '@/composables/useDuelWebSocket'
@@ -63,6 +63,10 @@ const selectedAnswerId = ref<string | null>(null)
 const showFeedback = ref(false)
 const hasAnswered = ref(false)
 const answerStartTime = ref(0)
+
+// Show cancel button after 5s if no game state received
+const isStuck = ref(false)
+let stuckTimeout: ReturnType<typeof setTimeout> | null = null
 
 // ===========================
 // Computed
@@ -162,8 +166,22 @@ const isCorrectAnswer = (answerId: string) => {
 // Lifecycle
 // ===========================
 
+watch(game, (newGame) => {
+	if (newGame && stuckTimeout) {
+		clearTimeout(stuckTimeout)
+		stuckTimeout = null
+	}
+})
+
 onMounted(() => {
 	connect()
+	stuckTimeout = setTimeout(() => {
+		if (!game.value) isStuck.value = true
+	}, 5000)
+})
+
+onUnmounted(() => {
+	if (stuckTimeout) clearTimeout(stuckTimeout)
 })
 </script>
 
@@ -187,16 +205,25 @@ onMounted(() => {
 		</div>
 
 		<!-- Initial connecting / loading state -->
-		<div v-if="!game" class="flex-1 flex flex-col items-center justify-center gap-5">
+		<div v-if="!game" class="flex-1 flex flex-col items-center justify-center gap-6 px-6">
 			<div class="relative flex items-center justify-center">
-				<div
-					class="absolute size-20 rounded-full border-2 border-primary/20 animate-ping"
-				/>
-				<UIcon name="i-heroicons-bolt" class="size-12 text-primary relative z-10" />
+				<div class="absolute size-24 rounded-full border-2 border-primary/20 animate-ping" />
+				<div class="absolute size-16 rounded-full border border-primary/10 animate-ping" style="animation-delay: 0.3s" />
+				<UIcon name="i-heroicons-bolt" class="size-14 text-primary relative z-10" />
 			</div>
-			<div class="text-center">
-				<p class="text-white font-semibold text-lg">{{ t('duel.connecting') }}</p>
+			<div class="text-center space-y-1">
+				<p class="text-white font-bold text-xl">{{ t('duel.connecting') }}</p>
+				<p class="text-gray-500 text-sm">{{ t('duel.waitingDesc') }}</p>
 			</div>
+			<UButton
+				v-if="isStuck"
+				color="gray"
+				variant="soft"
+				icon="i-heroicons-arrow-left"
+				@click="router.push({ name: 'duel-lobby', query: { skipRedirect: '1' } })"
+			>
+				{{ t('duel.cancelGame') }}
+			</UButton>
 		</div>
 
 		<!-- Waiting for Opponent -->

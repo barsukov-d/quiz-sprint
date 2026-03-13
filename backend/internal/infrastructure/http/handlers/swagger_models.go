@@ -1505,3 +1505,21 @@ type GetRivalsResponse struct {
 }
 
 // @name GetRivalsResponse
+
+// PrepareShareRequest is the request body for POST /duel/challenge/prepare-share
+type PrepareShareRequest struct {
+	PlayerID      string `json:"playerId" validate:"required"`
+	ChallengeLink string `json:"challengeLink" validate:"required"`
+}
+
+// @name PrepareShareRequest
+
+// PrepareShareResponse is the response for POST /duel/challenge/prepare-share
+type PrepareShareResponse struct {
+	Data struct {
+		PreparedMessageID string `json:"preparedMessageId" validate:"required"`
+		ExpiresAt         int64  `json:"expiresAt" validate:"required"`
+	} `json:"data"`
+}
+
+// @name PrepareShareResponse

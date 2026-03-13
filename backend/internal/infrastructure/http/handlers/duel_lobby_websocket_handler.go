@@ -10,11 +10,12 @@ import (
 
 // DuelLobbyWebSocketHandler handles /ws/duel/lobby connections.
 type DuelLobbyWebSocketHandler struct {
-	hub *DuelLobbyHub
+	hub           *DuelLobbyHub
+	onlineTracker appDuel.OnlineTracker
 }
 
-func NewDuelLobbyWebSocketHandler(hub *DuelLobbyHub) *DuelLobbyWebSocketHandler {
-	return &DuelLobbyWebSocketHandler{hub: hub}
+func NewDuelLobbyWebSocketHandler(hub *DuelLobbyHub, onlineTracker appDuel.OnlineTracker) *DuelLobbyWebSocketHandler {
+	return &DuelLobbyWebSocketHandler{hub: hub, onlineTracker: onlineTracker}
 }
 
 // HandleLobbyWebSocket registers the player, flushes missed events,
@@ -30,6 +31,10 @@ func (h *DuelLobbyWebSocketHandler) HandleLobbyWebSocket(c *websocket.Conn) {
 
 	log.Printf("[LobbyWS] %s connected", playerID)
 
+	if h.onlineTracker != nil {
+		_ = h.onlineTracker.SetOnline(playerID, 90)
+	}
+
 	// Flush any missed events before registering to avoid race:
 	// flush → register ensures no events are lost between reconnect and live delivery.
 	h.hub.FlushMissedEvents(playerID, c)
@@ -39,6 +44,9 @@ func (h *DuelLobbyWebSocketHandler) HandleLobbyWebSocket(c *websocket.Conn) {
 
 	defer func() {
 		h.hub.Unregister(playerID)
+		if h.onlineTracker != nil {
+			_ = h.onlineTracker.SetOffline(playerID)
+		}
 		log.Printf("[LobbyWS] %s disconnected", playerID)
 	}()
 

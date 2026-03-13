@@ -64,14 +64,9 @@ const handleRematch = async () => {
 		rematchStatus.value = 'pending'
 		rematchError.value = null
 
-		const result = await requestRematch(duelId.value)
+		await requestRematch(duelId.value)
 
-		if (result?.status === 'accepted') {
-			rematchStatus.value = 'accepted'
-			// Will be redirected by the composable
-		} else {
-			rematchStatus.value = 'pending'
-		}
+		router.push({ name: 'duel-lobby' })
 	} catch (error) {
 		console.error('Rematch failed:', error)
 		rematchStatus.value = 'idle'

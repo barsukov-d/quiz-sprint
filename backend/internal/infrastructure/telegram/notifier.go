@@ -14,6 +14,7 @@ type TelegramNotifier interface {
 	NotifyInviterWaiting(ctx context.Context, inviteeTelegramID int64, inviterName string, lobbyURL string) error
 	NotifyChallengeReceived(ctx context.Context, inviteeTelegramID int64, inviterName string, deepLink string) (int64, error)
 	EditChallengeMessage(ctx context.Context, inviteeTelegramID int64, messageID int64, text string) error
+	SavePreparedInlineMessage(ctx context.Context, userID int64, challengeLink string, challengeText string) (string, int64, error)
 }
 
 // NoOpNotifier does nothing (used in tests / when bot token is absent).
@@ -32,6 +33,9 @@ func (n *NoOpNotifier) NotifyChallengeReceived(_ context.Context, _ int64, _ str
 }
 func (n *NoOpNotifier) EditChallengeMessage(_ context.Context, _ int64, _ int64, _ string) error {
 	return nil
+}
+func (n *NoOpNotifier) SavePreparedInlineMessage(_ context.Context, _ int64, _ string, _ string) (string, int64, error) {
+	return "", 0, nil
 }
 
 // HTTPNotifier sends real Telegram messages.
@@ -78,6 +82,35 @@ type editMessageRequest struct {
 	MessageID int64  `json:"message_id"`
 	Text      string `json:"text"`
 	ParseMode string `json:"parse_mode"`
+}
+
+type inlineQueryResultArticle struct {
+	Type                string         `json:"type"`
+	ID                  string         `json:"id"`
+	Title               string         `json:"title"`
+	Description         string         `json:"description"`
+	InputMessageContent inputMsgContent `json:"input_message_content"`
+	ReplyMarkup         inlineKeyboard `json:"reply_markup"`
+}
+
+type inputMsgContent struct {
+	MessageText string `json:"message_text"`
+}
+
+type savePreparedInlineMessageRequest struct {
+	UserID            int64                    `json:"user_id"`
+	Result            inlineQueryResultArticle `json:"result"`
+	AllowUserChats    bool                     `json:"allow_user_chats"`
+	AllowGroupChats   bool                     `json:"allow_group_chats"`
+	AllowChannelChats bool                     `json:"allow_channel_chats"`
+}
+
+type savePreparedInlineMessageResponse struct {
+	OK     bool `json:"ok"`
+	Result struct {
+		ID             string `json:"id"`
+		ExpirationDate int64  `json:"expiration_date"`
+	} `json:"result"`
 }
 
 func (n *HTTPNotifier) sendMessage(ctx context.Context, chatID int64, text string) error {
@@ -149,6 +182,50 @@ func (n *HTTPNotifier) NotifyChallengeReceived(ctx context.Context, inviteeTeleg
 		inviterName,
 	)
 	return n.sendMessageWithButton(ctx, inviteeTelegramID, text, "⚔️ Принять вызов", deepLink)
+}
+
+func (n *HTTPNotifier) SavePreparedInlineMessage(ctx context.Context, userID int64, challengeLink string, challengeText string) (string, int64, error) {
+	result := inlineQueryResultArticle{
+		Type:        "article",
+		ID:          "challenge_share",
+		Title:       "⚔️ Вызов на дуэль — Quiz Sprint",
+		Description: challengeText,
+		InputMessageContent: inputMsgContent{
+			MessageText: challengeText,
+		},
+		ReplyMarkup: inlineKeyboard{
+			InlineKeyboard: [][]inlineButton{
+				{{Text: "⚔️ Принять вызов", URL: challengeLink}},
+			},
+		},
+	}
+	body, _ := json.Marshal(savePreparedInlineMessageRequest{
+		UserID:            userID,
+		Result:            result,
+		AllowUserChats:    true,
+		AllowGroupChats:   true,
+		AllowChannelChats: false,
+	})
+	url := fmt.Sprintf("https://api.telegram.org/bot%s/savePreparedInlineMessage", n.botToken)
+	req, err := http.NewRequestWithContext(ctx, http.MethodPost, url, bytes.NewReader(body))
+	if err != nil {
+		return "", 0, err
+	}
+	req.Header.Set("Content-Type", "application/json")
+	resp, err := n.client.Do(req)
+	if err != nil {
+		return "", 0, err
+	}
+	defer resp.Body.Close()
+
+	var result2 savePreparedInlineMessageResponse
+	if err := json.NewDecoder(resp.Body).Decode(&result2); err != nil {
+		return "", 0, err
+	}
+	if !result2.OK {
+		return "", 0, fmt.Errorf("telegram API error: savePreparedInlineMessage failed")
+	}
+	return result2.Result.ID, result2.Result.ExpirationDate, nil
 }
 
 func (n *HTTPNotifier) EditChallengeMessage(ctx context.Context, inviteeTelegramID int64, messageID int64, text string) error {
