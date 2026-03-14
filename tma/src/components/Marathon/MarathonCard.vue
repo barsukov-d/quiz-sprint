@@ -81,7 +81,6 @@ const handleResume = () => {
 	router.push({ name: 'marathon-play' })
 }
 
-
 // ===========================
 // Lifecycle
 // ===========================

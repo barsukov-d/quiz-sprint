@@ -74,7 +74,6 @@ let stuckTimeout: ReturnType<typeof setTimeout> | null = null
 
 const totalRounds = computed(() => game.value?.totalRounds ?? 7)
 
-
 // Cast question to expected DTO format
 const formattedQuestion = computed(() => {
 	if (!currentQuestion.value) return null

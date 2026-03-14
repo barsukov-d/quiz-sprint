@@ -25,7 +25,6 @@ const displayedLeaderboard = computed(() => {
 	return props.leaderboard.slice(0, props.maxEntries)
 })
 
-
 const getRankEmoji = (rank: number) => {
 	if (rank === 1) return '🥇'
 	if (rank === 2) return '🥈'

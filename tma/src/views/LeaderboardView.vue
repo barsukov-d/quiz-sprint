@@ -84,7 +84,6 @@ const getMedalEmoji = (rank: number) => {
 	}
 }
 
-
 // Check if entry is current user
 const isCurrentUser = (userId: string) => {
 	return currentUser.value?.id === userId

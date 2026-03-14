@@ -49,7 +49,6 @@ const buttonIcon = computed(() => {
 	return 'i-heroicons-magnifying-glass'
 })
 
-
 const totalAlerts = computed(
 	() => pendingChallenges.value.length + outgoingReadyChallenges.value.length,
 )

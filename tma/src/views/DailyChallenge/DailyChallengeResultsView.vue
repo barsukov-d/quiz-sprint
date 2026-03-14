@@ -81,7 +81,6 @@ const chestLabel = computed(() => {
 	}
 })
 
-
 // Bonus display mapping
 const bonusInfo: Record<
 	string,

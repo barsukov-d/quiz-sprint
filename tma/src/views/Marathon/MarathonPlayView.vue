@@ -69,7 +69,6 @@ const feedbackShieldConsumed = ref(false)
 // Computed
 // ===========================
 
-
 const bonusButtons = [
 	{
 		type: 'shield' as BonusType,

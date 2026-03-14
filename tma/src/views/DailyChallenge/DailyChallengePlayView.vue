@@ -53,7 +53,6 @@ const feedbackGameCompleted = ref(false)
 // Computed
 // ===========================
 
-
 const questionProgress = computed(() =>
 	Math.round(((questionIndex.value + 1) / totalQuestions.value) * 100),
 )
