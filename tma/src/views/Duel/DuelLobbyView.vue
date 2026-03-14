@@ -311,7 +311,7 @@ onMounted(async () => {
 					<h2 class="text-base font-bold text-primary-700 dark:text-primary-300">
 						{{ t('duel.activeGameFound') }}
 					</h2>
-					<p class="text-sm text-gray-600 dark:text-gray-400">
+					<p class="text-sm text-(--ui-text-muted)">
 						{{ t('duel.activeGameFoundDesc') }}
 					</p>
 				</div>
@@ -321,7 +321,7 @@ onMounted(async () => {
 					{{ t('duel.returnToGame') }}
 				</UButton>
 				<UButton
-					color="gray"
+					color="neutral"
 					variant="soft"
 					block
 					size="lg"
@@ -345,7 +345,7 @@ onMounted(async () => {
 						<h2 class="text-base font-bold text-purple-700 dark:text-purple-300">
 							{{ t('duel.waitingOpponentAccept') }}
 						</h2>
-						<p class="text-sm text-gray-600 dark:text-gray-400 truncate">
+						<p class="text-sm text-(--ui-text-muted) truncate">
 							{{ challenge.inviteeName || t('duel.opponent') }}
 						</p>
 					</div>
@@ -392,7 +392,7 @@ onMounted(async () => {
 						<h2 class="text-lg font-bold text-orange-700 dark:text-orange-300">
 							{{ t('duel.incomingChallenge') }}
 						</h2>
-						<p class="text-sm text-gray-600 dark:text-gray-400">
+						<p class="text-sm text-(--ui-text-muted)">
 							{{
 								t('duel.challengerInvites', {
 									name: directChallenge.challengerUsername || t('duel.friend'),
@@ -413,7 +413,7 @@ onMounted(async () => {
 						{{ t('duel.acceptChallenge') }}
 					</UButton>
 					<UButton
-						color="gray"
+						color="neutral"
 						variant="soft"
 						block
 						size="lg"
@@ -429,18 +429,18 @@ onMounted(async () => {
 			<!-- Not found / expired state -->
 			<div
 				v-else
-				class="mb-4 rounded-2xl bg-gray-50 dark:bg-gray-800 border border-gray-200 dark:border-gray-700 p-5"
+				class="mb-4 rounded-2xl bg-(--ui-bg-elevated) border border-(--ui-border) p-5"
 			>
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-3">
 						<span class="text-2xl">⏰</span>
-						<p class="text-sm font-medium text-gray-600 dark:text-gray-400">
+						<p class="text-sm font-medium text-(--ui-text-muted)">
 							{{ t('duel.challengeNotFound') }}
 						</p>
 					</div>
 					<UButton
 						size="xs"
-						color="gray"
+						color="neutral"
 						variant="ghost"
 						icon="i-heroicons-x-mark"
 						@click="dismissDirectChallenge"
@@ -462,7 +462,7 @@ onMounted(async () => {
 						<h2 class="text-base font-bold text-blue-700 dark:text-blue-300">
 							{{ t('duel.waitingForInviter') }}
 						</h2>
-						<p class="text-sm text-gray-600 dark:text-gray-400">
+						<p class="text-sm text-(--ui-text-muted)">
 							{{
 								t('duel.inviterWillStart', {
 									name: challenge.challengerUsername || t('duel.friend'),
@@ -498,7 +498,7 @@ onMounted(async () => {
 					<p class="font-medium text-red-600 dark:text-red-400">{{ deepLinkError }}</p>
 					<UButton
 						size="xs"
-						color="gray"
+						color="neutral"
 						variant="link"
 						class="mt-1"
 						@click="dismissDeepLinkError"
@@ -515,7 +515,7 @@ onMounted(async () => {
 				<div class="p-6 text-center">
 					<div class="text-4xl mb-4">⚔️</div>
 					<h3 class="text-xl font-bold mb-2">{{ t('duel.incomingChallenge') }}</h3>
-					<p class="text-gray-600 dark:text-gray-400 mb-6">
+					<p class="text-(--ui-text-muted) mb-6">
 						{{ t('duel.wantsToFight') }}
 					</p>
 					<div class="space-y-3">
@@ -531,7 +531,7 @@ onMounted(async () => {
 						<UButton
 							block
 							size="lg"
-							color="gray"
+							color="neutral"
 							variant="ghost"
 							@click="handleDeclineChallengeModal"
 						>
@@ -549,7 +549,7 @@ onMounted(async () => {
 					<span class="text-4xl">{{ leagueIcon }}</span>
 					<div>
 						<p class="text-lg font-bold">{{ leagueLabel }}</p>
-						<p class="text-sm text-gray-500 dark:text-gray-400">
+						<p class="text-sm text-(--ui-text-muted)">
 							{{ t('duel.mmrValue', { mmr }) }}
 						</p>
 					</div>
@@ -559,18 +559,18 @@ onMounted(async () => {
 						<UIcon name="i-heroicons-ticket" class="size-4 text-primary" />
 						<span class="font-semibold">{{ tickets }}</span>
 					</div>
-					<p class="text-xs text-gray-500 dark:text-gray-400">{{ t('duel.tickets') }}</p>
+					<p class="text-xs text-(--ui-text-muted)">{{ t('duel.tickets') }}</p>
 				</div>
 			</div>
 
 			<!-- Stats -->
 			<div
-				class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-gray-200 dark:border-gray-700"
+				class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-(--ui-border)"
 			>
 				<div class="text-center">
 					<p class="text-xl font-bold text-green-500">{{ seasonWins }}</p>
 					<p
-						class="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400"
+						class="text-[10px] uppercase tracking-wider text-(--ui-text-muted)"
 					>
 						{{ t('duel.wins') }}
 					</p>
@@ -578,7 +578,7 @@ onMounted(async () => {
 				<div class="text-center">
 					<p class="text-xl font-bold text-amber-500">{{ seasonDraws }}</p>
 					<p
-						class="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400"
+						class="text-[10px] uppercase tracking-wider text-(--ui-text-muted)"
 					>
 						{{ t('duel.draws') }}
 					</p>
@@ -586,7 +586,7 @@ onMounted(async () => {
 				<div class="text-center">
 					<p class="text-xl font-bold text-red-500">{{ seasonLosses }}</p>
 					<p
-						class="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400"
+						class="text-[10px] uppercase tracking-wider text-(--ui-text-muted)"
 					>
 						{{ t('duel.losses') }}
 					</p>
@@ -596,7 +596,7 @@ onMounted(async () => {
 						{{ Math.round(winRate) }}%
 					</p>
 					<p
-						class="text-[10px] uppercase tracking-wider text-gray-500 dark:text-gray-400"
+						class="text-[10px] uppercase tracking-wider text-(--ui-text-muted)"
 					>
 						{{ t('duel.winRate') }}
 					</p>
@@ -632,7 +632,7 @@ onMounted(async () => {
 							<p class="font-semibold">
 								{{ challenge.challengerUsername || t('duel.challenge') }}
 							</p>
-							<p class="text-sm text-gray-500 dark:text-gray-400">
+							<p class="text-sm text-(--ui-text-muted)">
 								{{ t('duel.challengesYou') }}
 							</p>
 						</div>
@@ -665,7 +665,7 @@ onMounted(async () => {
 		<!-- Tabs -->
 		<div class="flex gap-2 mb-4">
 			<UButton
-				:color="activeTab === 'play' ? 'primary' : 'gray'"
+				:color="activeTab === 'play' ? 'primary' : 'neutral'"
 				:variant="activeTab === 'play' ? 'solid' : 'ghost'"
 				size="sm"
 				@click="() => setActiveTab('play')"
@@ -673,7 +673,7 @@ onMounted(async () => {
 				{{ t('duel.tabPlay') }}
 			</UButton>
 			<UButton
-				:color="activeTab === 'leaderboard' ? 'primary' : 'gray'"
+				:color="activeTab === 'leaderboard' ? 'primary' : 'neutral'"
 				:variant="activeTab === 'leaderboard' ? 'solid' : 'ghost'"
 				size="sm"
 				@click="() => setActiveTab('leaderboard')"
@@ -681,7 +681,7 @@ onMounted(async () => {
 				{{ t('duel.tabLeaderboard') }}
 			</UButton>
 			<UButton
-				:color="activeTab === 'history' ? 'primary' : 'gray'"
+				:color="activeTab === 'history' ? 'primary' : 'neutral'"
 				:variant="activeTab === 'history' ? 'solid' : 'ghost'"
 				size="sm"
 				@click="() => setActiveTab('history')"
@@ -702,7 +702,7 @@ onMounted(async () => {
 					<p class="text-2xl font-mono font-bold text-primary">
 						{{ searchTimeFormatted }}
 					</p>
-					<UButton color="gray" variant="soft" class="mt-4" @click="handleFindMatch">
+					<UButton color="neutral" variant="soft" class="mt-4" @click="handleFindMatch">
 						{{ t('duel.cancel') }}
 					</UButton>
 				</div>
@@ -726,7 +726,7 @@ onMounted(async () => {
 
 			<!-- Outgoing Challenges -->
 			<div v-if="outgoingReadyChallenges.length > 0" class="space-y-2">
-				<h3 class="text-sm font-semibold text-gray-600 dark:text-gray-400">
+				<h3 class="text-sm font-semibold text-(--ui-text-muted)">
 					{{ t('duel.outgoingChallenges') }}
 				</h3>
 
@@ -766,14 +766,14 @@ onMounted(async () => {
 						<!-- Avatar with online indicator -->
 						<div class="relative flex-shrink-0">
 							<div
-								class="w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-800 flex items-center justify-center text-lg"
+								class="w-10 h-10 rounded-full bg-(--ui-bg-accented) flex items-center justify-center text-lg"
 							>
 								{{ rival.leagueIcon }}
 							</div>
 							<span
-								class="absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-white dark:ring-gray-900"
+								class="absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-(--ui-bg)"
 								:class="
-									rival.isOnline ? 'bg-green-500' : 'bg-gray-400 dark:bg-gray-600'
+									rival.isOnline ? 'bg-green-500' : 'bg-(--ui-text-dimmed)'
 								"
 							/>
 						</div>
@@ -781,7 +781,7 @@ onMounted(async () => {
 						<!-- Info -->
 						<div class="flex-1 min-w-0">
 							<p class="font-semibold truncate">{{ rival.username }}</p>
-							<p class="text-sm text-gray-500 dark:text-gray-400">
+							<p class="text-sm text-(--ui-text-muted)">
 								{{ rival.mmr }} MMR
 							</p>
 						</div>
@@ -791,7 +791,7 @@ onMounted(async () => {
 							size="sm"
 							:disabled="rival.hasPendingChallenge || sendingChallengeId === rival.id"
 							:loading="sendingChallengeId === rival.id"
-							:color="rival.hasPendingChallenge ? 'gray' : 'primary'"
+							:color="rival.hasPendingChallenge ? 'neutral' : 'primary'"
 							:variant="rival.hasPendingChallenge ? 'soft' : 'solid'"
 							@click="
 								() => {
@@ -810,15 +810,15 @@ onMounted(async () => {
 				</div>
 
 				<!-- Empty state -->
-				<p v-else class="text-sm text-gray-500 dark:text-gray-400 mb-4">
+				<p v-else class="text-sm text-(--ui-text-muted) mb-4">
 					{{ t('duel.noRivalsYet') }}
 				</p>
 
 				<!-- Divider -->
 				<div class="flex items-center gap-3 my-3">
-					<div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+					<div class="flex-1 h-px bg-(--ui-border)" />
 					<span class="text-xs text-(--ui-text-dimmed)">{{ t('duel.orInvite') }}</span>
-					<div class="flex-1 h-px bg-gray-200 dark:bg-gray-700" />
+					<div class="flex-1 h-px bg-(--ui-border)" />
 				</div>
 
 				<!-- Invite via Telegram -->
@@ -841,7 +841,7 @@ onMounted(async () => {
 					v-if="playerRank > 0"
 					class="mb-4 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg"
 				>
-					<p class="text-sm text-gray-600 dark:text-gray-400">{{ t('duel.yourRank') }}</p>
+					<p class="text-sm text-(--ui-text-muted)">{{ t('duel.yourRank') }}</p>
 					<p class="text-2xl font-bold text-primary">#{{ playerRank }}</p>
 				</div>
 

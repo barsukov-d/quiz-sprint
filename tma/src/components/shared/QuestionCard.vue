@@ -35,7 +35,7 @@ withDefaults(defineProps<Props>(), {
 
 		<!-- Question text — primary focus -->
 		<p
-			class="text-xl sm:text-2xl font-semibold leading-relaxed text-gray-900 dark:text-gray-100"
+			class="text-xl sm:text-2xl font-semibold leading-relaxed text-(--ui-text-highlighted)"
 		>
 			{{ question.text }}
 		</p>

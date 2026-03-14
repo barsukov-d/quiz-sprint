@@ -78,14 +78,14 @@ onMounted(async () => {
 			<div class="text-center">
 				<UIcon name="i-heroicons-trophy" class="size-16 text-yellow-500 mb-4" />
 				<h1 class="text-2xl font-bold">{{ t('marathon.runCompleted') }}</h1>
-				<p class="text-gray-500 dark:text-gray-400 mt-1">{{ t('marathon.title') }}</p>
+				<p class="text-(--ui-text-muted) mt-1">{{ t('marathon.title') }}</p>
 			</div>
 
 			<!-- Score Card -->
 			<UCard class="w-full">
 				<div class="text-center space-y-4">
 					<div>
-						<p class="text-sm text-gray-500 dark:text-gray-400">
+						<p class="text-sm text-(--ui-text-muted)">
 							{{ t('marathon.correctAnswers') }}
 						</p>
 						<p class="text-4xl font-bold text-primary">
@@ -95,7 +95,7 @@ onMounted(async () => {
 
 					<div class="grid grid-cols-2 gap-4">
 						<div>
-							<p class="text-xs text-gray-500 dark:text-gray-400">
+							<p class="text-xs text-(--ui-text-muted)">
 								{{ t('marathon.questions') }}
 							</p>
 							<p class="text-lg font-semibold">
@@ -103,7 +103,7 @@ onMounted(async () => {
 							</p>
 						</div>
 						<div>
-							<p class="text-xs text-gray-500 dark:text-gray-400">
+							<p class="text-xs text-(--ui-text-muted)">
 								{{ t('marathon.personalBest') }}
 							</p>
 							<p class="text-lg font-semibold">
@@ -127,7 +127,7 @@ onMounted(async () => {
 			<UCard v-if="canContinue && continueOffer" class="w-full">
 				<div class="text-center space-y-3">
 					<h3 class="font-semibold">{{ t('marathon.continueRun') }}</h3>
-					<p class="text-sm text-gray-500 dark:text-gray-400">
+					<p class="text-sm text-(--ui-text-muted)">
 						{{ t('marathon.continueRunDesc') }}
 					</p>
 
@@ -147,7 +147,7 @@ onMounted(async () => {
 
 						<UButton
 							v-if="continueOffer.hasAd"
-							color="gray"
+							color="neutral"
 							variant="soft"
 							block
 							size="lg"
@@ -164,7 +164,7 @@ onMounted(async () => {
 			<!-- Session Stats (shown from 2nd run onward) -->
 			<div
 				v-if="session.runCount.value >= 2"
-				class="w-full text-center text-sm text-gray-500 dark:text-gray-400"
+				class="w-full text-center text-sm text-(--ui-text-muted)"
 			>
 				{{ session.sessionLabel.value }}
 			</div>
@@ -187,7 +187,7 @@ onMounted(async () => {
 				</UButton>
 
 				<UButton
-					color="gray"
+					color="neutral"
 					variant="ghost"
 					block
 					size="lg"

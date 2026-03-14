@@ -71,25 +71,25 @@ function handleLocaleChange(val: string) {
 			</h3>
 			<div class="grid grid-cols-2 gap-3">
 				<div class="text-center p-4 rounded-xl bg-(--ui-bg-muted)">
-					<div class="text-3xl font-bold text-indigo-600 dark:text-indigo-400">-</div>
+					<div class="text-3xl font-bold text-primary">-</div>
 					<div class="text-sm text-(--ui-text-muted) mt-1">
 						{{ t('profile.quizzesCompleted') }}
 					</div>
 				</div>
 				<div class="text-center p-4 rounded-xl bg-(--ui-bg-muted)">
-					<div class="text-3xl font-bold text-emerald-600 dark:text-emerald-400">-</div>
+					<div class="text-3xl font-bold text-primary">-</div>
 					<div class="text-sm text-(--ui-text-muted) mt-1">
 						{{ t('profile.totalPoints') }}
 					</div>
 				</div>
 				<div class="text-center p-4 rounded-xl bg-(--ui-bg-muted)">
-					<div class="text-3xl font-bold text-violet-600 dark:text-violet-400">-</div>
+					<div class="text-3xl font-bold text-primary">-</div>
 					<div class="text-sm text-(--ui-text-muted) mt-1">
 						{{ t('profile.averageScore') }}
 					</div>
 				</div>
 				<div class="text-center p-4 rounded-xl bg-(--ui-bg-muted)">
-					<div class="text-3xl font-bold text-amber-600 dark:text-amber-400">-</div>
+					<div class="text-3xl font-bold text-primary">-</div>
 					<div class="text-sm text-(--ui-text-muted) mt-1">
 						{{ t('profile.bestRank') }}
 					</div>

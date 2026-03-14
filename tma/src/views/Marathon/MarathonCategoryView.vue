@@ -38,7 +38,7 @@ const handleBack = () => {
 		<!-- Header -->
 		<div class="flex items-center gap-3 mb-6">
 			<UButton
-				color="gray"
+				color="neutral"
 				variant="ghost"
 				icon="i-heroicons-arrow-left"
 				size="sm"
@@ -46,7 +46,7 @@ const handleBack = () => {
 			/>
 			<div>
 				<h1 class="text-xl font-bold">{{ t('marathon.chooseCategory') }}</h1>
-				<p class="text-sm text-gray-500 dark:text-gray-400">
+				<p class="text-sm text-(--ui-text-muted)">
 					{{ t('marathon.chooseCategoryDesc') }}
 				</p>
 			</div>
@@ -58,7 +58,7 @@ const handleBack = () => {
 			class="flex flex-col items-center justify-center min-h-[30vh]"
 		>
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">
+			<p class="text-(--ui-text-muted) mt-4">
 				{{ t('marathon.loadingCategories') }}
 			</p>
 		</div>
@@ -71,7 +71,7 @@ const handleBack = () => {
 					'cursor-pointer transition-all',
 					selectedCategory === 'all'
 						? 'ring-2 ring-primary'
-						: 'hover:ring-1 hover:ring-gray-300',
+						: 'hover:ring-1 hover:ring-(--ui-border-accented)',
 				]"
 				@click="handleSelectCategory('all')"
 			>
@@ -79,7 +79,7 @@ const handleBack = () => {
 					<UIcon name="i-heroicons-squares-2x2" class="size-6 text-primary" />
 					<div class="flex-1">
 						<p class="font-semibold">{{ t('marathon.allCategories') }}</p>
-						<p class="text-sm text-gray-500 dark:text-gray-400">
+						<p class="text-sm text-(--ui-text-muted)">
 							{{ t('marathon.allCategoriesDesc') }}
 						</p>
 					</div>
@@ -88,7 +88,7 @@ const handleBack = () => {
 						name="i-heroicons-arrow-path"
 						class="size-5 animate-spin text-primary"
 					/>
-					<UIcon v-else name="i-heroicons-chevron-right" class="size-5 text-gray-400" />
+					<UIcon v-else name="i-heroicons-chevron-right" class="size-5 text-(--ui-text-dimmed)" />
 				</div>
 			</UCard>
 
@@ -100,12 +100,12 @@ const handleBack = () => {
 					'cursor-pointer transition-all',
 					selectedCategory === category.id
 						? 'ring-2 ring-primary'
-						: 'hover:ring-1 hover:ring-gray-300',
+						: 'hover:ring-1 hover:ring-(--ui-border-accented)',
 				]"
 				@click="() => handleSelectCategory(category.id)"
 			>
 				<div class="flex items-center gap-3">
-					<UIcon name="i-heroicons-tag" class="size-6 text-gray-500" />
+					<UIcon name="i-heroicons-tag" class="size-6 text-(--ui-text-muted)" />
 					<div class="flex-1">
 						<p class="font-semibold">{{ category.name }}</p>
 					</div>
@@ -114,7 +114,7 @@ const handleBack = () => {
 						name="i-heroicons-arrow-path"
 						class="size-5 animate-spin text-primary"
 					/>
-					<UIcon v-else name="i-heroicons-chevron-right" class="size-5 text-gray-400" />
+					<UIcon v-else name="i-heroicons-chevron-right" class="size-5 text-(--ui-text-dimmed)" />
 				</div>
 			</UCard>
 		</div>

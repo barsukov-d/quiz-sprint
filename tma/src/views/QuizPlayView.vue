@@ -543,7 +543,7 @@ const getAnswerButtonClass = (answerId: string) => {
 						</UButton>
 						<UButton
 							size="lg"
-							color="gray"
+							color="neutral"
 							variant="outline"
 							block
 							:loading="isAbandoning"

@@ -47,7 +47,7 @@ const formatTime = (seconds: number) => {
 		<div class="flex items-center gap-3 mb-6">
 			<UButton
 				icon="i-heroicons-arrow-left"
-				color="gray"
+				color="neutral"
 				variant="ghost"
 				size="lg"
 				@click="goBack"

@@ -44,10 +44,10 @@ const handleClick = () => {
 			<div
 				:class="[
 					'flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl',
-					disabled ? 'bg-(--ui-bg-accented)' : 'bg-indigo-100 dark:bg-indigo-900/20',
+					disabled ? 'bg-(--ui-bg-accented)' : 'bg-primary/10',
 				]"
 			>
-				<UIcon v-if="icon.startsWith('i-')" :name="icon" class="size-6" />
+				<UIcon v-if="icon.startsWith('i-')" :name="icon" class="size-6 text-primary" />
 				<span v-else>{{ icon }}</span>
 			</div>
 
@@ -71,10 +71,10 @@ const handleClick = () => {
 						v-for="i in 3"
 						:key="i"
 						:name="i <= lives ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'"
-						:class="i <= lives ? 'text-red-500' : 'text-gray-300 dark:text-gray-600'"
+						:class="i <= lives ? 'text-red-500' : 'text-(--ui-text-dimmed)'"
 						class="size-4"
 					/>
-					<span class="text-xs text-gray-500 ml-1">{{
+					<span class="text-xs text-(--ui-text-muted) ml-1">{{
 						t('marathon.lives', { count: lives })
 					}}</span>
 				</div>

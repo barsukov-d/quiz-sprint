@@ -43,7 +43,7 @@ const formattedTime = computed(() => {
 		<!-- Header with result badge -->
 		<template #header>
 			<div class="flex justify-between items-center">
-				<UBadge color="gray" variant="subtle">
+				<UBadge color="neutral" variant="subtle">
 					{{ t('shared.questionOf', { current: questionNumber, total: totalQuestions }) }}
 				</UBadge>
 				<UBadge
@@ -60,7 +60,7 @@ const formattedTime = computed(() => {
 		<div class="flex flex-col gap-6">
 			<!-- Question -->
 			<div class="py-2">
-				<h3 class="text-lg font-semibold leading-relaxed text-gray-900 dark:text-gray-100">
+				<h3 class="text-lg font-semibold leading-relaxed text-(--ui-text-highlighted)">
 					{{ answeredQuestion.questionText }}
 				</h3>
 			</div>
@@ -68,7 +68,7 @@ const formattedTime = computed(() => {
 			<!-- Your Answer -->
 			<div class="flex flex-col gap-2">
 				<div
-					class="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+					class="text-sm font-medium text-(--ui-text-muted) uppercase tracking-wider"
 				>
 					{{ t('daily.yourAnswer') }}
 				</div>
@@ -97,7 +97,7 @@ const formattedTime = computed(() => {
 			<!-- Correct Answer (if wrong) -->
 			<div v-if="!answeredQuestion.isCorrect" class="flex flex-col gap-2">
 				<div
-					class="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider"
+					class="text-sm font-medium text-(--ui-text-muted) uppercase tracking-wider"
 				>
 					{{ t('daily.correctAnswer') }}
 				</div>
@@ -112,9 +112,9 @@ const formattedTime = computed(() => {
 			</div>
 
 			<!-- Stats -->
-			<div class="flex gap-4 pt-2 border-t border-gray-200 dark:border-gray-700">
+			<div class="flex gap-4 pt-2 border-t border-(--ui-border)">
 				<div
-					class="flex items-center gap-2 px-3 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium"
+					class="flex items-center gap-2 px-3 py-2 rounded-md bg-(--ui-bg-elevated) text-(--ui-text) text-sm font-medium"
 				>
 					<UIcon name="i-heroicons-clock" class="w-4 h-4" />
 					<span>{{ formattedTime }}</span>
@@ -124,7 +124,7 @@ const formattedTime = computed(() => {
 					:class="
 						answeredQuestion.isCorrect
 							? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-							: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+							: 'bg-(--ui-bg-elevated) text-(--ui-text-muted)'
 					"
 				>
 					<UIcon

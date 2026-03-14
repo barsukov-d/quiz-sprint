@@ -248,7 +248,7 @@ onUnmounted(() => {
 		<!-- Loading State -->
 		<div v-if="!currentQuestion" class="flex flex-col items-center justify-center min-h-[50vh]">
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('daily.loadingQuestion') }}</p>
+			<p class="text-(--ui-text-muted) mt-4">{{ t('daily.loadingQuestion') }}</p>
 		</div>
 
 		<!-- Game View -->
@@ -256,7 +256,7 @@ onUnmounted(() => {
 			<!-- Header: counter + progress + timer (single row) -->
 			<div class="flex items-center gap-3">
 				<span
-					class="shrink-0 text-sm font-semibold text-gray-500 dark:text-gray-400 tabular-nums"
+					class="shrink-0 text-sm font-semibold text-(--ui-text-muted) tabular-nums"
 				>
 					{{ questionIndex + 1 }}/{{ totalQuestions }}
 				</span>
@@ -297,7 +297,7 @@ onUnmounted(() => {
 			<div v-if="isSubmitting || showFeedback" class="mt-2">
 				<UAlert
 					v-if="isSubmitting"
-					color="gray"
+					color="neutral"
 					variant="soft"
 					:title="t('daily.submitting')"
 				>

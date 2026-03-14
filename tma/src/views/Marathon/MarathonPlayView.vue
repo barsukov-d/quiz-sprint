@@ -328,7 +328,7 @@ onUnmounted(() => {
 		<!-- Loading State -->
 		<div v-if="!currentQuestion" class="flex flex-col items-center justify-center min-h-[50vh]">
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('marathon.loadingQuestion') }}</p>
+			<p class="text-(--ui-text-muted) mt-4">{{ t('marathon.loadingQuestion') }}</p>
 		</div>
 
 		<!-- Game View -->
@@ -346,7 +346,7 @@ onUnmounted(() => {
 							:class="
 								filled
 									? 'bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.55)]'
-									: 'bg-gray-700'
+									: 'bg-(--ui-bg-accented)'
 							"
 						/>
 					</div>
@@ -399,7 +399,7 @@ onUnmounted(() => {
 			<!-- Milestone progress -->
 			<div
 				v-if="state.milestone && state.milestone.next > 0"
-				class="text-xs text-center text-gray-500 dark:text-gray-400"
+				class="text-xs text-center text-(--ui-text-muted)"
 			>
 				{{
 					t('marathon.nextMilestone', {
@@ -445,8 +445,8 @@ onUnmounted(() => {
 					class="bonus-btn flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all duration-200"
 					:class="[
 						b.canUse.value
-							? 'bg-gray-100 dark:bg-gray-800 hover:scale-105 active:scale-95 cursor-pointer'
-							: 'bg-gray-100/50 dark:bg-gray-800/30 opacity-35 cursor-not-allowed',
+							? 'bg-(--ui-bg-elevated) hover:scale-105 active:scale-95 cursor-pointer'
+							: 'bg-(--ui-bg-elevated) opacity-35 cursor-not-allowed',
 						activatedBonus === b.type
 							? 'bonus-activated ring-2 ring-offset-1 ring-offset-transparent'
 							: '',
@@ -460,15 +460,15 @@ onUnmounted(() => {
 				>
 					<UIcon
 						:name="b.icon"
-						:class="b.canUse.value ? b.activeColor : 'text-gray-400 dark:text-gray-600'"
+						:class="b.canUse.value ? b.activeColor : 'text-(--ui-text-dimmed)'"
 						class="w-5 h-5"
 					/>
 					<span
 						class="text-[10px] font-bold tabular-nums"
 						:class="
 							b.canUse.value
-								? 'text-gray-900 dark:text-gray-100'
-								: 'text-gray-400 dark:text-gray-600'
+								? 'text-(--ui-text-highlighted)'
+								: 'text-(--ui-text-dimmed)'
 						"
 					>
 						{{ state.bonusInventory[b.key] }}
@@ -477,8 +477,8 @@ onUnmounted(() => {
 						class="text-[9px] leading-tight"
 						:class="
 							b.canUse.value
-								? 'text-gray-500 dark:text-gray-400'
-								: 'text-gray-400/60 dark:text-gray-600'
+								? 'text-(--ui-text-muted)'
+								: 'text-(--ui-text-dimmed)'
 						"
 					>
 						{{ b.label }}
@@ -490,7 +490,7 @@ onUnmounted(() => {
 			<div v-if="isSubmitting || showFeedback" class="mt-2">
 				<UAlert
 					v-if="isSubmitting"
-					color="gray"
+					color="neutral"
 					variant="soft"
 					:title="t('marathon.submittingAnswer')"
 				>

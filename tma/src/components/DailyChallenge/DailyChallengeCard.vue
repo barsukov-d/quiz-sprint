@@ -127,11 +127,11 @@ onBeforeUnmount(() => {
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-2.5">
 					<div
-						class="flex items-center justify-center size-9 rounded-lg bg-indigo-100 dark:bg-indigo-900/30"
+						class="flex items-center justify-center size-9 rounded-lg bg-primary/10"
 					>
 						<UIcon
 							name="i-heroicons-calendar-days"
-							class="size-5 text-indigo-600 dark:text-indigo-400"
+							class="size-5 text-primary"
 						/>
 					</div>
 					<div>

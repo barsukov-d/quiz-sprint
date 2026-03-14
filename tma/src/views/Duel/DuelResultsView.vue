@@ -44,7 +44,7 @@ const resultIcon = computed(() => {
 })
 
 const resultColor = computed(() => {
-	if (isDraw.value) return 'text-gray-500 dark:text-gray-400'
+	if (isDraw.value) return 'text-(--ui-text-muted)'
 	return didWin.value ? 'text-yellow-500' : 'text-red-500'
 })
 
@@ -129,14 +129,14 @@ const handleShare = () => {
 			<!-- Score -->
 			<div class="flex items-center gap-6 mb-6">
 				<div class="text-center">
-					<p class="text-sm text-gray-500 dark:text-gray-400">{{ t('duel.you') }}</p>
+					<p class="text-sm text-(--ui-text-muted)">{{ t('duel.you') }}</p>
 					<p class="text-5xl font-bold text-primary">
 						{{ gameData?.playerScore ?? 0 }}
 					</p>
 				</div>
 				<span class="text-2xl text-(--ui-text-dimmed)">-</span>
 				<div class="text-center">
-					<p class="text-sm text-gray-500 dark:text-gray-400">
+					<p class="text-sm text-(--ui-text-muted)">
 						{{ gameData?.opponent?.username ?? t('duel.opponent') }}
 					</p>
 					<p class="text-5xl font-bold text-orange-500">
@@ -173,7 +173,7 @@ const handleShare = () => {
 			<UButton
 				v-else-if="rematchStatus === 'pending'"
 				icon="i-heroicons-clock"
-				color="gray"
+				color="neutral"
 				variant="soft"
 				size="xl"
 				block
@@ -189,7 +189,7 @@ const handleShare = () => {
 			<!-- Share Button -->
 			<UButton
 				icon="i-heroicons-share"
-				color="gray"
+				color="neutral"
 				variant="soft"
 				size="lg"
 				block
@@ -201,7 +201,7 @@ const handleShare = () => {
 			<!-- Back to Lobby -->
 			<UButton
 				icon="i-heroicons-arrow-left"
-				color="gray"
+				color="neutral"
 				variant="ghost"
 				size="lg"
 				block

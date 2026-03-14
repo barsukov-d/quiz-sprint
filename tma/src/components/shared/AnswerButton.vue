@@ -43,7 +43,7 @@ const buttonClasses = computed(() => {
 			return `${base} border-red-500 bg-red-500/20 dark:bg-red-500/15`
 		}
 		// Not selected + not correct → muted
-		return `${base} border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 opacity-40`
+		return `${base} border-(--ui-border) bg-(--ui-bg-elevated) opacity-40`
 	}
 
 	// Selected state (before submit) — более яркий синий для заметности
@@ -53,10 +53,10 @@ const buttonClasses = computed(() => {
 
 	// Default — interactive
 	if (props.disabled) {
-		return `${base} border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 opacity-50 cursor-not-allowed`
+		return `${base} border-(--ui-border) bg-(--ui-bg-elevated) opacity-50 cursor-not-allowed`
 	}
 
-	return `${base} border-gray-300 dark:border-gray-700 bg-white dark:bg-gray-800 hover:border-primary-500 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 cursor-pointer`
+	return `${base} border-(--ui-border) bg-(--ui-bg-elevated) hover:border-primary-500 hover:-translate-y-0.5 hover:shadow-md active:translate-y-0 cursor-pointer`
 })
 
 const badgeColor = computed(() => {
@@ -99,7 +99,7 @@ const handleClick = () => {
 
 			<!-- Answer text -->
 			<span
-				class="flex-1 text-base font-medium leading-snug text-gray-900 dark:text-gray-100"
+				class="flex-1 text-base font-medium leading-snug text-(--ui-text-highlighted)"
 			>
 				{{ answer.text }}
 			</span>

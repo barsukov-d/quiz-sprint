@@ -214,10 +214,10 @@ const goHome = () => {
 				<UButton size="xl" color="primary" block @click="tryAgain">
 					{{ t('quiz.tryAgainBtn') }}
 				</UButton>
-				<UButton size="xl" color="gray" variant="outline" block @click="viewLeaderboard">
+				<UButton size="xl" color="neutral" variant="outline" block @click="viewLeaderboard">
 					{{ t('quiz.viewLeaderboard') }}
 				</UButton>
-				<UButton size="xl" color="gray" variant="ghost" block @click="goHome">
+				<UButton size="xl" color="neutral" variant="ghost" block @click="goHome">
 					{{ t('quiz.backToHome') }}
 				</UButton>
 			</div>
@@ -229,7 +229,7 @@ const goHome = () => {
 						{{ t('quiz.shareAchievement') }}
 					</p>
 					<div class="flex justify-center gap-3">
-						<UButton icon="i-heroicons-share" color="gray" variant="outline">
+						<UButton icon="i-heroicons-share" color="neutral" variant="outline">
 							{{ t('quiz.share') }}
 						</UButton>
 					</div>

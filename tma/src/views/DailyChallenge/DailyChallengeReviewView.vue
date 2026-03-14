@@ -68,7 +68,7 @@ onMounted(async () => {
 		<!-- Loading State -->
 		<div v-if="!results" class="loading-container">
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('daily.loadingReview') }}</p>
+			<p class="text-(--ui-text-muted) mt-4">{{ t('daily.loadingReview') }}</p>
 		</div>
 
 		<!-- Review View -->
@@ -121,7 +121,7 @@ onMounted(async () => {
 				</UButton>
 
 				<UButton
-					color="gray"
+					color="neutral"
 					size="xl"
 					icon="i-heroicons-home"
 					variant="outline"

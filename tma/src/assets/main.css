@@ -2,19 +2,36 @@
 @import '@nuxt/ui';
 
 /*
- * Quiz Sprint TMA — Design System Overrides
- * Built on Nuxt UI v4 CSS variables
+ * Quiz Sprint TMA — Design System
+ * Colors extracted from Quizzo UI Kit design
+ * Primary: #6C5CE7 (purple-violet)
  */
+
+/* ─── Custom Primary Color Scale ─── */
+@theme {
+	--color-primary-50: #f0edff;
+	--color-primary-100: #e0dcfe;
+	--color-primary-200: #c2bafd;
+	--color-primary-300: #a397fa;
+	--color-primary-400: #8675f3;
+	--color-primary-500: #6c5ce7;
+	--color-primary-600: #5847d0;
+	--color-primary-700: #4536b2;
+	--color-primary-800: #352a8f;
+	--color-primary-900: #261e6c;
+	--color-primary-950: #1a144a;
+}
 
 /* ─── Light Theme ─── */
 :root {
-	--ui-primary: var(--ui-color-primary-600);
+	--ui-primary: var(--color-primary-600);
+	--ui-radius: 0.75rem;
 
-	/* Refined backgrounds */
-	--ui-bg: #fcfcfd;
-	--ui-bg-muted: var(--ui-color-neutral-50);
-	--ui-bg-elevated: white;
-	--ui-bg-accented: var(--ui-color-neutral-100);
+	/* Clean white backgrounds with subtle purple tint */
+	--ui-bg: #ffffff;
+	--ui-bg-muted: #f8f7fc;
+	--ui-bg-elevated: #ffffff;
+	--ui-bg-accented: #f0eeff;
 
 	/* Softer borders */
 	--ui-border: var(--ui-color-neutral-200);
@@ -31,18 +48,18 @@
 
 /* ─── Dark Theme ─── */
 .dark {
-	--ui-primary: var(--ui-color-primary-400);
+	--ui-primary: var(--color-primary-400);
 
-	/* Deep dark backgrounds */
-	--ui-bg: #0c0e14;
-	--ui-bg-muted: #12141c;
-	--ui-bg-elevated: #181a24;
-	--ui-bg-accented: #1e2130;
+	/* Deep dark backgrounds with purple-navy tint */
+	--ui-bg: #12141e;
+	--ui-bg-muted: #181a28;
+	--ui-bg-elevated: #1f2236;
+	--ui-bg-accented: #262a40;
 
 	/* Subtle borders */
-	--ui-border: #252836;
-	--ui-border-muted: #1e2130;
-	--ui-border-accented: #2e3248;
+	--ui-border: #2e3248;
+	--ui-border-muted: #262a40;
+	--ui-border-accented: #3a3e56;
 
 	/* Crisp text */
 	--ui-text: var(--ui-color-neutral-300);

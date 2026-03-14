@@ -150,20 +150,20 @@ const isCurrentUser = (userId: string) => {
 				<!-- Current user rank badge (if not in top 10) -->
 				<UCard
 					v-if="currentUserRank && currentUserRank > 10"
-					class="mb-4 bg-indigo-50 dark:bg-indigo-950/30"
+					class="mb-4 bg-(--ui-bg-muted)"
 				>
 					<div class="flex items-center justify-between">
 						<div>
 							<p class="text-sm text-(--ui-text-muted)">
 								{{ t('leaderboard.yourRank') }}
 							</p>
-							<p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
+							<p class="text-2xl font-bold text-primary">
 								#{{ currentUserRank }}
 							</p>
 						</div>
 						<UIcon
 							name="i-heroicons-star"
-							class="text-4xl text-indigo-600 dark:text-indigo-400"
+							class="text-4xl text-primary"
 						/>
 					</div>
 				</UCard>
@@ -203,7 +203,7 @@ const isCurrentUser = (userId: string) => {
 									:class="[
 										'border-b border-(--ui-border-muted) transition-colors',
 										isCurrentUser(entry.userId)
-											? 'current-user-row bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/30'
+											? 'current-user-row bg-(--ui-bg-muted) hover:bg-(--ui-bg-elevated)'
 											: 'hover:bg-(--ui-bg-muted)',
 									]"
 								>
@@ -228,7 +228,7 @@ const isCurrentUser = (userId: string) => {
 											<UIcon
 												v-if="isCurrentUser(entry.userId)"
 												name="i-heroicons-star-solid"
-												class="text-indigo-600 dark:text-indigo-400"
+												class="text-primary"
 											/>
 										</div>
 									</td>
@@ -266,29 +266,14 @@ const isCurrentUser = (userId: string) => {
 	max-width: 1200px;
 }
 
-/* Highlight animation for current user — light mode */
+/* Highlight animation for current user */
 @keyframes highlight-pulse {
 	0%,
 	100% {
-		background-color: rgb(238 242 255);
+		background-color: var(--ui-bg-muted);
 	}
 	50% {
-		background-color: rgb(199 210 254);
-	}
-}
-
-/* Dark mode override using Tailwind's .dark class strategy */
-:global(.dark) .current-user-row {
-	animation: highlight-pulse-dark 2s ease-in-out infinite;
-}
-
-@keyframes highlight-pulse-dark {
-	0%,
-	100% {
-		background-color: rgb(49 46 129 / 0.3);
-	}
-	50% {
-		background-color: rgb(49 46 129 / 0.5);
+		background-color: var(--ui-bg-elevated);
 	}
 }
 

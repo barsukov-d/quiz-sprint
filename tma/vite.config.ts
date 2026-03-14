@@ -21,6 +21,54 @@ export default defineConfig({
 					info: 'sky',
 					neutral: 'slate',
 				},
+				// ─── Component overrides (Quizzo design patterns) ───
+				button: {
+					slots: {
+						base: 'rounded-full font-semibold',
+					},
+				},
+				card: {
+					slots: {
+						root: 'rounded-2xl',
+					},
+				},
+				badge: {
+					variants: {
+						size: {
+							xs: { base: 'rounded-full' },
+							sm: { base: 'rounded-full' },
+							md: { base: 'rounded-full' },
+							lg: { base: 'rounded-full' },
+							xl: { base: 'rounded-full' },
+						},
+					},
+				},
+				modal: {
+					slots: {
+						content: 'rounded-2xl',
+					},
+				},
+				alert: {
+					slots: {
+						root: 'rounded-xl',
+					},
+				},
+				input: {
+					slots: {
+						base: 'rounded-xl',
+					},
+				},
+				select: {
+					slots: {
+						base: 'rounded-xl',
+					},
+				},
+				progress: {
+					slots: {
+						root: 'rounded-full',
+						indicator: 'rounded-full',
+					},
+				},
 			},
 		}),
 		// vueDevTools(),
