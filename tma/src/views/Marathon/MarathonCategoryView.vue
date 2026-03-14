@@ -88,7 +88,11 @@ const handleBack = () => {
 						name="i-heroicons-arrow-path"
 						class="size-5 animate-spin text-primary"
 					/>
-					<UIcon v-else name="i-heroicons-chevron-right" class="size-5 text-(--ui-text-dimmed)" />
+					<UIcon
+						v-else
+						name="i-heroicons-chevron-right"
+						class="size-5 text-(--ui-text-dimmed)"
+					/>
 				</div>
 			</UCard>
 
@@ -114,7 +118,11 @@ const handleBack = () => {
 						name="i-heroicons-arrow-path"
 						class="size-5 animate-spin text-primary"
 					/>
-					<UIcon v-else name="i-heroicons-chevron-right" class="size-5 text-(--ui-text-dimmed)" />
+					<UIcon
+						v-else
+						name="i-heroicons-chevron-right"
+						class="size-5 text-(--ui-text-dimmed)"
+					/>
 				</div>
 			</UCard>
 		</div>

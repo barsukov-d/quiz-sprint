@@ -217,7 +217,9 @@ onUnmounted(() => {
 				<UIcon name="i-heroicons-bolt" class="size-14 text-primary relative z-10" />
 			</div>
 			<div class="text-center space-y-1">
-				<p class="text-(--ui-text-highlighted) font-bold text-xl">{{ t('duel.connecting') }}</p>
+				<p class="text-(--ui-text-highlighted) font-bold text-xl">
+					{{ t('duel.connecting') }}
+				</p>
 				<p class="text-(--ui-text-muted) text-sm">{{ t('duel.waitingDesc') }}</p>
 			</div>
 			<UButton
@@ -265,7 +267,9 @@ onUnmounted(() => {
 			</div>
 
 			<div class="text-center">
-				<p class="text-(--ui-text-highlighted) font-semibold mb-1">{{ t('duel.waitingOpponent') }}</p>
+				<p class="text-(--ui-text-highlighted) font-semibold mb-1">
+					{{ t('duel.waitingOpponent') }}
+				</p>
 				<p class="text-sm text-(--ui-text-muted)">{{ t('duel.waitingDesc') }}</p>
 			</div>
 		</div>
@@ -445,9 +449,7 @@ onUnmounted(() => {
 									: '❌ ' + t('duel.wrong')
 							}}
 						</p>
-						<div
-							class="flex justify-center gap-6 text-sm text-(--ui-text-muted)"
-						>
+						<div class="flex justify-center gap-6 text-sm text-(--ui-text-muted)">
 							<span
 								>{{ t('duel.yourTime') }}:
 								{{ (myAnswerTime / 1000).toFixed(1) }}s</span
@@ -487,7 +489,9 @@ onUnmounted(() => {
 						<h3 class="text-lg font-bold mb-1">
 							{{ opponent?.username }} {{ t('duel.reconnecting') }}
 						</h3>
-						<p class="text-(--ui-text-muted) text-sm mb-3">{{ t('duel.reconnectingDesc') }}</p>
+						<p class="text-(--ui-text-muted) text-sm mb-3">
+							{{ t('duel.reconnectingDesc') }}
+						</p>
 						<div class="text-3xl font-bold text-primary">
 							{{ opponentReconnectCountdown }}s
 						</div>

@@ -476,9 +476,7 @@ onUnmounted(() => {
 					<span
 						class="text-[9px] leading-tight"
 						:class="
-							b.canUse.value
-								? 'text-(--ui-text-muted)'
-								: 'text-(--ui-text-dimmed)'
+							b.canUse.value ? 'text-(--ui-text-muted)' : 'text-(--ui-text-dimmed)'
 						"
 					>
 						{{ b.label }}

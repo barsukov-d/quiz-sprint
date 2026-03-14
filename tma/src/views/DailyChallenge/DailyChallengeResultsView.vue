@@ -241,9 +241,7 @@ onMounted(async () => {
 						>
 							{{ game?.finalScore || 0 }}
 						</div>
-						<div
-							class="text-sm text-(--ui-text-muted) uppercase tracking-wider mt-1"
-						>
+						<div class="text-sm text-(--ui-text-muted) uppercase tracking-wider mt-1">
 							{{ t('daily.points') }}
 						</div>
 						<!-- Score breakdown -->
@@ -270,9 +268,7 @@ onMounted(async () => {
 							:color="performanceLevel.color"
 							size="lg"
 						/>
-						<p
-							class="text-center text-sm text-(--ui-text) font-semibold"
-						>
+						<p class="text-center text-sm text-(--ui-text) font-semibold">
 							{{
 								t('daily.correctOf', {
 									correct: results.correctAnswers,
@@ -309,9 +305,7 @@ onMounted(async () => {
 				:class="chestColor === 'yellow' ? 'bg-yellow-50 dark:bg-yellow-950' : ''"
 			>
 				<div class="flex flex-col gap-6">
-					<div
-						class="flex items-center gap-4 pb-4 border-b border-(--ui-border)"
-					>
+					<div class="flex items-center gap-4 pb-4 border-b border-(--ui-border)">
 						<span class="text-5xl">{{ chestEmoji }}</span>
 						<div>
 							<h3 class="text-xl font-bold">{{ chestLabel }}</h3>
@@ -322,9 +316,7 @@ onMounted(async () => {
 					</div>
 
 					<div class="grid grid-cols-2 gap-4">
-						<div
-							class="flex items-center gap-3 p-4 bg-(--ui-bg-muted) rounded-xl"
-						>
+						<div class="flex items-center gap-3 p-4 bg-(--ui-bg-muted) rounded-xl">
 							<UIcon
 								name="i-heroicons-currency-dollar"
 								class="w-6 h-6 text-yellow-500"
@@ -333,21 +325,23 @@ onMounted(async () => {
 								<div class="text-2xl font-bold text-(--ui-text-highlighted)">
 									{{ chestReward.coins }}
 								</div>
-								<div class="text-xs text-(--ui-text-muted) uppercase tracking-wider">
+								<div
+									class="text-xs text-(--ui-text-muted) uppercase tracking-wider"
+								>
 									{{ t('daily.coins') }}
 								</div>
 							</div>
 						</div>
 
-						<div
-							class="flex items-center gap-3 p-4 bg-(--ui-bg-muted) rounded-xl"
-						>
+						<div class="flex items-center gap-3 p-4 bg-(--ui-bg-muted) rounded-xl">
 							<UIcon name="i-heroicons-ticket" class="w-6 h-6 text-blue-500" />
 							<div>
 								<div class="text-2xl font-bold text-(--ui-text-highlighted)">
 									{{ chestReward.pvpTickets }}
 								</div>
-								<div class="text-xs text-(--ui-text-muted) uppercase tracking-wider">
+								<div
+									class="text-xs text-(--ui-text-muted) uppercase tracking-wider"
+								>
 									{{ t('daily.pvpTickets') }}
 								</div>
 							</div>
@@ -387,9 +381,7 @@ onMounted(async () => {
 									class="w-5 h-5 shrink-0"
 								/>
 								<div class="flex-1 min-w-0">
-									<div
-										class="text-sm font-semibold text-(--ui-text-highlighted)"
-									>
+									<div class="text-sm font-semibold text-(--ui-text-highlighted)">
 										{{ getBonusInfo(bonus).label }}
 									</div>
 									<div class="text-xs text-(--ui-text-muted)">
@@ -409,9 +401,7 @@ onMounted(async () => {
 			<!-- Rank Card -->
 			<UCard>
 				<div class="flex flex-col gap-4">
-					<div
-						class="flex items-center gap-3 pb-4 border-b border-(--ui-border)"
-					>
+					<div class="flex items-center gap-3 pb-4 border-b border-(--ui-border)">
 						<UIcon name="i-heroicons-chart-bar" class="w-6 h-6 text-primary" />
 						<h3 class="text-lg font-semibold">{{ t('daily.yourRanking') }}</h3>
 					</div>
@@ -422,13 +412,17 @@ onMounted(async () => {
 									#{{ results.rank }}
 								</UBadge>
 							</div>
-							<div class="text-sm text-(--ui-text-muted)">{{ t('daily.yourRank') }}</div>
+							<div class="text-sm text-(--ui-text-muted)">
+								{{ t('daily.yourRank') }}
+							</div>
 						</div>
 						<div class="text-center">
 							<div class="text-2xl font-bold text-(--ui-text-highlighted) mb-2">
 								{{ results.totalPlayers }}
 							</div>
-							<div class="text-sm text-(--ui-text-muted)">{{ t('daily.totalPlayers') }}</div>
+							<div class="text-sm text-(--ui-text-muted)">
+								{{ t('daily.totalPlayers') }}
+							</div>
 						</div>
 					</div>
 				</div>
@@ -448,9 +442,7 @@ onMounted(async () => {
 				<!-- Retry Section -->
 				<UCard class="bg-(--ui-bg-muted)">
 					<div class="flex flex-col gap-3">
-						<div
-							class="flex items-center gap-2 pb-3 border-b border-(--ui-border)"
-						>
+						<div class="flex items-center gap-2 pb-3 border-b border-(--ui-border)">
 							<UIcon name="i-heroicons-arrow-path" class="w-5 h-5 text-primary" />
 							<h3 class="text-lg font-semibold">{{ t('daily.tryAgain') }}</h3>
 						</div>

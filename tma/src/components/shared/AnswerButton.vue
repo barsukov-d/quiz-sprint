@@ -98,9 +98,7 @@ const handleClick = () => {
 			</UBadge>
 
 			<!-- Answer text -->
-			<span
-				class="flex-1 text-base font-medium leading-snug text-(--ui-text-highlighted)"
-			>
+			<span class="flex-1 text-base font-medium leading-snug text-(--ui-text-highlighted)">
 				{{ answer.text }}
 			</span>
 

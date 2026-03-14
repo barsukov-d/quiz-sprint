@@ -157,14 +157,9 @@ const isCurrentUser = (userId: string) => {
 							<p class="text-sm text-(--ui-text-muted)">
 								{{ t('leaderboard.yourRank') }}
 							</p>
-							<p class="text-2xl font-bold text-primary">
-								#{{ currentUserRank }}
-							</p>
+							<p class="text-2xl font-bold text-primary">#{{ currentUserRank }}</p>
 						</div>
-						<UIcon
-							name="i-heroicons-star"
-							class="text-4xl text-primary"
-						/>
+						<UIcon name="i-heroicons-star" class="text-4xl text-primary" />
 					</div>
 				</UCard>
 

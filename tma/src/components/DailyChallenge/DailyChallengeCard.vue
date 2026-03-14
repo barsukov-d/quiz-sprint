@@ -126,13 +126,8 @@ onBeforeUnmount(() => {
 		<template #header>
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-2.5">
-					<div
-						class="flex items-center justify-center size-9 rounded-lg bg-primary/10"
-					>
-						<UIcon
-							name="i-heroicons-calendar-days"
-							class="size-5 text-primary"
-						/>
+					<div class="flex items-center justify-center size-9 rounded-lg bg-primary/10">
+						<UIcon name="i-heroicons-calendar-days" class="size-5 text-primary" />
 					</div>
 					<div>
 						<h3 class="text-base font-bold text-(--ui-text-highlighted)">

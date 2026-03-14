@@ -564,30 +564,22 @@ onMounted(async () => {
 			</div>
 
 			<!-- Stats -->
-			<div
-				class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-(--ui-border)"
-			>
+			<div class="grid grid-cols-4 gap-2 mt-4 pt-4 border-t border-(--ui-border)">
 				<div class="text-center">
 					<p class="text-xl font-bold text-green-500">{{ seasonWins }}</p>
-					<p
-						class="text-[10px] uppercase tracking-wider text-(--ui-text-muted)"
-					>
+					<p class="text-[10px] uppercase tracking-wider text-(--ui-text-muted)">
 						{{ t('duel.wins') }}
 					</p>
 				</div>
 				<div class="text-center">
 					<p class="text-xl font-bold text-amber-500">{{ seasonDraws }}</p>
-					<p
-						class="text-[10px] uppercase tracking-wider text-(--ui-text-muted)"
-					>
+					<p class="text-[10px] uppercase tracking-wider text-(--ui-text-muted)">
 						{{ t('duel.draws') }}
 					</p>
 				</div>
 				<div class="text-center">
 					<p class="text-xl font-bold text-red-500">{{ seasonLosses }}</p>
-					<p
-						class="text-[10px] uppercase tracking-wider text-(--ui-text-muted)"
-					>
+					<p class="text-[10px] uppercase tracking-wider text-(--ui-text-muted)">
 						{{ t('duel.losses') }}
 					</p>
 				</div>
@@ -595,9 +587,7 @@ onMounted(async () => {
 					<p class="text-xl font-bold text-(--ui-text-highlighted)">
 						{{ Math.round(winRate) }}%
 					</p>
-					<p
-						class="text-[10px] uppercase tracking-wider text-(--ui-text-muted)"
-					>
+					<p class="text-[10px] uppercase tracking-wider text-(--ui-text-muted)">
 						{{ t('duel.winRate') }}
 					</p>
 				</div>
@@ -772,18 +762,14 @@ onMounted(async () => {
 							</div>
 							<span
 								class="absolute bottom-0 right-0 w-3 h-3 rounded-full ring-2 ring-(--ui-bg)"
-								:class="
-									rival.isOnline ? 'bg-green-500' : 'bg-(--ui-text-dimmed)'
-								"
+								:class="rival.isOnline ? 'bg-green-500' : 'bg-(--ui-text-dimmed)'"
 							/>
 						</div>
 
 						<!-- Info -->
 						<div class="flex-1 min-w-0">
 							<p class="font-semibold truncate">{{ rival.username }}</p>
-							<p class="text-sm text-(--ui-text-muted)">
-								{{ rival.mmr }} MMR
-							</p>
+							<p class="text-sm text-(--ui-text-muted)">{{ rival.mmr }} MMR</p>
 						</div>
 
 						<!-- Action button -->

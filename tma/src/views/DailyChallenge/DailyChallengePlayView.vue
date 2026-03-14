@@ -255,9 +255,7 @@ onUnmounted(() => {
 		<div v-else class="flex flex-col gap-4">
 			<!-- Header: counter + progress + timer (single row) -->
 			<div class="flex items-center gap-3">
-				<span
-					class="shrink-0 text-sm font-semibold text-(--ui-text-muted) tabular-nums"
-				>
+				<span class="shrink-0 text-sm font-semibold text-(--ui-text-muted) tabular-nums">
 					{{ questionIndex + 1 }}/{{ totalQuestions }}
 				</span>
 

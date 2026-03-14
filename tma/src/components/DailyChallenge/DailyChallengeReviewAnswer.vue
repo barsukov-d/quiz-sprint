@@ -67,9 +67,7 @@ const formattedTime = computed(() => {
 
 			<!-- Your Answer -->
 			<div class="flex flex-col gap-2">
-				<div
-					class="text-sm font-medium text-(--ui-text-muted) uppercase tracking-wider"
-				>
+				<div class="text-sm font-medium text-(--ui-text-muted) uppercase tracking-wider">
 					{{ t('daily.yourAnswer') }}
 				</div>
 				<div
@@ -96,9 +94,7 @@ const formattedTime = computed(() => {
 
 			<!-- Correct Answer (if wrong) -->
 			<div v-if="!answeredQuestion.isCorrect" class="flex flex-col gap-2">
-				<div
-					class="text-sm font-medium text-(--ui-text-muted) uppercase tracking-wider"
-				>
+				<div class="text-sm font-medium text-(--ui-text-muted) uppercase tracking-wider">
 					{{ t('daily.correctAnswer') }}
 				</div>
 				<div
