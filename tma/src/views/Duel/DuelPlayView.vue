@@ -74,7 +74,6 @@ let stuckTimeout: ReturnType<typeof setTimeout> | null = null
 
 const totalRounds = computed(() => game.value?.totalRounds ?? 7)
 
-const answerLabels = ['A', 'B', 'C', 'D']
 
 // Cast question to expected DTO format
 const formattedQuestion = computed(() => {
@@ -327,15 +326,25 @@ onUnmounted(() => {
 		<template v-else-if="isPlaying && currentQuestion">
 			<!-- Header: Players & Scores + Timer -->
 			<div class="bg-(--ui-bg-elevated) border-b border-(--ui-border) shadow-md">
-				<!-- Round row -->
-				<div class="flex items-center justify-center gap-1.5 pt-2.5 pb-1">
-					<span class="text-[10px] uppercase tracking-widest text-(--ui-text-muted)">
-						{{ t('duel.round') }}
-					</span>
-					<span class="text-sm font-bold text-(--ui-text-highlighted) tabular-nums">
+				<!-- Row 1: round counter left, title center, menu right -->
+				<div class="flex items-center justify-between px-4 pt-3 pb-1">
+					<span
+						class="text-2xl font-black text-(--ui-text-highlighted) tabular-nums leading-none"
+					>
 						{{ currentRound
-						}}<span class="text-(--ui-text-muted) font-normal">/{{ totalRounds }}</span>
+						}}<span class="text-sm font-normal text-(--ui-text-muted)"
+							>/{{ totalRounds }}</span
+						>
 					</span>
+					<span class="text-base font-bold text-(--ui-text-highlighted)">{{
+						t('duel.title')
+					}}</span>
+					<UButton
+						size="xs"
+						color="neutral"
+						variant="ghost"
+						icon="i-heroicons-ellipsis-horizontal"
+					/>
 				</div>
 
 				<!-- Players row -->
@@ -394,7 +403,7 @@ onUnmounted(() => {
 					</div>
 				</div>
 
-				<!-- Timer row -->
+				<!-- Row 2: thick gradient progress bar with seconds inside -->
 				<div class="px-4 pb-3">
 					<GameTimer
 						ref="timerRef"
@@ -404,7 +413,19 @@ onUnmounted(() => {
 						:on-timeout="handleTimeout"
 						show-progress
 						size="lg"
+						class="sr-only"
 					/>
+					<div class="relative h-7 rounded-full bg-(--ui-bg-accented) overflow-hidden">
+						<div
+							class="absolute inset-0 bg-gradient-to-r from-primary-500 to-primary-700 rounded-full transition-all duration-1000"
+							:style="{ width: `${(countdownSeconds / 10) * 100}%` }"
+						/>
+						<span
+							class="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow"
+						>
+							{{ countdownSeconds }}s
+						</span>
+					</div>
 				</div>
 			</div>
 
@@ -416,13 +437,14 @@ onUnmounted(() => {
 					:total-questions="totalRounds"
 				/>
 
-				<!-- Answers -->
-				<div class="mt-6 space-y-3">
+				<!-- Answers (colored bars) -->
+				<div class="mt-6 flex flex-col gap-3">
 					<AnswerButton
 						v-for="(answer, index) in formattedAnswers"
 						:key="answer.id"
 						:answer="answer"
-						:label="answerLabels[index]"
+						:color-index="index % 4"
+						:color-bar="true"
 						:selected="selectedAnswerId === answer.id"
 						:disabled="hasAnswered"
 						:show-feedback="showFeedback"

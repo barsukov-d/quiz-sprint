@@ -49,24 +49,100 @@ const navigateTo = (tab: Tab) => {
 </script>
 
 <template>
-	<div
-		class="fixed bottom-0 inset-x-0 z-50 bg-(--ui-bg-elevated) border-t border-(--ui-border) pb-[env(safe-area-inset-bottom)]"
-	>
-		<div class="flex justify-around items-center h-16 max-w-[1200px] mx-auto">
+	<div class="tab-bar-wrapper">
+		<div class="tab-bar-container">
 			<button
 				v-for="tab in tabs"
 				:key="tab.name"
-				class="flex-1 flex flex-col items-center justify-center gap-1 py-2 transition-colors"
-				:class="
-					currentTab === tab.name
-						? 'text-(--ui-primary)'
-						: 'text-(--ui-text-dimmed) hover:text-(--ui-text-muted)'
-				"
+				class="tab-item"
+				:class="currentTab === tab.name ? 'tab-item--active' : 'tab-item--inactive'"
 				@click="() => navigateTo(tab)"
 			>
-				<UIcon :name="tab.icon" class="size-6" />
-				<span class="text-xs font-medium">{{ tab.label }}</span>
+				<div
+					class="tab-icon-wrap"
+					:class="currentTab === tab.name ? 'tab-icon-wrap--active' : ''"
+				>
+					<UIcon :name="tab.icon" class="size-5" />
+				</div>
+				<span class="tab-label">{{ tab.label }}</span>
 			</button>
 		</div>
 	</div>
 </template>
+
+<style scoped>
+.tab-bar-wrapper {
+	position: fixed;
+	bottom: 0;
+	left: 0;
+	right: 0;
+	z-index: 50;
+	background-color: var(--ui-bg-elevated);
+	border-top: 1px solid var(--ui-border);
+	padding-bottom: env(safe-area-inset-bottom);
+	/* Subtle shadow for elevated feel */
+	box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.dark .tab-bar-wrapper {
+	box-shadow: 0 -4px 20px rgba(0, 0, 0, 0.4);
+}
+
+.tab-bar-container {
+	display: flex;
+	justify-content: space-around;
+	align-items: center;
+	height: 4rem;
+	max-width: 1200px;
+	margin: 0 auto;
+	padding: 0 0.5rem;
+}
+
+.tab-item {
+	flex: 1;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+	justify-content: center;
+	gap: 2px;
+	padding: 0.375rem 0;
+	border-radius: 0.5rem;
+	transition: color 150ms ease;
+	cursor: pointer;
+	background: none;
+	border: none;
+	outline: none;
+}
+
+.tab-item--active {
+	color: var(--ui-primary);
+}
+
+.tab-item--inactive {
+	color: var(--ui-text-dimmed);
+}
+
+.tab-item--inactive:hover {
+	color: var(--ui-text-muted);
+}
+
+.tab-icon-wrap {
+	display: flex;
+	align-items: center;
+	justify-content: center;
+	width: 2rem;
+	height: 1.75rem;
+	border-radius: 1rem;
+	transition: background-color 150ms ease;
+}
+
+.tab-icon-wrap--active {
+	background-color: var(--ui-bg-accented);
+}
+
+.tab-label {
+	font-size: 0.6875rem;
+	font-weight: 500;
+	line-height: 1;
+}
+</style>

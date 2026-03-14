@@ -1,7 +1,5 @@
 <script setup lang="ts">
-import { useI18n } from 'vue-i18n'
 
-const { t } = useI18n()
 
 interface Props {
 	title: string
@@ -30,54 +28,36 @@ const handleClick = () => {
 </script>
 
 <template>
-	<UCard
+	<div
 		:class="[
-			'transition-all duration-200',
+			'rounded-(--ui-radius) overflow-hidden bg-(--ui-bg-elevated) border border-(--ui-border) transition-all',
 			disabled
 				? 'opacity-50 cursor-not-allowed'
-				: 'cursor-pointer hover:shadow-lg hover:scale-[1.02]',
+				: 'cursor-pointer hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]',
 		]"
 		@click="handleClick"
 	>
-		<div class="flex items-center gap-4">
+		<div class="flex items-center gap-3 px-4 py-4">
 			<!-- Icon -->
 			<div
 				:class="[
-					'flex-shrink-0 w-12 h-12 rounded-xl flex items-center justify-center text-2xl',
-					disabled ? 'bg-(--ui-bg-accented)' : 'bg-primary/10',
+					'flex-shrink-0 size-10 rounded-xl flex items-center justify-center text-xl',
+					disabled ? 'bg-(--ui-bg-accented)' : 'bg-primary-500/15 dark:bg-primary-400/15',
 				]"
 			>
-				<UIcon v-if="icon.startsWith('i-')" :name="icon" class="size-6 text-primary" />
+				<UIcon v-if="icon.startsWith('i-')" :name="icon" class="size-5 text-primary" />
 				<span v-else>{{ icon }}</span>
 			</div>
 
 			<!-- Content -->
 			<div class="flex-1 min-w-0">
-				<div class="flex items-center gap-2 mb-1">
-					<h4 class="font-semibold text-base text-(--ui-text-highlighted)">
-						{{ title }}
-					</h4>
+				<div class="flex items-center gap-2">
+					<h4 class="font-bold text-base text-(--ui-text-highlighted)">{{ title }}</h4>
 					<UBadge v-if="badge" :color="badgeColor" size="xs" variant="subtle">
 						{{ badge }}
 					</UBadge>
 				</div>
-				<p class="text-sm text-(--ui-text-muted)">
-					{{ description }}
-				</p>
-
-				<!-- Lives indicator (для Marathon) -->
-				<div v-if="lives !== undefined" class="flex items-center gap-1 mt-2">
-					<UIcon
-						v-for="i in 3"
-						:key="i"
-						:name="i <= lives ? 'i-heroicons-heart-solid' : 'i-heroicons-heart'"
-						:class="i <= lives ? 'text-red-500' : 'text-(--ui-text-dimmed)'"
-						class="size-4"
-					/>
-					<span class="text-xs text-(--ui-text-muted) ml-1">{{
-						t('marathon.lives', { count: lives })
-					}}</span>
-				</div>
+				<p class="text-xs text-(--ui-text-dimmed) mt-0.5">{{ description }}</p>
 			</div>
 
 			<!-- Arrow -->
@@ -87,5 +67,5 @@ const handleClick = () => {
 				class="flex-shrink-0 size-5 text-(--ui-text-dimmed)"
 			/>
 		</div>
-	</UCard>
+	</div>
 </template>

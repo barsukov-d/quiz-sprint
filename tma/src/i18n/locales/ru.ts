@@ -76,6 +76,7 @@ export default {
 		startingFresh: 'Начинаем заново...',
 		loadingResults: 'Загрузка результатов...',
 		loadResultsFailed: 'Не удалось загрузить результаты',
+		finalScoreboard: 'Финальный результат',
 		completed: 'Квиз завершён!',
 		passed: '✓ Пройден',
 		notPassed: '✗ Не пройден',

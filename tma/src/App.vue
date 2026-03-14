@@ -161,7 +161,11 @@ onMounted(async () => {
 		</div>
 
 		<!-- Основное приложение -->
-		<div v-else class="min-h-svh bg-(--ui-bg) p-4 pt-4 pb-20 sm:p-3 sm:pt-20">
+		<div
+			v-else
+			class="min-h-svh bg-(--ui-bg) px-4 pt-safe-top pb-safe-bottom"
+			style="padding-bottom: max(5rem, env(safe-area-inset-bottom))"
+		>
 			<RouterView />
 			<BottomTabBar v-if="showBottomNav" />
 		</div>

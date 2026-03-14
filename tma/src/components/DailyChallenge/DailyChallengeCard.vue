@@ -20,7 +20,6 @@ const { t } = useI18n()
 const {
 	game,
 	streak,
-	totalPlayers,
 	questionIndex,
 	totalQuestions,
 	isPlaying,
@@ -72,11 +71,6 @@ const buttonIcon = computed(() => {
 	return 'i-heroicons-play'
 })
 
-const buttonColor = computed(() => {
-	if (hasPlayed.value) return 'gray'
-	return 'primary'
-})
-
 const questionProgress = computed(() =>
 	Math.round((questionIndex.value / totalQuestions.value) * 100),
 )
@@ -121,39 +115,41 @@ onBeforeUnmount(() => {
 </script>
 
 <template>
-	<UCard class="overflow-hidden">
-		<!-- Gradient accent bar -->
-		<template #header>
-			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-2.5">
-					<div class="flex items-center justify-center size-9 rounded-lg bg-primary/10">
-						<UIcon name="i-heroicons-calendar-days" class="size-5 text-primary" />
-					</div>
-					<div>
-						<h3 class="text-base font-bold text-(--ui-text-highlighted)">
-							{{ t('daily.title') }}
-						</h3>
-						<p class="text-xs text-(--ui-text-dimmed)">
-							{{ t('daily.questionsInfo') }}
-						</p>
-					</div>
+	<div
+		class="rounded-(--ui-radius) overflow-hidden bg-(--ui-bg-elevated) border border-(--ui-border) cursor-pointer transition-all hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]"
+		@click="handleClick"
+	>
+		<!-- Header row -->
+		<div class="flex items-center justify-between px-4 pt-4 pb-3">
+			<div class="flex items-center gap-3">
+				<div
+					class="flex items-center justify-center size-10 rounded-xl bg-primary-500/15 dark:bg-primary-400/15"
+				>
+					<UIcon name="i-heroicons-calendar-days" class="size-5 text-primary" />
 				</div>
-				<UBadge v-if="hasPlayed" color="green" variant="subtle" size="sm">
-					<UIcon name="i-heroicons-check-circle" class="size-3.5 mr-0.5" />
-					{{ t('daily.completedBadge') }}
-				</UBadge>
-				<UBadge v-else-if="isPlaying" color="blue" variant="subtle" size="sm">
-					<UIcon name="i-heroicons-play-circle" class="size-3.5 mr-0.5" />
-					{{ t('daily.inProgressBadge') }}
-				</UBadge>
+				<div>
+					<h3 class="text-base font-bold text-(--ui-text-highlighted)">
+						{{ t('daily.title') }}
+					</h3>
+					<p class="text-xs text-(--ui-text-dimmed)">{{ t('daily.questionsInfo') }}</p>
+				</div>
 			</div>
-		</template>
+			<UBadge v-if="hasPlayed" color="green" variant="subtle" size="sm">
+				<UIcon name="i-heroicons-check-circle" class="size-3.5 mr-0.5" />
+				{{ t('daily.completedBadge') }}
+			</UBadge>
+			<UBadge v-else-if="isPlaying" color="blue" variant="subtle" size="sm">
+				<UIcon name="i-heroicons-play-circle" class="size-3.5 mr-0.5" />
+				{{ t('daily.inProgressBadge') }}
+			</UBadge>
+		</div>
 
-		<div class="space-y-4">
+		<!-- Body -->
+		<div class="px-4 pb-3">
 			<!-- Completed State -->
 			<div v-if="hasPlayed && game" class="flex items-center justify-between">
 				<div>
-					<p class="text-2xl font-black text-emerald-600 dark:text-emerald-400">
+					<p class="text-2xl font-black text-emerald-500">
 						{{ game.finalScore || 0 }}
 						<span class="text-sm font-medium text-(--ui-text-dimmed)">{{
 							t('daily.points')
@@ -172,7 +168,7 @@ onBeforeUnmount(() => {
 			</div>
 
 			<!-- In Progress State -->
-			<div v-else-if="isPlaying" class="space-y-3">
+			<div v-else-if="isPlaying" class="space-y-2">
 				<div class="flex justify-between text-sm">
 					<span class="font-medium text-(--ui-text-highlighted)">
 						{{
@@ -205,27 +201,15 @@ onBeforeUnmount(() => {
 						</p>
 					</div>
 				</div>
-				<div v-if="totalPlayers > 0" class="mt-3 pt-3 border-t border-(--ui-border-muted)">
-					<p class="text-xs text-(--ui-text-dimmed)">
-						<UIcon name="i-heroicons-user-group" class="inline size-3.5" />
-						{{ t('daily.playersCount', { count: totalPlayers }) }}
-					</p>
-				</div>
 			</div>
 		</div>
 
-		<template #footer>
-			<UButton
-				:icon="buttonIcon"
-				:color="buttonColor"
-				:loading="isLoading"
-				:disabled="!canPlay && !hasPlayed && !isPlaying"
-				block
-				size="lg"
-				@click="handleClick"
-			>
-				{{ buttonText }}
-			</UButton>
-		</template>
-	</UCard>
+		<!-- Footer button -->
+		<div class="px-4 pb-4 pt-2 border-t border-(--ui-border-muted)">
+			<div class="flex items-center justify-center gap-2 text-sm font-semibold text-primary">
+				<UIcon :name="buttonIcon" class="size-4" />
+				<span>{{ buttonText }}</span>
+			</div>
+		</div>
+	</div>
 </template>

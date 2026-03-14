@@ -25,12 +25,6 @@ const displayedLeaderboard = computed(() => {
 	return props.leaderboard.slice(0, props.maxEntries)
 })
 
-const getRankBadgeColor = (rank: number) => {
-	if (rank === 1) return 'yellow'
-	if (rank === 2) return 'gray'
-	if (rank === 3) return 'orange'
-	return 'blue'
-}
 
 const getRankEmoji = (rank: number) => {
 	if (rank === 1) return '🥇'
@@ -45,61 +39,58 @@ const isCurrentPlayer = (playerId: string) => {
 </script>
 
 <template>
-	<div class="flex flex-col gap-4">
-		<div class="pb-2 border-b border-(--ui-border)">
-			<h3 class="text-lg font-semibold flex items-center gap-2 text-(--ui-text-highlighted)">
-				<UIcon name="i-heroicons-trophy" class="size-5 text-yellow-500" />
-				{{ t('daily.topPlayers') }}
-			</h3>
-			<p class="text-sm text-(--ui-text-muted)">{{ t('daily.todaysChallenge') }}</p>
+	<div class="flex flex-col gap-3">
+		<div class="flex items-center gap-2 mb-1">
+			<span class="text-lg">🏆</span>
+			<div>
+				<h3 class="text-sm font-semibold text-(--ui-text-highlighted)">
+					{{ t('daily.topPlayers') }}
+				</h3>
+				<p class="text-xs text-(--ui-text-muted)">{{ t('daily.todaysChallenge') }}</p>
+			</div>
 		</div>
 
-		<div class="flex flex-col gap-2">
+		<div class="flex flex-col gap-1.5">
 			<div
 				v-for="entry in displayedLeaderboard"
 				:key="entry.userId"
-				class="flex items-center gap-4 px-3 py-3 rounded-lg transition-all duration-200"
+				class="flex items-center gap-3 px-3 py-2.5 rounded-lg transition-all duration-200"
 				:class="
 					isCurrentPlayer(entry.userId)
-						? 'bg-(--ui-primary)/10 border-2 border-(--ui-primary)/40'
-						: 'bg-(--ui-bg-muted) hover:bg-(--ui-bg-elevated) border-2 border-transparent'
+						? 'bg-primary/10 border border-primary/30'
+						: 'bg-(--ui-bg) border border-(--ui-border)'
 				"
 			>
 				<!-- Rank -->
-				<div class="shrink-0 min-w-12 flex justify-center">
-					<UBadge
-						v-if="showRank"
-						:color="getRankBadgeColor(entry.rank)"
-						size="lg"
-						variant="soft"
+				<div class="shrink-0 w-8 text-center">
+					<span v-if="showRank && entry.rank <= 3" class="text-xl">{{
+						getRankEmoji(entry.rank)
+					}}</span>
+					<span v-else-if="showRank" class="text-xs font-bold text-(--ui-text-dimmed)"
+						>#{{ entry.rank }}</span
 					>
-						<span v-if="entry.rank <= 3" class="text-lg">{{
-							getRankEmoji(entry.rank)
-						}}</span>
-						<span v-else>#{{ entry.rank }}</span>
-					</UBadge>
 				</div>
 
 				<!-- Avatar & Name -->
-				<div class="flex-1 flex items-center gap-3 min-w-0">
-					<UAvatar :alt="entry.username" size="md" />
+				<div class="flex-1 flex items-center gap-2.5 min-w-0">
+					<UAvatar :alt="entry.username" size="sm" />
 					<div class="flex-1 min-w-0">
 						<p
-							class="font-semibold text-(--ui-text-highlighted) overflow-hidden text-ellipsis whitespace-nowrap flex items-center gap-2"
+							class="text-sm font-semibold text-(--ui-text-highlighted) truncate flex items-center gap-1.5"
 						>
 							{{ entry.username }}
-							<UBadge v-if="isCurrentPlayer(entry.userId)" color="primary" size="xs">
-								{{ t('daily.youBadge') }}
-							</UBadge>
+							<span
+								v-if="isCurrentPlayer(entry.userId)"
+								class="text-xs font-medium text-primary bg-primary/10 px-1.5 py-0.5 rounded-full"
+								>{{ t('daily.youBadge') }}</span
+							>
 						</p>
 					</div>
 				</div>
 
 				<!-- Score -->
 				<div class="shrink-0 text-right">
-					<div class="text-lg font-bold text-(--ui-primary) sm:text-base">
-						{{ entry.score }}
-					</div>
+					<div class="text-sm font-bold text-(--ui-primary)">{{ entry.score }}</div>
 					<div class="text-xs text-(--ui-text-dimmed)">{{ t('daily.points') }}</div>
 				</div>
 			</div>

@@ -17,7 +17,6 @@ const { t } = useI18n()
 // ===========================
 
 const {
-	tickets,
 	pendingChallenges,
 	outgoingReadyChallenges,
 	hasActiveDuel,
@@ -27,8 +26,6 @@ const {
 	seasonWins,
 	seasonLosses,
 	winRate,
-	isLoading,
-	canPlay,
 	goToActiveDuel,
 	initialize,
 } = usePvPDuel(props.playerId)
@@ -52,11 +49,6 @@ const buttonIcon = computed(() => {
 	return 'i-heroicons-magnifying-glass'
 })
 
-const buttonColor = computed(() => {
-	if (outgoingReadyChallenges.value.length > 0) return 'green'
-	if (pendingChallenges.value.length > 0) return 'orange'
-	return 'primary'
-})
 
 const totalAlerts = computed(
 	() => pendingChallenges.value.length + outgoingReadyChallenges.value.length,
@@ -95,86 +87,63 @@ onMounted(async () => {
 </script>
 
 <template>
-	<UCard>
-		<!-- Header -->
-		<template #header>
-			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-2.5">
-					<UIcon name="i-heroicons-bolt" class="size-5 text-orange-500" />
-					<h3 class="text-base font-semibold">{{ t('duel.title') }}</h3>
+	<div
+		class="rounded-(--ui-radius) overflow-hidden bg-(--ui-bg-elevated) border border-(--ui-border) cursor-pointer transition-all hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]"
+		@click="handleClick"
+	>
+		<!-- Header row -->
+		<div class="flex items-center justify-between px-4 pt-4 pb-3">
+			<div class="flex items-center gap-3">
+				<div
+					class="flex items-center justify-center size-10 rounded-xl bg-red-500/15 dark:bg-red-400/15"
+				>
+					<UIcon name="i-heroicons-bolt" class="size-5 text-red-500" />
 				</div>
-				<UBadge v-if="totalAlerts > 0" color="orange" variant="soft" size="sm">
-					{{ t('duel.pendingCount', { count: totalAlerts }) }}
-				</UBadge>
+				<div>
+					<h3 class="text-base font-bold text-(--ui-text-highlighted)">
+						{{ t('duel.title') }}
+					</h3>
+					<p class="text-xs text-(--ui-text-dimmed)">
+						{{ t('duel.mmrValue', { mmr }) }}
+					</p>
+				</div>
 			</div>
-		</template>
+			<UBadge v-if="totalAlerts > 0" color="orange" variant="soft" size="sm">
+				{{ t('duel.pendingCount', { count: totalAlerts }) }}
+			</UBadge>
+			<UBadge v-else-if="hasActiveDuel" color="blue" variant="subtle" size="sm">
+				<UIcon name="i-heroicons-play-circle" class="size-3.5 mr-0.5" />
+				Live
+			</UBadge>
+		</div>
 
 		<!-- Body -->
-		<div class="space-y-4">
-			<!-- Player Rating -->
+		<div class="px-4 pb-3">
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-2">
-					<span class="text-2xl">{{ leagueIcon }}</span>
-					<div>
-						<p class="font-semibold">{{ leagueLabel }}</p>
-						<p class="text-sm text-(--ui-text-dimmed)">
-							{{ t('duel.mmrValue', { mmr }) }}
-						</p>
-					</div>
+					<span class="text-lg">{{ leagueIcon }}</span>
+					<span class="font-semibold text-sm">{{ leagueLabel }}</span>
 				</div>
-				<div class="text-right">
-					<p class="text-sm font-medium">
-						<span class="text-green-600 dark:text-green-400"
-							>{{ seasonWins }}{{ t('duel.wIndicator') }}</span
-						>
-						<span class="text-(--ui-text-dimmed) mx-1">/</span>
-						<span class="text-red-600 dark:text-red-400"
-							>{{ seasonLosses }}{{ t('duel.lIndicator') }}</span
-						>
-					</p>
-					<p class="text-xs text-(--ui-text-dimmed)">
-						{{ winRateFormatted }} {{ t('duel.winRate') }}
-					</p>
-				</div>
-			</div>
-
-			<!-- Meta Info -->
-			<div class="grid grid-cols-2 gap-4 pt-3 border-t border-(--ui-border)">
-				<div class="text-center">
-					<p class="text-xs text-(--ui-text-dimmed) mb-1">
-						{{ t('duel.tickets') }}
-					</p>
-					<p class="text-sm font-semibold">
-						<UIcon name="i-heroicons-ticket" class="inline size-3.5 text-primary" />
-						{{ tickets }}
-					</p>
-				</div>
-
-				<div class="text-center">
-					<p class="text-xs text-(--ui-text-dimmed) mb-1">
-						{{ t('duel.thisSeason') }}
-					</p>
-					<p class="text-sm font-semibold">
-						<UIcon name="i-heroicons-trophy" class="inline size-3.5 text-yellow-500" />
-						{{ t('duel.totalGames', { count: totalGames }) }}
-					</p>
+				<div class="text-right text-sm">
+					<span class="text-green-500 font-medium">{{ seasonWins }}W</span>
+					<span class="text-(--ui-text-dimmed) mx-0.5">/</span>
+					<span class="text-red-500 font-medium">{{ seasonLosses }}L</span>
+					<span class="text-(--ui-text-dimmed) ml-1 text-xs"
+						>({{ winRateFormatted }})</span
+					>
 				</div>
 			</div>
 		</div>
 
-		<!-- Footer -->
-		<template #footer>
-			<UButton
-				:icon="buttonIcon"
-				:color="buttonColor"
-				:loading="isLoading"
-				:disabled="!canPlay && !hasActiveDuel && totalAlerts === 0"
-				block
-				size="lg"
-				@click="handleClick"
+		<!-- Footer action -->
+		<div class="px-4 pb-4 pt-2 border-t border-(--ui-border-muted)">
+			<div
+				class="flex items-center justify-center gap-2 text-sm font-semibold"
+				:class="totalAlerts > 0 ? 'text-orange-500' : 'text-primary'"
 			>
-				{{ buttonText }}
-			</UButton>
-		</template>
-	</UCard>
+				<UIcon :name="buttonIcon" class="size-4" />
+				<span>{{ buttonText }}</span>
+			</div>
+		</div>
+	</div>
 </template>

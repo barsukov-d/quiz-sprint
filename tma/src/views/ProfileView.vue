@@ -17,112 +17,102 @@ function handleLocaleChange(val: string) {
 </script>
 
 <template>
-	<div class="mx-auto max-w-2xl">
+	<div class="mx-auto max-w-[800px] pb-8">
 		<!-- Header -->
-		<h1 class="text-2xl font-bold mb-6 text-(--ui-text-highlighted)">
-			{{ t('profile.title') }}
-		</h1>
+		<div class="flex items-center justify-between mb-4">
+			<h1 class="text-xl font-bold text-(--ui-text-highlighted)">
+				{{ t('profile.title') }}
+			</h1>
+			<UIcon name="i-heroicons-cog-6-tooth" class="size-5 text-(--ui-text-dimmed)" />
+		</div>
 
-		<!-- User Info Card -->
-		<UCard v-if="isAuthenticated && currentUser" class="mb-6">
-			<div class="flex items-center gap-4 mb-6">
-				<UAvatar
-					:src="currentUser.avatarUrl"
-					:alt="currentUser.username"
-					size="xl"
-					:ui="{ rounded: 'rounded-full' }"
-				/>
-				<div>
-					<h2 class="text-xl font-bold text-(--ui-text-highlighted)">
+		<!-- Cover Banner (compact) -->
+		<div class="relative rounded-(--ui-radius) overflow-hidden mb-4">
+			<div
+				class="h-28 w-full bg-gradient-to-br from-primary-600 via-violet-500 to-primary-400"
+			/>
+		</div>
+
+		<!-- Avatar + Name Row -->
+		<div class="flex items-center gap-4 px-1 mb-5">
+			<UAvatar
+				:src="currentUser?.avatarUrl"
+				:alt="currentUser?.username"
+				size="xl"
+				:ui="{ rounded: 'rounded-full' }"
+			/>
+			<div class="flex-1 min-w-0">
+				<template v-if="isAuthenticated && currentUser">
+					<h2 class="text-lg font-bold text-(--ui-text-highlighted)">
 						{{ currentUser.username }}
 					</h2>
 					<p v-if="currentUser.telegramUsername" class="text-sm text-(--ui-text-muted)">
 						@{{ currentUser.telegramUsername }}
 					</p>
-					<p class="text-xs text-(--ui-text-dimmed) mt-1">ID: {{ currentUser.id }}</p>
-				</div>
+				</template>
+				<template v-else>
+					<h2 class="text-lg font-bold text-(--ui-text-highlighted)">Guest</h2>
+				</template>
 			</div>
+		</div>
 
-			<div class="border-t border-(--ui-border) pt-4">
-				<div class="grid grid-cols-2 gap-4">
-					<div>
-						<p class="text-sm text-(--ui-text-muted)">{{ t('profile.email') }}</p>
-						<p class="font-medium text-(--ui-text)">
-							{{ currentUser.email || t('profile.notSet') }}
-						</p>
-					</div>
-					<div>
-						<p class="text-sm text-(--ui-text-muted)">{{ t('profile.language') }}</p>
-						<USelect
-							:model-value="locale"
-							:items="localeOptions"
-							value-key="value"
-							@update:model-value="handleLocaleChange"
-						/>
-					</div>
+		<!-- Stats Grid (2 rows x 3 cols like Figma) -->
+		<div class="rounded-(--ui-radius) border border-(--ui-border) overflow-hidden mb-5">
+			<div class="grid grid-cols-3 divide-x divide-(--ui-border)">
+				<div class="flex flex-col items-center py-3">
+					<span class="text-lg font-bold text-(--ui-text-highlighted)">-</span>
+					<span class="text-xs text-(--ui-text-muted)">{{
+						t('profile.quizzesCompleted')
+					}}</span>
+				</div>
+				<div class="flex flex-col items-center py-3">
+					<span class="text-lg font-bold text-(--ui-text-highlighted)">-</span>
+					<span class="text-xs text-(--ui-text-muted)">{{
+						t('profile.totalPoints')
+					}}</span>
+				</div>
+				<div class="flex flex-col items-center py-3">
+					<span class="text-lg font-bold text-(--ui-text-highlighted)">-</span>
+					<span class="text-xs text-(--ui-text-muted)">{{
+						t('profile.averageScore')
+					}}</span>
 				</div>
 			</div>
-		</UCard>
+		</div>
 
-		<!-- Statistics Card -->
-		<UCard class="mb-6">
-			<h3 class="text-lg font-bold mb-4 text-(--ui-text-highlighted)">
-				{{ t('profile.statistics') }}
-			</h3>
-			<div class="grid grid-cols-2 gap-3">
-				<div class="text-center p-4 rounded-xl bg-(--ui-bg-muted)">
-					<div class="text-3xl font-bold text-primary">-</div>
-					<div class="text-sm text-(--ui-text-muted) mt-1">
-						{{ t('profile.quizzesCompleted') }}
-					</div>
-				</div>
-				<div class="text-center p-4 rounded-xl bg-(--ui-bg-muted)">
-					<div class="text-3xl font-bold text-primary">-</div>
-					<div class="text-sm text-(--ui-text-muted) mt-1">
-						{{ t('profile.totalPoints') }}
-					</div>
-				</div>
-				<div class="text-center p-4 rounded-xl bg-(--ui-bg-muted)">
-					<div class="text-3xl font-bold text-primary">-</div>
-					<div class="text-sm text-(--ui-text-muted) mt-1">
-						{{ t('profile.averageScore') }}
-					</div>
-				</div>
-				<div class="text-center p-4 rounded-xl bg-(--ui-bg-muted)">
-					<div class="text-3xl font-bold text-primary">-</div>
-					<div class="text-sm text-(--ui-text-muted) mt-1">
-						{{ t('profile.bestRank') }}
-					</div>
-				</div>
+		<!-- Language Selector -->
+		<div class="mb-5">
+			<p class="text-sm font-medium text-(--ui-text-muted) mb-2">
+				{{ t('profile.language') }}
+			</p>
+			<div class="flex gap-2">
+				<button
+					v-for="opt in localeOptions"
+					:key="opt.value"
+					class="px-4 py-1.5 rounded-full text-sm font-medium border transition-colors"
+					:class="
+						locale === opt.value
+							? 'bg-primary text-white border-primary'
+							: 'border-(--ui-border) text-(--ui-text-muted) bg-(--ui-bg-elevated)'
+					"
+					@click="handleLocaleChange(opt.value)"
+				>
+					{{ opt.label }}
+				</button>
 			</div>
-		</UCard>
-
-		<!-- Achievements Card -->
-		<UCard class="mb-6">
-			<h3 class="text-lg font-bold mb-4 text-(--ui-text-highlighted)">
-				{{ t('profile.achievements') }}
-			</h3>
-			<div class="text-center py-8">
-				<UIcon
-					name="i-heroicons-trophy"
-					class="size-14 text-(--ui-text-dimmed) mx-auto mb-3"
-				/>
-				<p class="text-(--ui-text-muted)">{{ t('profile.achievementsSoon') }}</p>
-			</div>
-		</UCard>
+		</div>
 
 		<!-- Recent Activity -->
-		<UCard>
-			<h3 class="text-lg font-bold mb-4 text-(--ui-text-highlighted)">
+		<div>
+			<h3 class="text-base font-bold text-(--ui-text-highlighted) mb-3">
 				{{ t('profile.recentActivity') }}
 			</h3>
-			<div class="text-center py-8">
-				<UIcon
-					name="i-heroicons-clock"
-					class="size-14 text-(--ui-text-dimmed) mx-auto mb-3"
-				/>
-				<p class="text-(--ui-text-muted)">{{ t('profile.activitySoon') }}</p>
+			<div
+				class="flex flex-col items-center py-8 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) text-(--ui-text-dimmed)"
+			>
+				<UIcon name="i-heroicons-clock" class="size-10 mb-2" />
+				<p class="text-sm">{{ t('profile.activitySoon') }}</p>
 			</div>
-		</UCard>
+		</div>
 	</div>
 </template>

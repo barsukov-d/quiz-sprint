@@ -76,6 +76,7 @@ export default {
 		startingFresh: 'Starting Fresh...',
 		loadingResults: 'Loading results...',
 		loadResultsFailed: 'Failed to load results',
+		finalScoreboard: 'Final Scoreboard',
 		completed: 'Quiz Completed!',
 		passed: '✓ Passed',
 		notPassed: '✗ Not Passed',

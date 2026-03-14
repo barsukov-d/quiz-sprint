@@ -20,12 +20,37 @@
 	--color-primary-800: #352a8f;
 	--color-primary-900: #261e6c;
 	--color-primary-950: #1a144a;
+
+	/* ─── Answer Button Colors ─── */
+	--color-answer-blue: #4a90d9;
+	--color-answer-red: #e74c3c;
+	--color-answer-orange: #f39c12;
+	--color-answer-green: #2ecc71;
+
+	/* ─── Border Radius Tokens ─── */
+	--radius-card: 16px;
+	--radius-button: 12px;
+	--radius-badge: 8px;
+	--radius-full: 9999px;
+
+	/* ─── Typography Scale ─── */
+	--text-display: 2rem; /* 32px — hero headings */
+	--text-heading: 1.5rem; /* 24px — section headings */
+	--text-title: 1.25rem; /* 20px — card titles */
+	--text-body: 1rem; /* 16px — body text */
+	--text-small: 0.875rem; /* 14px — secondary text */
+	--text-caption: 0.75rem; /* 12px — captions, badges */
+
+	--font-weight-bold: 700;
+	--font-weight-semibold: 600;
+	--font-weight-medium: 500;
+	--font-weight-regular: 400;
 }
 
 /* ─── Light Theme ─── */
 :root {
 	--ui-primary: var(--color-primary-600);
-	--ui-radius: 0.75rem;
+	--ui-radius: 1rem; /* 16px — matching Figma card radius */
 
 	/* Clean white backgrounds with subtle purple tint */
 	--ui-bg: #ffffff;
@@ -44,6 +69,10 @@
 	--ui-text-muted: var(--ui-color-neutral-500);
 	--ui-text-dimmed: var(--ui-color-neutral-400);
 	--ui-text-toned: var(--ui-color-neutral-600);
+
+	/* Card shadow (light mode only) */
+	--shadow-card: 0 2px 12px 0 rgba(108, 92, 231, 0.08), 0 1px 3px 0 rgba(0, 0, 0, 0.06);
+	--shadow-card-hover: 0 4px 20px 0 rgba(108, 92, 231, 0.14), 0 2px 6px 0 rgba(0, 0, 0, 0.08);
 }
 
 /* ─── Dark Theme ─── */
@@ -67,6 +96,10 @@
 	--ui-text-muted: var(--ui-color-neutral-400);
 	--ui-text-dimmed: var(--ui-color-neutral-500);
 	--ui-text-toned: var(--ui-color-neutral-400);
+
+	/* Card shadow (dark mode — subtle glow) */
+	--shadow-card: 0 2px 12px 0 rgba(0, 0, 0, 0.4), 0 1px 3px 0 rgba(0, 0, 0, 0.3);
+	--shadow-card-hover: 0 4px 20px 0 rgba(108, 92, 231, 0.2), 0 2px 6px 0 rgba(0, 0, 0, 0.4);
 }
 
 /* ─── Global Styles ─── */
@@ -87,7 +120,7 @@ body {
 *,
 *::before,
 *::after {
-	transition-property: background-color, border-color;
+	transition-property: background-color, border-color, color, box-shadow;
 	transition-duration: 150ms;
 	transition-timing-function: ease;
 }

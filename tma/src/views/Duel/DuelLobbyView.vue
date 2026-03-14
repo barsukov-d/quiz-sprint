@@ -303,12 +303,12 @@ onMounted(async () => {
 		<!-- Active Game Banner (user returned from connecting screen) -->
 		<div
 			v-if="skippedRedirect && hasActiveDuel && activeGameId"
-			class="mb-4 rounded-2xl bg-primary-50 dark:bg-primary-900/30 border-2 border-primary-300 dark:border-primary-700 p-5"
+			class="mb-4 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4"
 		>
 			<div class="flex items-center gap-3 mb-4">
 				<span class="text-3xl">⚡</span>
 				<div>
-					<h2 class="text-base font-bold text-primary-700 dark:text-primary-300">
+					<h2 class="text-base font-bold text-(--ui-text-highlighted)">
 						{{ t('duel.activeGameFound') }}
 					</h2>
 					<p class="text-sm text-(--ui-text-muted)">
@@ -337,12 +337,12 @@ onMounted(async () => {
 			<div
 				v-for="challenge in outgoingPendingChallenges"
 				:key="challenge.id"
-				class="mb-4 rounded-2xl bg-purple-50 dark:bg-purple-900/20 border-2 border-purple-300 dark:border-purple-600 p-5"
+				class="mb-4 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-purple-400/40 p-4"
 			>
 				<div class="flex items-center gap-3">
 					<span class="text-3xl">⚔️</span>
 					<div class="flex-1 min-w-0">
-						<h2 class="text-base font-bold text-purple-700 dark:text-purple-300">
+						<h2 class="text-base font-bold text-(--ui-text-highlighted)">
 							{{ t('duel.waitingOpponentAccept') }}
 						</h2>
 						<p class="text-sm text-(--ui-text-muted) truncate">
@@ -369,14 +369,14 @@ onMounted(async () => {
 			<!-- Loading state -->
 			<div
 				v-if="isLoadingStatus"
-				class="mb-4 rounded-2xl bg-primary-50 dark:bg-primary-900/30 border border-primary-200 dark:border-primary-700 p-5"
+				class="mb-4 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4"
 			>
 				<div class="animate-pulse space-y-3">
-					<div class="h-5 bg-primary-200 dark:bg-primary-700 rounded w-2/3" />
-					<div class="h-4 bg-primary-100 dark:bg-primary-800 rounded w-1/2" />
+					<div class="h-5 bg-(--ui-bg-accented) rounded w-2/3" />
+					<div class="h-4 bg-(--ui-bg-accented) rounded w-1/2" />
 					<div class="grid grid-cols-2 gap-3 mt-4">
-						<div class="h-10 bg-primary-200 dark:bg-primary-700 rounded-lg" />
-						<div class="h-10 bg-primary-100 dark:bg-primary-800 rounded-lg" />
+						<div class="h-10 bg-(--ui-bg-accented) rounded-(--ui-radius)" />
+						<div class="h-10 bg-(--ui-bg-accented) rounded-(--ui-radius)" />
 					</div>
 				</div>
 			</div>
@@ -384,12 +384,12 @@ onMounted(async () => {
 			<!-- Found state -->
 			<div
 				v-else-if="directChallenge"
-				class="mb-4 rounded-2xl bg-orange-50 dark:bg-orange-900/20 border-2 border-orange-300 dark:border-orange-600 p-5"
+				class="mb-4 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-orange-400/40 p-4"
 			>
 				<div class="flex items-center gap-3 mb-1">
 					<span class="text-3xl">⚔️</span>
 					<div>
-						<h2 class="text-lg font-bold text-orange-700 dark:text-orange-300">
+						<h2 class="text-lg font-bold text-(--ui-text-highlighted)">
 							{{ t('duel.incomingChallenge') }}
 						</h2>
 						<p class="text-sm text-(--ui-text-muted)">
@@ -429,7 +429,7 @@ onMounted(async () => {
 			<!-- Not found / expired state -->
 			<div
 				v-else
-				class="mb-4 rounded-2xl bg-(--ui-bg-elevated) border border-(--ui-border) p-5"
+				class="mb-4 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4"
 			>
 				<div class="flex items-center justify-between">
 					<div class="flex items-center gap-3">
@@ -454,12 +454,12 @@ onMounted(async () => {
 			<div
 				v-for="challenge in acceptedChallenges"
 				:key="challenge.id"
-				class="mb-4 rounded-2xl bg-blue-50 dark:bg-blue-900/20 border-2 border-blue-300 dark:border-blue-600 p-5"
+				class="mb-4 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-blue-400/40 p-4"
 			>
 				<div class="flex items-center gap-3 mb-1">
 					<span class="text-3xl">⏳</span>
 					<div>
-						<h2 class="text-base font-bold text-blue-700 dark:text-blue-300">
+						<h2 class="text-base font-bold text-(--ui-text-highlighted)">
 							{{ t('duel.waitingForInviter') }}
 						</h2>
 						<p class="text-sm text-(--ui-text-muted)">
@@ -471,7 +471,7 @@ onMounted(async () => {
 						</p>
 					</div>
 					<div class="ml-auto text-right">
-						<p class="font-mono text-sm font-bold text-blue-600 dark:text-blue-400">
+						<p class="font-mono text-sm font-bold text-primary">
 							{{ formatCountdown(challenge.expiresAt!) }}
 						</p>
 						<p class="text-xs text-(--ui-text-dimmed)">{{ t('duel.expiresIn') }}</p>
@@ -481,33 +481,36 @@ onMounted(async () => {
 		</template>
 
 		<!-- Deep Link Challenge Loading -->
-		<UCard v-if="isAcceptingChallenge" class="mb-4">
-			<div class="flex items-center justify-center gap-3 py-4">
+		<div
+			v-if="isAcceptingChallenge"
+			class="mb-4 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4"
+		>
+			<div class="flex items-center justify-center gap-3 py-2">
 				<div class="animate-spin">
 					<UIcon name="i-heroicons-arrow-path" class="size-6 text-primary" />
 				</div>
 				<p class="font-medium">{{ t('duel.acceptingChallenge') }}</p>
 			</div>
-		</UCard>
+		</div>
 
 		<!-- Deep Link Error -->
-		<UCard v-if="deepLinkError" class="mb-4 border-red-200 dark:border-red-800">
+		<div
+			v-if="deepLinkError"
+			class="mb-4 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-red-400/40 p-4"
+		>
 			<div class="flex items-center gap-3">
 				<UIcon name="i-heroicons-exclamation-circle" class="size-6 text-red-500" />
 				<div>
 					<p class="font-medium text-red-600 dark:text-red-400">{{ deepLinkError }}</p>
-					<UButton
-						size="xs"
-						color="neutral"
-						variant="link"
-						class="mt-1"
+					<button
+						class="text-xs text-(--ui-text-muted) mt-1 underline"
 						@click="dismissDeepLinkError"
 					>
 						{{ t('duel.close') }}
-					</UButton>
+					</button>
 				</div>
 			</div>
-		</UCard>
+		</div>
 
 		<!-- Confirmation Modal -->
 		<UModal v-model:open="showConfirmModal" :dismissible="false">
@@ -543,7 +546,9 @@ onMounted(async () => {
 		</UModal>
 
 		<!-- Player Rating Card -->
-		<UCard class="mb-4">
+		<div
+			class="mb-4 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4"
+		>
 			<div class="flex items-center justify-between">
 				<div class="flex items-center gap-3">
 					<span class="text-4xl">{{ leagueIcon }}</span>
@@ -592,29 +597,30 @@ onMounted(async () => {
 					</p>
 				</div>
 			</div>
-		</UCard>
+		</div>
 
 		<!-- Pending Challenges -->
-		<UCard v-if="pendingChallenges.length > 0" class="mb-4">
-			<template #header>
-				<div class="flex items-center justify-between">
-					<div class="flex items-center gap-2.5">
-						<UIcon name="i-heroicons-bolt" class="size-5 text-orange-500" />
-						<h3 class="text-base font-semibold">{{ t('duel.pendingChallenges') }}</h3>
-					</div>
-					<UBadge color="orange" variant="soft" size="sm">
-						{{ t('duel.pendingCount', { count: pendingChallenges.length }) }}
-					</UBadge>
+		<div
+			v-if="pendingChallenges.length > 0"
+			class="mb-4 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4"
+		>
+			<div class="flex items-center justify-between mb-3">
+				<div class="flex items-center gap-2.5">
+					<UIcon name="i-heroicons-bolt" class="size-5 text-orange-500" />
+					<h3 class="text-base font-semibold">{{ t('duel.pendingChallenges') }}</h3>
 				</div>
-			</template>
+				<UBadge color="orange" variant="soft" size="sm">
+					{{ t('duel.pendingCount', { count: pendingChallenges.length }) }}
+				</UBadge>
+			</div>
 
 			<div class="space-y-4">
 				<div v-for="(challenge, index) in pendingChallenges" :key="challenge.id">
-					<UDivider v-if="index > 0" class="mb-4" />
+					<div v-if="index > 0" class="h-px bg-(--ui-border) mb-4" />
 					<!-- Challenger identity -->
 					<div class="flex items-center gap-4 mb-3">
 						<div
-							class="flex-shrink-0 w-12 h-12 rounded-lg flex items-center justify-center bg-orange-100 dark:bg-orange-900/30"
+							class="flex-shrink-0 w-12 h-12 rounded-(--ui-radius) flex items-center justify-center bg-(--ui-bg-accented)"
 						>
 							<UIcon name="i-heroicons-bolt" class="size-6 text-orange-500" />
 						</div>
@@ -650,40 +656,52 @@ onMounted(async () => {
 					</div>
 				</div>
 			</div>
-		</UCard>
+		</div>
 
 		<!-- Tabs -->
 		<div class="flex gap-2 mb-4">
-			<UButton
-				:color="activeTab === 'play' ? 'primary' : 'neutral'"
-				:variant="activeTab === 'play' ? 'solid' : 'ghost'"
-				size="sm"
+			<button
+				class="px-4 py-2 rounded-full text-sm font-medium transition-colors"
+				:class="
+					activeTab === 'play'
+						? 'bg-primary text-white'
+						: 'bg-(--ui-bg-accented) text-(--ui-text-muted)'
+				"
 				@click="() => setActiveTab('play')"
 			>
 				{{ t('duel.tabPlay') }}
-			</UButton>
-			<UButton
-				:color="activeTab === 'leaderboard' ? 'primary' : 'neutral'"
-				:variant="activeTab === 'leaderboard' ? 'solid' : 'ghost'"
-				size="sm"
+			</button>
+			<button
+				class="px-4 py-2 rounded-full text-sm font-medium transition-colors"
+				:class="
+					activeTab === 'leaderboard'
+						? 'bg-primary text-white'
+						: 'bg-(--ui-bg-accented) text-(--ui-text-muted)'
+				"
 				@click="() => setActiveTab('leaderboard')"
 			>
 				{{ t('duel.tabLeaderboard') }}
-			</UButton>
-			<UButton
-				:color="activeTab === 'history' ? 'primary' : 'neutral'"
-				:variant="activeTab === 'history' ? 'solid' : 'ghost'"
-				size="sm"
+			</button>
+			<button
+				class="px-4 py-2 rounded-full text-sm font-medium transition-colors"
+				:class="
+					activeTab === 'history'
+						? 'bg-primary text-white'
+						: 'bg-(--ui-bg-accented) text-(--ui-text-muted)'
+				"
 				@click="() => setActiveTab('history')"
 			>
 				{{ t('duel.tabHistory') }}
-			</UButton>
+			</button>
 		</div>
 
 		<!-- Play Tab -->
 		<div v-if="activeTab === 'play'" class="space-y-4">
 			<!-- Find Match Button -->
-			<UCard v-if="FEATURES.matchmaking" class="text-center">
+			<div
+				v-if="FEATURES.matchmaking"
+				class="rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4 text-center"
+			>
 				<div v-if="isSearching" class="py-4">
 					<div class="animate-pulse mb-4">
 						<UIcon name="i-heroicons-magnifying-glass" class="size-12 text-primary" />
@@ -698,21 +716,24 @@ onMounted(async () => {
 				</div>
 
 				<div v-else class="py-2">
-					<UButton
-						icon="i-heroicons-magnifying-glass"
-						size="xl"
-						:disabled="!canPlay"
-						:loading="isLoading"
-						block
+					<button
+						class="w-full py-4 rounded-(--ui-radius) bg-gradient-to-r from-primary-500 to-primary-700 text-white font-semibold text-base flex items-center justify-center gap-2 disabled:opacity-50 transition-opacity"
+						:disabled="!canPlay || isLoading"
 						@click="handleFindMatch"
 					>
+						<UIcon
+							v-if="isLoading"
+							name="i-heroicons-arrow-path"
+							class="size-5 animate-spin"
+						/>
+						<UIcon v-else name="i-heroicons-magnifying-glass" class="size-5" />
 						{{ t('duel.findOpponent') }}
-					</UButton>
+					</button>
 					<p v-if="tickets === 0" class="text-sm text-red-500 mt-2">
 						{{ t('duel.noTickets') }}
 					</p>
 				</div>
-			</UCard>
+			</div>
 
 			<!-- Outgoing Challenges -->
 			<div v-if="outgoingReadyChallenges.length > 0" class="space-y-2">
@@ -721,10 +742,10 @@ onMounted(async () => {
 				</h3>
 
 				<!-- Ready to start -->
-				<UCard
+				<div
 					v-for="challenge in outgoingReadyChallenges"
 					:key="challenge.id"
-					class="border-green-200 dark:border-green-800"
+					class="rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-green-400/40 p-4"
 				>
 					<div class="flex items-center gap-2 mb-3">
 						<span class="text-green-500">✅</span>
@@ -743,11 +764,13 @@ onMounted(async () => {
 					>
 						{{ t('duel.startDuel') }}
 					</UButton>
-				</UCard>
+				</div>
 			</div>
 
 			<!-- Rivals Section -->
-			<UCard>
+			<div
+				class="rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4"
+			>
 				<h3 class="font-semibold mb-3">{{ t('duel.rivals') }}</h3>
 
 				<!-- Rivals list -->
@@ -817,15 +840,17 @@ onMounted(async () => {
 				>
 					{{ t('duel.inviteFriend') }}
 				</UButton>
-			</UCard>
+			</div>
 		</div>
 
 		<!-- Leaderboard Tab -->
 		<div v-else-if="activeTab === 'leaderboard'">
-			<UCard>
+			<div
+				class="rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4"
+			>
 				<div
 					v-if="playerRank > 0"
-					class="mb-4 p-3 bg-primary-50 dark:bg-primary-900/20 rounded-lg"
+					class="mb-4 p-3 bg-(--ui-bg-accented) rounded-(--ui-radius)"
 				>
 					<p class="text-sm text-(--ui-text-muted)">{{ t('duel.yourRank') }}</p>
 					<p class="text-2xl font-bold text-primary">#{{ playerRank }}</p>
@@ -835,19 +860,22 @@ onMounted(async () => {
 					<div
 						v-for="(entry, index) in leaderboard as any[]"
 						:key="entry.playerId ?? index"
-						class="flex items-center justify-between p-2 rounded"
+						class="flex items-center justify-between p-3 rounded-(--ui-radius) border border-(--ui-border)"
 						:class="
-							entry.playerId === playerId
-								? 'bg-primary-50 dark:bg-primary-900/20'
-								: ''
+							entry.playerId === playerId ? 'bg-(--ui-bg-accented)' : 'bg-(--ui-bg)'
 						"
 					>
 						<div class="flex items-center gap-3">
-							<span
-								class="w-6 text-center font-bold"
-								:class="index < 3 ? 'text-yellow-500' : ''"
-							>
-								{{ index + 1 }}
+							<span class="w-7 text-center font-bold text-lg">
+								{{
+									index === 0
+										? '🥇'
+										: index === 1
+											? '🥈'
+											: index === 2
+												? '🥉'
+												: index + 1
+								}}
 							</span>
 							<span class="text-lg">{{ entry.leagueIcon ?? '' }}</span>
 							<div>
@@ -868,7 +896,7 @@ onMounted(async () => {
 						</div>
 					</div>
 				</div>
-			</UCard>
+			</div>
 		</div>
 
 		<!-- History Tab -->
@@ -877,7 +905,11 @@ onMounted(async () => {
 				{{ t('duel.noGames') }}
 			</div>
 			<div v-else class="space-y-2">
-				<UCard v-for="game in gameHistory" :key="game.gameId" class="!p-3">
+				<div
+					v-for="game in gameHistory"
+					:key="game.gameId"
+					class="rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-3"
+				>
 					<div class="flex items-center justify-between">
 						<div class="flex items-center gap-3">
 							<UIcon
@@ -915,7 +947,7 @@ onMounted(async () => {
 							</UBadge>
 						</div>
 					</div>
-				</UCard>
+				</div>
 			</div>
 		</div>
 	</div>

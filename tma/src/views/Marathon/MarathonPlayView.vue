@@ -69,7 +69,6 @@ const feedbackShieldConsumed = ref(false)
 // Computed
 // ===========================
 
-const answerLabels = ['A', 'B', 'C', 'D']
 
 const bonusButtons = [
 	{
@@ -333,7 +332,53 @@ onUnmounted(() => {
 
 		<!-- Game View -->
 		<div v-else class="flex flex-col gap-4">
-			<!-- Header: energy + score + timer -->
+			<!-- Header Row 1: question counter + title + menu -->
+			<div class="flex items-center justify-between">
+				<span class="text-2xl font-bold tabular-nums leading-none">{{
+					state.totalQuestions
+				}}</span>
+				<span
+					class="text-sm font-semibold text-(--ui-text-muted) tracking-wide uppercase"
+					>{{ t('marathon.title') }}</span
+				>
+				<UButton
+					color="neutral"
+					variant="ghost"
+					icon="i-heroicons-ellipsis-vertical"
+					size="sm"
+				/>
+			</div>
+
+			<!-- Header Row 2: thick progress bar with seconds inside -->
+			<div class="relative h-7 rounded-full overflow-hidden bg-(--ui-bg-accented)">
+				<div
+					class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-yellow-400 via-primary-500 to-primary-600 transition-all duration-1000"
+					:style="{
+						width: timerRef
+							? `${(timerRef.remainingTime / state.timeLimit) * 100}%`
+							: '100%',
+					}"
+				/>
+				<div class="absolute inset-0 flex items-center justify-center">
+					<span class="text-xs font-bold text-white drop-shadow tabular-nums">
+						{{ timerRef?.remainingTime ?? state.timeLimit }}s
+					</span>
+				</div>
+			</div>
+
+			<!-- Hidden functional timer -->
+			<GameTimer
+				ref="timerRef"
+				:initial-time="state.timeLimit"
+				:auto-start="false"
+				:warning-threshold="5"
+				:show-progress="false"
+				size="sm"
+				:on-timeout="handleTimeout"
+				class="sr-only"
+			/>
+
+			<!-- Energy + score + streak row -->
 			<div class="flex items-center gap-3">
 				<!-- Energy bar -->
 				<div class="flex items-center gap-1.5 shrink-0 relative">
@@ -380,20 +425,6 @@ onUnmounted(() => {
 					name="i-heroicons-shield-check"
 					class="size-4 text-blue-500 shrink-0"
 				/>
-
-				<div class="flex-1" />
-
-				<!-- Timer -->
-				<GameTimer
-					ref="timerRef"
-					:initial-time="state.timeLimit"
-					:auto-start="false"
-					:warning-threshold="5"
-					:show-progress="false"
-					size="sm"
-					:on-timeout="handleTimeout"
-					class="shrink-0"
-				/>
 			</div>
 
 			<!-- Milestone progress -->
@@ -416,12 +447,14 @@ onUnmounted(() => {
 				:show-badge="false"
 			/>
 
-			<!-- Answer Buttons -->
+			<!-- Answer Buttons (colored bars) -->
 			<div class="flex flex-col gap-3">
 				<AnswerButton
 					v-for="(answer, index) in visibleAnswers"
 					:key="answer.id"
 					:answer="answer"
+					:color-index="index % 4"
+					:color-bar="true"
 					:selected="selectedAnswerId === answer.id"
 					:disabled="
 						isSubmitting ||
@@ -431,7 +464,6 @@ onUnmounted(() => {
 					"
 					:show-feedback="getAnswerFeedback(answer.id).showFeedback"
 					:is-correct="getAnswerFeedback(answer.id).isCorrect"
-					:label="answerLabels[index]"
 					:class="{ 'opacity-0 pointer-events-none': answer.hidden }"
 					@click="handleAnswerSelect"
 				/>

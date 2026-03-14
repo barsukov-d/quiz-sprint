@@ -35,34 +35,28 @@ const goToQuizDetails = (quizId: string) => {
 </script>
 
 <template>
-	<div class="container mx-auto p-4 pt-32">
-		<!-- Header with back button -->
-		<div class="flex items-center gap-3 mb-6">
+	<div class="min-h-screen bg-(--ui-bg)">
+		<!-- Header -->
+		<div class="flex items-center gap-3 px-4 py-4 border-b border-(--ui-border)">
 			<UButton
 				icon="i-heroicons-arrow-left"
 				color="neutral"
 				variant="ghost"
-				size="lg"
+				size="md"
 				@click="goBackToCategories"
 			/>
-			<div>
-				<h1 class="text-3xl font-bold text-(--ui-text-highlighted)">
-					{{ t('quiz.title') }}
-				</h1>
-				<p v-if="categoryId" class="text-sm text-(--ui-text-dimmed)">
-					{{ t('quiz.category', { name: categoryName }) }}
-				</p>
-			</div>
+			<h1 class="text-xl font-bold text-(--ui-text-highlighted)">
+				{{ categoryName || t('quiz.title') }}
+			</h1>
 		</div>
 
 		<!-- Loading state -->
-		<div v-if="isLoading" class="flex justify-center items-center py-12">
-			<UProgress animation="carousel" />
-			<span class="ml-4">{{ t('quiz.loading') }}</span>
+		<div v-if="isLoading" class="flex justify-center items-center py-16">
+			<UProgress animation="carousel" class="w-32" />
 		</div>
 
 		<!-- Error state -->
-		<div v-else-if="isError" class="mb-4">
+		<div v-else-if="isError" class="px-4 pt-6">
 			<UAlert
 				color="red"
 				variant="soft"
@@ -71,7 +65,7 @@ const goToQuizDetails = (quizId: string) => {
 			/>
 			<UButton
 				color="red"
-				class="mt-2"
+				class="mt-3"
 				@click="
 					() => {
 						refetch()
@@ -82,63 +76,62 @@ const goToQuizDetails = (quizId: string) => {
 			</UButton>
 		</div>
 
-		<!-- Success state with data -->
+		<!-- Success state — vertical list -->
 		<div
 			v-else-if="quizzes?.data && Array.isArray(quizzes.data) && quizzes.data.length > 0"
-			class="grid gap-4 md:grid-cols-2 lg:grid-cols-3"
+			class="flex flex-col gap-1 p-4"
 		>
-			<UCard
+			<button
 				v-for="(quiz, index) in quizzes.data"
 				:key="quiz.id || index"
-				class="hover:shadow-lg transition-shadow"
+				class="flex items-center gap-4 p-3 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) text-left transition-transform active:scale-[0.98] hover:border-(--ui-border-accented)"
+				@click="() => goToQuizDetails(quiz.id)"
 			>
-				<template #header>
-					<h3 class="text-xl font-semibold">{{ quiz.title || t('quiz.unnamed') }}</h3>
-				</template>
-
-				<p class="text-(--ui-text-muted) text-sm mb-4">
-					{{ quiz.description || t('quiz.noDescription') }}
-				</p>
-
-				<div class="flex items-center justify-between text-sm text-(--ui-text-dimmed) mb-4">
-					<span
-						>📝
-						{{ t('quiz.questionsCount', { count: quiz.questionsCount || 0 }) }}</span
+				<!-- Emoji placeholder / thumbnail -->
+				<div
+					class="relative shrink-0 w-20 h-16 rounded-lg bg-(--ui-bg-muted) flex items-center justify-center overflow-hidden"
+				>
+					<span class="text-3xl">📝</span>
+					<div
+						v-if="quiz.questionsCount"
+						class="absolute bottom-1 right-1 bg-black/70 text-white text-[10px] font-bold px-1.5 py-0.5 rounded"
 					>
-					<span
-						>⏱️
-						{{
-							quiz.timeLimit
-								? t('quiz.timeLimit', { min: Math.floor(quiz.timeLimit / 60) })
-								: 'N/A'
-						}}</span
-					>
+						{{ quiz.questionsCount }} Qs
+					</div>
 				</div>
 
-				<div class="flex items-center text-sm text-(--ui-text-dimmed) mb-4">
-					<span>{{ t('quiz.passingScore', { score: quiz.passingScore || 0 }) }}</span>
+				<!-- Info -->
+				<div class="flex-1 min-w-0">
+					<h3 class="text-sm font-semibold text-(--ui-text-highlighted) truncate">
+						{{ quiz.title || t('quiz.unnamed') }}
+					</h3>
+					<p
+						v-if="quiz.description"
+						class="text-xs text-(--ui-text-muted) mt-0.5 line-clamp-2"
+					>
+						{{ quiz.description }}
+					</p>
+					<div class="flex items-center gap-2 mt-1.5">
+						<UBadge color="primary" variant="soft" size="xs">
+							{{ t('quiz.questionsCount', { count: quiz.questionsCount || 0 }) }}
+						</UBadge>
+					</div>
 				</div>
 
-				<template #footer>
-					<UButton block color="primary" @click="() => goToQuizDetails(quiz.id)">
-						{{ t('quiz.viewQuiz') }}
-					</UButton>
-				</template>
-			</UCard>
+				<!-- Arrow -->
+				<UIcon
+					name="i-heroicons-chevron-right"
+					class="size-4 text-(--ui-text-dimmed) shrink-0"
+				/>
+			</button>
 		</div>
 
 		<!-- Empty state -->
-		<div v-else class="text-center py-12 text-(--ui-text-dimmed)">
-			<div class="text-6xl mb-4">📋</div>
-			<p class="text-lg font-semibold mb-2">{{ t('quiz.notFound') }}</p>
-			<p class="text-sm mb-4">{{ t('quiz.notFoundDesc') }}</p>
-			<UButton @click="goBackToCategories"> {{ t('quiz.backToCategories') }} </UButton>
+		<div v-else class="flex flex-col items-center py-16 text-(--ui-text-dimmed) px-4">
+			<span class="text-5xl mb-4">📋</span>
+			<p class="text-base font-semibold mb-1">{{ t('quiz.notFound') }}</p>
+			<p class="text-sm text-center mb-6">{{ t('quiz.notFoundDesc') }}</p>
+			<UButton @click="goBackToCategories">{{ t('quiz.backToCategories') }}</UButton>
 		</div>
 	</div>
 </template>
-
-<style scoped>
-.container {
-	max-width: 1200px;
-}
-</style>

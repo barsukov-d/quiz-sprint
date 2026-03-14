@@ -53,7 +53,6 @@ const feedbackGameCompleted = ref(false)
 // Computed
 // ===========================
 
-const answerLabels = ['A', 'B', 'C', 'D']
 
 const questionProgress = computed(() =>
 	Math.round(((questionIndex.value + 1) / totalQuestions.value) * 100),
@@ -252,15 +251,40 @@ onUnmounted(() => {
 		</div>
 
 		<!-- Game View -->
-		<div v-else class="flex flex-col gap-4">
-			<!-- Header: counter + progress + timer (single row) -->
-			<div class="flex items-center gap-3">
-				<span class="shrink-0 text-sm font-semibold text-(--ui-text-muted) tabular-nums">
+		<div v-else class="flex flex-col gap-5">
+			<!-- Header row: counter + title -->
+			<div class="flex items-center justify-between">
+				<span class="text-xl font-bold text-(--ui-text-highlighted) tabular-nums">
 					{{ questionIndex + 1 }}/{{ totalQuestions }}
 				</span>
+				<span class="text-base font-semibold text-(--ui-text-muted)">
+					{{ t('daily.title') }}
+				</span>
+				<UIcon
+					name="i-heroicons-ellipsis-horizontal-circle"
+					class="size-6 text-(--ui-text-dimmed)"
+				/>
+			</div>
 
-				<UProgress v-model="questionProgress" color="primary" size="xs" class="flex-1" />
-
+			<!-- Progress bar with timer inside -->
+			<div class="relative">
+				<div class="h-7 w-full rounded-full bg-(--ui-bg-accented) overflow-hidden">
+					<div
+						class="h-full rounded-full bg-gradient-to-r from-yellow-400 via-primary-500 to-primary-600 transition-all duration-300"
+						:style="{ width: `${questionProgress}%` }"
+					/>
+				</div>
+				<span
+					class="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums"
+					:class="
+						timerRef?.remainingTime !== undefined && timerRef.remainingTime <= 5
+							? 'text-red-400'
+							: 'text-white'
+					"
+				>
+					{{ timerRef?.remainingTime ?? timeLimit }}
+				</span>
+				<!-- Hidden GameTimer for logic -->
 				<GameTimer
 					ref="timerRef"
 					:initial-time="timeLimit"
@@ -269,14 +293,14 @@ onUnmounted(() => {
 					:show-progress="false"
 					size="sm"
 					:on-timeout="handleTimeout"
-					class="shrink-0"
+					class="sr-only"
 				/>
 			</div>
 
 			<!-- Question text (primary focus) -->
 			<QuestionCard :question="currentQuestion" :show-badge="false" />
 
-			<!-- Answer Buttons -->
+			<!-- Answer Buttons (colored bars) -->
 			<div class="flex flex-col gap-3">
 				<AnswerButton
 					v-for="(answer, index) in currentQuestion.answers"
@@ -286,7 +310,8 @@ onUnmounted(() => {
 					:disabled="isSubmitting || showFeedback || timerRef?.remainingTime === 0"
 					:show-feedback="getAnswerFeedback(answer.id).showFeedback"
 					:is-correct="getAnswerFeedback(answer.id).isCorrect"
-					:label="answerLabels[index]"
+					:color-index="index % 4"
+					:color-bar="true"
 					@click="handleAnswerSelect"
 				/>
 			</div>

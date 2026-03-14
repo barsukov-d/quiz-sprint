@@ -84,17 +84,6 @@ const getMedalEmoji = (rank: number) => {
 	}
 }
 
-// Format date
-const formatDate = (timestamp: number) => {
-	const now = Date.now()
-	const diff = now - timestamp * 1000
-	const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-
-	if (days === 0) return 'today'
-	if (days === 1) return '1d'
-	if (days < 30) return `${days}d`
-	return new Date(timestamp * 1000).toLocaleDateString()
-}
 
 // Check if entry is current user
 const isCurrentUser = (userId: string) => {
@@ -103,176 +92,133 @@ const isCurrentUser = (userId: string) => {
 </script>
 
 <template>
-	<div class="container mx-auto">
-		<div class="max-w-4xl mx-auto">
-			<!-- Header -->
-			<div class="mb-6 mx-auto text-center">
-				<h1 class="text-3xl font-bold mb-2">{{ t('leaderboard.title') }}</h1>
-				<p class="text-(--ui-text-muted)">{{ t('leaderboard.subtitle') }}</p>
+	<div class="mx-auto max-w-[800px] pb-8">
+		<!-- Header -->
+		<div class="text-center mb-6">
+			<div class="text-4xl mb-2">🏆</div>
+			<h1 class="text-2xl font-bold text-(--ui-text-highlighted)">
+				{{ t('leaderboard.title') }}
+			</h1>
+			<p class="text-sm text-(--ui-text-muted) mt-1">{{ t('leaderboard.subtitle') }}</p>
+		</div>
+
+		<!-- Loading -->
+		<div v-if="isLoading" class="flex flex-col items-center justify-center py-12">
+			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
+			<p class="text-(--ui-text-muted) mt-4">{{ t('leaderboard.loading') }}</p>
+		</div>
+
+		<!-- Error -->
+		<div v-else-if="isError" class="text-center py-12">
+			<UAlert
+				color="red"
+				variant="soft"
+				:title="t('leaderboard.loadFailed')"
+				:description="error?.error?.message || t('quiz.tryAgain2')"
+			/>
+			<UButton
+				color="red"
+				class="mt-3"
+				@click="
+					() => {
+						refetch()
+					}
+				"
+			>
+				{{ t('leaderboard.retry') }}
+			</UButton>
+		</div>
+
+		<!-- Empty state -->
+		<div
+			v-else-if="entries.length === 0"
+			class="flex flex-col items-center justify-center py-16 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border)"
+		>
+			<div class="text-5xl mb-3">🏆</div>
+			<h2 class="text-xl font-bold text-(--ui-text-highlighted) mb-1">
+				{{ t('leaderboard.empty') }}
+			</h2>
+			<p class="text-sm text-(--ui-text-muted)">{{ t('leaderboard.emptyDesc') }}</p>
+		</div>
+
+		<!-- Leaderboard content -->
+		<div v-else>
+			<!-- Current user rank badge (if not in top 10) -->
+			<div
+				v-if="currentUserRank && currentUserRank > 10"
+				class="flex items-center justify-between px-4 py-3 mb-3 rounded-(--ui-radius) bg-primary-500/10 border border-primary-500/20"
+			>
+				<p class="text-sm text-(--ui-text-muted)">{{ t('leaderboard.yourRank') }}</p>
+				<p class="text-xl font-bold text-primary">#{{ currentUserRank }}</p>
 			</div>
 
-			<!-- Loading -->
-			<div v-if="isLoading" class="flex justify-center items-center py-12">
-				<UProgress animation="carousel" />
-				<span class="ml-4">{{ t('leaderboard.loading') }}</span>
-			</div>
-
-			<!-- Error -->
-			<div v-else-if="isError" class="mb-4">
-				<UAlert
-					color="red"
-					variant="soft"
-					:title="t('leaderboard.loadFailed')"
-					:description="error?.error?.message || t('quiz.tryAgain2')"
-				/>
-				<UButton
-					color="red"
-					class="mt-2"
-					@click="
-						() => {
-							refetch()
-						}
+			<!-- Entries list -->
+			<div class="rounded-(--ui-radius) border border-(--ui-border) overflow-hidden">
+				<div
+					v-for="entry in entries"
+					:key="entry.userId"
+					class="flex items-center gap-3 px-4 py-3 border-b border-(--ui-border-muted) last:border-b-0 transition-colors"
+					:class="
+						isCurrentUser(entry.userId) ? 'bg-primary-500/10' : 'bg-(--ui-bg-elevated)'
 					"
 				>
-					{{ t('leaderboard.retry') }}
-				</UButton>
-			</div>
+					<!-- Rank -->
+					<span v-if="entry.rank <= 3" class="text-xl w-7 text-center shrink-0">{{
+						getMedalEmoji(entry.rank)
+					}}</span>
+					<span
+						v-else
+						class="text-sm font-semibold text-(--ui-text-dimmed) w-7 text-center shrink-0"
+						>{{ entry.rank }}</span
+					>
 
-			<!-- Empty state -->
-			<div v-else-if="entries.length === 0" class="text-center py-12">
-				<div class="text-6xl mb-4">🏆</div>
-				<h2 class="text-2xl font-bold mb-2">{{ t('leaderboard.empty') }}</h2>
-				<p class="text-(--ui-text-muted)">{{ t('leaderboard.emptyDesc') }}</p>
-			</div>
-
-			<!-- Leaderboard Table -->
-			<div v-else>
-				<!-- Current user rank badge (if not in top 10) -->
-				<UCard
-					v-if="currentUserRank && currentUserRank > 10"
-					class="mb-4 bg-(--ui-bg-muted)"
-				>
-					<div class="flex items-center justify-between">
-						<div>
-							<p class="text-sm text-(--ui-text-muted)">
-								{{ t('leaderboard.yourRank') }}
-							</p>
-							<p class="text-2xl font-bold text-primary">#{{ currentUserRank }}</p>
-						</div>
-						<UIcon name="i-heroicons-star" class="text-4xl text-primary" />
+					<!-- Avatar initial -->
+					<div
+						class="size-10 rounded-full flex items-center justify-center text-sm font-bold shrink-0"
+						:class="
+							isCurrentUser(entry.userId)
+								? 'bg-primary-500 text-white'
+								: 'bg-(--ui-bg-accented) text-(--ui-text-highlighted)'
+						"
+					>
+						{{ (entry.username || '?')[0]?.toUpperCase() }}
 					</div>
-				</UCard>
 
-				<!-- Leaderboard entries -->
-				<UCard>
-					<div class="overflow-x-auto">
-						<table class="w-full">
-							<thead>
-								<tr class="border-b border-(--ui-border)">
-									<th
-										class="text-left py-3 px-4 font-semibold text-(--ui-text-toned)"
-									>
-										{{ t('leaderboard.colRank') }}
-									</th>
-									<th
-										class="text-left py-3 px-4 font-semibold text-(--ui-text-toned)"
-									>
-										{{ t('leaderboard.colPlayer') }}
-									</th>
-									<th
-										class="text-right py-3 px-4 font-semibold text-(--ui-text-toned)"
-									>
-										{{ t('leaderboard.colScore') }}
-									</th>
-									<th
-										class="text-right py-3 px-4 font-semibold text-(--ui-text-toned)"
-									>
-										{{ t('leaderboard.colDate') }}
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr
-									v-for="entry in entries"
-									:key="entry.userId"
-									:class="[
-										'border-b border-(--ui-border-muted) transition-colors',
-										isCurrentUser(entry.userId)
-											? 'current-user-row bg-(--ui-bg-muted) hover:bg-(--ui-bg-elevated)'
-											: 'hover:bg-(--ui-bg-muted)',
-									]"
-								>
-									<!-- Rank -->
-									<td class="py-3 px-4">
-										<div class="flex items-center gap-2">
-											<span v-if="entry.rank <= 3" class="text-2xl">
-												{{ getMedalEmoji(entry.rank) }}
-											</span>
-											<span class="font-semibold text-(--ui-text-toned)">
-												{{ entry.rank }}
-											</span>
-										</div>
-									</td>
-
-									<!-- Player -->
-									<td class="py-3 px-4">
-										<div class="flex items-center gap-2">
-											<span class="font-medium">{{
-												entry.username || t('leaderboard.anonymous')
-											}}</span>
-											<UIcon
-												v-if="isCurrentUser(entry.userId)"
-												name="i-heroicons-star-solid"
-												class="text-primary"
-											/>
-										</div>
-									</td>
-
-									<!-- Score -->
-									<td class="py-3 px-4 text-right">
-										<span class="font-bold text-(--ui-text-highlighted)">{{
-											entry.totalScore
-										}}</span>
-									</td>
-
-									<!-- Date -->
-									<td class="py-3 px-4 text-right">
-										<span class="text-sm text-(--ui-text-dimmed)">
-											{{ formatDate(entry.rank) }}
-										</span>
-									</td>
-								</tr>
-							</tbody>
-						</table>
+					<!-- Name -->
+					<div class="flex-1 min-w-0">
+						<span
+							class="font-medium truncate block"
+							:class="
+								isCurrentUser(entry.userId)
+									? 'text-(--ui-text-highlighted)'
+									: 'text-(--ui-text)'
+							"
+						>
+							{{ entry.username || t('leaderboard.anonymous') }}
+						</span>
+						<span v-if="isCurrentUser(entry.userId)" class="text-xs text-primary"
+							>You</span
+						>
 					</div>
-				</UCard>
 
-				<!-- Stats footer -->
-				<div class="mt-4 text-center text-sm text-(--ui-text-dimmed)">
-					{{ t('leaderboard.showingTop', { count: entries.length }) }}
+					<!-- Score -->
+					<span
+						class="font-bold tabular-nums shrink-0"
+						:class="
+							entry.rank <= 3
+								? 'text-primary text-lg'
+								: 'text-(--ui-text-highlighted)'
+						"
+					>
+						{{ entry.totalScore }}
+					</span>
 				</div>
 			</div>
+
+			<!-- Footer -->
+			<p class="text-center text-xs text-(--ui-text-dimmed) mt-3">
+				{{ t('leaderboard.showingTop', { count: entries.length }) }}
+			</p>
 		</div>
 	</div>
 </template>
-
-<style scoped>
-.container {
-	max-width: 1200px;
-}
-
-/* Highlight animation for current user */
-@keyframes highlight-pulse {
-	0%,
-	100% {
-		background-color: var(--ui-bg-muted);
-	}
-	50% {
-		background-color: var(--ui-bg-elevated);
-	}
-}
-
-.current-user-row {
-	animation: highlight-pulse 2s ease-in-out infinite;
-}
-</style>
