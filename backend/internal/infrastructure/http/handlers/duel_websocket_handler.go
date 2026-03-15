@@ -2,6 +2,7 @@ package handlers
 
 import (
 	"encoding/json"
+	"errors"
 	"log"
 	"sync"
 	"time"
@@ -424,6 +425,10 @@ func (h *DuelWebSocketHub) handleSubmitAnswer(gameID, playerID string, data Duel
 	}
 
 	if err != nil {
+		// Late answer after timeout — expected race, not an error for the user
+		if errors.Is(err, quick_duel.ErrPlayerAlreadyAnswered) {
+			return
+		}
 		if playerConn != nil {
 			playerConn.WriteJSON(map[string]interface{}{
 				"type":  "error",

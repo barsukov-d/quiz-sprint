@@ -1515,6 +1515,13 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 	}
 	currentQuestionID := questionIDs[currentRound-1]
 
+	// Detect stale round: if the client sent a questionID and it doesn't match
+	// the server's current round question, the round already advanced (timeout race).
+	// Treat as late/stale answer — return ErrPlayerAlreadyAnswered instead of confusing ErrAnswerNotFound.
+	if input.QuestionID != "" && input.QuestionID != currentQuestionID.String() {
+		return nil, quick_duel.ErrPlayerAlreadyAnswered
+	}
+
 	question, err := uc.questionRepo.FindByID(currentQuestionID)
 	if err != nil {
 		return nil, fmt.Errorf("submit duel answer: load question: %w", err)
