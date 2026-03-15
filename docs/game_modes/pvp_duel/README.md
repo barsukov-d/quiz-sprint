@@ -6,13 +6,13 @@
 
 | Файл | ✅ | ⚠️ | ❌ | Главные расхождения |
 |------|----|----|----|--------------------|
-| 01_concept.md | 12 | 3 | 3 | Нет bot games, emotes, cosmetics |
-| 02_gameplay.md | 16 | 4 | 6 | Нет emotes, surrender, bot games, victory cards |
-| 03_rules.md | 14 | 4 | 5 | Matchmaking исправлен, tiebreaker добавлен |
-| 04_rewards.md | 9 | 2 | 10 | Referral rewards добавлены, seasonal добавлен |
-| 05_api.md | 26 | 2 | 1 | Referral endpoints добавлены, нет surrender |
-| 06_domain.md | 22 | 11 | 2 | Пакет quick_duel (не pvp_duel), сервисы в use cases |
-| 07_edge_cases.md | 12 | 10 | 5 | Tiebreaker по времени, нет bot/surrender |
+| 01_concept.md | 14 | 1 | 3 | Нет emotes, cosmetics, ticket shop |
+| 02_gameplay.md | 18 | 2 | 4 | Нет emotes, victory cards, push notifications |
+| 03_rules.md | 11 | 4 | 7 | Scoring+K-factor исправлены, surrender добавлен |
+| 04_rewards.md | 6 | 1 | 14 | Referral claiming + seasonal distribution добавлены |
+| 05_api.md | 27 | 1 | 0 | Surrender + referral endpoints добавлены |
+| 06_domain.md | 22 | 11 | 1 | Surrender, BotFallback, CalculateDrawRating добавлены |
+| 07_edge_cases.md | 13 | 11 | 3 | Tiebreaker, bot game, same-opponent исправлены |
 
 ## Quick Navigation
 
@@ -72,11 +72,11 @@
 - [x] Bot games fallback (60s queue timeout)
 - [x] Same-opponent prevention in matchmaking (Redis duel:recent:{p}:{o} EX 300, bypass after 30s)
 - [x] Surrender endpoint (POST /duel/game/:gameId/surrender, requires 3+ answers)
-- [ ] Structured error codes (JSON format)
+- [x] Structured error codes (AppError with errorCode field, 30+ codes)
 - [ ] Anti-cheat: pattern detection, penalties
 
 ### Bugs / Fixes Needed
-- [ ] Fix: Scoring doc says "correct count", code uses points+speed bonus — align doc or code
+- [x] Fix: Scoring doc updated — 100 base + speed bonus (50/25/10/0), not correct count
 - [x] Fix: Matchmaking ranges — updated to 5-tier spec (10/20/30/45/45+ seconds)
-- [ ] Fix: K-factor doc says K=32 always, code has K=32/<30 games, K=16 after
-- [ ] Fix: Package name `quick_duel` vs doc `pvp_duel` — choose one
+- [x] Fix: K-factor doc updated — K=32 for <30 games, K=16 for 30+ games
+- [x] Fix: Package name — docs updated to `quick_duel` (note added to 06_domain.md)

@@ -1,7 +1,7 @@
 # Daily Challenge - API Specification
 
 > **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 2 | ⚠️ Расходится: 7 | ❌ Не реализовано: 0
+> ✅ Реализовано: 7 | ⚠️ Расходится: 2 | ❌ Не реализовано: 0
 
 ## Architecture Note: Thin Client Pattern
 
@@ -82,7 +82,7 @@ Content-Type: application/json
 
 ### 2. Submit Answer
 
-> ⚠️ **Расходится:** эндпоинт существует, возвращает 200, но структура ответа отличается. Код возвращает `isCorrect`, `correctAnswerId`, `nextQuestion`, `gameResults` — вместо `questionIndex`, `remainingQuestions`. В результатах игры отсутствуют `rankLabel`, `chestLabel`, `shareText` (фронт вычисляет локально).
+> ✅ **Реализовано:** эндпоинт существует, возвращает 200 с `isCorrect`, `correctAnswerId`, `nextQuestion`, `questionIndex`, `remainingQuestions`. В `gameResults` присутствуют `rankLabel`, `chestLabel`, `shareText`, `suspiciousScore`.
 
 ```http
 POST /api/v1/daily-challenge/:gameId/answer
@@ -146,7 +146,7 @@ Content-Type: application/json
 
 ### 3. Get Daily Status
 
-> ⚠️ **Расходится:** эндпоинт существует, но ответ отличается. Код возвращает `timeRemaining`, `timeToExpire`, `totalPlayers` — но не возвращает `canRetry`, `retryCost`, `streakLabel`, `canPlayNow`. Thin-client labels отсутствуют в DTO.
+> ✅ **Реализовано:** эндпоинт возвращает `canRetry`, `retryCost`, `canPlayNow`, `timeToExpire`, `totalPlayers`. ⚠️ `streakLabel` не возвращается (есть `streak.bonusPercent`, но нет готовой строки "🔥 6 дней подряд").
 
 ```http
 GET /api/v1/daily-challenge/status?playerId=user_123&date=2026-01-28
@@ -206,7 +206,7 @@ GET /api/v1/daily-challenge/status?playerId=user_123&date=2026-01-28
 
 ### 4. Get Leaderboard
 
-> ✅ **Близко к спецификации.** Отсутствует поддержка параметра `type` (`global`/`friends`/`country`) — фильтрация не реализована.
+> ✅ **Реализовано.** Поддерживается параметр `type`: `global` (default), `friends` (по referrals), `country` (по language_code). Методы `FindTopByDateAndFriends` + `FindTopByDateAndCountry` в репозитории.
 
 ```http
 GET /api/v1/daily-challenge/leaderboard?date=2026-01-28&limit=10&playerId=user_123
@@ -251,7 +251,7 @@ GET /api/v1/daily-challenge/leaderboard?date=2026-01-28&limit=10&playerId=user_1
 
 ### 5. Get Player Streak
 
-> ⚠️ **Расходится:** эндпоинт существует, но названия полей отличаются: `longestStreak` → `bestStreak`, `streakBonus` → `bonusPercent` в коде.
+> ✅ **Реализовано.** ⚠️ Названия полей в коде: `bestStreak` (не `longestStreak`), `bonusPercent` (не `streakBonus`).
 
 ```http
 GET /api/v1/daily-challenge/streak?playerId=user_123
@@ -310,7 +310,7 @@ POST /api/v1/daily-challenge/:gameId/chest/open
 
 ### 7. Retry Challenge (Second Attempt)
 
-> ✅ **Реализовано.** Эндпоинт существует, возвращает 201, ответ соответствует спецификации с дополнительными полями `firstQuestion`, `timeLimit`.
+> ✅ **Реализовано.** Эндпоинт существует, возвращает 201 с `newGameId`, `firstQuestion`, `timeLimit`, `coinsDeducted`, `remainingCoins`. Списание монет реальное через `InventoryService`.
 
 ```http
 POST /api/v1/daily-challenge/:gameId/retry
@@ -338,6 +338,39 @@ Content-Type: application/json
 **Errors:**
 - `400 Bad Request` - Insufficient coins
 - `409 Conflict` - Retry limit reached (non-premium)
+
+---
+
+### 8. Recover Streak
+
+> ✅ **Реализовано.** `RecoverStreakUseCase` через `InventoryService.Debit(50 coins)` или `AdVerificationService`.
+
+```http
+POST /api/v1/daily-challenge/streak/recover
+Content-Type: application/json
+```
+
+**Request:**
+```json
+{
+  "playerId": "user_123",
+  "paymentMethod": "coins"  // or "ad"
+}
+```
+
+**Response 200 OK:**
+```json
+{
+  "data": {
+    "restoredStreak": 7,
+    "coinsDeducted": 50
+  }
+}
+```
+
+**Errors:**
+- `400 Bad Request` - Streak not recoverable (>1 day missed)
+- `400 Bad Request` - Insufficient coins
 
 ---
 
@@ -388,7 +421,7 @@ type StreakMilestoneReachedEvent struct {
 
 ## Error Codes
 
-> ⚠️ **Расходится:** `ErrAlreadyAnswered` возвращает 500 вместо 409. `ErrInvalidTimeTaken` и `INSUFFICIENT_COINS` не реализованы.
+> ✅ `ErrAlreadyAnswered` → 409 реализовано. ⚠️ `ErrInvalidTimeTaken` (диапазон 0-15s) не валидируется. `INSUFFICIENT_COINS` возвращается через `InventoryService.Debit` ошибку.
 
 | HTTP Status | Error Code | Description |
 |-------------|------------|-------------|

@@ -1,14 +1,16 @@
 # PvP Duel - Domain Model
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 18 | ⚠️ Расходится: 15 | ❌ Не реализовано: 2
+> **Статус реализации (обновлено 2026-03-15)**
+> ✅ Реализовано: 22 | ⚠️ Расходится: 11 | ❌ Не реализовано: 1
 >
-> ✅ DuelGame aggregate, SubmitAnswer (с anti-cheat), DuelGameRepository (FindByID/FindActiveByPlayer/Save), DuelChallenge aggregate (все статусы), AcceptWaiting, Accept/Decline/SetMatchID, PlayerRating, GetLeagueLabel, CanDemote, SeasonReset (формула совпадает), Referral (referral.go с milestones), DuelPlayer (immutable, AddScore/SetConnected/UpdateElo), League/GetLeagueFromMMR (league.go совпадает), domain events (полный набор в events.go), таблицы: duel_games, player_ratings, duel_challenges, referrals
-> ⚠️ Bounded context называется `quick_duel` (не `pvp_duel`); GetCurrentQuestion — нет метода, доступ через QuestionIDs()[currentRound-1]; GetWinner — приватный determineWinner, возвращает *UserID (не (*PlayerID, WinReason)); CalculateMMRChanges — MMR через EloRating.CalculateNewRating, не отдельный метод; Forfeit — нет метода, HandlePlayerDisconnect ставит abandoned; ApplyMatchResult — называется ApplyGameResult, принимает GameResult struct; PlayerAnswer — называется RoundAnswer, другая структура (есть поле points); GameStatus константы — waiting_start/in_progress/finished/abandoned (не waiting/countdown/in_progress/completed/cancelled); WinReason — нет типа, победитель по сравнению счёта; MMRCalculator — логика внутри EloRating.CalculateNewRating и PlayerRating.ApplyGameResult; MatchmakingService — use case (use_cases.go), не domain service; ChallengeService — логика в use_cases.go; ReferralService — базовый tracking, нет claiming rewards; Redis active matches — duel_round_cache.go хранит round data, не полный match state; Redis seasonal leaderboard — не реализован
-> ❌ PlayerTickets/TicketService — не реализован; таблица seasons — нет отдельной таблицы
+> ✅ DuelGame aggregate, SubmitAnswer (с anti-cheat), DuelGameRepository (FindByID/FindActiveByPlayer/Save), DuelChallenge aggregate (все статусы), AcceptWaiting, Accept/Decline/SetMatchID, PlayerRating, GetLeagueLabel, CanDemote, SeasonReset (формула совпадает), Referral (referral.go с milestones + claiming), DuelPlayer (immutable, AddScore/SetConnected/UpdateElo), League/GetLeagueFromMMR (league.go совпадает), domain events (полный набор в events.go), таблицы: duel_games, player_ratings, duel_challenges, referrals; Surrender (после Q3, WinReason=forfeit); BotFallbackUseCase (60s timeout); CalculateDrawRating (symmetric ELO для ничьей); same-opponent prevention (Redis duel:recent:{p}:{o} EX 300); totalTimeMs на DuelPlayer; time-based tiebreaker (deterministic, playerID fallback)
+> ⚠️ Bounded context называется `quick_duel` (не `pvp_duel`); GetCurrentQuestion — нет метода, доступ через QuestionIDs()[currentRound-1]; GetWinner — приватный determineWinner, возвращает *UserID; CalculateMMRChanges — MMR через EloRating.CalculateNewRating; ApplyMatchResult — называется ApplyGameResult; PlayerAnswer — называется RoundAnswer; GameStatus константы — waiting_start/in_progress/finished/abandoned; MMRCalculator — логика внутри EloRating; MatchmakingService — use case (use_cases.go); ChallengeService — логика в use_cases.go; Redis seasonal leaderboard — не реализован
+> ❌ таблица seasons — нет отдельной таблицы (данные в player_ratings)
+
+> **Package note:** Backend package is `quick_duel` (historical name, не `pvp_duel`). Import path: `internal/domain/quick_duel`.
 
 ## Bounded Context
-`pvp_duel` - Real-time 1v1 competitive quiz mode with ranking and social features.
+`quick_duel` - Real-time 1v1 competitive quiz mode with ranking and social features.
 
 ---
 
@@ -67,11 +69,10 @@ func (dg *DuelGame) SubmitAnswer(
     submittedAt int64,
 ) (*AnswerResult, error)
 
-func (dg *DuelGame) GetCurrentQuestion() *DuelQuestion
 func (dg *DuelGame) IsComplete() bool
-func (dg *DuelGame) GetWinner() (*PlayerID, WinReason)
-func (dg *DuelGame) CalculateMMRChanges() (player1Delta, player2Delta int)
-func (dg *DuelGame) Forfeit(playerID PlayerID) error
+// GetWinner: приватный determineWinner → returns *UserID (tiebreaker: time, then playerID)
+// Surrender: available after Q3; sets WinReason=forfeit, opponent wins
+// CalculateDrawRating: symmetric ELO for equal-score draws
 ```
 
 **Repository:**
@@ -251,36 +252,35 @@ const (
 
 ```go
 type DuelPlayer struct {
-    id          PlayerID
-    username    string
-    avatar      string
-    mmrBefore   int
-    mmrAfter    *int
+    id           PlayerID
+    username     string
+    avatar       string
+    mmrBefore    int
+    mmrAfter     *int
 
-    answers     []PlayerAnswer
-    totalTime   int64
-    score       int
+    answers      []RoundAnswer   // actual name in code: RoundAnswer (has .points field)
+    totalTimeMs  int64           // sum of timeTaken across all answers
+    score        int             // sum of points (100 base + speed bonus per correct answer)
 }
 
-func (dp *DuelPlayer) AddAnswer(answer PlayerAnswer) {
+func (dp *DuelPlayer) AddAnswer(answer RoundAnswer) {
     dp.answers = append(dp.answers, answer)
-    dp.totalTime += answer.TimeTaken
-    if answer.IsCorrect {
-        dp.score++
-    }
+    dp.totalTimeMs += answer.TimeTaken
+    dp.score += answer.Points  // 0 if wrong, 100–150 if correct
 }
 ```
 
 ---
 
-### PlayerAnswer
+### RoundAnswer (PlayerAnswer in code)
 
 ```go
-type PlayerAnswer struct {
+type RoundAnswer struct {
     questionID  QuestionID
     answerID    *AnswerID     // nil if timeout
     isCorrect   bool
-    timeTaken   int64         // milliseconds
+    timeTaken   int64         // milliseconds (clamped: >10500ms → 10000ms)
+    points      int           // 0 if wrong; 100–150 if correct (100 base + speed bonus)
     answeredAt  int64
 }
 ```

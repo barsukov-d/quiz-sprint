@@ -1,7 +1,7 @@
 # Daily Challenge - Domain Model
 
 > **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 8 | ⚠️ Расходится: 7 | ❌ Не реализовано: 3
+> ✅ Реализовано: 10 | ⚠️ Расходится: 6 | ❌ Не реализовано: 2
 
 ## Bounded Context
 `daily_challenge` - independent context for daily competitions.
@@ -165,6 +165,8 @@ const (
 func (gs GameStatus) CanTransitionTo(next GameStatus) bool
 func (gs GameStatus) IsTerminal() bool
 ```
+
+> ✅ Реализовано — все 3 статуса, включая `abandoned`. Переходы: `in_progress → completed | abandoned`.
 
 ---
 

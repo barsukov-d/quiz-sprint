@@ -1,7 +1,7 @@
 # Daily Challenge - Business Rules
 
 > **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 7 | ⚠️ Расходится: 6 | ❌ Не реализовано: 4
+> ✅ Реализовано: 10 | ⚠️ Расходится: 5 | ❌ Не реализовано: 2
 
 ## Score Calculation
 
@@ -77,6 +77,7 @@ else:
 - Available: Within 24h after break
 - Cost: 50 coins OR Rewarded Ad
 - Effect: Restores previous streak
+> ✅ Реализовано — `RecoverStreakUseCase` через `InventoryService.Debit` (50 coins) или `AdVerificationService`
 
 ## Validation Rules
 
@@ -126,7 +127,7 @@ IN_PROGRESS --[24h timeout]--> ABANDONED
 
 Invalid transitions throw `ErrInvalidGameStatus`.
 
-> ⚠️ Расходится — состояние ABANDONED отсутствует в коде
+> ✅ Реализовано — `GameStatusAbandoned` существует. `CleanupAbandonedGamesUseCase.Execute()` помечает просроченные игры через `MarkAbandonedGames()`.
 
 ## Leaderboard Rules
 
@@ -164,7 +165,7 @@ Stored in Redis Sorted Set (higher = better rank).
 - 100 coins (deducted upfront)
 - OR Rewarded Ad
 
-> ⚠️ Расходится — use case существует, но списание монет не реализовано (TODO stub)
+> ✅ Реализовано — `RetryChallengeUseCase` вызывает `InventoryService.Debit(100 coins)` или `AdVerificationService.VerifyAdWatched()`
 
 **Effect:**
 - Creates NEW `DailyGame` with same `date`
@@ -197,10 +198,10 @@ Applied automatically at chest opening.
 ## Anti-Cheat
 
 **Server validates:**
-1. Time taken (realistic range) — ❌ Не реализовано
+1. Time taken (realistic range) — ❌ Не реализовано (валидация diapason 0-15s отсутствует)
 2. Answer sequence (no skipping questions) — ✅ Реализовано через kernel session
-3. Completion time (min 10 seconds total) — ❌ Не реализовано
-4. Request signatures (Telegram auth) — ⚠️ Расходится: middleware существует, но handlers принимают PlayerID из тела запроса (риск bypass)
+3. Completion time (suspicious avg < 1s/question) — ✅ Реализовано (`SuspiciousScore` flag в `GameResultsDTO`)
+4. Request signatures (Telegram auth) — ⚠️ Middleware существует, но handlers принимают PlayerID из тела запроса (риск bypass)
 
 **Penalties:**
 - Suspicious activity → Game invalidated

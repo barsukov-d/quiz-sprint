@@ -1,19 +1,19 @@
 # Daily Challenge Documentation
 
-> **Аудит реализации: 2026-03-15 | Обновлено: 2026-03-15 (Phase 8: leaderboard friends/country filtering)**
+> **Аудит реализации: 2026-03-15 | Обновлено: 2026-03-15 (Phase 9: streak recovery, ABANDONED, anti-cheat, thin-client labels, leaderboard filtering, ErrAlreadyAnswered→409, retry coins)**
 
 ## Статус документации vs кода
 
 | Файл | ✅ | ⚠️ | ❌ | Главные расхождения |
 |------|----|----|----|--------------------|
-| 01_concept.md | 9 | 1 | 1 | Нет анимации сундука |
-| 02_gameplay.md | 10 | 4 | 0 | ABANDONED добавлен, лейблы добавлены |
-| 03_rules.md | 13 | 4 | 0 | Anti-cheat добавлен (suspicious flag) |
+| 01_concept.md | 7 | 2 | 2 | Premium stub, нет анимации сундука |
+| 02_gameplay.md | 8 | 4 | 2 | ABANDONED ✅, лейблы ✅, нет ChestOpening анимации |
+| 03_rules.md | 10 | 5 | 2 | Recovery ✅, retry coins ✅, anti-cheat flag ✅; timeTaken валидация ❌ |
 | 04_rewards.md | 7 | 1 | 0 | Inventory работает, Premium stub |
-| 05_api.md | 7 | 2 | 0 | Основные поля добавлены (rankLabel, chestLabel, shareText) |
-| 06_domain.md | 10 | 5 | 3 | DailyQuiz структура другая, нет Redis |
-| 07_edge_cases.md | 8 | 3 | 1 | Серверная валидация времени добавлена |
-| 08_frontend_integration.md | 4 | 4 | 2 | Thin client нарушения, нет ChestOpening |
+| 05_api.md | 7 | 2 | 0 | rankLabel/chestLabel/shareText ✅, leaderboard filtering ✅, RecoverStreak ✅ |
+| 06_domain.md | 10 | 6 | 2 | ABANDONED ✅, DailyQuiz структура другая, нет Redis |
+| 07_edge_cases.md | 7 | 3 | 2 | ABANDONED ✅, ErrAlreadyAnswered 409 ✅, SuspiciousScore ✅ |
+| 08_frontend_integration.md | 5 | 3 | 2 | rankLabel/chestLabel от бэкенда ✅, нет ChestOpening |
 
 ## Quick Navigation
 
@@ -41,6 +41,7 @@
 - [x] Ad verification interface (NoopAdVerificationService wired in routes.go)
 - [x] Swagger: RecoverStreak аннотации, ErrAlreadyAnswered → HTTP 409
 - [x] Фильтрация лидерборда (friends/country) — FindTopByDateAndFriends + FindTopByDateAndCountry
-- [ ] Chest opening анимация (frontend)
+- [ ] Chest opening анимация (frontend — `ChestOpening.vue` отсутствует)
 - [ ] Push notifications
 - [ ] Redis-лидерборд (вместо PostgreSQL)
+- [ ] timeTaken диапазон валидация (0-15s) на сервере

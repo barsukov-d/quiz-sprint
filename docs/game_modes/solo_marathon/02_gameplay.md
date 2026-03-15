@@ -1,7 +1,7 @@
 # Solo Marathon - Gameplay Flow
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 10 | ⚠️ Расходится: 6 | ❌ Не реализовано: 4
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 11 | ⚠️ Расходится: 5 | ❌ Не реализовано: 4
 
 ## Entry Point
 Home → "Марафон" → Shows:
@@ -77,7 +77,7 @@ Home → "Марафон" → Shows:
 - Questions 26-50: 10 seconds
 - Questions 51+: 8 seconds
 
-**Difficulty transition notification:** <!-- ❌ No difficultyChanged/difficultyMessage in DTOs -->
+**Difficulty transition notification:** <!-- ✅ difficultyChanged/difficultyMessage in question DTO; frontend toast component implemented -->
 When timer limit changes (e.g., question 11, 26, 51), show brief toast:
 ```
 ⚡ Сложность растёт! Время: 12 сек
@@ -118,7 +118,7 @@ Player taps Skip
 → NO life lost
 ```
 
-#### Using Freeze ❄️ <!-- ⚠️ Frontend adds only +5 seconds, not +10 (MarathonPlayView.vue:267). Also ⚠️ code prevents reuse of same bonus type per question (ErrBonusAlreadyUsed), contradicting "can use multiple freezes" -->
+#### Using Freeze ❄️ <!-- ✅ +10 seconds confirmed. ⚠️ ErrBonusAlreadyUsed prevents reuse of same bonus type per question, contradicting "can use multiple freezes" -->
 ```
 Player taps Freeze
 → Timer +10 seconds instantly

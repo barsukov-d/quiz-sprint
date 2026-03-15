@@ -1,7 +1,7 @@
 # Daily Challenge - Gameplay Flow
 
 > **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 6 | ⚠️ Расходится: 6 | ❌ Не реализовано: 2
+> ✅ Реализовано: 8 | ⚠️ Расходится: 4 | ❌ Не реализовано: 2
 
 ## Changes
 
@@ -174,7 +174,7 @@ Example: user selected C (wrong), correct is A:
 
 ### 4. Completion Screen
 
-> ⚠️ **Расходится:** экран результатов показывает счёт, ранг и тип сундука, но отдельная кнопка "Открыть сундук" и её анимация отсутствуют
+> ⚠️ **Расходится:** бэкенд возвращает `rankLabel`, `chestLabel`, `shareText` (✅). Кнопка "Открыть сундук" есть, но анимация открытия (`ChestOpening.vue`) не реализована (❌)
 
 ```
 ┌─────────────────────────────────────┐
@@ -228,12 +228,12 @@ Animation → Shows rewards:
 
 ## States
 
-> ⚠️ **Расходится:** статус `ABANDONED` отсутствует в коде — только `in_progress` и `completed`
+> ✅ **Реализовано:** статус `ABANDONED` существует. `CleanupAbandonedGamesUseCase` помечает просроченные игры через `MarkAbandonedGames()`.
 
 ```
 NOT_STARTED → IN_PROGRESS → COMPLETED
               ↓
-           ABANDONED (24h timeout)
+           ABANDONED (24h timeout, cron cleanup)
 ```
 
 ## Edge Cases

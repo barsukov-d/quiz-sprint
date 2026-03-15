@@ -1,7 +1,7 @@
 # Daily Challenge - Frontend Integration
 
 > **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 4 | ⚠️ Расходится: 4 | ❌ Не реализовано: 2
+> ✅ Реализовано: 5 | ⚠️ Расходится: 3 | ❌ Не реализовано: 2
 
 ## Changes
 
@@ -105,7 +105,7 @@ const submitAnswer = async (answerId: string) => {
 
 ### ResultsScreen.vue
 
-> ⚠️ Расходится: компонент называется DailyChallengeResultsView.vue. Вычисляет scorePercentage, streakMultiplier, performanceLevel локально — нарушение thin client.
+> ⚠️ Расходится: компонент называется DailyChallengeResultsView.vue. Бэкенд возвращает `rankLabel`, `chestLabel`, `shareText` (✅). Но фронт вычисляет `scorePercentage`, `performanceLevel` локально — частичное нарушение thin client.
 
 **Only does:**
 - Fetch results from completion response
@@ -189,7 +189,7 @@ const { data: status } = useQuery({
 // - results: { score, chest, rank }
 ```
 
-> ⚠️ Расходится: ResultsView вычисляет scorePercentage, streakMultiplier, performanceLevel на фронтенде — нарушение thin client.
+> ⚠️ Расходится: `DailyChallengeResultsView.vue` вычисляет `scorePercentage`, `performanceLevel` на фронтенде. `rankLabel`, `chestLabel`, `shareText` теперь приходят от бэкенда (✅).
 
 ### NO Pinia/Vuex for game state
 
@@ -297,7 +297,7 @@ await api.post('/daily/:gameId/answer', { answerId })
 
 **Server ALWAYS validates:**
 
-> ⚠️ Расходится: фронтенд отправляет timeTaken, но сервер НЕ валидирует его.
+> ⚠️ Расходится: фронтенд отправляет `timeTaken`, сервер использует его для скоринга, но диапазон 0-15s не валидируется (❌). `SuspiciousScore` флаг работает как anti-cheat (✅).
 
 - Time taken valid (0-15s)
 - Question not already answered

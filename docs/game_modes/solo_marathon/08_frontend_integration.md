@@ -1,7 +1,7 @@
 # Solo Marathon - Frontend Integration
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 6 | ⚠️ Расходится: 8 | ❌ Не реализовано: 5
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 8 | ⚠️ Расходится: 7 | ❌ Не реализовано: 3
 >
 > - ✅ Frontend has ZERO game logic
 > - ✅ Lives from API
@@ -10,6 +10,9 @@
 > - ✅ Tests only cover rendering
 > - ✅ QuestionScreen — реализован как `MarathonPlayView.vue`
 > - ✅ GameOverScreen — реализован как `MarathonGameOverView.vue`
+> - ✅ DifficultyTransition toast — реализован; backend возвращает `difficultyChanged`/`difficultyMessage` в question DTO
+> - ✅ CorrectAnswerText — доступен в answer response (`correctAnswerText` field)
+> - ✅ CanStart — доступен в GET /marathon/status response
 > - ⚠️ Timer visual only, server validates — таймер визуальный, но сервер НЕ валидирует `timeTaken` против `timeLimit`
 > - ⚠️ MarathonView.vue (pre-start) — существует только `MarathonCategoryView.vue`, нет отдельного pre-start экрана
 > - ⚠️ BonusControls — встроен inline в `MarathonPlayView.vue`, не отдельный компонент
@@ -17,7 +20,6 @@
 > - ⚠️ ResultsScreen — не отдельный; GameOver screen совмещает обе функции
 > - ⚠️ MilestoneProgress — inline, не отдельный компонент
 > - ❌ PersonalBestProgress — не реализован
-> - ❌ DifficultyTransition toast — не реализован
 > - ❌ OnboardingOverlay — не реализован
 > - ❌ NetworkOverlay — не реализован
 > - ❌ ShareCard — не реализован
@@ -596,7 +598,7 @@ Visual progress bar comparing current score to personal best.
 
 ### DifficultyTransition.vue
 
-> ❌ Не реализован.
+> ✅ Реализован. Backend возвращает `difficultyChanged`/`difficultyMessage` в question DTO; frontend toast component показывает уведомление.
 
 Brief toast notification when timer limit changes.
 

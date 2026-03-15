@@ -1,18 +1,19 @@
 # Solo Marathon - API Specification
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 2 | ⚠️ Расходится: 7 | ❌ Не реализовано: 1
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 4 | ⚠️ Расходится: 6 | ❌ Не реализовано: 0
 >
 > - ✅ Domain events (все существуют + дополнительные)
 > - ✅ Error codes (все маппируются в HTTP)
+> - ✅ POST /marathon/:gameId/complete — реализован (CompleteMarathonUseCase)
+> - ✅ POST /marathon/:gameId/answer — response содержит `correctAnswerText` (добавлено)
 > - ⚠️ POST /marathon/start — endpoint есть, но `selectedBonuses` в request не используется (бонусы грузятся автоматически); response не содержит `milestone`, `onboarding`, `startedAt`
 > - ⚠️ POST /marathon/:gameId/bonus — endpoint есть, но нет `statusMessage`; 50/50 возвращает `hiddenAnswerIds` вместо `remainingAnswers`; skip возвращает `nextQuestion` ✅
-> - ⚠️ POST /marathon/:gameId/answer — endpoint есть, но `shieldActive` не принимается в request; response не содержит `feedbackMessage`, `correctAnswerText`, `explanation`; `gameOverData` не содержит `weeklyRank`
+> - ⚠️ POST /marathon/:gameId/answer — `shieldActive` не принимается в request; response не содержит `feedbackMessage`, `explanation`; `gameOverData` не содержит `weeklyRank`; `Suspicious` field added
 > - ⚠️ POST /marathon/:gameId/continue — endpoint есть, но `remainingCoins` отсутствует в response
-> - ⚠️ GET /marathon/status — endpoint есть, но не содержит `weeklyBest`, `weeklyRank`, `canStart`
+> - ⚠️ GET /marathon/status — endpoint есть, `canStart` добавлен; но не содержит `weeklyBest`, `weeklyRank`
 > - ⚠️ GET /marathon/leaderboard — endpoint есть, но нет `weekId`, `endsAt`, `totalPlayers`; `playerRank` всегда nil
 > - ⚠️ Errors — маппируются как plain text, не как структурированный `{error: {code, message}}`
-> - ❌ POST /marathon/:gameId/complete — не реализован; вместо него код использует DELETE /:gameId (abandon)
 
 ## Architecture Note: Thin Client Pattern
 
@@ -182,7 +183,7 @@ POST /api/v1/marathon/:gameId/bonus
 
 ### 3. Submit Answer
 
-> ⚠️ Endpoint существует. `shieldActive` не принимается в request. Response не содержит `feedbackMessage`, `correctAnswerText`, `explanation`. `gameOverData` не содержит `weeklyRank`.
+> ⚠️ Endpoint существует. `shieldActive` не принимается в request. Response содержит `correctAnswerText` ✅. Response не содержит `feedbackMessage`, `explanation`. `gameOverData` не содержит `weeklyRank`. Response содержит `Suspicious` bool поле.
 
 ```http
 POST /api/v1/marathon/:gameId/answer
@@ -319,7 +320,7 @@ POST /api/v1/marathon/:gameId/continue
 
 ### 5. Get Marathon Status
 
-> ⚠️ Endpoint существует. Response не содержит `weeklyBest`, `weeklyRank`, `canStart`.
+> ⚠️ Endpoint существует. Response содержит `canStart` ✅. Response не содержит `weeklyBest`, `weeklyRank`.
 
 ```http
 GET /api/v1/marathon/status?playerId=user_123
@@ -412,7 +413,7 @@ GET /api/v1/marathon/leaderboard?type=weekly&limit=10&playerId=user_123
 
 ### 7. Complete Game (Quit)
 
-> ❌ Endpoint не реализован. В коде используется `DELETE /:gameId` (abandon). Отдельного complete endpoint нет.
+> ✅ Endpoint реализован (CompleteMarathonUseCase). `POST /marathon/:gameId/complete` завершает игру и сохраняет результат.
 
 ```http
 POST /api/v1/marathon/:gameId/complete

@@ -1,7 +1,7 @@
 # Solo Marathon - Concept
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 9 | ⚠️ Расходится: 3 | ❌ Не реализовано: 3
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 11 | ⚠️ Расходится: 1 | ❌ Не реализовано: 3
 
 ## What?
 Endless PvE mode where player answers questions until losing 3 lives.
@@ -50,7 +50,7 @@ Daily Challenge → Earn Bonuses → Use in Marathon → Set Record → Compete 
 | Shield | 🛡️ | 1 free mistake (no life loss) | Uncertain answer | <!-- ✅ -->
 | 50/50 | 🔀 | Remove 2 wrong answers | 50/50 guess | <!-- ✅ -->
 | Skip | ⏭️ | Skip question (no penalty) | Unknown topic | <!-- ✅ -->
-| Freeze | ❄️ | +10 seconds to timer | Late-game time pressure | <!-- ⚠️ Backend DTO correct (+10), but frontend adds only +5 (MarathonPlayView.vue:267) -->
+| Freeze | ❄️ | +10 seconds to timer | Late-game time pressure | <!-- ✅ +10s confirmed (backend + frontend) -->
 
 ### 3. Adaptive Difficulty
 Questions get harder over time:
@@ -60,7 +60,7 @@ Questions get harder over time:
 
 ### 4. Continue Mechanic (optional monetization)
 At 0 energy:
-- **Continue:** 200 coins OR Rewarded Ad → energy resets to 1 ⚡ (resume same run) <!-- ✅ Formula implemented, but coins NOT actually deducted (TODO stub) -->
+- **Continue:** 200 coins OR Rewarded Ad → energy resets to 1 ⚡ (resume same run) <!-- ✅ Formula implemented, coins deducted (real) -->
 - **New run:** Free → 5 ⚡ fresh start (best run per week goes to leaderboard) <!-- ✅ -->
 
 ## Leaderboards
@@ -77,10 +77,10 @@ Weekly resets → Fresh competition every week.
 
 | Feature | Cost | Effect |
 |---------|------|--------|
-| Continue (1st) | 200 coins / Ad | Lives reset to 1 | <!-- ✅ Formula implemented, ❌ coins NOT deducted (TODO stub) -->
-| Continue (2nd) | 400 coins / Ad | Lives reset to 1 | <!-- ✅ Formula only -->
-| Continue (3rd) | 600 coins / Ad | Lives reset to 1 | <!-- ✅ Formula only -->
-| Continue (4th+) | 800+ coins (no Ad) | Lives reset to 1 | <!-- ✅ Formula only -->
+| Continue (1st) | 200 coins / Ad | Lives reset to 1 | <!-- ✅ Implemented, coins deducted (real) -->
+| Continue (2nd) | 400 coins / Ad | Lives reset to 1 | <!-- ✅ Implemented, coins deducted (real) -->
+| Continue (3rd) | 600 coins / Ad | Lives reset to 1 | <!-- ✅ Implemented, coins deducted (real) -->
+| Continue (4th+) | 800+ coins (no Ad) | Lives reset to 1 | <!-- ✅ Implemented, coins deducted (real) -->
 | Bonus pack | 500 coins | 3 Shields, 5 Freezes | <!-- ❌ No shop/pack system -->
 
 ## Success Metrics

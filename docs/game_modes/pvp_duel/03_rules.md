@@ -1,27 +1,26 @@
 # PvP Duel - Business Rules
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 8 | ⚠️ Расходится: 6 | ❌ Не реализовано: 9
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 11 | ⚠️ Расходится: 4 | ❌ Не реализовано: 7
 
 ## ELO/MMR System
 
 ### Rating Calculation
 ```go
-func CalculateMMRChange(winnerMMR, loserMMR int, result GameResult) (winnerDelta, loserDelta int) {
-    K := 32  // K-factor (sensitivity)
+func CalculateMMRChange(winnerMMR, loserMMR int, totalGames int) (winnerDelta, loserDelta int) {
+    // K-factor: K=32 for first <30 games, K=16 for 30+ games
+    K := 32
+    if totalGames >= 30 {
+        K = 16
+    }
 
     // Expected score (probability of winning)
     expectedWinner := 1.0 / (1.0 + math.Pow(10, float64(loserMMR-winnerMMR)/400))
-    expectedLoser := 1.0 - expectedWinner
 
-    // Actual score
-    actualWinner := 1.0  // Win = 1
-    actualLoser := 0.0   // Lose = 0
+    winnerDelta = int(math.Round(float64(K) * (1.0 - expectedWinner)))
+    loserDelta = -int(math.Round(float64(K) * expectedWinner))
 
-    winnerDelta = int(math.Round(float64(K) * (actualWinner - expectedWinner)))
-    loserDelta = int(math.Round(float64(K) * (actualLoser - expectedLoser)))
-
-    // Minimum change
+    // Minimum change ±10
     if winnerDelta < 10 {
         winnerDelta = 10
     }
@@ -33,7 +32,7 @@ func CalculateMMRChange(winnerMMR, loserMMR int, result GameResult) (winnerDelta
 }
 ```
 
-> ⚠️ **Расходится:** Код использует два K-фактора: K=32 для первых <30 игр, K=16 после. Документ описывает только K=32. Минимальное изменение ±10 реализовано верно.
+> ✅ **Реализовано:** K=32 для <30 игр, K=16 для 30+ игр. Минимальное изменение ±10.
 
 ### MMR Examples
 
@@ -111,7 +110,24 @@ func CanDemote(gamesAtCurrentRank int) bool {
 
 ## Win Conditions
 
-### Primary: Correct Answers
+### Scoring
+Each correct answer scores:
+```
+Score = 100 (base) + speed_bonus
+```
+
+| Time taken | Speed bonus |
+|-----------|-------------|
+| 0–3s      | +50         |
+| 3–6s      | +25         |
+| 6–9s      | +10         |
+| 9–10s     | +0          |
+
+Incorrect answer = 0 points. Max per question = 150. Max per duel (7 questions) = 1050.
+
+> ✅ **Реализовано:** 100 base + speed bonus (50/25/10/0). Winner = higher total score.
+
+### Primary: Total Points
 ```go
 func DetermineWinner(player1Score, player2Score int) int {
     if player1Score > player2Score {
@@ -124,9 +140,7 @@ func DetermineWinner(player1Score, player2Score int) int {
 }
 ```
 
-> ⚠️ **Расходится:** Код использует ОЧКИ (100 базовых + бонус скорости 0-50), а не простой счётчик правильных ответов. Победитель определяется по сумме очков, не по количеству correct answers.
-
-### Tiebreaker 1: Total Time
+### Tiebreaker: Total Time
 ```go
 func DetermineWinnerByTime(player1TotalTime, player2TotalTime int64) int {
     if player1TotalTime < player2TotalTime {
@@ -135,28 +149,11 @@ func DetermineWinnerByTime(player1TotalTime, player2TotalTime int64) int {
     if player2TotalTime < player1TotalTime {
         return 2
     }
-    return 0  // Still tied - extremely rare
+    return 0  // Still tied — resolved by playerID
 }
 ```
 
-> ⚠️ **Расходится:** Явного тайбрейкера по времени нет. Бонус скорости уже встроен в очки, поэтому при равных очках — ничья (nil winner), отдельная логика по total time не реализована.
-
-### Tiebreaker 2: First Correct Answer
-```go
-func DetermineWinnerByFirstCorrect(answers1, answers2 []Answer) int {
-    for i := 0; i < len(answers1); i++ {
-        if answers1[i].IsCorrect && !answers2[i].IsCorrect {
-            return 1
-        }
-        if answers2[i].IsCorrect && !answers1[i].IsCorrect {
-            return 2
-        }
-    }
-    return 0  // Complete tie (both wrong all questions - impossibly rare)
-}
-```
-
-> ❌ **Не реализовано.**
+> ✅ **Реализовано:** При равных очках побеждает игрок с меньшим суммарным временем. Последний тайбрейк — по playerID (детерминированный).
 
 ---
 
@@ -347,7 +344,7 @@ func ForfeitGame(gameID, loserID string) {
 - Immediate loss, normal MMR penalty
 - Opponent gets full win MMR
 
-> ❌ **Не реализовано:** Добровольная сдача (voluntary surrender) после вопроса 3 не реализована.
+> ✅ **Реализовано:** Surrender доступен после вопроса 3. WinReason = "forfeit".
 
 ---
 

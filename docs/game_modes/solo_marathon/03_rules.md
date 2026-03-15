@@ -1,7 +1,7 @@
 # Solo Marathon - Business Rules
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 15 | ⚠️ Расходится: 4 | ❌ Не реализовано: 8
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 18 | ⚠️ Расходится: 4 | ❌ Не реализовано: 5
 
 ## Lives System
 
@@ -57,7 +57,7 @@ func Continue(continueCount int) {
     status = IN_PROGRESS
 }
 ```
-<!-- ✅ Реализовано: формула и lives=1. ⚠️ Монеты НЕ списываются (TODO) -->
+<!-- ✅ Реализовано: формула, lives=1, монеты списываются (real deduction) -->
 
 **Max continues:** Unlimited (but escalating cost). <!-- ✅ Реализовано -->
 
@@ -76,7 +76,7 @@ score = correctAnswersCount
 
 ### Leaderboard Tiebreaker
 Primary: `score DESC`
-<!-- ⚠️ Расходится: код сортирует по best_streak DESC первым, затем best_score DESC -->
+<!-- ⚠️ Расходится: код сортирует по best_streak DESC первым, затем best_score DESC (migration 023 persists streak_count/best_streak) -->
 Secondary: `questionCount ASC` (fewer total questions = better efficiency)
 <!-- ❌ Не реализовано: PersonalBest не хранит totalQuestions -->
 Tertiary: `completedAt ASC` (earlier = better) <!-- ✅ Реализовано -->
@@ -385,11 +385,18 @@ func UpdatePersonalBest(playerID, score int) {
     }
 }
 ```
-<!-- ❌ Не реализовано: начисление 500 монет за рекорд отсутствует -->
+<!-- ✅ Реализовано: milestone rewards implemented (5 thresholds + dedup via marathon_bonus_usage). ❌ Flat 500 coins "new record bonus" не начисляется (milestone coins only) -->
 
 ---
 
 ## Anti-Cheat
+
+### Impossible Score (High Score Threshold)
+```
+if correctAnswers > 200:
+    game.Suspicious = true  // flagged for review, not auto-banned
+```
+<!-- ✅ Реализовано: Suspicious поле на MarathonGameV2, порог >200 -->
 
 ### Impossible Times
 ```

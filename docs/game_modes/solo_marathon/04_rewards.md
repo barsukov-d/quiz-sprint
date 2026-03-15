@@ -1,10 +1,10 @@
 # Solo Marathon - Rewards System
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 3 | ⚠️ Расходится: 2 | ❌ Не реализовано: 11
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 6 | ⚠️ Расходится: 2 | ❌ Не реализовано: 8
 
 ## Weekly Leaderboard Rewards
-<!-- ❌ Не реализовано: система распределения наград отсутствует -->
+<!-- ⚠️ WeeklyRewardDistributionUseCase реализован (UC готов), но Redis weekly leaderboard не реализован → данные для распределения недоступны -->
 
 ### Week Schedule
 - **Start:** Monday 00:00 UTC
@@ -75,7 +75,7 @@ First time reaching new personal record:
 ```
 New record → +500 coins (one-time)
 ```
-<!-- ❌ Не реализовано: монеты за рекорд не начисляются -->
+<!-- ❌ Flat +500 coins for PB not implemented. Milestone coins ARE credited (see Milestones above) -->
 
 **Milestones:**
 | Score Reached | Bonus | Badge |
@@ -86,7 +86,7 @@ New record → +500 coins (one-time)
 | 200 | 1,000 coins | 💫 Expert |
 | 500 | 5,000 coins | 🌠 Master |
 
-<!-- ⚠️ Расходится: milestone-отметки отслеживаются и отображаются, но монеты и бейджи не выдаются -->
+<!-- ✅ Реализовано: 5 milestone порогов + coins начисляются + dedup через MilestoneClaimsRepository (marathon_bonus_usage). ❌ Бейджи не выдаются -->
 
 ---
 
@@ -106,7 +106,7 @@ Continue #4+: 800+ coins (no ad option, cost keeps escalating)
 
 **Ad option:** Available for first 3 continues only (`continueCount < 3`). <!-- ✅ Реализовано: флаг присутствует -->
 
-<!-- ⚠️ Расходится: стоимость вычисляется корректно, но монеты фактически НЕ списываются (TODO в коде) -->
+<!-- ✅ Стоимость вычисляется корректно, монеты списываются (real deduction) -->
 
 ### Expected Value Analysis
 
@@ -195,7 +195,7 @@ UPDATE user_inventory SET
 Получено: 2,000💰, 20🎟️, Standard Pack
 ```
 
-<!-- ❌ Не реализовано: scheduled job для распределения наград отсутствует -->
+<!-- ⚠️ WeeklyRewardDistributionUseCase реализован (PostgreSQL), но scheduled job и Redis leaderboard не реализованы -->
 
 ---
 

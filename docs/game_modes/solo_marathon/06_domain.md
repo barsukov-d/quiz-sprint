@@ -1,30 +1,30 @@
 # Solo Marathon - Domain Model
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 10 | ⚠️ Расходится: 8 | ❌ Не реализовано: 3
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 13 | ⚠️ Расходится: 7 | ❌ Не реализовано: 1
 >
 > - ✅ MarathonGameV2 aggregate (все поля)
 > - ✅ Factory NewMarathonGameV2
 > - ✅ Key methods (LoadNextQuestion, AnswerQuestion, UseBonus, ActivateShield, Continue, CompleteGame, Abandon)
+> - ✅ CompleteMarathonUseCase — реализован
 > - ✅ Repository (FindByID, FindActiveByPlayer, Save)
 > - ✅ BonusInventory
 > - ✅ GameStatus + transitions
 > - ✅ PaymentMethod
 > - ✅ ContinueCostCalculator (как value object, не отдельный сервис)
 > - ✅ DifficultyProgression
-> - ✅ Milestones
+> - ✅ Milestones + MilestoneClaimsRepository (dedup via marathon_bonus_usage, migration 024)
 > - ✅ QuestionSelector
 > - ✅ Error types (все + дополнительные)
+> - ✅ streakCount/bestStreak/livesRestored — персистируются (migration 023)
 > - ⚠️ LivesSystem (max 5) — комментарий в коде говорит max 3 на строке 68, но константа MaxLives=5
 > - ⚠️ LivesSystem.RegenerateLives — реализован, но не используется в marathon; TimeToNextLife захардкожен в 0
 > - ⚠️ DifficultyCalculator как отдельный сервис — встроен в DifficultyProgression, не отдельный
-> - ⚠️ PersonalBestTracker как сервис — логика встроена в AbandonMarathonUseCase, не отдельный
+> - ⚠️ PersonalBestTracker как сервис — логика встроена в CompleteMarathonUseCase, не отдельный
 > - ⚠️ DB marathon_games — имена колонок отличаются от документа (individual columns vs session_data JSONB)
 > - ⚠️ DB marathon_personal_bests — есть дополнительные колонки: category_id, updated_at
 > - ⚠️ Repository — Delete метод не задокументирован, но реализован
-> - ❌ DB marathon_bonus_usage — не реализована
 > - ❌ Redis structures — не реализованы
-> - ❌ Repository.Delete — отсутствует в интерфейсе (задокументировано без него)
 
 ## Bounded Context
 `solo_marathon` - PvE endless mode with lives and bonuses.
@@ -72,6 +72,7 @@ type MarathonGameV2 struct {
     usedBonuses map[QuestionID][]BonusType
 
     // Marathon Momentum (streak-based life regen)
+    // ✅ All three fields persisted in DB (migration 023)
     streakCount   int  // current consecutive correct answers
     bestStreak    int  // best streak this session
     livesRestored int  // total lives restored via streak
@@ -297,7 +298,7 @@ func (ccc *ContinueCostCalculator) HasAdOption(continueCount int) bool {
 
 ### PersonalBestTracker
 
-> ⚠️ Логика встроена в `AbandonMarathonUseCase`, не реализована как отдельный сервис.
+> ⚠️ Логика встроена в `CompleteMarathonUseCase`, не реализована как отдельный сервис.
 
 ```go
 type PersonalBestTracker struct {
@@ -459,7 +460,7 @@ CREATE TABLE marathon_personal_best (
 
 ### Table: marathon_bonus_usage
 
-> ❌ Не реализована.
+> ✅ Реализована (migration 024). Используется MilestoneClaimsRepository для dedup milestone наград. Паттерн: `WithMilestoneClaimsRepository(repo)`.
 
 ```sql
 CREATE TABLE marathon_bonus_usage (

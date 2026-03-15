@@ -1,7 +1,7 @@
 # PvP Duel - Concept
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 8 | ⚠️ Расходится: 5 | ❌ Не реализовано: 5
+> **Статус реализации (обновлено 2026-03-15)**
+> ✅ Реализовано: 14 | ⚠️ Расходится: 1 | ❌ Не реализовано: 3
 
 ## What?
 Competitive 1v1 ranked mode where players battle in real-time quiz duels using identical questions. **Designed for maximum virality and friend engagement.**
@@ -24,8 +24,8 @@ Competitive 1v1 ranked mode where players battle in real-time quiz duels using i
 | Time per question | 10 seconds | ✅ |
 | Entry cost | 1 PvP ticket | ❌ Ticket system not implemented — no consumption or refund logic |
 | Bonuses/hints | **FORBIDDEN** | ✅ |
-| Win condition | Most correct answers | ⚠️ Code uses POINTS (100 + SpeedBonus up to 50), not simple correct count |
-| Tiebreaker | Total time spent | ⚠️ Time is baked into speed bonus points; if points tied, code returns nil (draw) — no explicit time tiebreaker |
+| Win condition | Most points (100 base + speed bonus 0–50 per answer) | ✅ |
+| Tiebreaker | Total time spent; final fallback — lower playerID | ✅ |
 
 ## Core Loop
 ```
@@ -39,15 +39,15 @@ Daily Challenge → Earn PvP Tickets → Enter Duel → Win/Lose → MMR Change 
 - **NO luck factor** (same questions, same order)
 - **Identical conditions** for both players
 
-### 2. ELO/MMR Rating System <!-- ⚠️ K factor differs: code uses K=32 for new players (<30 games), K=16 for regular; doc says K=32 always. Min ±10 implemented. -->
+### 2. ELO/MMR Rating System
 Skill-based matchmaking:
 - Win against stronger opponent → more MMR (up to ~+30)
 - Win against weaker opponent → less MMR (minimum +10)
 - Lose to stronger opponent → less MMR lost (minimum -10)
 - Lose to weaker opponent → more MMR lost (up to ~-30)
-- Exact values: ELO formula, K=32, min ±10. See `03_rules.md`.
+- K=32 for first <30 games, K=16 after. Min ±10. See `03_rules.md`.
 
-> ⚠️ **Расхождение:** Код использует K=32 для игроков с <30 играми и K=16 для остальных. Документ специфицирует K=32 для всех. Min ±10 реализован корректно.
+> ✅ **Реализовано.**
 
 ### 3. League System <!-- ✅ Fully implemented with correct MMR ranges and 6 leagues × 4 divisions -->
 
@@ -60,12 +60,12 @@ Skill-based matchmaking:
 | Diamond | 💎 | 2500-2999 | 4 |
 | Legend | 👑 | 3000+ | 1 |
 
-### 4. Seasonal Structure <!-- ✅ SeasonReset method with correct soft-reset formula -->
+### 4. Seasonal Structure
 - **Season duration:** 1 month
 - **Soft reset:** MMR compressed toward 1000 at season start
-- **Seasonal rewards:** Exclusive cosmetics based on peak rank <!-- ❌ No reward distribution implemented -->
+- **Seasonal rewards:** Credits by peak league (DistributeSeasonalRewardsUseCase)
 
-> ❌ **Не реализовано:** Seasonal rewards — распределение наград не реализовано.
+> ✅ **Реализовано:** SeasonReset + DistributeSeasonalRewardsUseCase.
 
 ## Entry Requirement
 
@@ -78,44 +78,42 @@ Skill-based matchmaking:
 
 ## Matchmaking
 
-### Queue Time Expectations <!-- ⚠️ Code has 4 tiers (5s/10s/15s/15s+), not 5 tiers. After 15s matches anyone regardless of MMR. -->
+### Queue Time Expectations
 
-| MMR Difference | Max Wait | Статус |
-|----------------|----------|--------|
-| ±50 | 10s | ⚠️ |
-| ±100 | 20s | ⚠️ |
-| ±200 | 30s | ⚠️ |
-| ±300 | 45s | ⚠️ |
-| ±500 | 60s | ⚠️ |
+| Time in queue | MMR Range | Статус |
+|---------------|-----------|--------|
+| 0–10s | ±50 | ✅ |
+| 10–20s | ±100 | ✅ |
+| 20–30s | ±200 | ✅ |
+| 30–45s | ±300 | ✅ |
+| 45s+ | ±500 | ✅ |
 
-> ⚠️ **Расхождение:** Код реализует 4 тира (5с/10с/15с/15с+), после 15с матчит любого. Документ специфицирует 5 тиров с расширением до 60с.
+> ✅ **Реализовано:** 5-тировый матчмейкинг (10/20/30/45/45+ секунд).
 
 ### Fallback
-If no opponent found in 60s → Offer bot game (clearly labeled as 🤖 Bot). <!-- ❌ Not implemented -->
+If no opponent found in 60s → Offer bot game (clearly labeled as 🤖 Bot).
 
-> ❌ **Не реализовано:** Bot game fallback после 60с.
+> ✅ **Реализовано:** Bot game fallback после 60с.
 
 ## Victory Conditions
 
-### Primary: Correct Answers <!-- ⚠️ Code uses point-based system (100 + speed bonus), not raw correct count -->
+### Primary: Total Points
 ```
-Player A: 5/7 correct
-Player B: 4/7 correct
+Player A: 5/7 correct, 650 pts
+Player B: 4/7 correct, 510 pts
 Winner: Player A
 ```
+Each correct answer = 100 base + speed bonus (50/25/10/0). Max 150 pts/question.
 
-### Tiebreaker: Total Time <!-- ⚠️ If points are equal, code returns nil (draw); no explicit time tiebreaker -->
+### Tiebreaker 1: Total Time
 ```
 Player A: 5/7 correct, 42.5s total
 Player B: 5/7 correct, 38.2s total
 Winner: Player B (faster)
 ```
 
-### Second Tiebreaker: First Correct
-If total time equal (extremely rare):
-```
-Winner: First player to answer correctly on any question
-```
+### Tiebreaker 2: Lower playerID (deterministic)
+If total time equal (extremely rare) → lower playerID wins.
 
 ## Monetization
 

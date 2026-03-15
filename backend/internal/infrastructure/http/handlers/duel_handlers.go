@@ -557,43 +557,46 @@ func (h *DuelHandler) PrepareShare(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": output})
 }
 
-// mapDuelError maps domain errors to HTTP errors
+// mapDuelError maps domain errors to HTTP errors with structured error codes.
+// The errorCode field allows frontend to handle errors programmatically.
 func mapDuelError(err error) error {
 	switch err {
 	case domainDuel.ErrGameNotFound:
-		return fiber.NewError(fiber.StatusNotFound, "Game not found")
+		return NewAppError(fiber.StatusNotFound, string(domainDuel.CodeGameNotFound), "Game not found")
 	case domainDuel.ErrGameNotActive:
-		return fiber.NewError(fiber.StatusConflict, "Game is not active")
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeGameNotActive), "Game is not active")
+	case domainDuel.ErrGameAlreadyFinished:
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeGameAlreadyFinished), "Game is already finished")
 	case domainDuel.ErrChallengeNotFound:
-		return fiber.NewError(fiber.StatusNotFound, "Challenge not found")
+		return NewAppError(fiber.StatusNotFound, string(domainDuel.CodeChallengeNotFound), "Challenge not found")
 	case domainDuel.ErrChallengeExpired:
-		return fiber.NewError(fiber.StatusConflict, "Challenge has expired")
-	case domainDuel.ErrAlreadyInQueue:
-		return fiber.NewError(fiber.StatusConflict, "Already in matchmaking queue")
-	case domainDuel.ErrAlreadyInGame:
-		return fiber.NewError(fiber.StatusConflict, "Already in an active game")
-	case domainDuel.ErrFriendBusy:
-		return fiber.NewError(fiber.StatusConflict, "Friend is already in a game")
-	case domainDuel.ErrChallengeAlreadySent:
-		return fiber.NewError(fiber.StatusConflict, "Challenge already sent to this player")
-	case domainDuel.ErrInsufficientTickets:
-		return fiber.NewError(fiber.StatusBadRequest, "Insufficient tickets")
-	case domainDuel.ErrCannotChallengeSelf:
-		return fiber.NewError(fiber.StatusBadRequest, "Cannot challenge yourself")
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeChallengeExpired), "Challenge has expired")
 	case domainDuel.ErrChallengeNotPending:
-		return fiber.NewError(fiber.StatusConflict, "Challenge is no longer pending")
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeChallengeNotPending), "Challenge is no longer pending")
+	case domainDuel.ErrAlreadyInQueue:
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeAlreadyInQueue), "Already in matchmaking queue")
+	case domainDuel.ErrAlreadyInGame:
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeAlreadyInGame), "Already in an active game")
+	case domainDuel.ErrFriendBusy:
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeFriendBusy), "Friend is already in a game")
+	case domainDuel.ErrChallengeAlreadySent:
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeChallengeAlreadySent), "Challenge already sent to this player")
+	case domainDuel.ErrInsufficientTickets:
+		return NewAppError(fiber.StatusPaymentRequired, string(domainDuel.CodeInsufficientTickets), "Insufficient tickets")
+	case domainDuel.ErrCannotChallengeSelf:
+		return NewAppError(fiber.StatusBadRequest, string(domainDuel.CodeCannotChallengeSelf), "Cannot challenge yourself")
 	case domainDuel.ErrNotChallengedPlayer:
-		return fiber.NewError(fiber.StatusForbidden, "Not the challenged player")
+		return NewAppError(fiber.StatusForbidden, string(domainDuel.CodeNotChallengedPlayer), "Not the challenged player")
 	case domainDuel.ErrPlayerNotInGame:
-		return fiber.NewError(fiber.StatusForbidden, "Player not in this game")
+		return NewAppError(fiber.StatusForbidden, string(domainDuel.CodePlayerNotInGame), "Player not in this game")
 	case domainDuel.ErrTooEarlyToSurrender:
-		return fiber.NewError(fiber.StatusConflict, "Cannot surrender before answering 3 questions")
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeTooEarlyToSurrender), "Cannot surrender before answering 3 questions")
 	case domainDuel.ErrReferralNotFound:
-		return fiber.NewError(fiber.StatusNotFound, "Referral not found")
+		return NewAppError(fiber.StatusNotFound, string(domainDuel.CodeReferralNotFound), "Referral not found")
 	case domainDuel.ErrMilestoneNotReached:
-		return fiber.NewError(fiber.StatusBadRequest, "Milestone not reached")
+		return NewAppError(fiber.StatusBadRequest, string(domainDuel.CodeMilestoneNotReached), "Milestone not reached")
 	case domainDuel.ErrRewardAlreadyClaimed:
-		return fiber.NewError(fiber.StatusConflict, "Reward already claimed")
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeRewardAlreadyClaimed), "Reward already claimed")
 	default:
 		return fiber.NewError(fiber.StatusInternalServerError, "Internal server error")
 	}

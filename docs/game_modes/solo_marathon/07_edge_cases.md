@@ -1,7 +1,7 @@
 # Solo Marathon - Edge Cases & Error Handling
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 8 | ⚠️ Расходится: 6 | ❌ Не реализовано: 3
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 10 | ⚠️ Расходится: 5 | ❌ Не реализовано: 3
 >
 > - ✅ Shield + correct: shield NOT consumed (деактивируется)
 > - ✅ Last life + shield + wrong: game continues
@@ -11,12 +11,13 @@
 > - ✅ Duplicate submission prevention (via currentQuestion validation)
 > - ✅ New record equals old: not new (strictly greater check)
 > - ✅ Abandoned game status = ABANDONED
+> - ✅ Abandon does NOT update personal best (fixed)
+> - ✅ Milestone dedup: MilestoneClaimsRepository prevents re-crediting (marathon_bonus_usage, migration 024)
 > - ⚠️ Multiple bonuses same question: разные типы разрешены, но взаимодействие Skip+Shield отличается от документа
 > - ⚠️ Timer NOT paused server-side — нет server-side паузы, frontend обрабатывает timeout локально
 > - ⚠️ Tied scores tiebreaker — используется best_streak DESC первым (не score), затем best_score, затем achieved_at
-> - ⚠️ Abandoned game NOT in leaderboard — код ОБНОВЛЯЕТ personal best при abandon (баг)
 > - ⚠️ Error format — возвращается plain text, не `{error: {code, message, details}}`
-> - ⚠️ Bonus usage history — `marathon_bonus_usage` таблица не реализована, история не пишется
+> - ⚠️ Bonus usage history — `marathon_bonus_usage` таблица используется только для milestone dedup, не для полной истории бонусов
 > - ❌ Network timeout auto-submit 30s — нет server-side timeout
 > - ❌ Multiple games same week: only best — нет weekly scoping
 > - ❌ Abandon timeout 30+ min — нет background cleanup
@@ -319,7 +320,7 @@ Old best: 90
 ```
 
 ### Multiple new records same week
-**Each milestone once:**
+**Each milestone once:** <!-- ✅ Dedup via MilestoneClaimsRepository (marathon_bonus_usage table, migration 024) -->
 ```
 Game 1: Score 30 → Milestone 25 ✓ (+100 coins)
 Game 2: Score 60 → Milestone 50 ✓ (+250 coins)
@@ -344,7 +345,7 @@ Game 4: Score 120 → Milestones 100 ✓ (+500 coins)
 - Score saved to history (but NOT personal best)
 - NOT in leaderboard (incomplete run)
 
-> ⚠️ Баг: код ОБНОВЛЯЕТ personal best при abandon в `AbandonMarathonUseCase`. Правильное поведение — НЕ обновлять.
+<!-- ✅ Исправлено: abandon НЕ обновляет personal best. PB обновляется только в CompleteMarathonUseCase. -->
 
 ### Abandon due to timeout
 

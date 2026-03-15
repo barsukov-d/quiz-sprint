@@ -1,7 +1,7 @@
 # Daily Challenge - Edge Cases & Error Handling
 
 > **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 5 | ⚠️ Расходится: 3 | ❌ Не реализовано: 4
+> ✅ Реализовано: 7 | ⚠️ Расходится: 3 | ❌ Не реализовано: 2
 
 ## Timing Edge Cases
 
@@ -40,7 +40,7 @@ game.date = currentDate  // Fixed at start
 
 ### Game abandoned (24h timeout)
 
-> ❌ Не реализовано: статус ABANDONED отсутствует, фоновое задание не реализовано.
+> ✅ Реализовано: `GameStatusAbandoned` существует. `CleanupAbandonedGamesUseCase` помечает игры через `MarkAbandonedGames()` (запускается как cron).
 
 **Trigger:** Player started but didn't finish within 24h.
 
@@ -83,7 +83,7 @@ if now - startedAt > 24h && status == "in_progress":
 
 ### Duplicate answer submission
 
-> ⚠️ Расходится: ErrQuestionAlreadyAnswered существует, но не замаплен в handler — падает в 500.
+> ✅ Реализовано: `ErrAlreadyAnswered` замаплен в handler → `409 Conflict`.
 
 **Scenario:** Double-tap or network retry.
 
@@ -127,7 +127,7 @@ Separate ZREVRANK call for player's rank.
 
 ### Historical leaderboards
 
-> ❌ Не реализовано: Redis не используется. Все данные хранятся в PostgreSQL постоянно, архивации нет.
+> ⚠️ Redis не используется. Все данные хранятся в PostgreSQL постоянно без архивации. Архивация через Redis не реализована (❌).
 
 **Retention:** 7 days in Redis.
 
@@ -334,7 +334,7 @@ if questionID != session.CurrentQuestion().ID() {
 
 ### Total game time too fast
 
-> ❌ Не реализовано: проверка минимального времени не реализована.
+> ✅ Реализовано: `SuspiciousScore = true` если средное время < 1s/вопрос. Флаг включён в `GameResultsDTO`. ⚠️ Инвалидация игры не реализована — только флаг.
 
 **Check:**
 ```go

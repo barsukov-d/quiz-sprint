@@ -234,8 +234,9 @@ type ErrorResponse struct {
 
 // ErrorDetail contains error details
 type ErrorDetail struct {
-	Code    int    `json:"code" validate:"required"`
-	Message string `json:"message" validate:"required"`
+	Code      int    `json:"code" validate:"required"`
+	Message   string `json:"message" validate:"required"`
+	ErrorCode string `json:"errorCode,omitempty"`
 }
 
 // @name ErrorDetail

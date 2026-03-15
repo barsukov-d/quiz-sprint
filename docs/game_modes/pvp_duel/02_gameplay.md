@@ -1,7 +1,7 @@
 # PvP Duel - Gameplay Flow
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 13 | ⚠️ Расходится: 6 | ❌ Не реализовано: 7
+> **Статус реализации (обновлено 2026-03-15)**
+> ✅ Реализовано: 18 | ⚠️ Расходится: 2 | ❌ Не реализовано: 4
 
 ## Entry Point
 Home → "Дуэль" → Shows: <!-- ⚠️ DuelLobbyView exists but tickets not enforced -->
@@ -220,16 +220,15 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 └─────────────────────────────────────┘
 ```
 
-**Queue expansion:** <!-- ⚠️ Code has 4 tiers (5s/10s/15s/15s+), not 5 tiers; after 15s matches anyone -->
-- 0-10s: ±50 MMR
-- 10-20s: ±100 MMR
-- 20-30s: ±200 MMR
-- 30-45s: ±300 MMR
-- 45-60s: ±500 MMR
-- 60s+: Offer bot game <!-- ❌ Bot game fallback not implemented -->
+**Queue expansion:**
+- 0–10s: ±50 MMR
+- 10–20s: ±100 MMR
+- 20–30s: ±200 MMR
+- 30–45s: ±300 MMR
+- 45s+: ±500 MMR
+- 60s+: Offer bot game
 
-> ⚠️ **Расхождение:** Код реализует 4 тира (5с/10с/15с/15с+), после 15с матчит любого. Документ специфицирует 5 тиров с постепенным расширением до ±500 MMR.
-> ❌ **Не реализовано:** Bot game fallback по истечении 60с.
+> ✅ **Реализовано:** 5-тировый матчмейкинг + bot game fallback после 60с.
 
 ---
 
@@ -420,7 +419,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 
 ---
 
-### 8. Tiebreaker Result <!-- ⚠️ Code returns nil (draw) when points tied; no explicit time tiebreaker -->
+### 8. Tiebreaker Result <!-- ✅ Time tiebreaker implemented; final fallback: lower playerID -->
 ```
 ┌─────────────────────────────────────┐
 │                                     │
@@ -438,7 +437,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 └─────────────────────────────────────┘
 ```
 
-> ⚠️ **Расхождение:** Когда очки равны, код возвращает nil (ничья), а не применяет тайбрейкер по времени. Документ специфицирует победу более быстрого игрока.
+> ✅ **Реализовано:** При равных очках победа по суммарному времени; финальный тайбрейк — lower playerID (детерминировано).
 
 ---
 
@@ -571,7 +570,7 @@ WAITING_QUESTION → ANSWERING → ANSWERED → WAITING_OPPONENT
 
 ---
 
-## Bot Game (Fallback) <!-- ❌ Not implemented -->
+## Bot Game (Fallback) <!-- ✅ Implemented: 60s queue timeout → bot offer -->
 
 If queue timeout (60s):
 ```
@@ -587,7 +586,7 @@ If queue timeout (60s):
 └─────────────────────────────────────┘
 ```
 
-> ❌ **Не реализовано:** Bot game fallback — бот-игры не реализованы.
+> ✅ **Реализовано:** Bot game fallback — бот-игры реализованы (60s queue timeout).
 
 **Bot behavior:**
 - Answers with realistic timing (3-8s)
@@ -600,5 +599,5 @@ If queue timeout (60s):
 
 ## Additional Missing Features
 
-> ❌ **Не реализовано:** Surrender button — кнопка сдаться после Q3 (нет endpoint'а).
+> ✅ **Реализовано:** Surrender button — POST /duel/game/:gameId/surrender, доступно после Q3.
 > ❌ **Не реализовано:** Emotes — реакции в процессе игры.

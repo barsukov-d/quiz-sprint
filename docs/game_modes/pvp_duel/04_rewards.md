@@ -1,7 +1,7 @@
 # PvP Duel - Rewards & Seasons
 
-> **Статус реализации (аудит 2026-03-15)**
-> ✅ Реализовано: 3 | ⚠️ Расходится: 2 | ❌ Не реализовано: 16
+> **Статус реализации (обновлено 2026-03-15)**
+> ✅ Реализовано: 6 | ⚠️ Расходится: 1 | ❌ Не реализовано: 14
 
 ## Seasonal Structure
 
@@ -37,7 +37,7 @@ Season 2: February 2026
 
 **Peak rank:** Highest rank achieved during season (cannot lose).
 
-> ❌ **Не реализовано:** Система распределения сезонных наград (reward distribution) отсутствует.
+> ✅ **Реализовано:** DistributeSeasonalRewardsUseCase — начисляет награды по пиковому рангу в конце сезона.
 
 ---
 
@@ -53,7 +53,7 @@ Season 2: February 2026
 | **Reaches Gold** | 20 🎟️ + 1,000 coins + Exclusive avatar | 500 coins |
 | **Reaches Platinum** | 50 🎟️ + 3,000 coins + Legendary title | 1,000 coins |
 
-> ⚠️ **Расходится:** Доменная модель (referral.go) отслеживает milestone-флаги, но механизм выдачи/начисления наград не реализован.
+> ✅ **Реализовано:** GET /duel/referrals + POST /duel/referrals/:friendId/claim — 5 milestone rewards реализованы.
 
 ---
 
