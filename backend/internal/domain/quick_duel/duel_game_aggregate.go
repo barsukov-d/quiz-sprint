@@ -430,6 +430,28 @@ func (dg *DuelGame) HandlePlayerReconnect(playerID UserID, reconnectedAt int64) 
 	return nil
 }
 
+// ReplayRoundAnswer restores a previously submitted answer into the in-memory roundAnswers map.
+// Used to re-hydrate state from an external cache (Redis) since roundAnswers are not persisted to DB.
+// Does NOT trigger game logic, events, or score changes — purely state restoration.
+func (dg *DuelGame) ReplayRoundAnswer(round int, playerID UserID, answerID AnswerID, timeTaken int64, isCorrect bool, points int) {
+	if dg.roundAnswers == nil {
+		dg.roundAnswers = make(map[int][]RoundAnswer)
+	}
+	// Skip if already present
+	for _, a := range dg.roundAnswers[round] {
+		if a.playerID.Equals(playerID) {
+			return
+		}
+	}
+	dg.roundAnswers[round] = append(dg.roundAnswers[round], RoundAnswer{
+		playerID:  playerID,
+		answerID:  answerID,
+		timeTaken: timeTaken,
+		isCorrect: isCorrect,
+		points:    points,
+	})
+}
+
 // Helper methods
 
 func (dg *DuelGame) isPlayerInGame(playerID UserID) bool {

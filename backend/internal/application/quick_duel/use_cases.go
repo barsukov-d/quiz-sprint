@@ -1296,6 +1296,17 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 		return nil, err
 	}
 
+	// Pre-populate roundAnswers from Redis cache (roundAnswers are not persisted to DB).
+	// This ensures the domain aggregate knows about the opponent's already-submitted answer
+	// so that bothAnswered/completeRound logic works correctly.
+	if cachedAnswers, cacheErr := uc.roundCache.GetAnswers(input.GameID, currentRound); cacheErr == nil {
+		for _, ca := range cachedAnswers {
+			caPlayerID, _ := shared.NewUserID(ca.PlayerID)
+			caAnswerID, _ := quiz.NewAnswerIDFromString(ca.AnswerID)
+			game.ReplayRoundAnswer(currentRound, caPlayerID, caAnswerID, int64(ca.TimeTaken), ca.IsCorrect, ca.Points)
+		}
+	}
+
 	// Delegate correctness check and scoring to the domain aggregate
 	result, err := game.SubmitAnswer(playerID, answerID, int64(input.TimeTaken), question, now)
 	if err != nil {
