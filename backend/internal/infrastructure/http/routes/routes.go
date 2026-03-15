@@ -300,6 +300,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			marathonRepo,
 			personalBestRepo,
 			marathonEventBus,
+			inventoryService,
 		)
 		getMarathonStatusUC = appMarathon.NewGetMarathonStatusUseCase(
 			marathonRepo,
@@ -397,6 +398,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		getGameResultUC        *appDuel.GetGameResultUseCase
 		getRivalsUC            *appDuel.GetRivalsUseCase
 		prepareShareUC         *appDuel.PrepareShareUseCase
+		getReferralsUC         *appDuel.GetReferralsUseCase
+		claimReferralRewardUC  *appDuel.ClaimReferralRewardUseCase
 	)
 
 	if duelGameRepo != nil && playerRatingRepo != nil && challengeRepo != nil && referralRepo != nil && seasonRepo != nil && userRepo != nil {
@@ -533,6 +536,15 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			challengeRepo,
 		)
 		prepareShareUC = appDuel.NewPrepareShareUseCase(telegramNotifier)
+		getReferralsUC = appDuel.NewGetReferralsUseCase(
+			referralRepo,
+			userRepo,
+			inventoryService,
+		)
+		claimReferralRewardUC = appDuel.NewClaimReferralRewardUseCase(
+			referralRepo,
+			inventoryService,
+		)
 
 
 		// Start background challenge cleanup scheduler
@@ -695,6 +707,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			getGameResultUC,
 			getRivalsUC,
 			prepareShareUC,
+			getReferralsUC,
+			claimReferralRewardUC,
 		)
 	}
 
@@ -825,6 +839,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		duel.Get("/game/:gameId", duelHandler.GetGameResult)
 		duel.Post("/game/:gameId/rematch", duelHandler.RequestRematch)
 		duel.Get("/rivals", duelHandler.GetRivals)
+		duel.Get("/referrals", duelHandler.GetReferrals)
+		duel.Post("/referrals/:friendId/claim", duelHandler.ClaimReferralReward)
 	}
 
 	// Admin routes (debug/testing, protected by API key)

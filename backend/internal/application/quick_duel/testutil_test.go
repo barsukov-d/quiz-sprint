@@ -355,6 +355,44 @@ func (m *mockPlayerRatingRepo) GetTotalPlayers(seasonID string) (int, error) {
 	return count, nil
 }
 
+func (m *mockPlayerRatingRepo) FindAllBySeasonID(seasonID string) ([]*quick_duel.PlayerRating, error) {
+	var result []*quick_duel.PlayerRating
+	for _, r := range m.ratings {
+		if r.SeasonID() == seasonID {
+			result = append(result, r)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockPlayerRatingRepo) ResetAllRatingsForSeason(newSeasonID string, resetFn func(currentMMR int) int) error {
+	// collect all ratings first to avoid modifying while iterating
+	var all []*quick_duel.PlayerRating
+	for _, r := range m.ratings {
+		all = append(all, r)
+	}
+	for _, r := range all {
+		newMMR := resetFn(r.MMR())
+		leagueInfo := quick_duel.GetLeagueFromMMR(newMMR)
+		updated := quick_duel.ReconstructPlayerRating(
+			r.PlayerID(),
+			newMMR,
+			leagueInfo.League(),
+			leagueInfo.Division(),
+			r.PeakMMR(),
+			r.PeakLeague(),
+			r.PeakDivision(),
+			0,
+			newSeasonID,
+			0, 0, 0,
+			r.UpdatedAt(),
+		)
+		delete(m.ratings, m.key(r.PlayerID(), r.SeasonID()))
+		m.ratings[m.key(updated.PlayerID(), updated.SeasonID())] = updated
+	}
+	return nil
+}
+
 // mockMatchmakingQueue is an in-memory matchmaking queue
 type mockMatchmakingQueue struct {
 	queue map[string]struct {

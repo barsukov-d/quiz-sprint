@@ -1597,3 +1597,54 @@ type PrepareShareResponse struct {
 }
 
 // @name PrepareShareResponse
+
+// ReferralItemDTO represents a single referral in Swagger docs
+type ReferralItemDTO struct {
+	ID                string   `json:"id" validate:"required"`
+	InviteeID         string   `json:"inviteeId" validate:"required"`
+	InviteeUsername   string   `json:"inviteeUsername" validate:"required"`
+	MilestonesReached []string `json:"milestonesReached" validate:"required"`
+	PendingRewards    []string `json:"pendingRewards" validate:"required"`
+	CreatedAt         int64    `json:"createdAt" validate:"required"`
+}
+
+// @name ReferralItemDTO
+
+// GetReferralsResponse is the Swagger response model for GET /duel/referrals
+type GetReferralsResponse struct {
+	Data struct {
+		ReferralLink            string            `json:"referralLink" validate:"required"`
+		TotalReferrals          int               `json:"totalReferrals" validate:"required"`
+		ActiveReferrals         int               `json:"activeReferrals" validate:"required"`
+		PendingRewards          []string          `json:"pendingRewards" validate:"required"`
+		ReferralLeaderboardRank int               `json:"referralLeaderboardRank" validate:"required"`
+		Referrals               []ReferralItemDTO `json:"referrals" validate:"required"`
+	} `json:"data"`
+}
+
+// @name GetReferralsResponse
+
+// ClaimReferralRewardRequest is the request body for POST /duel/referrals/:friendId/claim
+type ClaimReferralRewardRequest struct {
+	Milestone string `json:"milestone" validate:"required"`
+}
+
+// @name ClaimReferralRewardRequest
+
+// ClaimReferralRewardResponse is the Swagger response model for POST /duel/referrals/:friendId/claim
+type ClaimReferralRewardResponse struct {
+	Data struct {
+		Success          bool   `json:"success" validate:"required"`
+		Rewards          struct {
+			Tickets int    `json:"tickets"`
+			Coins   int    `json:"coins"`
+			Badge   string `json:"badge,omitempty"`
+			Avatar  string `json:"avatar,omitempty"`
+			Title   string `json:"title,omitempty"`
+		} `json:"rewards" validate:"required"`
+		NewTicketBalance int `json:"newTicketBalance" validate:"required"`
+		NewCoinBalance   int `json:"newCoinBalance" validate:"required"`
+	} `json:"data"`
+}
+
+// @name ClaimReferralRewardResponse

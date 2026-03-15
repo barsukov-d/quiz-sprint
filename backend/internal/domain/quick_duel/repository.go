@@ -81,6 +81,13 @@ type PlayerRatingRepository interface {
 
 	// GetTotalPlayers returns total players in season
 	GetTotalPlayers(seasonID string) (int, error)
+
+	// FindAllBySeasonID retrieves all player ratings for a given season (used for reward distribution)
+	FindAllBySeasonID(seasonID string) ([]*PlayerRating, error)
+
+	// ResetAllRatingsForSeason applies soft reset to all players and moves them to newSeasonID.
+	// resetFn computes the new MMR from the current MMR.
+	ResetAllRatingsForSeason(newSeasonID string, resetFn func(currentMMR int) int) error
 }
 
 // ChallengeRepository defines the interface for duel challenge persistence

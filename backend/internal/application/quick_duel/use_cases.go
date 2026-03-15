@@ -1056,6 +1056,209 @@ func (uc *GetLeaderboardUseCase) Execute(input GetLeaderboardInput) (GetLeaderbo
 }
 
 // ========================================
+// GetReferrals Use Case
+// ========================================
+
+type GetReferralsUseCase struct {
+	referralRepo    quick_duel.ReferralRepository
+	userRepo        domainUser.UserRepository
+	inventoryService InventoryService
+}
+
+func NewGetReferralsUseCase(
+	referralRepo quick_duel.ReferralRepository,
+	userRepo domainUser.UserRepository,
+	inventoryService InventoryService,
+) *GetReferralsUseCase {
+	return &GetReferralsUseCase{
+		referralRepo:    referralRepo,
+		userRepo:        userRepo,
+		inventoryService: inventoryService,
+	}
+}
+
+func (uc *GetReferralsUseCase) Execute(input GetReferralsInput) (GetReferralsOutput, error) {
+	playerID, err := shared.NewUserID(input.PlayerID)
+	if err != nil {
+		return GetReferralsOutput{}, err
+	}
+
+	referrals, err := uc.referralRepo.FindByInviter(playerID)
+	if err != nil {
+		return GetReferralsOutput{}, err
+	}
+
+	totalReferrals, err := uc.referralRepo.CountByInviter(playerID)
+	if err != nil {
+		totalReferrals = len(referrals)
+	}
+
+	activeReferrals, err := uc.referralRepo.CountActiveByInviter(playerID)
+	if err != nil {
+		activeReferrals = 0
+	}
+
+	referralLeaderboardRank, _ := uc.referralRepo.GetPlayerReferralRank(playerID)
+
+	// Collect all pending rewards across all referrals
+	var allPendingRewards []string
+	referralDTOs := make([]ReferralDTO, 0, len(referrals))
+
+	for _, r := range referrals {
+		inviteeUsername := r.InviteeID().String()
+		if user, err := uc.userRepo.FindByID(r.InviteeID()); err == nil && user != nil {
+			if !user.Username().IsAnonymous() {
+				inviteeUsername = user.Username().String()
+			} else if user.TelegramUsername().String() != "" {
+				inviteeUsername = user.TelegramUsername().String()
+			}
+		}
+
+		milestonesReached := make([]string, 0)
+		milestones := []string{
+			quick_duel.MilestoneRegistered,
+			quick_duel.MilestonePlayedFive,
+			quick_duel.MilestoneReachedSilver,
+			quick_duel.MilestoneReachedGold,
+			quick_duel.MilestoneReachedPlatinum,
+		}
+		for _, m := range milestones {
+			if r.IsMilestoneReached(m) {
+				milestonesReached = append(milestonesReached, m)
+			}
+		}
+
+		pendingRewards := r.GetPendingInviterRewards()
+		allPendingRewards = append(allPendingRewards, pendingRewards...)
+
+		referralDTOs = append(referralDTOs, ReferralDTO{
+			ID:                r.ID().String(),
+			InviteeID:         r.InviteeID().String(),
+			InviteeUsername:   inviteeUsername,
+			MilestonesReached: milestonesReached,
+			PendingRewards:    pendingRewards,
+			CreatedAt:         r.CreatedAt(),
+		})
+	}
+
+	// Build referral link from bot username — use PlayerID as ref parameter
+	referralLink := fmt.Sprintf("https://t.me/quiz_sprint_bot?start=ref_%s", input.PlayerID)
+
+	return GetReferralsOutput{
+		ReferralLink:            referralLink,
+		TotalReferrals:          totalReferrals,
+		ActiveReferrals:         activeReferrals,
+		PendingRewards:          allPendingRewards,
+		ReferralLeaderboardRank: referralLeaderboardRank,
+		Referrals:               referralDTOs,
+	}, nil
+}
+
+// ========================================
+// ClaimReferralReward Use Case
+// ========================================
+
+type ClaimReferralRewardUseCase struct {
+	referralRepo    quick_duel.ReferralRepository
+	inventoryService InventoryService
+}
+
+func NewClaimReferralRewardUseCase(
+	referralRepo quick_duel.ReferralRepository,
+	inventoryService InventoryService,
+) *ClaimReferralRewardUseCase {
+	return &ClaimReferralRewardUseCase{
+		referralRepo:    referralRepo,
+		inventoryService: inventoryService,
+	}
+}
+
+func (uc *ClaimReferralRewardUseCase) Execute(input ClaimReferralRewardInput) (ClaimReferralRewardOutput, error) {
+	playerID, err := shared.NewUserID(input.PlayerID)
+	if err != nil {
+		return ClaimReferralRewardOutput{}, err
+	}
+
+	friendID, err := shared.NewUserID(input.FriendID)
+	if err != nil {
+		return ClaimReferralRewardOutput{}, err
+	}
+
+	if input.Milestone == "" {
+		return ClaimReferralRewardOutput{}, quick_duel.ErrMilestoneNotReached
+	}
+
+	// Look up referral where player is inviter and friend is invitee
+	referral, err := uc.referralRepo.FindByInviterAndInvitee(playerID, friendID)
+	if err != nil {
+		// Also check if player is invitee and friend is inviter
+		referral, err = uc.referralRepo.FindByInviterAndInvitee(friendID, playerID)
+		if err != nil {
+			return ClaimReferralRewardOutput{}, quick_duel.ErrReferralNotFound
+		}
+
+		// Player is invitee — claim invitee reward
+		reward, err := referral.ClaimInviteeReward(input.Milestone)
+		if err != nil {
+			return ClaimReferralRewardOutput{}, err
+		}
+
+		if err := uc.referralRepo.Save(referral); err != nil {
+			return ClaimReferralRewardOutput{}, err
+		}
+
+		return uc.creditAndBuildOutput(input.PlayerID, reward)
+	}
+
+	// Player is inviter — claim inviter reward
+	reward, err := referral.ClaimInviterReward(input.Milestone)
+	if err != nil {
+		return ClaimReferralRewardOutput{}, err
+	}
+
+	if err := uc.referralRepo.Save(referral); err != nil {
+		return ClaimReferralRewardOutput{}, err
+	}
+
+	return uc.creditAndBuildOutput(input.PlayerID, reward)
+}
+
+func (uc *ClaimReferralRewardUseCase) creditAndBuildOutput(playerID string, reward *quick_duel.ReferralReward) (ClaimReferralRewardOutput, error) {
+	creditDetails := make(map[string]int)
+	if reward.Coins > 0 {
+		creditDetails["coins"] = reward.Coins
+	}
+	if reward.Tickets > 0 {
+		creditDetails["pvp_tickets"] = reward.Tickets
+	}
+
+	if len(creditDetails) > 0 && uc.inventoryService != nil {
+		if err := uc.inventoryService.Credit(playerID, "referral_milestone", creditDetails); err != nil {
+			return ClaimReferralRewardOutput{}, err
+		}
+	}
+
+	var newTicketBalance int
+	var newCoinBalance int
+	if uc.inventoryService != nil {
+		newTicketBalance, _ = uc.inventoryService.GetPvpTickets(playerID)
+	}
+
+	return ClaimReferralRewardOutput{
+		Success: true,
+		Rewards: ReferralRewardDTO{
+			Tickets: reward.Tickets,
+			Coins:   reward.Coins,
+			Badge:   reward.Badge,
+			Avatar:  reward.Avatar,
+			Title:   reward.Title,
+		},
+		NewTicketBalance: newTicketBalance,
+		NewCoinBalance:   newCoinBalance,
+	}, nil
+}
+
+// ========================================
 // StartGame Use Case
 // ========================================
 

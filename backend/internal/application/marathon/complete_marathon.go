@@ -13,6 +13,7 @@ type CompleteMarathonUseCase struct {
 	marathonRepo     solo_marathon.Repository
 	personalBestRepo solo_marathon.PersonalBestRepository
 	eventBus         EventBus
+	inventoryService InventoryService
 }
 
 // NewCompleteMarathonUseCase creates a new CompleteMarathonUseCase
@@ -20,11 +21,13 @@ func NewCompleteMarathonUseCase(
 	marathonRepo solo_marathon.Repository,
 	personalBestRepo solo_marathon.PersonalBestRepository,
 	eventBus EventBus,
+	inventoryService InventoryService,
 ) *CompleteMarathonUseCase {
 	return &CompleteMarathonUseCase{
 		marathonRepo:     marathonRepo,
 		personalBestRepo: personalBestRepo,
 		eventBus:         eventBus,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -61,6 +64,9 @@ func (uc *CompleteMarathonUseCase) Execute(input CompleteMarathonInput) (Complet
 	// 5. Update personal best if this is a new record
 	uc.updatePersonalBestIfNeeded(game, now)
 
+	// 5b. Credit milestone rewards for the final score
+	uc.creditMilestoneRewards(input.PlayerID, game.Score())
+
 	// 6. Persist game
 	if err := uc.marathonRepo.Save(game); err != nil {
 		return CompleteMarathonOutput{}, err
@@ -78,6 +84,29 @@ func (uc *CompleteMarathonUseCase) Execute(input CompleteMarathonInput) (Complet
 	return CompleteMarathonOutput{
 		GameOverResult: BuildGameOverResultV2(game),
 	}, nil
+}
+
+// personalBestMilestoneRewards defines coins awarded when a new personal best
+// reaches specific milestone thresholds for the first time.
+var personalBestMilestoneRewards = map[int]int{
+	25:  100,
+	50:  250,
+	100: 500,
+	200: 1000,
+	500: 5000,
+}
+
+// creditMilestoneRewards credits coins for each milestone the player's score reaches.
+// Only called on CompleteGame (not Abandon), matching the personal-best save logic.
+func (uc *CompleteMarathonUseCase) creditMilestoneRewards(playerID string, score int) {
+	if uc.inventoryService == nil {
+		return
+	}
+	for threshold, coins := range personalBestMilestoneRewards {
+		if score >= threshold {
+			_ = uc.inventoryService.Credit(playerID, "marathon_milestone_personal_best", map[string]int{"coins": coins})
+		}
+	}
 }
 
 // updatePersonalBestIfNeeded updates the personal best record if the game score is better

@@ -289,7 +289,7 @@ func (pr *PlayerRating) GetSeasonRewardTickets() int {
 	case LeagueSilver:
 		return 5
 	default:
-		return 2
+		return 1
 	}
 }
 
