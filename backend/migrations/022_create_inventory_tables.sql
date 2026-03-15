@@ -10,8 +10,8 @@ CREATE TABLE IF NOT EXISTS user_inventory (
     pvp_tickets INT NOT NULL DEFAULT 3,
     shield INT NOT NULL DEFAULT 0,
     fifty_fifty INT NOT NULL DEFAULT 0,
-    skip INT NOT NULL DEFAULT 0,
-    freeze INT NOT NULL DEFAULT 0,
+    "skip" INT NOT NULL DEFAULT 0,
+    "freeze" INT NOT NULL DEFAULT 0,
     updated_at BIGINT NOT NULL DEFAULT 0,
 
     CONSTRAINT chk_inventory_non_negative CHECK (
@@ -19,8 +19,8 @@ CREATE TABLE IF NOT EXISTS user_inventory (
         pvp_tickets >= 0 AND
         shield >= 0 AND
         fifty_fifty >= 0 AND
-        skip >= 0 AND
-        freeze >= 0
+        "skip" >= 0 AND
+        "freeze" >= 0
     )
 );
 
@@ -30,7 +30,7 @@ CREATE TABLE IF NOT EXISTS user_inventory (
 CREATE TABLE IF NOT EXISTS user_transactions (
     id UUID PRIMARY KEY DEFAULT gen_random_uuid(),
     player_id TEXT NOT NULL REFERENCES users(id),
-    type TEXT NOT NULL CHECK (type IN ('credit', 'debit')),
+    "type" TEXT NOT NULL CHECK ("type" IN ('credit', 'debit')),
     source TEXT NOT NULL,
     details JSONB NOT NULL DEFAULT '{}',
     created_at BIGINT NOT NULL DEFAULT 0

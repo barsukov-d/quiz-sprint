@@ -24,7 +24,7 @@ func NewInventoryRepository(db *sql.DB) *InventoryRepository {
 func (r *InventoryRepository) FindByPlayerID(playerID user.UserID) (*user.Inventory, error) {
 	// Try INSERT with defaults first (ON CONFLICT DO NOTHING handles existing rows)
 	insertQuery := `
-		INSERT INTO user_inventory (player_id, coins, pvp_tickets, shield, fifty_fifty, skip, freeze, updated_at)
+		INSERT INTO user_inventory (player_id, coins, pvp_tickets, shield, fifty_fifty, "skip", "freeze", updated_at)
 		VALUES ($1, 0, 3, 0, 0, 0, 0, $2)
 		ON CONFLICT (player_id) DO NOTHING
 	`
@@ -37,7 +37,7 @@ func (r *InventoryRepository) FindByPlayerID(playerID user.UserID) (*user.Invent
 
 	// Now SELECT the row (guaranteed to exist)
 	selectQuery := `
-		SELECT player_id, coins, pvp_tickets, shield, fifty_fifty, skip, freeze, updated_at
+		SELECT player_id, coins, pvp_tickets, shield, fifty_fifty, "skip", "freeze", updated_at
 		FROM user_inventory
 		WHERE player_id = $1
 	`
@@ -71,15 +71,15 @@ func (r *InventoryRepository) FindByPlayerID(playerID user.UserID) (*user.Invent
 // Save persists an inventory (upsert)
 func (r *InventoryRepository) Save(inventory *user.Inventory) error {
 	query := `
-		INSERT INTO user_inventory (player_id, coins, pvp_tickets, shield, fifty_fifty, skip, freeze, updated_at)
+		INSERT INTO user_inventory (player_id, coins, pvp_tickets, shield, fifty_fifty, "skip", "freeze", updated_at)
 		VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
 		ON CONFLICT (player_id) DO UPDATE SET
 			coins = EXCLUDED.coins,
 			pvp_tickets = EXCLUDED.pvp_tickets,
 			shield = EXCLUDED.shield,
 			fifty_fifty = EXCLUDED.fifty_fifty,
-			skip = EXCLUDED.skip,
-			freeze = EXCLUDED.freeze,
+			"skip" = EXCLUDED."skip",
+			"freeze" = EXCLUDED."freeze",
 			updated_at = EXCLUDED.updated_at
 	`
 
