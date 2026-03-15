@@ -1212,6 +1212,7 @@ type SubmitDuelAnswerUseCase struct {
 	seasonRepo       quick_duel.SeasonRepository
 	eventBus         EventBus
 	roundCache       DuelRoundCache
+	inventoryService InventoryService
 }
 
 // PlayerAnswer holds a single player's answer for one duel round.
@@ -1231,6 +1232,7 @@ func NewSubmitDuelAnswerUseCase(
 	seasonRepo quick_duel.SeasonRepository,
 	eventBus EventBus,
 	roundCache DuelRoundCache,
+	inventoryService InventoryService,
 ) *SubmitDuelAnswerUseCase {
 	return &SubmitDuelAnswerUseCase{
 		duelGameRepo:     duelGameRepo,
@@ -1239,6 +1241,7 @@ func NewSubmitDuelAnswerUseCase(
 		seasonRepo:       seasonRepo,
 		eventBus:         eventBus,
 		roundCache:       roundCache,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -1434,6 +1437,34 @@ func (uc *SubmitDuelAnswerUseCase) finalizeGame(
 		uc.playerRatingRepo.Save(rating2)
 		output.Player2MMRChange = rating2.MMR() - oldMMR2
 		output.Player2NewMMR = rating2.MMR()
+	}
+
+	// Credit win rewards via inventory
+	if uc.inventoryService != nil {
+		if winnerID != "" {
+			// Winner gets coins based on their league
+			var winnerLeague quick_duel.League
+			if game.Player1().UserID().String() == winnerID && rating1 != nil {
+				winnerLeague = rating1.League()
+			} else if rating2 != nil {
+				winnerLeague = rating2.League()
+			}
+			reward := winnerLeague.GetWinReward()
+			if reward > 0 {
+				_ = uc.inventoryService.Credit(winnerID, "pvp_win", map[string]int{"coins": reward})
+			}
+		} else {
+			// Draw — both get draw reward
+			var league1, league2 quick_duel.League
+			if rating1 != nil {
+				league1 = rating1.League()
+			}
+			if rating2 != nil {
+				league2 = rating2.League()
+			}
+			_ = uc.inventoryService.Credit(game.Player1().UserID().String(), "pvp_draw", map[string]int{"coins": league1.GetDrawReward()})
+			_ = uc.inventoryService.Credit(game.Player2().UserID().String(), "pvp_draw", map[string]int{"coins": league2.GetDrawReward()})
+		}
 	}
 
 	// Save game (domain already updated status internally)

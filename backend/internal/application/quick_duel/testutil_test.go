@@ -860,6 +860,7 @@ func (f *duelFixture) newSubmitDuelAnswerUC() *SubmitDuelAnswerUseCase {
 		f.duelGameRepo, f.playerRatingRepo, f.questionRepo,
 		f.seasonRepo, f.eventBus,
 		NewMemoryRoundCache(),
+		nil,
 	)
 }
 

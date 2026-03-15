@@ -264,7 +264,7 @@ const handleUseBonus = async (bonusType: BonusType) => {
 
 		// If freeze, update timer with new time limit
 		if (bonusType === 'freeze') {
-			timerRef.value?.addTime(5)
+			timerRef.value?.addTime(10)
 		}
 	} catch (error) {
 		console.error('Failed to use bonus:', error)

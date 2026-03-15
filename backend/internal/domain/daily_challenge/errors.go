@@ -18,6 +18,9 @@ var (
 	ErrAlreadyPlayedToday   = errors.New("already played today")
 	ErrInvalidGameStatus    = errors.New("invalid game status transition")
 
+	// Streak errors
+	ErrStreakNotRecoverable = errors.New("streak is not recoverable (more than 1 day missed)")
+
 	// Question errors
 	ErrAllQuestionsAnswered = errors.New("all questions already answered")
 	ErrQuestionNotInQuiz    = errors.New("question not in daily quiz")

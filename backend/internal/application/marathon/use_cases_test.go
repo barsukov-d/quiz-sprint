@@ -754,7 +754,7 @@ func TestAbandon_Success(t *testing.T) {
 	}
 }
 
-func TestAbandon_SavesPersonalBest(t *testing.T) {
+func TestAbandon_DoesNotSavePersonalBest(t *testing.T) {
 	f := setupFixture(t)
 	startOutput := f.startGameForPlayer(t, testPlayerID)
 
@@ -764,23 +764,19 @@ func TestAbandon_SavesPersonalBest(t *testing.T) {
 	}
 
 	uc := f.newAbandonUC()
-	output, _ := uc.Execute(AbandonMarathonInput{
+	_, err := uc.Execute(AbandonMarathonInput{
 		GameID:   startOutput.Game.ID,
 		PlayerID: testPlayerID,
 	})
-
-	if !output.GameOverResult.IsNewPersonalBest {
-		t.Error("Expected IsNewPersonalBest=true for first game")
-	}
-
-	// Verify personal best was saved
-	category := solo_marathon.NewMarathonCategoryAll()
-	pb, err := f.personalBestRepo.FindByPlayerAndCategory(mustUserID(testPlayerID), category)
 	if err != nil {
-		t.Fatalf("PersonalBest not saved: %v", err)
+		t.Fatalf("Abandon failed: %v", err)
 	}
-	if pb.BestScore() != 5 {
-		t.Errorf("PersonalBest score = %d, want 5", pb.BestScore())
+
+	// Verify personal best was NOT saved (abandoned games don't count)
+	category := solo_marathon.NewMarathonCategoryAll()
+	_, err = f.personalBestRepo.FindByPlayerAndCategory(mustUserID(testPlayerID), category)
+	if err == nil {
+		t.Error("Expected personal best NOT to be saved on abandon")
 	}
 }
 

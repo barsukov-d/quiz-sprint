@@ -376,7 +376,7 @@ func setupHandlerFixture(t *testing.T) *handlerFixture {
 	openChestUC := appDaily.NewOpenChestUseCase(dailyGameRepo, nil)
 	retryUC := appDaily.NewRetryChallengeUseCase(dailyGameRepo, dailyQuizRepo, questionRepo, eventBus, nil)
 
-	handler := NewDailyChallengeHandler(getOrCreateQuizUC, startUC, submitUC, statusUC, leaderboardUC, streakUC, openChestUC, retryUC)
+	handler := NewDailyChallengeHandler(getOrCreateQuizUC, startUC, submitUC, statusUC, leaderboardUC, streakUC, openChestUC, retryUC, nil)
 
 	// Create Fiber app and register routes
 	app := fiber.New()

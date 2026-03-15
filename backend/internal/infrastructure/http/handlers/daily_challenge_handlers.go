@@ -18,6 +18,7 @@ type DailyChallengeHandler struct {
 	getStreakUC       *appDaily.GetPlayerStreakUseCase
 	openChestUC       *appDaily.OpenChestUseCase
 	retryUC           *appDaily.RetryChallengeUseCase
+	recoverStreakUC   *appDaily.RecoverStreakUseCase
 }
 
 func NewDailyChallengeHandler(
@@ -29,6 +30,7 @@ func NewDailyChallengeHandler(
 	getStreakUC *appDaily.GetPlayerStreakUseCase,
 	openChestUC *appDaily.OpenChestUseCase,
 	retryUC *appDaily.RetryChallengeUseCase,
+	recoverStreakUC *appDaily.RecoverStreakUseCase,
 ) *DailyChallengeHandler {
 	return &DailyChallengeHandler{
 		getOrCreateQuizUC: getOrCreateQuizUC,
@@ -39,6 +41,7 @@ func NewDailyChallengeHandler(
 		getStreakUC:       getStreakUC,
 		openChestUC:       openChestUC,
 		retryUC:           retryUC,
+		recoverStreakUC:   recoverStreakUC,
 	}
 }
 
@@ -275,6 +278,33 @@ func (h *DailyChallengeHandler) RetryChallenge(c fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": output})
 }
 
+// RecoverStreak handles POST /api/v1/daily-challenge/recover-streak
+func (h *DailyChallengeHandler) RecoverStreak(c fiber.Ctx) error {
+	var req struct {
+		PlayerID      string `json:"playerId"`
+		PaymentMethod string `json:"paymentMethod"`
+	}
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+	if req.PlayerID == "" || req.PaymentMethod == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Missing required fields")
+	}
+	if req.PaymentMethod != "coins" && req.PaymentMethod != "ad" {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid payment method")
+	}
+
+	output, err := h.recoverStreakUC.Execute(appDaily.RecoverStreakInput{
+		PlayerID:      req.PlayerID,
+		PaymentMethod: req.PaymentMethod,
+	})
+	if err != nil {
+		return mapDailyChallengeError(err)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": output})
+}
+
 // ========================================
 // Error Mapping
 // ========================================
@@ -291,6 +321,8 @@ func mapDailyChallengeError(err error) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Game already completed")
 	case domainDaily.ErrGameNotActive:
 		return fiber.NewError(fiber.StatusBadRequest, "Game not active")
+	case domainDaily.ErrStreakNotRecoverable:
+		return fiber.NewError(fiber.StatusConflict, "Streak is not recoverable")
 	case domainQuiz.ErrQuestionNotFound:
 		return fiber.NewError(fiber.StatusNotFound, "Question not found")
 	case domainQuiz.ErrAnswerNotFound:

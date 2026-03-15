@@ -58,8 +58,7 @@ func (uc *AbandonMarathonUseCase) Execute(input AbandonMarathonInput) (AbandonMa
 		return AbandonMarathonOutput{}, err
 	}
 
-	// 5. Update PersonalBest if new record
-	uc.updatePersonalBestIfNeeded(game, now)
+	// 5. Skip personal best update for abandoned games — only completed runs count
 
 	// 6. Persist game
 	if err := uc.marathonRepo.Save(game); err != nil {

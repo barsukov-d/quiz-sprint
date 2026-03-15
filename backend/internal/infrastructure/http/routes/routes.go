@@ -483,6 +483,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				seasonRepo,
 				duelEventBus,
 				duelRoundCache,
+				inventoryService,
 			)
 		}
 		createChallengeLinkUC = appDuel.NewCreateChallengeLinkUseCase(
@@ -648,6 +649,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	// Daily Challenge handler (only if database is available)
 	var dailyChallengeHandler *handlers.DailyChallengeHandler
 	if startDailyChallengeUC != nil {
+		recoverStreakUC := appDaily.NewRecoverStreakUseCase(dailyGameRepo, inventoryService)
 		dailyChallengeHandler = handlers.NewDailyChallengeHandler(
 			getOrCreateDailyQuizUC,
 			startDailyChallengeUC,
@@ -657,6 +659,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			getPlayerStreakUC,
 			openChestUC,
 			retryUC,
+			recoverStreakUC,
 		)
 	}
 
@@ -787,6 +790,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		daily.Get("/status", dailyChallengeHandler.GetDailyStatus)
 		daily.Get("/leaderboard", dailyChallengeHandler.GetDailyLeaderboard)
 		daily.Get("/streak", dailyChallengeHandler.GetPlayerStreak)
+		daily.Post("/recover-streak", dailyChallengeHandler.RecoverStreak)
 	}
 
 	// Duel (PvP) routes (only if database is available)

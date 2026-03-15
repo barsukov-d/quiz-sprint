@@ -117,7 +117,7 @@ func (r *PersonalBestRepository) FindTopByCategory(
 			($1::uuid IS NULL AND category_id IS NULL) OR
 			(category_id = $1)
 		)
-		ORDER BY best_streak DESC, best_score DESC, achieved_at ASC
+		ORDER BY best_score DESC, best_streak DESC, achieved_at ASC
 		LIMIT $2
 	`
 
@@ -181,7 +181,7 @@ func (r *PersonalBestRepository) FindAllByPlayer(
 		SELECT id, player_id, category_id, best_streak, best_score, achieved_at, updated_at
 		FROM marathon_personal_bests
 		WHERE player_id = $1
-		ORDER BY best_streak DESC
+		ORDER BY best_score DESC, best_streak DESC
 	`
 
 	rows, err := r.db.Query(query, playerID.String())
