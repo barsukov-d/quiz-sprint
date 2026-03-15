@@ -10,6 +10,7 @@ import HomeView from '../views/HomeView.vue'
 
 // Daily Challenge Views
 import DailyChallengePlayView from '../views/DailyChallenge/DailyChallengePlayView.vue'
+import DailyChallengeChestView from '../views/DailyChallenge/DailyChallengeChestView.vue'
 import DailyChallengeResultsView from '../views/DailyChallenge/DailyChallengeResultsView.vue'
 
 // Marathon Views
@@ -80,6 +81,11 @@ const router = createRouter({
 					path: 'play',
 					name: 'daily-challenge-play',
 					component: DailyChallengePlayView,
+				},
+				{
+					path: 'chest',
+					name: 'daily-challenge-chest',
+					component: DailyChallengeChestView,
 				},
 				{
 					path: 'results',

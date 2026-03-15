@@ -257,6 +257,42 @@ func (pr *PlayerRating) SeasonReset(newSeasonID string, resetTime int64) {
 	))
 }
 
+// GetSeasonRewardCoins returns coins rewarded based on peak league at season end
+func (pr *PlayerRating) GetSeasonRewardCoins() int {
+	switch pr.peakLeague {
+	case LeagueLegend:
+		return 5000
+	case LeagueDiamond:
+		return 3000
+	case LeaguePlatinum:
+		return 2000
+	case LeagueGold:
+		return 1000
+	case LeagueSilver:
+		return 500
+	default:
+		return 100
+	}
+}
+
+// GetSeasonRewardTickets returns PvP tickets rewarded based on peak league
+func (pr *PlayerRating) GetSeasonRewardTickets() int {
+	switch pr.peakLeague {
+	case LeagueLegend:
+		return 50
+	case LeagueDiamond:
+		return 30
+	case LeaguePlatinum:
+		return 20
+	case LeagueGold:
+		return 10
+	case LeagueSilver:
+		return 5
+	default:
+		return 2
+	}
+}
+
 // GetLeagueLabel returns formatted league label
 func (pr *PlayerRating) GetLeagueLabel() string {
 	return LeagueInfo{league: pr.league, division: pr.division}.FullLabel()

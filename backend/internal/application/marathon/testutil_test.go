@@ -105,6 +105,10 @@ func (m *mockPersonalBestRepo) FindTopByCategory(category solo_marathon.Marathon
 	return result, nil
 }
 
+func (m *mockPersonalBestRepo) FindTopByCategoryInTimeRange(category solo_marathon.MarathonCategory, limit int, from int64, to int64) ([]*solo_marathon.PersonalBest, error) {
+	return m.FindTopByCategory(category, limit)
+}
+
 func (m *mockPersonalBestRepo) FindAllByPlayer(playerID solo_marathon.UserID) ([]*solo_marathon.PersonalBest, error) {
 	var result []*solo_marathon.PersonalBest
 	prefix := playerID.String() + ":"
