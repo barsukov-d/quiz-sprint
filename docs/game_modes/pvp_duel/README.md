@@ -71,7 +71,7 @@
 - [x] Swagger: missing fields added (ExpiredChallenges, RankChange, Questions, RematchExpiresIn)
 - [x] Bot games fallback (60s queue timeout)
 - [x] Same-opponent prevention in matchmaking (Redis duel:recent:{p}:{o} EX 300, bypass after 30s)
-- [ ] Surrender endpoint (after Q3)
+- [x] Surrender endpoint (POST /duel/game/:gameId/surrender, requires 3+ answers)
 - [ ] Structured error codes (JSON format)
 - [ ] Anti-cheat: pattern detection, penalties
 

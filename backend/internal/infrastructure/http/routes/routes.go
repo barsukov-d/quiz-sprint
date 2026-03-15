@@ -377,15 +377,15 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		openChestUC = appDaily.NewOpenChestUseCase(
 			dailyGameRepo,
 			inventoryService,
-		)
+		).WithPremiumService(&appUser.NoopPremiumService{})
 		retryUC = appDaily.NewRetryChallengeUseCase(
 			dailyGameRepo,
 			dailyQuizRepo,
 			questionRepo,
 			dailyChallengeEventBus,
 			inventoryService,
-			nil, // adVerificationSvc: wire NoopAdVerificationService or real impl here
-		)
+			&appDaily.NoopAdVerificationService{},
+		).WithPremiumService(&appUser.NoopPremiumService{})
 	}
 
 	// Duel (PvP) use cases (only if database is available)

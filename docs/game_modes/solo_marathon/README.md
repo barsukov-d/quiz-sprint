@@ -45,8 +45,8 @@
 - [x] Fix: streakCount/bestStreak/livesRestored persisted (migration 023)
 - [x] Fix: CurrentStreak()/MaxStreak() getters fixed (returned score → streak)
 - [ ] Weekly leaderboard (Redis sorted set, needs infra implementation)
-- [ ] WeeklyRewardDistributionRepository (PostgreSQL impl needed)
-- [ ] Milestone deduplication (prevent re-crediting same threshold)
+- [x] WeeklyRewardDistributionRepository (PostgreSQL impl: HasDistributed/MarkDistributed, wired in routes.go)
+- [x] Milestone deduplication (migration 026: marathon_milestone_claims table + MilestoneClaimsRepository, wired via WithMilestoneClaimsRepository)
 - [ ] Bonus shop / packs
 - [x] Difficulty transition toasts (frontend) — toast shown on difficulty level up
 - [x] Fix: Freeze frontend +5s → +10s (confirmed correct, matches backend FREEZE_BONUS_SECONDS=10)

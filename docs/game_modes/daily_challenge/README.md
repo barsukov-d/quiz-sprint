@@ -38,7 +38,7 @@
 - [x] Anti-cheat (suspicious score flag: avg time < 1s/question)
 - [x] ABANDONED статус + CleanupAbandonedGamesUseCase (24h timeout)
 - [x] Thin-client лейблы от бэкенда (RankLabel, ChestLabel, ShareText, CanRetry, RetryCost, CanPlayNow)
-- [x] Ad verification interface (NoopAdVerificationService stub)
+- [x] Ad verification interface (NoopAdVerificationService wired in routes.go)
 - [x] Swagger: RecoverStreak аннотации, ErrAlreadyAnswered → HTTP 409
 - [x] Фильтрация лидерборда (friends/country) — FindTopByDateAndFriends + FindTopByDateAndCountry
 - [ ] Chest opening анимация (frontend)

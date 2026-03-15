@@ -666,6 +666,12 @@ func NewOpenChestUseCase(
 	}
 }
 
+// WithPremiumService sets the optional premium service
+func (uc *OpenChestUseCase) WithPremiumService(ps PremiumService) *OpenChestUseCase {
+	uc.premiumService = ps
+	return uc
+}
+
 func (uc *OpenChestUseCase) Execute(input OpenChestInput) (OpenChestOutput, error) {
 	// 1. Load game
 	gameID := daily_challenge.NewGameIDFromString(input.GameID)
@@ -755,6 +761,12 @@ func NewRetryChallengeUseCase(
 		inventoryService:  inventoryService,
 		adVerificationSvc: adVerificationSvc,
 	}
+}
+
+// WithPremiumService sets the optional premium service
+func (uc *RetryChallengeUseCase) WithPremiumService(ps PremiumService) *RetryChallengeUseCase {
+	uc.premiumService = ps
+	return uc
 }
 
 func (uc *RetryChallengeUseCase) Execute(input RetryChallengeInput) (RetryChallengeOutput, error) {
