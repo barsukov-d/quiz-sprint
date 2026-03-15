@@ -457,6 +457,14 @@ func (m *mockMatchmakingQueue) GetStaleQueueEntries(cutoffTime int64) ([]quick_d
 	return stale, nil
 }
 
+func (m *mockMatchmakingQueue) RecordRecentOpponent(_, _ quick_duel.UserID) error {
+	return nil
+}
+
+func (m *mockMatchmakingQueue) IsRecentOpponent(_, _ quick_duel.UserID) (bool, error) {
+	return false, nil
+}
+
 // mockSeasonRepo is an in-memory season repository
 type mockSeasonRepo struct {
 	currentSeason string
@@ -903,7 +911,7 @@ func (f *duelFixture) newGetLeaderboardUC() *GetLeaderboardUseCase {
 func (f *duelFixture) newStartGameUC() *StartGameUseCase {
 	return NewStartGameUseCase(
 		f.duelGameRepo, f.playerRatingRepo, f.questionRepo,
-		f.seasonRepo, f.eventBus,
+		f.seasonRepo, f.eventBus, f.matchmakingQueue,
 	)
 }
 

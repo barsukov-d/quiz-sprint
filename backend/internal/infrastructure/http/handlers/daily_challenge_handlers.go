@@ -153,6 +153,7 @@ func (h *DailyChallengeHandler) GetDailyStatus(c fiber.Ctx) error {
 // @Param date query string false "Date (YYYY-MM-DD, defaults to today)"
 // @Param limit query int false "Limit (default 10, max 100)"
 // @Param playerId query string false "Player ID (to get rank)"
+// @Param type query string false "Filter type: global (default) | friends | country"
 // @Success 200 {object} GetDailyLeaderboardResponse "Leaderboard"
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /daily-challenge/leaderboard [get]
@@ -169,6 +170,7 @@ func (h *DailyChallengeHandler) GetDailyLeaderboard(c fiber.Ctx) error {
 		Date:     c.Query("date"),
 		Limit:    limit,
 		PlayerID: c.Query("playerId"),
+		Type:     c.Query("type"),
 	})
 	if err != nil {
 		return mapDailyChallengeError(err)

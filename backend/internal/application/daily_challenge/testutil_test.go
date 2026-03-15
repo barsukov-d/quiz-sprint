@@ -140,6 +140,14 @@ func (m *MockDailyGameRepository) FindTopByDate(date daily_challenge.Date, limit
 	return games, nil
 }
 
+func (m *MockDailyGameRepository) FindTopByDateAndFriends(date daily_challenge.Date, playerID daily_challenge.UserID, limit int) ([]*daily_challenge.DailyGame, error) {
+	return m.FindTopByDate(date, limit)
+}
+
+func (m *MockDailyGameRepository) FindTopByDateAndCountry(date daily_challenge.Date, playerID daily_challenge.UserID, limit int) ([]*daily_challenge.DailyGame, error) {
+	return m.FindTopByDate(date, limit)
+}
+
 func (m *MockDailyGameRepository) GetPlayerRankByDate(playerID daily_challenge.UserID, date daily_challenge.Date) (int, error) {
 	topGames, _ := m.FindTopByDate(date, 0)
 	for i, g := range topGames {

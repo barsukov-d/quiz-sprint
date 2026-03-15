@@ -485,6 +485,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				duelQuestionRepo,
 				seasonRepo,
 				duelEventBus,
+				matchmakingQueue,
 			)
 			startChallengeUC = appDuel.NewStartChallengeUseCase(
 				challengeRepo,

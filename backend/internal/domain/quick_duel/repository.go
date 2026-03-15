@@ -60,6 +60,13 @@ type MatchmakingQueue interface {
 
 	// GetStaleQueueEntries returns IDs of players who joined before cutoffTime (unix sec)
 	GetStaleQueueEntries(cutoffTime int64) ([]UserID, error)
+
+	// RecordRecentOpponent marks opponentID as a recent opponent of playerID (and vice versa).
+	// The record expires after 5 minutes so the same pair can match again later.
+	RecordRecentOpponent(playerID, opponentID UserID) error
+
+	// IsRecentOpponent returns true if opponentID was a recent opponent of playerID.
+	IsRecentOpponent(playerID, opponentID UserID) (bool, error)
 }
 
 // PlayerRatingRepository defines the interface for player rating persistence

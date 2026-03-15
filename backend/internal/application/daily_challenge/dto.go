@@ -201,6 +201,7 @@ type GetDailyLeaderboardInput struct {
 	Date     string `json:"date,omitempty"` // Optional, defaults to today
 	Limit    int    `json:"limit"` // Max entries
 	PlayerID string `json:"playerId,omitempty"` // Optional, to find player's rank
+	Type     string `json:"type,omitempty"` // "global" (default) | "friends" | "country"
 }
 
 type GetDailyLeaderboardOutput struct {

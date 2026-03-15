@@ -141,6 +141,14 @@ func (m *mockDailyGameRepo) FindTopByDate(date domainDaily.Date, limit int) ([]*
 	return games, nil
 }
 
+func (m *mockDailyGameRepo) FindTopByDateAndFriends(date domainDaily.Date, playerID domainDaily.UserID, limit int) ([]*domainDaily.DailyGame, error) {
+	return m.FindTopByDate(date, limit)
+}
+
+func (m *mockDailyGameRepo) FindTopByDateAndCountry(date domainDaily.Date, playerID domainDaily.UserID, limit int) ([]*domainDaily.DailyGame, error) {
+	return m.FindTopByDate(date, limit)
+}
+
 func (m *mockDailyGameRepo) GetPlayerRankByDate(playerID domainDaily.UserID, date domainDaily.Date) (int, error) {
 	top, _ := m.FindTopByDate(date, 0)
 	for i, g := range top {

@@ -1268,6 +1268,7 @@ type StartGameUseCase struct {
 	questionRepo     QuestionRepository
 	seasonRepo       quick_duel.SeasonRepository
 	eventBus         EventBus
+	matchmakingQueue quick_duel.MatchmakingQueue // optional, for recording recent opponents
 }
 
 // QuestionRepository interface for getting questions
@@ -1298,6 +1299,7 @@ func NewStartGameUseCase(
 	questionRepo QuestionRepository,
 	seasonRepo quick_duel.SeasonRepository,
 	eventBus EventBus,
+	matchmakingQueue quick_duel.MatchmakingQueue,
 ) *StartGameUseCase {
 	return &StartGameUseCase{
 		duelGameRepo:     duelGameRepo,
@@ -1305,6 +1307,7 @@ func NewStartGameUseCase(
 		questionRepo:     questionRepo,
 		seasonRepo:       seasonRepo,
 		eventBus:         eventBus,
+		matchmakingQueue: matchmakingQueue,
 	}
 }
 
@@ -1370,6 +1373,11 @@ func (uc *StartGameUseCase) Execute(input StartGameInput) (StartGameOutput, erro
 	err = uc.duelGameRepo.Save(game)
 	if err != nil {
 		return StartGameOutput{}, err
+	}
+
+	// Record recent opponents so rematch is avoided for 5 minutes (best-effort)
+	if uc.matchmakingQueue != nil {
+		_ = uc.matchmakingQueue.RecordRecentOpponent(player1ID, player2ID)
 	}
 
 	return StartGameOutput{

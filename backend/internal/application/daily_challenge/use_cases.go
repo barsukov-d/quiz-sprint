@@ -511,10 +511,44 @@ func (uc *GetDailyLeaderboardUseCase) Execute(input GetDailyLeaderboardInput) (G
 		limit = 100
 	}
 
-	// 3. Get top games
-	topGames, err := uc.dailyGameRepo.FindTopByDate(date, limit)
-	if err != nil {
-		return GetDailyLeaderboardOutput{}, err
+	// 3. Get top games (filtered by type)
+	var topGames []*daily_challenge.DailyGame
+	filterType := input.Type
+	if filterType == "" {
+		filterType = "global"
+	}
+
+	switch filterType {
+	case "friends":
+		if input.PlayerID == "" {
+			return GetDailyLeaderboardOutput{}, nil
+		}
+		playerID, err := shared.NewUserID(input.PlayerID)
+		if err != nil {
+			return GetDailyLeaderboardOutput{}, err
+		}
+		topGames, err = uc.dailyGameRepo.FindTopByDateAndFriends(date, playerID, limit)
+		if err != nil {
+			return GetDailyLeaderboardOutput{}, err
+		}
+	case "country":
+		if input.PlayerID == "" {
+			return GetDailyLeaderboardOutput{}, nil
+		}
+		playerID, err := shared.NewUserID(input.PlayerID)
+		if err != nil {
+			return GetDailyLeaderboardOutput{}, err
+		}
+		topGames, err = uc.dailyGameRepo.FindTopByDateAndCountry(date, playerID, limit)
+		if err != nil {
+			return GetDailyLeaderboardOutput{}, err
+		}
+	default: // "global"
+		var err error
+		topGames, err = uc.dailyGameRepo.FindTopByDate(date, limit)
+		if err != nil {
+			return GetDailyLeaderboardOutput{}, err
+		}
 	}
 
 	// 4. Build leaderboard entries

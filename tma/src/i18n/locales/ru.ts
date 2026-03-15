@@ -208,6 +208,8 @@ export default {
 		allCategories: 'Все категории',
 		allCategoriesDesc: 'Вопросы по всем темам',
 		lives: '{count} жизней',
+		difficultyIncreased: 'Сложность выросла!',
+		difficultyDecreased: 'Сложность снизилась',
 	},
 	daily: {
 		title: 'Вызов дня',

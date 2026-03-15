@@ -38,6 +38,12 @@ type DailyGameRepository interface {
 	// Sorted by score descending, best attempt per player
 	FindTopByDate(date Date, limit int) ([]*DailyGame, error)
 
+	// FindTopByDateAndFriends retrieves top N results filtered to player's friends (referrals)
+	FindTopByDateAndFriends(date Date, playerID UserID, limit int) ([]*DailyGame, error)
+
+	// FindTopByDateAndCountry retrieves top N results filtered to players with same language_code
+	FindTopByDateAndCountry(date Date, playerID UserID, limit int) ([]*DailyGame, error)
+
 	// GetPlayerRankByDate calculates player's rank for a specific date
 	// Returns 0 if player hasn't played
 	GetPlayerRankByDate(playerID UserID, date Date) (int, error)

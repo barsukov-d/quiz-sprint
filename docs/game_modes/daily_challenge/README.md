@@ -1,6 +1,6 @@
 # Daily Challenge Documentation
 
-> **Аудит реализации: 2026-03-15 | Обновлено: 2026-03-15 (post-implementation)**
+> **Аудит реализации: 2026-03-15 | Обновлено: 2026-03-15 (Phase 8: leaderboard friends/country filtering)**
 
 ## Статус документации vs кода
 
@@ -40,7 +40,7 @@
 - [x] Thin-client лейблы от бэкенда (RankLabel, ChestLabel, ShareText, CanRetry, RetryCost, CanPlayNow)
 - [x] Ad verification interface (NoopAdVerificationService stub)
 - [x] Swagger: RecoverStreak аннотации, ErrAlreadyAnswered → HTTP 409
+- [x] Фильтрация лидерборда (friends/country) — FindTopByDateAndFriends + FindTopByDateAndCountry
 - [ ] Chest opening анимация (frontend)
 - [ ] Push notifications
 - [ ] Redis-лидерборд (вместо PostgreSQL)
-- [ ] Фильтрация лидерборда (friends/country)

@@ -126,6 +126,10 @@ func (uc *BotFallbackUseCase) spawnBotGame(playerID quick_duel.UserID, now int64
 		return err
 	}
 
+	// Record bot as recent opponent so re-queue won't immediately match the same pair
+	// (best-effort: ignore error)
+	_ = uc.matchmakingQueue.RecordRecentOpponent(playerID, botID)
+
 	// Publish events (game_created + game_started)
 	for _, event := range game.Events() {
 		uc.eventBus.Publish(event)

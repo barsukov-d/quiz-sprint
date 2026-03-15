@@ -1,6 +1,6 @@
 # PvP Duel Documentation
 
-> **Аудит реализации: 2026-03-15 | Обновлено: 2026-03-15 (post-implementation)**
+> **Аудит реализации: 2026-03-15 | Обновлено: 2026-03-15 (Phase 8: bot fallback + same-opponent prevention)**
 
 ## Статус документации vs кода
 
@@ -69,11 +69,11 @@
 - [x] Server-side time validation (reject negative, clamp >10500ms to 10000ms)
 - [x] ELO draw fix (symmetric CalculateDrawRating for equal scores)
 - [x] Swagger: missing fields added (ExpiredChallenges, RankChange, Questions, RematchExpiresIn)
-- [ ] Bot games fallback (60s queue timeout)
+- [x] Bot games fallback (60s queue timeout)
+- [x] Same-opponent prevention in matchmaking (Redis duel:recent:{p}:{o} EX 300, bypass after 30s)
 - [ ] Surrender endpoint (after Q3)
 - [ ] Structured error codes (JSON format)
 - [ ] Anti-cheat: pattern detection, penalties
-- [ ] Same-opponent prevention in matchmaking
 
 ### Bugs / Fixes Needed
 - [ ] Fix: Scoring doc says "correct count", code uses points+speed bonus — align doc or code

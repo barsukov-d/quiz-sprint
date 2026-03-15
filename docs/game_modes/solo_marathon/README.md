@@ -1,6 +1,6 @@
 # Solo Marathon Documentation
 
-> **Аудит реализации: 2026-03-15 | Обновлено: 2026-03-15 (post-implementation)**
+> **Аудит реализации: 2026-03-15 | Обновлено: 2026-03-15 (Phase 8: freeze fix verified + difficulty toasts)**
 
 ## Статус документации vs кода
 
@@ -48,8 +48,8 @@
 - [ ] WeeklyRewardDistributionRepository (PostgreSQL impl needed)
 - [ ] Milestone deduplication (prevent re-crediting same threshold)
 - [ ] Bonus shop / packs
-- [ ] Difficulty transition toasts (frontend)
+- [x] Difficulty transition toasts (frontend) — toast shown on difficulty level up
+- [x] Fix: Freeze frontend +5s → +10s (confirmed correct, matches backend FREEZE_BONUS_SECONDS=10)
 - [ ] Onboarding overlay (frontend)
 - [ ] Network disconnect overlay (frontend)
 - [ ] Share card (frontend)
-- [ ] Fix: Freeze frontend +5s → +10s (verify current state)

@@ -58,6 +58,30 @@ watch(lifeRestoredSignal, () => {
 	}, 1200)
 })
 
+// Difficulty change toast
+const difficultyToast = ref<'increased' | 'decreased' | null>(null)
+const prevDifficultyLevel = ref<string | null>(null)
+
+watch(
+	() => state.value.lastAnswerResult?.difficultyLevel,
+	(newLevel) => {
+		if (!newLevel || prevDifficultyLevel.value === null) {
+			prevDifficultyLevel.value = newLevel ?? null
+			return
+		}
+		const levels = ['easy', 'medium', 'hard']
+		const prevIdx = levels.indexOf(prevDifficultyLevel.value)
+		const newIdx = levels.indexOf(newLevel)
+		if (prevIdx !== -1 && newIdx !== -1 && newIdx !== prevIdx) {
+			difficultyToast.value = newIdx > prevIdx ? 'increased' : 'decreased'
+			setTimeout(() => {
+				difficultyToast.value = null
+			}, 2000)
+		}
+		prevDifficultyLevel.value = newLevel
+	},
+)
+
 const showFeedback = ref(false)
 const feedbackIsCorrect = ref<boolean | null>(null)
 const feedbackCorrectAnswerId = ref<string | null>(null)
@@ -428,6 +452,25 @@ onUnmounted(() => {
 				/>
 			</div>
 
+			<!-- Difficulty change toast -->
+			<Transition name="difficulty-toast">
+				<div
+					v-if="difficultyToast"
+					class="text-xs text-center font-semibold py-1 px-3 rounded-full mx-auto w-fit"
+					:class="
+						difficultyToast === 'increased'
+							? 'bg-orange-500/20 text-orange-400'
+							: 'bg-blue-500/20 text-blue-400'
+					"
+				>
+					{{
+						difficultyToast === 'increased'
+							? t('marathon.difficultyIncreased')
+							: t('marathon.difficultyDecreased')
+					}}
+				</div>
+			</Transition>
+
 			<!-- Milestone progress -->
 			<div
 				v-if="state.milestone && state.milestone.next > 0"
@@ -588,6 +631,36 @@ onUnmounted(() => {
 
 .life-restore-enter-active {
 	animation: life-restore-pop 1.2s ease-out forwards;
+}
+
+.difficulty-toast-enter-active {
+	animation: difficulty-fade-in 0.3s ease-out forwards;
+}
+
+.difficulty-toast-leave-active {
+	animation: difficulty-fade-out 0.4s ease-in forwards;
+}
+
+@keyframes difficulty-fade-in {
+	from {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
+	to {
+		opacity: 1;
+		transform: translateY(0);
+	}
+}
+
+@keyframes difficulty-fade-out {
+	from {
+		opacity: 1;
+		transform: translateY(0);
+	}
+	to {
+		opacity: 0;
+		transform: translateY(-6px);
+	}
 }
 
 @keyframes life-restore-pop {

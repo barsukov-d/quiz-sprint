@@ -208,6 +208,8 @@ export default {
 		allCategories: 'All Categories',
 		allCategoriesDesc: 'Questions from all topics',
 		lives: '{count} lives',
+		difficultyIncreased: 'Difficulty up!',
+		difficultyDecreased: 'Difficulty down',
 	},
 	daily: {
 		title: "Today's Challenge",
