@@ -17,3 +17,8 @@ pre-commit:
       root: "tma/"
       glob: "**/*"
       run: pnpm run type-check
+
+    backend-test:
+      root: "backend/"
+      glob: "**/*.go"
+      run: go test ./...
