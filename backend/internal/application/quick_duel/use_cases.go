@@ -555,13 +555,7 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 		return RespondChallengeOutput{}, fmt.Errorf("question repository unavailable")
 	}
 
-	// Consume PvP ticket for accepting a challenge
-	if uc.inventoryService != nil {
-		err := uc.inventoryService.Debit(input.PlayerID, "pvp_entry", map[string]int{"pvp_tickets": 1})
-		if err != nil {
-			return RespondChallengeOutput{}, quick_duel.ErrInsufficientTickets
-		}
-	}
+	// No ticket cost for accepting a challenge — only the challenger pays
 
 	// Prepare data needed for game creation before entering tx
 	challengerID := challenge.ChallengerID()
@@ -767,13 +761,7 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 		return AcceptByLinkCodeOutput{}, quick_duel.ErrChallengeNotPending
 	}
 
-	// Consume PvP ticket for accepting a challenge link
-	if uc.inventoryService != nil {
-		err := uc.inventoryService.Debit(input.PlayerID, "pvp_entry", map[string]int{"pvp_tickets": 1})
-		if err != nil {
-			return AcceptByLinkCodeOutput{}, quick_duel.ErrInsufficientTickets
-		}
-	}
+	// No ticket cost for accepting a challenge link — only the challenger pays
 
 	// Check if accepter is already in a game
 	if activeGame, err := uc.duelGameRepo.FindActiveByPlayer(accepterID); err == nil && activeGame != nil {
