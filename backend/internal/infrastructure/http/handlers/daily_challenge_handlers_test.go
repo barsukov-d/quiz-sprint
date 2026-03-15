@@ -166,6 +166,10 @@ func (m *mockDailyGameRepo) Delete(id domainDaily.GameID) error {
 	return nil
 }
 
+func (m *mockDailyGameRepo) MarkAbandonedGames() (int, error) {
+	return 0, nil
+}
+
 // mockQuestionRepo is an in-memory QuestionRepository
 type mockQuestionRepo struct {
 	questions map[string]*domainQuiz.Question
@@ -374,7 +378,7 @@ func setupHandlerFixture(t *testing.T) *handlerFixture {
 	statusUC := appDaily.NewGetDailyGameStatusUseCase(dailyQuizRepo, dailyGameRepo, leaderboardUC)
 	streakUC := appDaily.NewGetPlayerStreakUseCase(dailyGameRepo)
 	openChestUC := appDaily.NewOpenChestUseCase(dailyGameRepo, nil)
-	retryUC := appDaily.NewRetryChallengeUseCase(dailyGameRepo, dailyQuizRepo, questionRepo, eventBus, nil)
+	retryUC := appDaily.NewRetryChallengeUseCase(dailyGameRepo, dailyQuizRepo, questionRepo, eventBus, nil, nil)
 
 	handler := NewDailyChallengeHandler(getOrCreateQuizUC, startUC, submitUC, statusUC, leaderboardUC, streakUC, openChestUC, retryUC, nil)
 

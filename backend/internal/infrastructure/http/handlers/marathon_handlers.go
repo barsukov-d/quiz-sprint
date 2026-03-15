@@ -16,6 +16,7 @@ type MarathonHandler struct {
 	useBonusUC                *appMarathon.UseMarathonBonusUseCase
 	continueMarathonUC        *appMarathon.ContinueMarathonUseCase
 	abandonMarathonUC         *appMarathon.AbandonMarathonUseCase
+	completeMarathonUC        *appMarathon.CompleteMarathonUseCase
 	getStatusUC               *appMarathon.GetMarathonStatusUseCase
 	getPersonalBestsUC        *appMarathon.GetPersonalBestsUseCase
 	getLeaderboardUC          *appMarathon.GetMarathonLeaderboardUseCase
@@ -28,6 +29,7 @@ func NewMarathonHandler(
 	useBonusUC *appMarathon.UseMarathonBonusUseCase,
 	continueMarathonUC *appMarathon.ContinueMarathonUseCase,
 	abandonMarathonUC *appMarathon.AbandonMarathonUseCase,
+	completeMarathonUC *appMarathon.CompleteMarathonUseCase,
 	getStatusUC *appMarathon.GetMarathonStatusUseCase,
 	getPersonalBestsUC *appMarathon.GetPersonalBestsUseCase,
 	getLeaderboardUC *appMarathon.GetMarathonLeaderboardUseCase,
@@ -38,6 +40,7 @@ func NewMarathonHandler(
 		useBonusUC:         useBonusUC,
 		continueMarathonUC: continueMarathonUC,
 		abandonMarathonUC:  abandonMarathonUC,
+		completeMarathonUC: completeMarathonUC,
 		getStatusUC:        getStatusUC,
 		getPersonalBestsUC: getPersonalBestsUC,
 		getLeaderboardUC:   getLeaderboardUC,
@@ -259,6 +262,43 @@ func (h *MarathonHandler) AbandonMarathon(c fiber.Ctx) error {
 	}
 
 	output, err := h.abandonMarathonUC.Execute(appMarathon.AbandonMarathonInput{
+		GameID:   c.Params("gameId"),
+		PlayerID: req.PlayerID,
+	})
+	if err != nil {
+		return mapMarathonError(err)
+	}
+
+	return c.JSON(fiber.Map{
+		"data": output.GameOverResult,
+	})
+}
+
+// CompleteMarathon handles POST /api/v1/marathon/:gameId/complete
+// @Summary Complete a marathon game
+// @Description Complete a marathon game that is in game_over state (player declines continue)
+// @Tags marathon
+// @Accept json
+// @Produce json
+// @Param gameId path string true "Game ID"
+// @Param request body AbandonMarathonRequest true "Complete game request"
+// @Success 200 {object} AbandonMarathonResponse "Game completed with final statistics"
+// @Failure 400 {object} ErrorResponse "Invalid game ID or game not in game_over state"
+// @Failure 401 {object} ErrorResponse "Unauthorized - game belongs to another player"
+// @Failure 404 {object} ErrorResponse "Game not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /marathon/{gameId}/complete [post]
+func (h *MarathonHandler) CompleteMarathon(c fiber.Ctx) error {
+	var req AbandonMarathonRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if req.PlayerID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "playerId is required")
+	}
+
+	output, err := h.completeMarathonUC.Execute(appMarathon.CompleteMarathonInput{
 		GameID:   c.Params("gameId"),
 		PlayerID: req.PlayerID,
 	})

@@ -168,6 +168,10 @@ func (m *MockDailyGameRepository) Delete(id daily_challenge.GameID) error {
 	return daily_challenge.ErrGameNotFound
 }
 
+func (m *MockDailyGameRepository) MarkAbandonedGames() (int, error) {
+	return 0, nil
+}
+
 // MockQuestionRepository is an in-memory QuestionRepository
 type MockQuestionRepository struct {
 	questions map[string]*quiz.Question // keyed by question ID
@@ -596,5 +600,5 @@ func (f *testFixture) newOpenChestUC() *OpenChestUseCase {
 }
 
 func (f *testFixture) newRetryUC() *RetryChallengeUseCase {
-	return NewRetryChallengeUseCase(f.dailyGameRepo, f.dailyQuizRepo, f.questionRepo, f.eventBus, nil)
+	return NewRetryChallengeUseCase(f.dailyGameRepo, f.dailyQuizRepo, f.questionRepo, f.eventBus, nil, nil)
 }

@@ -181,9 +181,9 @@ func (dg *DuelGame) SubmitAnswer(
 
 	// 8. Update player score
 	if dg.player1.UserID().Equals(playerID) {
-		dg.player1 = dg.player1.AddScore(points)
+		dg.player1 = dg.player1.AddScore(points, timeTaken)
 	} else {
-		dg.player2 = dg.player2.AddScore(points)
+		dg.player2 = dg.player2.AddScore(points, timeTaken)
 	}
 
 	// 9. Publish PlayerAnswered event
@@ -282,20 +282,19 @@ func (dg *DuelGame) finishGame(finishedAt int64) error {
 	dg.status = GameStatusFinished
 	dg.finishedAt = finishedAt
 
-	// Determine winner
-	var player1Won bool
-	if dg.player1.Score() > dg.player2.Score() {
-		player1Won = true
-	} else if dg.player1.Score() < dg.player2.Score() {
-		player1Won = false
-	} else {
-		// Draw - both get draw result for ELO
-		player1Won = false // Will be treated as draw in ELO calculation
-	}
-
 	// Calculate new ELO ratings
-	player1NewElo := dg.player1.Elo().CalculateNewRating(player1Won, dg.player2.Elo().Rating())
-	player2NewElo := dg.player2.Elo().CalculateNewRating(!player1Won, dg.player1.Elo().Rating())
+	var player1NewElo, player2NewElo EloRating
+	if dg.player1.Score() > dg.player2.Score() {
+		player1NewElo = dg.player1.Elo().CalculateNewRating(true, dg.player2.Elo().Rating())
+		player2NewElo = dg.player2.Elo().CalculateNewRating(false, dg.player1.Elo().Rating())
+	} else if dg.player1.Score() < dg.player2.Score() {
+		player1NewElo = dg.player1.Elo().CalculateNewRating(false, dg.player2.Elo().Rating())
+		player2NewElo = dg.player2.Elo().CalculateNewRating(true, dg.player1.Elo().Rating())
+	} else {
+		// Draw - both get symmetric draw ELO adjustment
+		player1NewElo = dg.player1.Elo().CalculateDrawRating(dg.player2.Elo().Rating())
+		player2NewElo = dg.player2.Elo().CalculateDrawRating(dg.player1.Elo().Rating())
+	}
 
 	// Update players' ELO
 	dg.player1 = dg.player1.UpdateElo(player1NewElo)
@@ -341,13 +340,21 @@ func (dg *DuelGame) RecordTimeoutAnswer(playerID UserID, timedOutAt int64) (*Sub
 	}
 
 	// Record as timed out: wrong, max time, 0 points, zero AnswerID
+	const timeoutMs = TimePerQuestionSec * 1000
 	roundAnswer := RoundAnswer{
 		playerID:  playerID,
-		timeTaken: TimePerQuestionSec * 1000,
+		timeTaken: timeoutMs,
 		isCorrect: false,
 		points:    0,
 	}
 	dg.roundAnswers[dg.currentRound] = append(dg.roundAnswers[dg.currentRound], roundAnswer)
+
+	// Update player total time for tiebreaker tracking
+	if dg.player1.UserID().Equals(playerID) {
+		dg.player1 = dg.player1.AddTime(timeoutMs)
+	} else {
+		dg.player2 = dg.player2.AddTime(timeoutMs)
+	}
 
 	bothAnswered := len(dg.roundAnswers[dg.currentRound]) == 2
 	result := &SubmitAnswerResult{
@@ -494,7 +501,23 @@ func (dg *DuelGame) determineWinner() *UserID {
 		id := dg.player2.UserID()
 		return &id
 	}
-	return nil // Draw
+
+	// Scores are equal: tiebreaker by total answer time (less is better)
+	if dg.player1.TotalTimeMs() < dg.player2.TotalTimeMs() {
+		id := dg.player1.UserID()
+		return &id
+	} else if dg.player2.TotalTimeMs() < dg.player1.TotalTimeMs() {
+		id := dg.player2.UserID()
+		return &id
+	}
+
+	// Times also equal: deterministic tiebreaker by smaller playerID string
+	if dg.player1.UserID().String() < dg.player2.UserID().String() {
+		id := dg.player1.UserID()
+		return &id
+	}
+	id := dg.player2.UserID()
+	return &id
 }
 
 // Getters

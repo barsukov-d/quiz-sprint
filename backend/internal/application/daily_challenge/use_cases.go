@@ -398,6 +398,7 @@ func (uc *GetDailyGameStatusUseCase) Execute(input GetDailyGameStatusInput) (Get
 	if err != nil || game == nil {
 		return GetDailyGameStatusOutput{
 			HasPlayed:    false,
+			CanPlayNow:   true,
 			TimeToExpire: timeToExpire,
 			TotalPlayers: totalPlayers,
 		}, nil
@@ -447,6 +448,18 @@ func (uc *GetDailyGameStatusUseCase) Execute(input GetDailyGameStatusInput) (Get
 	// HasPlayed = true ONLY if game is completed
 	hasPlayed := game.Status() == daily_challenge.GameStatusCompleted
 
+	// Determine retry eligibility: player has < 2 attempts today
+	attemptCount, _ := uc.dailyGameRepo.CountAttemptsByPlayerAndDate(playerID, date)
+	canRetry := hasPlayed && attemptCount < 2
+	var retryCost *RetryCostDTO
+	if canRetry {
+		retryCost = &RetryCostDTO{
+			Coins: 100,
+			HasAd: true,
+		}
+	}
+	canPlayNow := !hasPlayed || canRetry
+
 	return GetDailyGameStatusOutput{
 		HasPlayed:     hasPlayed,
 		Game:          &gameDTO,
@@ -455,6 +468,9 @@ func (uc *GetDailyGameStatusUseCase) Execute(input GetDailyGameStatusInput) (Get
 		TimeRemaining: timeRemaining,
 		TimeToExpire:  timeToExpire,
 		TotalPlayers:  totalPlayers,
+		CanRetry:      canRetry,
+		RetryCost:     retryCost,
+		CanPlayNow:    canPlayNow,
 	}, nil
 }
 
@@ -673,11 +689,12 @@ func (uc *OpenChestUseCase) Execute(input OpenChestInput) (OpenChestOutput, erro
 // ========================================
 
 type RetryChallengeUseCase struct {
-	dailyGameRepo    daily_challenge.DailyGameRepository
-	dailyQuizRepo    daily_challenge.DailyQuizRepository
-	questionRepo     quiz.QuestionRepository
-	eventBus         EventBus
-	inventoryService InventoryService
+	dailyGameRepo       daily_challenge.DailyGameRepository
+	dailyQuizRepo       daily_challenge.DailyQuizRepository
+	questionRepo        quiz.QuestionRepository
+	eventBus            EventBus
+	inventoryService    InventoryService
+	adVerificationSvc   AdVerificationService
 }
 
 func NewRetryChallengeUseCase(
@@ -686,13 +703,15 @@ func NewRetryChallengeUseCase(
 	questionRepo quiz.QuestionRepository,
 	eventBus EventBus,
 	inventoryService InventoryService,
+	adVerificationSvc AdVerificationService,
 ) *RetryChallengeUseCase {
 	return &RetryChallengeUseCase{
-		dailyGameRepo:    dailyGameRepo,
-		dailyQuizRepo:    dailyQuizRepo,
-		questionRepo:     questionRepo,
-		eventBus:         eventBus,
-		inventoryService: inventoryService,
+		dailyGameRepo:     dailyGameRepo,
+		dailyQuizRepo:     dailyQuizRepo,
+		questionRepo:      questionRepo,
+		eventBus:          eventBus,
+		inventoryService:  inventoryService,
+		adVerificationSvc: adVerificationSvc,
 	}
 }
 
@@ -749,7 +768,12 @@ func (uc *RetryChallengeUseCase) Execute(input RetryChallengeInput) (RetryChalle
 			}
 		}
 	} else if input.PaymentMethod == "ad" {
-		// TODO: verify ad was watched (via ad network callback)
+		if uc.adVerificationSvc != nil {
+			watched, err := uc.adVerificationSvc.VerifyAdWatched(input.PlayerID, "daily_retry")
+			if err != nil || !watched {
+				return RetryChallengeOutput{}, daily_challenge.ErrInvalidGameID // ad not verified
+			}
+		}
 		coinsDeducted = 0
 	} else {
 		return RetryChallengeOutput{}, daily_challenge.ErrInvalidGameID // Invalid payment method
@@ -827,11 +851,18 @@ func (uc *RetryChallengeUseCase) Execute(input RetryChallengeInput) (RetryChalle
 		return RetryChallengeOutput{}, err
 	}
 
+	remainingCoins := 0
+	if uc.inventoryService != nil {
+		if coins, err := uc.inventoryService.GetCoins(input.PlayerID); err == nil {
+			remainingCoins = coins
+		}
+	}
+
 	return RetryChallengeOutput{
 		NewGameID:      newGame.ID().String(),
 		FirstQuestion:  ToQuestionDTO(firstQuestion),
 		CoinsDeducted:  coinsDeducted,
-		RemainingCoins: 0, // TODO: get from user account
+		RemainingCoins: remainingCoins,
 		TimeLimit:      15,
 	}, nil
 }

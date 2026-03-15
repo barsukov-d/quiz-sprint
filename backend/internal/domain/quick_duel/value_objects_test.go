@@ -140,7 +140,7 @@ func TestEloRating_CalculateNewRating(t *testing.T) {
 	}
 }
 
-// TestEloRating_GetMatchmakingRange tests matchmaking ranges
+// TestEloRating_GetMatchmakingRange tests matchmaking ranges (5-tier)
 func TestEloRating_GetMatchmakingRange(t *testing.T) {
 	elo := ReconstructEloRating(1000, 10)
 
@@ -151,10 +151,15 @@ func TestEloRating_GetMatchmakingRange(t *testing.T) {
 		expectedMax   int
 	}{
 		{"Instant (0s)", 0, 950, 1050},
-		{"Quick (4s)", 4, 950, 1050},
-		{"Medium (7s)", 7, 900, 1100},
-		{"Long (12s)", 12, 800, 1200},
-		{"Very long (20s)", 20, MinEloRating, 9999},
+		{"Tier1 boundary (9s)", 9, 950, 1050},
+		{"Tier2 start (10s)", 10, 900, 1100},
+		{"Tier2 boundary (19s)", 19, 900, 1100},
+		{"Tier3 start (20s)", 20, 800, 1200},
+		{"Tier3 boundary (29s)", 29, 800, 1200},
+		{"Tier4 start (30s)", 30, 700, 1300},
+		{"Tier4 boundary (44s)", 44, 700, 1300},
+		{"Tier5 start (45s)", 45, 500, 1500},
+		{"Tier5 long (120s)", 120, 500, 1500},
 	}
 
 	for _, tt := range tests {
@@ -168,6 +173,19 @@ func TestEloRating_GetMatchmakingRange(t *testing.T) {
 				t.Errorf("Max = %d, want %d", max, tt.expectedMax)
 			}
 		})
+	}
+}
+
+// TestEloRating_GetMatchmakingRange_LowRating tests minimum rating clamping
+func TestEloRating_GetMatchmakingRange_LowRating(t *testing.T) {
+	elo := ReconstructEloRating(110, 5) // Near minimum
+
+	min, max := elo.GetMatchmakingRange(0) // Tier1: delta=50 → 60..160
+	if min != MinEloRating {
+		t.Errorf("Min should be clamped to MinEloRating=%d, got %d", MinEloRating, min)
+	}
+	if max != 160 {
+		t.Errorf("Max = %d, want 160", max)
 	}
 }
 
@@ -194,15 +212,33 @@ func TestDuelPlayer_Operations(t *testing.T) {
 	}
 
 	// Test AddScore (immutable)
-	player2 := player.AddScore(100)
+	player2 := player.AddScore(100, 3000)
 	if player2.Score() != 100 {
 		t.Errorf("Score = %d, want 100", player2.Score())
 	}
 	if player2.AnswersCount() != 1 {
 		t.Errorf("Answers count = %d, want 1", player2.AnswersCount())
 	}
+	if player2.TotalTimeMs() != 3000 {
+		t.Errorf("TotalTimeMs = %d, want 3000", player2.TotalTimeMs())
+	}
 	if player.Score() != 0 {
 		t.Error("Original player should be unchanged")
+	}
+	if player.TotalTimeMs() != 0 {
+		t.Error("Original player TotalTimeMs should be unchanged")
+	}
+
+	// Test AddTime (immutable, no score/answer count change)
+	player3timeout := player.AddTime(10000)
+	if player3timeout.TotalTimeMs() != 10000 {
+		t.Errorf("TotalTimeMs after AddTime = %d, want 10000", player3timeout.TotalTimeMs())
+	}
+	if player3timeout.Score() != 0 {
+		t.Error("AddTime should not change score")
+	}
+	if player3timeout.AnswersCount() != 0 {
+		t.Error("AddTime should not change answers count")
 	}
 
 	// Test SetConnected

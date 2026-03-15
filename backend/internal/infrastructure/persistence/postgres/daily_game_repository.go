@@ -283,6 +283,23 @@ func (r *DailyGameRepository) CountAttemptsByPlayerAndDate(playerID daily_challe
 	return count, err
 }
 
+// MarkAbandonedGames marks in_progress games older than yesterday as abandoned.
+// Returns the number of games updated.
+func (r *DailyGameRepository) MarkAbandonedGames() (int, error) {
+	query := `
+		UPDATE daily_games
+		SET status = 'abandoned'
+		WHERE status = 'in_progress'
+		  AND date < CURRENT_DATE - INTERVAL '1 day'
+	`
+	result, err := r.db.Exec(query)
+	if err != nil {
+		return 0, err
+	}
+	affected, err := result.RowsAffected()
+	return int(affected), err
+}
+
 // Delete removes a daily game
 func (r *DailyGameRepository) Delete(id daily_challenge.GameID) error {
 	_, err := r.db.Exec(`DELETE FROM daily_games WHERE id = $1`, id.String())

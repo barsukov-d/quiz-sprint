@@ -25,6 +25,7 @@ type GetDuelStatusUseCase struct {
 	seasonRepo       quick_duel.SeasonRepository
 	userRepo         domainUser.UserRepository
 	onlineTracker    OnlineTracker // optional, nil if Redis unavailable
+	inventoryService InventoryService
 }
 
 func NewGetDuelStatusUseCase(
@@ -34,6 +35,7 @@ func NewGetDuelStatusUseCase(
 	seasonRepo quick_duel.SeasonRepository,
 	userRepo domainUser.UserRepository,
 	onlineTracker OnlineTracker,
+	inventoryService InventoryService,
 ) *GetDuelStatusUseCase {
 	return &GetDuelStatusUseCase{
 		playerRatingRepo: playerRatingRepo,
@@ -42,6 +44,7 @@ func NewGetDuelStatusUseCase(
 		seasonRepo:       seasonRepo,
 		userRepo:         userRepo,
 		onlineTracker:    onlineTracker,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -164,11 +167,18 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 		expiredDTOs = append(expiredDTOs, dto)
 	}
 
+	tickets := 0
+	if uc.inventoryService != nil {
+		if t, err := uc.inventoryService.GetPvpTickets(input.PlayerID); err == nil {
+			tickets = t
+		}
+	}
+
 	return GetDuelStatusOutput{
 		HasActiveDuel:      activeGameID != nil,
 		ActiveGameID:       activeGameID,
 		Player:             ToPlayerRatingDTO(rating),
-		Tickets:            10, // TODO: get from user wallet
+		Tickets:            tickets,
 		FriendsOnline:      []FriendDTO{}, // TODO: implement friends service
 		PendingChallenges:  challengeDTOs,
 		OutgoingChallenges: outgoingDTOs,
@@ -295,10 +305,16 @@ func (uc *LeaveQueueUseCase) Execute(input LeaveQueueInput) (LeaveQueueOutput, e
 	}
 
 	if !inQueue {
+		tickets := 0
+		if uc.inventoryService != nil {
+			if t, err := uc.inventoryService.GetPvpTickets(input.PlayerID); err == nil {
+				tickets = t
+			}
+		}
 		return LeaveQueueOutput{
 			Success:        true,
 			TicketRefunded: false,
-			NewTicketCount: 10, // TODO: get from wallet
+			NewTicketCount: tickets,
 		}, nil
 	}
 
@@ -313,10 +329,17 @@ func (uc *LeaveQueueUseCase) Execute(input LeaveQueueInput) (LeaveQueueOutput, e
 		_ = uc.inventoryService.Credit(input.PlayerID, "pvp_refund", map[string]int{"pvp_tickets": 1})
 	}
 
+	tickets := 0
+	if uc.inventoryService != nil {
+		if t, err := uc.inventoryService.GetPvpTickets(input.PlayerID); err == nil {
+			tickets = t
+		}
+	}
+
 	return LeaveQueueOutput{
 		Success:        true,
 		TicketRefunded: true,
-		NewTicketCount: 10, // TODO: get from wallet
+		NewTicketCount: tickets,
 	}, nil
 }
 

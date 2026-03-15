@@ -774,7 +774,7 @@ func setupFixture(t *testing.T) *duelFixture {
 func (f *duelFixture) newGetDuelStatusUC() *GetDuelStatusUseCase {
 	return NewGetDuelStatusUseCase(
 		f.playerRatingRepo, f.duelGameRepo, f.challengeRepo,
-		f.seasonRepo, f.userRepo, f.onlineTracker,
+		f.seasonRepo, f.userRepo, f.onlineTracker, nil,
 	)
 }
 

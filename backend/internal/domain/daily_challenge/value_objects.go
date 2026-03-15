@@ -233,16 +233,19 @@ type GameStatus string
 const (
 	GameStatusInProgress GameStatus = "in_progress"
 	GameStatusCompleted  GameStatus = "completed"
+	GameStatusAbandoned  GameStatus = "abandoned"
 )
 
 // State transition diagram for Daily Game:
 //
 //   in_progress ──(complete)──> completed (terminal)
+//   in_progress ──(abandon)──>  abandoned (terminal)
 //
 // Allowed transitions map
 var dailyGameTransitions = map[GameStatus][]GameStatus{
-	GameStatusInProgress: {GameStatusCompleted},
+	GameStatusInProgress: {GameStatusCompleted, GameStatusAbandoned},
 	GameStatusCompleted:  {}, // Terminal state - no transitions allowed
+	GameStatusAbandoned:  {}, // Terminal state - no transitions allowed
 }
 
 // CanTransitionTo checks if transition to target status is valid

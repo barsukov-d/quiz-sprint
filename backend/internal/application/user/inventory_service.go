@@ -11,6 +11,8 @@ import (
 // InventoryService orchestrates inventory and transaction operations
 type InventoryService interface {
 	GetBalance(playerID string) (*InventoryDTO, error)
+	GetCoins(playerID string) (int, error)
+	GetPvpTickets(playerID string) (int, error)
 	Credit(playerID string, source string, details map[string]int) error
 	Debit(playerID string, source string, details map[string]int) error
 }
@@ -48,6 +50,24 @@ func (s *inventoryServiceImpl) GetBalance(playerID string) (*InventoryDTO, error
 		Skip:       inventory.Skip(),
 		Freeze:     inventory.Freeze(),
 	}, nil
+}
+
+// GetCoins returns the current coin balance for a player
+func (s *inventoryServiceImpl) GetCoins(playerID string) (int, error) {
+	balance, err := s.GetBalance(playerID)
+	if err != nil {
+		return 0, err
+	}
+	return balance.Coins, nil
+}
+
+// GetPvpTickets returns the current PvP ticket count for a player
+func (s *inventoryServiceImpl) GetPvpTickets(playerID string) (int, error) {
+	balance, err := s.GetBalance(playerID)
+	if err != nil {
+		return 0, err
+	}
+	return balance.PvpTickets, nil
 }
 
 // Credit adds resources to a player's inventory and logs the transaction

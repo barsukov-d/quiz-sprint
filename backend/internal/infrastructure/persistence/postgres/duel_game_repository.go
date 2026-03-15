@@ -325,9 +325,9 @@ func (r *DuelGameRepository) reconstructGame(
 		"Player1", // TODO: get username
 		quick_duel.ReconstructEloRating(player1MMR, 0),
 	)
-	// Simulate adding score
+	// Simulate adding score (time unknown from DB, use 0)
 	for i := 0; i < player1Score/100; i++ {
-		player1 = player1.AddScore(100)
+		player1 = player1.AddScore(100, 0)
 	}
 
 	player2 := quick_duel.NewDuelPlayer(
@@ -336,7 +336,7 @@ func (r *DuelGameRepository) reconstructGame(
 		quick_duel.ReconstructEloRating(player2MMR, 0),
 	)
 	for i := 0; i < player2Score/100; i++ {
-		player2 = player2.AddScore(100)
+		player2 = player2.AddScore(100, 0)
 	}
 
 	var sa, fa int64

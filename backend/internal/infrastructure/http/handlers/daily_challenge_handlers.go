@@ -278,7 +278,18 @@ func (h *DailyChallengeHandler) RetryChallenge(c fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": output})
 }
 
-// RecoverStreak handles POST /api/v1/daily-challenge/recover-streak
+// RecoverStreak handles POST /api/v1/daily-challenge/streak/recover
+// @Summary Recover daily challenge streak
+// @Description Recover a broken streak by paying with coins or watching an ad
+// @Tags daily-challenge
+// @Accept json
+// @Produce json
+// @Param request body RecoverStreakRequest true "Recover streak request"
+// @Success 200 {object} RecoverStreakResponse "Streak recovered"
+// @Failure 400 {object} ErrorResponse "Invalid request or insufficient coins"
+// @Failure 409 {object} ErrorResponse "Streak not recoverable"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /daily-challenge/streak/recover [post]
 func (h *DailyChallengeHandler) RecoverStreak(c fiber.Ctx) error {
 	var req struct {
 		PlayerID      string `json:"playerId"`
@@ -327,6 +338,8 @@ func mapDailyChallengeError(err error) error {
 		return fiber.NewError(fiber.StatusNotFound, "Question not found")
 	case domainQuiz.ErrAnswerNotFound:
 		return fiber.NewError(fiber.StatusNotFound, "Answer not found")
+	case domainQuiz.ErrAlreadyAnswered:
+		return fiber.NewError(fiber.StatusConflict, "Question already answered")
 	default:
 		return fiber.NewError(fiber.StatusInternalServerError, "Internal server error")
 	}

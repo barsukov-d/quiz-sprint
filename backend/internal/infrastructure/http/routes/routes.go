@@ -258,6 +258,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		useMarathonBonusUC        *appMarathon.UseMarathonBonusUseCase
 		continueMarathonUC        *appMarathon.ContinueMarathonUseCase
 		abandonMarathonUC         *appMarathon.AbandonMarathonUseCase
+		completeMarathonUC        *appMarathon.CompleteMarathonUseCase
 		getMarathonStatusUC       *appMarathon.GetMarathonStatusUseCase
 		getPersonalBestsUC        *appMarathon.GetPersonalBestsUseCase
 		getMarathonLeaderboardUC  *appMarathon.GetMarathonLeaderboardUseCase
@@ -291,6 +292,11 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			inventoryService,
 		)
 		abandonMarathonUC = appMarathon.NewAbandonMarathonUseCase(
+			marathonRepo,
+			personalBestRepo,
+			marathonEventBus,
+		)
+		completeMarathonUC = appMarathon.NewCompleteMarathonUseCase(
 			marathonRepo,
 			personalBestRepo,
 			marathonEventBus,
@@ -369,6 +375,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			questionRepo,
 			dailyChallengeEventBus,
 			inventoryService,
+			nil, // adVerificationSvc: wire NoopAdVerificationService or real impl here
 		)
 	}
 
@@ -410,6 +417,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			seasonRepo,
 			userRepo,
 			duelOnlineTracker, // marks player online on each status poll
+			inventoryService,
 		)
 		if matchmakingQueue != nil {
 			joinQueueUC = appDuel.NewJoinQueueUseCase(
@@ -645,6 +653,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			useMarathonBonusUC,
 			continueMarathonUC,
 			abandonMarathonUC,
+			completeMarathonUC,
 			getMarathonStatusUC,
 			getPersonalBestsUC,
 			getMarathonLeaderboardUC,
@@ -779,6 +788,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		marathon.Post("/:gameId/answer", marathonHandler.SubmitMarathonAnswer)
 		marathon.Post("/:gameId/bonus", marathonHandler.UseMarathonBonus)
 		marathon.Post("/:gameId/continue", marathonHandler.ContinueMarathon)
+		marathon.Post("/:gameId/complete", marathonHandler.CompleteMarathon)
 		marathon.Delete("/:gameId", marathonHandler.AbandonMarathon)
 		marathon.Get("/status", marathonHandler.GetMarathonStatus)
 		marathon.Get("/personal-bests", marathonHandler.GetPersonalBests)

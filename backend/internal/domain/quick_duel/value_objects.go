@@ -109,6 +109,26 @@ func (e EloRating) CalculateNewRating(won bool, opponentRating int) EloRating {
 	}
 }
 
+// CalculateDrawRating calculates new ELO rating after a draw
+// opponentRating: opponent's ELO rating
+func (e EloRating) CalculateDrawRating(opponentRating int) EloRating {
+	expectedScore := 1.0 / (1.0 + math.Pow(10, float64(opponentRating-e.rating)/400.0))
+
+	kFactor := float64(e.KFactor())
+	ratingChange := kFactor * (0.5 - expectedScore)
+
+	newRating := e.rating + int(math.Round(ratingChange))
+
+	if newRating < MinEloRating {
+		newRating = MinEloRating
+	}
+
+	return EloRating{
+		rating:      newRating,
+		gamesPlayed: e.gamesPlayed + 1,
+	}
+}
+
 // IsNewPlayer checks if player is still in "new player" bracket
 func (e EloRating) IsNewPlayer() bool {
 	return e.gamesPlayed < NewPlayerGames
@@ -120,15 +140,16 @@ func (e EloRating) GetMatchmakingRange(searchSeconds int) (min int, max int) {
 	var rangeDelta int
 
 	switch {
-	case searchSeconds < 5:
-		rangeDelta = 50
 	case searchSeconds < 10:
+		rangeDelta = 50
+	case searchSeconds < 20:
 		rangeDelta = 100
-	case searchSeconds < 15:
+	case searchSeconds < 30:
 		rangeDelta = 200
+	case searchSeconds < 45:
+		rangeDelta = 300
 	default:
-		// After 15 seconds, match with anyone
-		return MinEloRating, 9999
+		rangeDelta = 500
 	}
 
 	min = e.rating - rangeDelta
@@ -150,9 +171,10 @@ type DuelPlayer struct {
 	userID       UserID
 	username     string
 	elo          EloRating
-	score        int  // Current score in this game
-	connected    bool // Connection status
-	answersCount int  // Number of questions answered
+	score        int   // Current score in this game
+	connected    bool  // Connection status
+	answersCount int   // Number of questions answered
+	totalTimeMs  int64 // Total time spent answering (ms), used for tiebreaker
 }
 
 func NewDuelPlayer(userID UserID, username string, elo EloRating) DuelPlayer {
@@ -163,11 +185,12 @@ func NewDuelPlayer(userID UserID, username string, elo EloRating) DuelPlayer {
 		score:        0,
 		connected:    true,
 		answersCount: 0,
+		totalTimeMs:  0,
 	}
 }
 
-// AddScore adds points to player's score (immutable)
-func (dp DuelPlayer) AddScore(points int) DuelPlayer {
+// AddScore adds points and records time spent on this answer (immutable)
+func (dp DuelPlayer) AddScore(points int, timeTakenMs int64) DuelPlayer {
 	return DuelPlayer{
 		userID:       dp.userID,
 		username:     dp.username,
@@ -175,6 +198,21 @@ func (dp DuelPlayer) AddScore(points int) DuelPlayer {
 		score:        dp.score + points,
 		connected:    dp.connected,
 		answersCount: dp.answersCount + 1,
+		totalTimeMs:  dp.totalTimeMs + timeTakenMs,
+	}
+}
+
+// AddTime adds time to the player's total without changing score or answer count (immutable).
+// Used for timeout answers where no points are awarded but time still counts for tiebreaker.
+func (dp DuelPlayer) AddTime(timeTakenMs int64) DuelPlayer {
+	return DuelPlayer{
+		userID:       dp.userID,
+		username:     dp.username,
+		elo:          dp.elo,
+		score:        dp.score,
+		connected:    dp.connected,
+		answersCount: dp.answersCount,
+		totalTimeMs:  dp.totalTimeMs + timeTakenMs,
 	}
 }
 
@@ -187,6 +225,7 @@ func (dp DuelPlayer) IncrementAnswers() DuelPlayer {
 		score:        dp.score,
 		connected:    dp.connected,
 		answersCount: dp.answersCount + 1,
+		totalTimeMs:  dp.totalTimeMs,
 	}
 }
 
@@ -199,6 +238,7 @@ func (dp DuelPlayer) SetConnected(connected bool) DuelPlayer {
 		score:        dp.score,
 		connected:    connected,
 		answersCount: dp.answersCount,
+		totalTimeMs:  dp.totalTimeMs,
 	}
 }
 
@@ -211,6 +251,7 @@ func (dp DuelPlayer) UpdateElo(newElo EloRating) DuelPlayer {
 		score:        dp.score,
 		connected:    dp.connected,
 		answersCount: dp.answersCount,
+		totalTimeMs:  dp.totalTimeMs,
 	}
 }
 
@@ -221,6 +262,7 @@ func (dp DuelPlayer) Elo() EloRating       { return dp.elo }
 func (dp DuelPlayer) Score() int           { return dp.score }
 func (dp DuelPlayer) Connected() bool      { return dp.connected }
 func (dp DuelPlayer) AnswersCount() int    { return dp.answersCount }
+func (dp DuelPlayer) TotalTimeMs() int64   { return dp.totalTimeMs }
 
 // WinStreak represents a player's winning streak
 type WinStreak struct {

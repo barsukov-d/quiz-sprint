@@ -87,14 +87,17 @@ func (uc *SubmitMarathonAnswerUseCase) Execute(input SubmitMarathonAnswerInput) 
 		return SubmitMarathonAnswerOutput{}, quiz.ErrUnauthorized
 	}
 
-	// 4. Submit answer (domain business logic)
+	// 4. Capture current question before answering (to extract correct answer text)
+	answeredQuestion := game.CurrentQuestion()
+
+	// 5. Submit answer (domain business logic)
 	now := time.Now().Unix()
 	result, err := game.AnswerQuestion(questionID, answerID, input.TimeTaken, now)
 	if err != nil {
 		return SubmitMarathonAnswerOutput{}, err
 	}
 
-	// 5. If game continues (not game_over), load next question
+	// 6. If game continues (not game_over), load next question
 	if !result.IsGameOver {
 		questionSelector := solo_marathon.NewQuestionSelector(uc.questionRepo)
 		if err := game.LoadNextQuestion(questionSelector); err != nil {
@@ -103,11 +106,23 @@ func (uc *SubmitMarathonAnswerUseCase) Execute(input SubmitMarathonAnswerInput) 
 		}
 	}
 
-	// 6. Build output
+	// Find correct answer text from the captured question
+	correctAnswerText := ""
+	if answeredQuestion != nil {
+		for _, a := range answeredQuestion.Answers() {
+			if a.IsCorrect() {
+				correctAnswerText = a.Text().String()
+				break
+			}
+		}
+	}
+
+	// 7. Build output
 	output := SubmitMarathonAnswerOutput{
-		IsCorrect:       result.IsCorrect,
-		CorrectAnswerID: result.CorrectAnswerID.String(),
-		TimeTaken:       result.TimeTaken,
+		IsCorrect:          result.IsCorrect,
+		CorrectAnswerID:    result.CorrectAnswerID.String(),
+		CorrectAnswerText:  correctAnswerText,
+		TimeTaken:          result.TimeTaken,
 		Score:           result.Score,
 		TotalQuestions:  result.TotalQuestions,
 		DifficultyLevel: string(result.DifficultyLevel),

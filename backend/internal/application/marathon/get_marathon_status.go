@@ -52,6 +52,7 @@ func (uc *GetMarathonStatusUseCase) Execute(input GetMarathonStatusInput) (GetMa
 			}
 			return GetMarathonStatusOutput{
 				HasActiveGame:  false,
+				CanStart:       true,
 				BonusInventory: &bonusDTO,
 			}, nil
 		}
@@ -63,9 +64,13 @@ func (uc *GetMarathonStatusUseCase) Execute(input GetMarathonStatusInput) (GetMa
 	gameDTO := ToMarathonGameDTOV2(game, now)
 	gameBonusDTO := gameDTO.BonusInventory
 
+	// CanStart = false when there is an in-progress game
+	canStart := game.Status() != solo_marathon.GameStatusInProgress
+
 	return GetMarathonStatusOutput{
 		HasActiveGame:  true,
 		Game:           &gameDTO,
 		BonusInventory: &gameBonusDTO,
+		CanStart:       canStart,
 	}, nil
 }

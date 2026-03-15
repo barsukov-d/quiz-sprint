@@ -1042,6 +1042,31 @@ type RetryChallengeResponse struct {
 
 // @name RetryChallengeResponse
 
+// RecoverStreakRequest is the HTTP request for recovering a broken streak
+type RecoverStreakRequest struct {
+	PlayerID      string `json:"playerId" validate:"required"`
+	PaymentMethod string `json:"paymentMethod" validate:"required"` // "coins" or "ad"
+}
+
+// @name RecoverStreakRequest
+
+// RecoverStreakData contains recover streak response data
+type RecoverStreakData struct {
+	Recovered     bool `json:"recovered" validate:"required"`
+	CurrentStreak int  `json:"currentStreak" validate:"required"`
+	BonusPercent  int  `json:"bonusPercent" validate:"required"`
+	CoinsDeducted int  `json:"coinsDeducted" validate:"required"`
+}
+
+// @name RecoverStreakData
+
+// RecoverStreakResponse wraps recover streak response
+type RecoverStreakResponse struct {
+	Data RecoverStreakData `json:"data" validate:"required"`
+}
+
+// @name RecoverStreakResponse
+
 // ========================================
 // Admin DTOs (for testing/debug endpoints)
 // ========================================
@@ -1335,6 +1360,7 @@ type GetDuelStatusResponse struct {
 		PendingChallenges  []DuelChallengeDTO  `json:"pendingChallenges"`
 		OutgoingChallenges []DuelChallengeDTO  `json:"outgoingChallenges"`
 		AcceptedChallenges []DuelChallengeDTO  `json:"acceptedChallenges"` // F1: added
+		ExpiredChallenges  []DuelChallengeDTO  `json:"expiredChallenges"`  // B9: expired challenges visible in lobby
 		SeasonID           string              `json:"seasonId"`
 		SeasonEndsAt       int64               `json:"seasonEndsAt"`
 	} `json:"data"`
@@ -1495,19 +1521,37 @@ type StartChallengeResponse struct {
 
 // @name StartChallengeResponse
 
+// GameQuestionResultDTO represents per-question breakdown in game result
+type GameQuestionResultDTO struct {
+	QuestionNum      int    `json:"questionNumber"`
+	QuestionText     string `json:"questionText"`
+	PlayerAnswerID   string `json:"playerAnswerId"`
+	PlayerCorrect    bool   `json:"playerCorrect"`
+	PlayerTime       int64  `json:"playerTime"`
+	OpponentAnswerID string `json:"opponentAnswerId"`
+	OpponentCorrect  bool   `json:"opponentCorrect"`
+	OpponentTime     int64  `json:"opponentTime"`
+	CorrectAnswerID  string `json:"correctAnswerId"`
+}
+
+// @name GameQuestionResultDTO
+
 // GetGameResultResponse wraps the game result response
 type GetGameResultResponse struct {
 	Data struct {
-		GameID        string                 `json:"gameId"`
-		Result        string                 `json:"result"` // "win", "loss", "draw"
-		PlayerScore   int                    `json:"playerScore"`
-		OpponentScore int                    `json:"opponentScore"`
-		MMRChange     int                    `json:"mmrChange"`
-		NewMMR        int                    `json:"newMmr"`
-		NewLeague     string                 `json:"newLeague"`
-		NewDivision   int                    `json:"newDivision"`
-		Opponent      GetGameResultPlayerDTO `json:"opponent"`
-		CanRematch    bool                   `json:"canRematch"`
+		GameID           string                  `json:"gameId"`
+		Result           string                  `json:"result"` // "win", "loss", "draw"
+		PlayerScore      int                     `json:"playerScore"`
+		OpponentScore    int                     `json:"opponentScore"`
+		MMRChange        int                     `json:"mmrChange"`
+		NewMMR           int                     `json:"newMmr"`
+		RankChange       *string                 `json:"rankChange,omitempty"` // "promoted", "demoted", null
+		NewLeague        string                  `json:"newLeague"`
+		NewDivision      int                     `json:"newDivision"`
+		Opponent         GetGameResultPlayerDTO  `json:"opponent"`
+		Questions        []GameQuestionResultDTO `json:"questions"`
+		CanRematch       bool                    `json:"canRematch"`
+		RematchExpiresIn *int                    `json:"rematchExpiresIn,omitempty"`
 	} `json:"data"`
 }
 

@@ -78,39 +78,3 @@ func (uc *AbandonMarathonUseCase) Execute(input AbandonMarathonInput) (AbandonMa
 		GameOverResult: BuildGameOverResultV2(game),
 	}, nil
 }
-
-// updatePersonalBestIfNeeded updates the personal best record if the game score is better
-func (uc *AbandonMarathonUseCase) updatePersonalBestIfNeeded(game *solo_marathon.MarathonGameV2, now int64) {
-	if !game.IsNewPersonalBest() {
-		return
-	}
-
-	personalBest, err := uc.personalBestRepo.FindByPlayerAndCategory(game.PlayerID(), game.Category())
-	if err != nil && err != solo_marathon.ErrPersonalBestNotFound {
-		return
-	}
-
-	if personalBest == nil {
-		// First time playing this category - create new record
-		personalBest, err = solo_marathon.NewPersonalBest(
-			game.PlayerID(),
-			game.Category(),
-			game.Score(),
-			game.Score(),
-			now,
-		)
-		if err == nil {
-			_ = uc.personalBestRepo.Save(personalBest)
-		}
-	} else {
-		// Update existing record
-		updated := personalBest.UpdateIfBetter(
-			game.Score(),
-			game.Score(),
-			now,
-		)
-		if updated {
-			_ = uc.personalBestRepo.Save(personalBest)
-		}
-	}
-}

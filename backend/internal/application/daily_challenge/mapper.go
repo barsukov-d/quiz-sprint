@@ -1,6 +1,8 @@
 package daily_challenge
 
 import (
+	"fmt"
+
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/daily_challenge"
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/kernel"
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
@@ -242,9 +244,22 @@ func BuildGameResultsDTO(
 		chestReward = ToChestRewardDTO(*game.ChestReward())
 	}
 
+	finalScore := game.GetFinalScore()
+	rankLabel := fmt.Sprintf("#%d из %d", rank, totalPlayers)
+
+	chestLabel := "Деревянный сундук"
+	switch chestReward.ChestType {
+	case "silver":
+		chestLabel = "Серебряный сундук"
+	case "golden":
+		chestLabel = "Золотой сундук"
+	}
+
+	shareText := fmt.Sprintf("Я набрал %d очков в Daily Challenge! Мой ранг: %s", finalScore, rankLabel)
+
 	return GameResultsDTO{
 		BaseScore:         session.BaseScore().Value(),
-		FinalScore:        game.GetFinalScore(),
+		FinalScore:        finalScore,
 		CorrectAnswers:    game.GetCorrectAnswersCount(),
 		TotalQuestions:    session.Quiz().QuestionsCount(),
 		StreakBonus:       bonusPercent,
@@ -255,5 +270,8 @@ func BuildGameResultsDTO(
 		ChestReward:       chestReward,
 		AnsweredQuestions: answeredQuestions,
 		Leaderboard:       leaderboard,
+		RankLabel:         rankLabel,
+		ChestLabel:        chestLabel,
+		ShareText:         shareText,
 	}
 }

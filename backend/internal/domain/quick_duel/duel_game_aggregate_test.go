@@ -257,8 +257,8 @@ func TestDuelGame_PlayerScores(t *testing.T) {
 	player2ID, _ := shared.NewUserID("player2")
 
 	// Create players with initial scores
-	player1 := NewDuelPlayer(player1ID, "Player1", NewEloRating()).AddScore(500)
-	player2 := NewDuelPlayer(player2ID, "Player2", NewEloRating()).AddScore(300)
+	player1 := NewDuelPlayer(player1ID, "Player1", NewEloRating()).AddScore(500, 0)
+	player2 := NewDuelPlayer(player2ID, "Player2", NewEloRating()).AddScore(300, 0)
 
 	questionIDs := make([]QuestionID, QuestionsPerDuel)
 	for i := 0; i < QuestionsPerDuel; i++ {
@@ -311,6 +311,102 @@ func TestDuelChallenge_AcceptWaiting(t *testing.T) {
 	if challenge.ChallengedID() == nil {
 		t.Error("ChallengedID should not be nil")
 	}
+}
+
+// buildFinishedGame creates a finished DuelGame with the given player states for tiebreaker testing.
+func buildFinishedGame(t *testing.T, p1 DuelPlayer, p2 DuelPlayer) *DuelGame {
+	t.Helper()
+	questionIDs := make([]QuestionID, QuestionsPerDuel)
+	for i := 0; i < QuestionsPerDuel; i++ {
+		questionIDs[i] = quiz.NewQuestionID()
+	}
+	game := ReconstructDuelGame(
+		NewGameID(),
+		p1,
+		p2,
+		questionIDs,
+		QuestionsPerDuel,
+		GameStatusFinished,
+		make(map[int][]RoundAnswer),
+		int64(1000000),
+		int64(1001000),
+	)
+	return game
+}
+
+// TestDuelGame_DetermineWinner_Tiebreaker tests tiebreaker logic when scores are equal
+func TestDuelGame_DetermineWinner_Tiebreaker(t *testing.T) {
+	p1ID, _ := shared.NewUserID("aaa-player1")
+	p2ID, _ := shared.NewUserID("bbb-player2")
+	elo := NewEloRating()
+
+	t.Run("Player1 wins by score", func(t *testing.T) {
+		p1 := NewDuelPlayer(p1ID, "P1", elo).AddScore(700, 20000)
+		p2 := NewDuelPlayer(p2ID, "P2", elo).AddScore(500, 15000)
+		game := buildFinishedGame(t, p1, p2)
+
+		winner := game.determineWinner()
+		if winner == nil || !winner.Equals(p1ID) {
+			t.Errorf("Expected player1 to win by score, got %v", winner)
+		}
+	})
+
+	t.Run("Player2 wins by score", func(t *testing.T) {
+		p1 := NewDuelPlayer(p1ID, "P1", elo).AddScore(500, 20000)
+		p2 := NewDuelPlayer(p2ID, "P2", elo).AddScore(700, 15000)
+		game := buildFinishedGame(t, p1, p2)
+
+		winner := game.determineWinner()
+		if winner == nil || !winner.Equals(p2ID) {
+			t.Errorf("Expected player2 to win by score, got %v", winner)
+		}
+	})
+
+	t.Run("Player1 wins tiebreaker by less total time", func(t *testing.T) {
+		p1 := NewDuelPlayer(p1ID, "P1", elo).AddScore(700, 10000) // 10s total
+		p2 := NewDuelPlayer(p2ID, "P2", elo).AddScore(700, 20000) // 20s total
+		game := buildFinishedGame(t, p1, p2)
+
+		winner := game.determineWinner()
+		if winner == nil || !winner.Equals(p1ID) {
+			t.Errorf("Expected player1 to win tiebreaker by time, got %v", winner)
+		}
+	})
+
+	t.Run("Player2 wins tiebreaker by less total time", func(t *testing.T) {
+		p1 := NewDuelPlayer(p1ID, "P1", elo).AddScore(700, 20000) // 20s total
+		p2 := NewDuelPlayer(p2ID, "P2", elo).AddScore(700, 10000) // 10s total
+		game := buildFinishedGame(t, p1, p2)
+
+		winner := game.determineWinner()
+		if winner == nil || !winner.Equals(p2ID) {
+			t.Errorf("Expected player2 to win tiebreaker by time, got %v", winner)
+		}
+	})
+
+	t.Run("Player1 wins tiebreaker by smaller playerID when times equal", func(t *testing.T) {
+		// p1ID = "aaa-player1" < "bbb-player2" = p2ID
+		p1 := NewDuelPlayer(p1ID, "P1", elo).AddScore(700, 15000)
+		p2 := NewDuelPlayer(p2ID, "P2", elo).AddScore(700, 15000)
+		game := buildFinishedGame(t, p1, p2)
+
+		winner := game.determineWinner()
+		if winner == nil || !winner.Equals(p1ID) {
+			t.Errorf("Expected player1 to win by smaller ID, got %v", winner)
+		}
+	})
+
+	t.Run("Tiebreaker is deterministic (same result on repeated calls)", func(t *testing.T) {
+		p1 := NewDuelPlayer(p1ID, "P1", elo).AddScore(700, 15000)
+		p2 := NewDuelPlayer(p2ID, "P2", elo).AddScore(700, 15000)
+		game := buildFinishedGame(t, p1, p2)
+
+		winner1 := game.determineWinner()
+		winner2 := game.determineWinner()
+		if winner1 == nil || winner2 == nil || !winner1.Equals(*winner2) {
+			t.Errorf("Tiebreaker should be deterministic, got %v and %v", winner1, winner2)
+		}
+	})
 }
 
 // TestDuelGame_ReconstructDuelGame tests reconstruction from persistence

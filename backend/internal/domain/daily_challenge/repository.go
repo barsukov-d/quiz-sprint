@@ -45,6 +45,10 @@ type DailyGameRepository interface {
 	// GetTotalPlayersByDate returns total number of players who played on date
 	GetTotalPlayersByDate(date Date) (int, error)
 
+	// MarkAbandonedGames marks in_progress games older than yesterday as abandoned.
+	// Returns the number of games updated.
+	MarkAbandonedGames() (int, error)
+
 	// Delete removes a daily game
 	Delete(id GameID) error
 }
