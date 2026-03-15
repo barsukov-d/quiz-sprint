@@ -1879,6 +1879,109 @@ func (uc *GetGameResultUseCase) Execute(input GetGameResultInput) (*GetGameResul
 	}, nil
 }
 
+// ========================================
+// SurrenderGame Use Case
+// ========================================
+
+type SurrenderGameUseCase struct {
+	duelGameRepo     quick_duel.DuelGameRepository
+	playerRatingRepo quick_duel.PlayerRatingRepository
+	seasonRepo       quick_duel.SeasonRepository
+	eventBus         EventBus
+}
+
+func NewSurrenderGameUseCase(
+	duelGameRepo quick_duel.DuelGameRepository,
+	playerRatingRepo quick_duel.PlayerRatingRepository,
+	seasonRepo quick_duel.SeasonRepository,
+	eventBus EventBus,
+) *SurrenderGameUseCase {
+	return &SurrenderGameUseCase{
+		duelGameRepo:     duelGameRepo,
+		playerRatingRepo: playerRatingRepo,
+		seasonRepo:       seasonRepo,
+		eventBus:         eventBus,
+	}
+}
+
+func (uc *SurrenderGameUseCase) Execute(input SurrenderGameInput) (*SurrenderGameOutput, error) {
+	now := time.Now().UTC().Unix()
+
+	playerID, err := shared.NewUserID(input.PlayerID)
+	if err != nil {
+		return nil, err
+	}
+
+	gameID := quick_duel.NewGameIDFromString(input.GameID)
+	game, err := uc.duelGameRepo.FindByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := game.Surrender(playerID, now)
+	if err != nil {
+		return nil, err
+	}
+
+	// Publish domain events
+	for _, event := range game.Events() {
+		uc.eventBus.Publish(event)
+	}
+
+	// Save finished game
+	if err := uc.duelGameRepo.Save(game); err != nil {
+		return nil, err
+	}
+
+	// Update ELO ratings
+	seasonID, _ := uc.seasonRepo.GetCurrentSeason()
+	opponentID := result.WinnerID
+
+	// Surrendering player: loss
+	loserRating, err := uc.playerRatingRepo.FindOrCreate(playerID, seasonID, now)
+	if err != nil {
+		return nil, err
+	}
+	oldMMR := loserRating.MMR()
+	var opponentEloForLoser int
+	if game.Player1().UserID().Equals(playerID) {
+		opponentEloForLoser = game.Player2().Elo().Rating()
+	} else {
+		opponentEloForLoser = game.Player1().Elo().Rating()
+	}
+	loserRating.ApplyGameResult(quick_duel.GameResult{
+		Won:         false,
+		OpponentMMR: opponentEloForLoser,
+		GameTime:    now,
+	})
+	_ = uc.playerRatingRepo.Save(loserRating)
+	mmrChange := loserRating.MMR() - oldMMR
+
+	// Winning player (opponent): win
+	opponentRating, err := uc.playerRatingRepo.FindOrCreate(opponentID, seasonID, now)
+	if err == nil {
+		var opponentElo int
+		if game.Player1().UserID().Equals(opponentID) {
+			opponentElo = game.Player2().Elo().Rating()
+		} else {
+			opponentElo = game.Player1().Elo().Rating()
+		}
+		opponentRating.ApplyGameResult(quick_duel.GameResult{
+			Won:         true,
+			OpponentMMR: opponentElo,
+			GameTime:    now,
+		})
+		_ = uc.playerRatingRepo.Save(opponentRating)
+	}
+
+	return &SurrenderGameOutput{
+		GameID:    input.GameID,
+		WinnerID:  opponentID.String(),
+		MMRChange: mmrChange,
+		NewMMR:    loserRating.MMR(),
+	}, nil
+}
+
 // isErr reports whether err or any of its unwrapped causes equals target.
 func isErr(err, target error) bool {
 	if err == target {

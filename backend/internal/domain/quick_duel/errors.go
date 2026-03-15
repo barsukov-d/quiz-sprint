@@ -23,7 +23,8 @@ var (
 	ErrInvalidRound         = errors.New("invalid round number")
 
 	// Answer errors
-	ErrInvalidAnswerTime = errors.New("invalid answer time (anti-cheat)")
+	ErrInvalidAnswerTime   = errors.New("invalid answer time (anti-cheat)")
+	ErrTooEarlyToSurrender = errors.New("cannot surrender before answering 3 questions")
 
 	// Challenge errors
 	ErrInvalidChallengeID   = errors.New("invalid challenge ID")

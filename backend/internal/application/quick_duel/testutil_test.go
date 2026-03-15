@@ -443,6 +443,20 @@ func (m *mockMatchmakingQueue) GetPlayerQueueInfo(playerID quick_duel.UserID) (i
 	return 0, 0, fmt.Errorf("player not in queue")
 }
 
+func (m *mockMatchmakingQueue) GetStaleQueueEntries(cutoffTime int64) ([]quick_duel.UserID, error) {
+	var stale []quick_duel.UserID
+	for idStr, info := range m.queue {
+		if info.joinedAt < cutoffTime {
+			uid, err := shared.NewUserID(idStr)
+			if err != nil {
+				continue
+			}
+			stale = append(stale, uid)
+		}
+	}
+	return stale, nil
+}
+
 // mockSeasonRepo is an in-memory season repository
 type mockSeasonRepo struct {
 	currentSeason string

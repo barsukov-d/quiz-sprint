@@ -478,3 +478,19 @@ type PrepareShareOutput struct {
 	PreparedMessageID string `json:"preparedMessageId"`
 	ExpiresAt         int64  `json:"expiresAt"`
 }
+
+// ========================================
+// SurrenderGame Use Case
+// ========================================
+
+type SurrenderGameInput struct {
+	PlayerID string `json:"playerId"`
+	GameID   string `json:"gameId"`
+}
+
+type SurrenderGameOutput struct {
+	GameID    string `json:"gameId"`
+	WinnerID  string `json:"winnerId"`
+	MMRChange int    `json:"mmrChange"`
+	NewMMR    int    `json:"newMmr"`
+}

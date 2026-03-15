@@ -242,6 +242,19 @@ func (dp DuelPlayer) SetConnected(connected bool) DuelPlayer {
 	}
 }
 
+// WithScore returns a copy with an explicit score (used for surrender/forfeit)
+func (dp DuelPlayer) WithScore(score int) DuelPlayer {
+	return DuelPlayer{
+		userID:       dp.userID,
+		username:     dp.username,
+		elo:          dp.elo,
+		score:        score,
+		connected:    dp.connected,
+		answersCount: dp.answersCount,
+		totalTimeMs:  dp.totalTimeMs,
+	}
+}
+
 // UpdateElo updates player's ELO (immutable)
 func (dp DuelPlayer) UpdateElo(newElo EloRating) DuelPlayer {
 	return DuelPlayer{

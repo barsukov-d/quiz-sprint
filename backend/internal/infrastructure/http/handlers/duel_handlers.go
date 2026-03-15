@@ -29,6 +29,7 @@ type DuelHandler struct {
 	prepareShareUC       *appDuel.PrepareShareUseCase
 	getReferralsUC       *appDuel.GetReferralsUseCase
 	claimReferralUC      *appDuel.ClaimReferralRewardUseCase
+	surrenderGameUC      *appDuel.SurrenderGameUseCase
 }
 
 func NewDuelHandler(
@@ -48,6 +49,7 @@ func NewDuelHandler(
 	prepareShareUC *appDuel.PrepareShareUseCase,
 	getReferralsUC *appDuel.GetReferralsUseCase,
 	claimReferralUC *appDuel.ClaimReferralRewardUseCase,
+	surrenderGameUC *appDuel.SurrenderGameUseCase,
 ) *DuelHandler {
 	return &DuelHandler{
 		getStatusUC:          getStatusUC,
@@ -66,6 +68,7 @@ func NewDuelHandler(
 		prepareShareUC:       prepareShareUC,
 		getReferralsUC:       getReferralsUC,
 		claimReferralUC:      claimReferralUC,
+		surrenderGameUC:      surrenderGameUC,
 	}
 }
 
@@ -581,6 +584,10 @@ func mapDuelError(err error) error {
 		return fiber.NewError(fiber.StatusConflict, "Challenge is no longer pending")
 	case domainDuel.ErrNotChallengedPlayer:
 		return fiber.NewError(fiber.StatusForbidden, "Not the challenged player")
+	case domainDuel.ErrPlayerNotInGame:
+		return fiber.NewError(fiber.StatusForbidden, "Player not in this game")
+	case domainDuel.ErrTooEarlyToSurrender:
+		return fiber.NewError(fiber.StatusConflict, "Cannot surrender before answering 3 questions")
 	case domainDuel.ErrReferralNotFound:
 		return fiber.NewError(fiber.StatusNotFound, "Referral not found")
 	case domainDuel.ErrMilestoneNotReached:
@@ -683,6 +690,46 @@ func (h *DuelHandler) GetRivals(c fiber.Ctx) error {
 
 	output, err := h.getRivalsUC.Execute(appDuel.GetRivalsInput{
 		PlayerID: playerID,
+	})
+	if err != nil {
+		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
+}
+
+// SurrenderGame handles POST /api/v1/duel/game/:gameId/surrender
+// @Summary Surrender a duel game
+// @Description Forfeit an active duel game. The surrendering player takes an ELO loss; the opponent wins.
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Param gameId path string true "Game ID"
+// @Success 200 {object} SurrenderGameResponse "Surrender processed"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 403 {object} ErrorResponse "Player not in game"
+// @Failure 404 {object} ErrorResponse "Game not found"
+// @Failure 409 {object} ErrorResponse "Game is not active"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /duel/game/{gameId}/surrender [post]
+func (h *DuelHandler) SurrenderGame(c fiber.Ctx) error {
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
+	}
+
+	gameID := c.Params("gameId")
+	if gameID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "gameId is required")
+	}
+
+	if h.surrenderGameUC == nil {
+		return fiber.NewError(fiber.StatusServiceUnavailable, "Surrender not available")
+	}
+
+	output, err := h.surrenderGameUC.Execute(appDuel.SurrenderGameInput{
+		PlayerID: playerID,
+		GameID:   gameID,
 	})
 	if err != nil {
 		return mapDuelError(err)

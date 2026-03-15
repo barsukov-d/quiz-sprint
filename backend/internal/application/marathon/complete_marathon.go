@@ -10,10 +10,11 @@ import (
 
 // CompleteMarathonUseCase handles completing a marathon game (player declines continue)
 type CompleteMarathonUseCase struct {
-	marathonRepo     solo_marathon.Repository
-	personalBestRepo solo_marathon.PersonalBestRepository
-	eventBus         EventBus
-	inventoryService InventoryService
+	marathonRepo      solo_marathon.Repository
+	personalBestRepo  solo_marathon.PersonalBestRepository
+	eventBus          EventBus
+	inventoryService  InventoryService
+	milestoneClaimsRepo MilestoneClaimsRepository
 }
 
 // NewCompleteMarathonUseCase creates a new CompleteMarathonUseCase
@@ -29,6 +30,12 @@ func NewCompleteMarathonUseCase(
 		eventBus:         eventBus,
 		inventoryService: inventoryService,
 	}
+}
+
+// WithMilestoneClaimsRepository attaches the deduplication repository for milestone rewards.
+func (uc *CompleteMarathonUseCase) WithMilestoneClaimsRepository(repo MilestoneClaimsRepository) *CompleteMarathonUseCase {
+	uc.milestoneClaimsRepo = repo
+	return uc
 }
 
 // Execute completes a marathon game that is in game_over state (player declined continue)
@@ -98,13 +105,27 @@ var personalBestMilestoneRewards = map[int]int{
 
 // creditMilestoneRewards credits coins for each milestone the player's score reaches.
 // Only called on CompleteGame (not Abandon), matching the personal-best save logic.
+// Deduplication via MilestoneClaimsRepository ensures each milestone is credited only once.
 func (uc *CompleteMarathonUseCase) creditMilestoneRewards(playerID string, score int) {
 	if uc.inventoryService == nil {
 		return
 	}
 	for threshold, coins := range personalBestMilestoneRewards {
-		if score >= threshold {
-			_ = uc.inventoryService.Credit(playerID, "marathon_milestone_personal_best", map[string]int{"coins": coins})
+		if score < threshold {
+			continue
+		}
+		// Skip if already claimed (deduplication guard)
+		if uc.milestoneClaimsRepo != nil {
+			already, err := uc.milestoneClaimsRepo.HasClaimed(playerID, threshold)
+			if err != nil || already {
+				continue
+			}
+		}
+		if err := uc.inventoryService.Credit(playerID, "marathon_milestone_personal_best", map[string]int{"coins": coins}); err != nil {
+			continue
+		}
+		if uc.milestoneClaimsRepo != nil {
+			_ = uc.milestoneClaimsRepo.MarkClaimed(playerID, threshold)
 		}
 	}
 }

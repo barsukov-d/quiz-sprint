@@ -445,6 +445,64 @@ func (dg *DuelGame) HandlePlayerReconnect(playerID UserID, reconnectedAt int64) 
 	return nil
 }
 
+// SurrenderResult holds the result of a surrender operation
+type SurrenderResult struct {
+	WinnerID UserID
+}
+
+// Surrender allows a player to forfeit the game mid-match.
+// The surrendering player loses; the opponent wins with full ELO gain.
+// Surrender is only allowed after the player has answered at least 3 questions.
+func (dg *DuelGame) Surrender(playerID UserID, surrenderedAt int64) (*SurrenderResult, error) {
+	if dg.status != GameStatusInProgress {
+		return nil, ErrGameNotActive
+	}
+	if !dg.isPlayerInGame(playerID) {
+		return nil, ErrPlayerNotInGame
+	}
+
+	// Enforce minimum: player must have answered at least 3 questions
+	answeredCount := dg.countPlayerAnswers(playerID)
+	if answeredCount < 3 {
+		return nil, ErrTooEarlyToSurrender
+	}
+
+	if !dg.status.CanTransitionTo(GameStatusFinished) {
+		return nil, ErrInvalidGameStatus
+	}
+
+	// Determine opponent
+	var opponentID UserID
+	if dg.player1.UserID().Equals(playerID) {
+		opponentID = dg.player2.UserID()
+	} else {
+		opponentID = dg.player1.UserID()
+	}
+
+	// Publish surrender event before finishing
+	dg.events = append(dg.events, NewPlayerSurrenderedEvent(
+		dg.id,
+		playerID,
+		opponentID,
+		surrenderedAt,
+	))
+
+	// Force scores: surrendering player gets 0, opponent gets 1 to guarantee win for ELO
+	if dg.player1.UserID().Equals(playerID) {
+		dg.player1 = dg.player1.WithScore(0)
+		dg.player2 = dg.player2.WithScore(dg.player2.Score() + 1)
+	} else {
+		dg.player2 = dg.player2.WithScore(0)
+		dg.player1 = dg.player1.WithScore(dg.player1.Score() + 1)
+	}
+
+	if err := dg.finishGame(surrenderedAt); err != nil {
+		return nil, err
+	}
+
+	return &SurrenderResult{WinnerID: opponentID}, nil
+}
+
 // ReplayRoundAnswer restores a previously submitted answer into the in-memory roundAnswers map.
 // Used to re-hydrate state from an external cache (Redis) since roundAnswers are not persisted to DB.
 // Does NOT trigger game logic, events, or score changes — purely state restoration.
@@ -468,6 +526,19 @@ func (dg *DuelGame) ReplayRoundAnswer(round int, playerID UserID, answerID Answe
 }
 
 // Helper methods
+
+func (dg *DuelGame) countPlayerAnswers(playerID UserID) int {
+	count := 0
+	for _, answers := range dg.roundAnswers {
+		for _, ans := range answers {
+			if ans.playerID.Equals(playerID) {
+				count++
+				break
+			}
+		}
+	}
+	return count
+}
 
 func (dg *DuelGame) isPlayerInGame(playerID UserID) bool {
 	return dg.player1.UserID().Equals(playerID) || dg.player2.UserID().Equals(playerID)

@@ -71,6 +71,17 @@ func (b *LobbyEventBus) Publish(event domainDuel.Event) {
 			})
 		}
 
+	case domainDuel.PlayerSurrenderedEvent:
+		// Notify the opponent that the other player surrendered (game is over)
+		b.hub.Notify(e.OpponentID().String(), appDuel.LobbyEvent{
+			Type: "game_surrendered",
+			Data: map[string]interface{}{
+				"gameId":      e.GameID().String(),
+				"surrenderId": e.PlayerID().String(),
+				"winnerId":    e.OpponentID().String(),
+			},
+		})
+
 	default:
 		log.Printf("[LobbyEventBus] unhandled event type: %T", event)
 	}

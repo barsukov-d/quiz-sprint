@@ -1648,3 +1648,15 @@ type ClaimReferralRewardResponse struct {
 }
 
 // @name ClaimReferralRewardResponse
+
+// SurrenderGameResponse is the Swagger response model for POST /duel/game/:gameId/surrender
+type SurrenderGameResponse struct {
+	Data struct {
+		GameID    string `json:"gameId" validate:"required"`
+		WinnerID  string `json:"winnerId" validate:"required"`
+		MMRChange int    `json:"mmrChange" validate:"required"`
+		NewMMR    int    `json:"newMmr" validate:"required"`
+	} `json:"data"`
+}
+
+// @name SurrenderGameResponse

@@ -176,6 +176,51 @@ func (q *MatchmakingQueue) GetPlayerQueueInfo(playerID quick_duel.UserID) (int64
 	return joinedAt, int(mmr), nil
 }
 
+// GetStaleQueueEntries returns IDs of players who joined before cutoffTime
+func (q *MatchmakingQueue) GetStaleQueueEntries(cutoffTime int64) ([]quick_duel.UserID, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Get all members from the sorted set (all queued players)
+	members, err := q.rdb.ZRange(ctx, queueKey, 0, -1).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(members) == 0 {
+		return nil, nil
+	}
+
+	// Get their join times from the hash
+	pipe := q.rdb.Pipeline()
+	cmds := make([]*redis.StringCmd, len(members))
+	for i, m := range members {
+		cmds[i] = pipe.HGet(ctx, queueInfoKey, m)
+	}
+	_, _ = pipe.Exec(ctx)
+
+	var stale []quick_duel.UserID
+	for i, m := range members {
+		joinedAtStr, err := cmds[i].Result()
+		if err != nil {
+			continue
+		}
+		joinedAt, err := strconv.ParseInt(joinedAtStr, 10, 64)
+		if err != nil {
+			continue
+		}
+		if joinedAt < cutoffTime {
+			uid, err := shared.NewUserID(m)
+			if err != nil {
+				continue
+			}
+			stale = append(stale, uid)
+		}
+	}
+
+	return stale, nil
+}
+
 func abs(x int) int {
 	if x < 0 {
 		return -x

@@ -57,6 +57,9 @@ type MatchmakingQueue interface {
 
 	// GetPlayerQueueInfo returns player's queue info (joinedAt, mmr)
 	GetPlayerQueueInfo(playerID UserID) (int64, int, error)
+
+	// GetStaleQueueEntries returns IDs of players who joined before cutoffTime (unix sec)
+	GetStaleQueueEntries(cutoffTime int64) ([]UserID, error)
 }
 
 // PlayerRatingRepository defines the interface for player rating persistence
