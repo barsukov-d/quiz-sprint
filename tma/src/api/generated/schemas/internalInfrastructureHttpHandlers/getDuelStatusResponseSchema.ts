@@ -15,6 +15,9 @@ export const internalInfrastructureHttpHandlersGetDuelStatusResponseSchema = z.o
                 return z.array(internalInfrastructureHttpHandlersDuelChallengeDTOSchema).describe("F1: added").optional()
               },
 "activeGameId": z.optional(z.string()),
+get "expiredChallenges"(){
+                return z.array(internalInfrastructureHttpHandlersDuelChallengeDTOSchema).describe("B9: expired challenges visible in lobby").optional()
+              },
 get "friendsOnline"(){
                 return z.array(internalInfrastructureHttpHandlersDuelFriendDTOSchema).optional()
               },

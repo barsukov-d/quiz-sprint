@@ -351,6 +351,43 @@ definitions:
     - marathonBonuses
     - pvpTickets
     type: object
+  internal_infrastructure_http_handlers.ClaimReferralRewardRequest:
+    properties:
+      milestone:
+        type: string
+    required:
+    - milestone
+    type: object
+  internal_infrastructure_http_handlers.ClaimReferralRewardResponse:
+    properties:
+      data:
+        properties:
+          newCoinBalance:
+            type: integer
+          newTicketBalance:
+            type: integer
+          rewards:
+            properties:
+              avatar:
+                type: string
+              badge:
+                type: string
+              coins:
+                type: integer
+              tickets:
+                type: integer
+              title:
+                type: string
+            type: object
+          success:
+            type: boolean
+        required:
+        - newCoinBalance
+        - newTicketBalance
+        - rewards
+        - success
+        type: object
+    type: object
   internal_infrastructure_http_handlers.ContinueMarathonData:
     properties:
       coinsDeducted:
@@ -664,6 +701,27 @@ definitions:
       result:
         type: string
     type: object
+  internal_infrastructure_http_handlers.GameQuestionResultDTO:
+    properties:
+      correctAnswerId:
+        type: string
+      opponentAnswerId:
+        type: string
+      opponentCorrect:
+        type: boolean
+      opponentTime:
+        type: integer
+      playerAnswerId:
+        type: string
+      playerCorrect:
+        type: boolean
+      playerTime:
+        type: integer
+      questionNumber:
+        type: integer
+      questionText:
+        type: string
+    type: object
   internal_infrastructure_http_handlers.GameResultsDTO:
     properties:
       answeredQuestions:
@@ -830,6 +888,11 @@ definitions:
             type: array
           activeGameId:
             type: string
+          expiredChallenges:
+            description: 'B9: expired challenges visible in lobby'
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO'
+            type: array
           friendsOnline:
             items:
               $ref: '#/definitions/internal_infrastructure_http_handlers.DuelFriendDTO'
@@ -904,6 +967,15 @@ definitions:
           opponentScore:
             type: integer
           playerScore:
+            type: integer
+          questions:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.GameQuestionResultDTO'
+            type: array
+          rankChange:
+            description: '"promoted", "demoted", null'
+            type: string
+          rematchExpiresIn:
             type: integer
           result:
             description: '"win", "loss", "draw"'
@@ -1036,6 +1108,35 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.GetQuizDetailsData'
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.GetReferralsResponse:
+    properties:
+      data:
+        properties:
+          activeReferrals:
+            type: integer
+          pendingRewards:
+            items:
+              type: string
+            type: array
+          referralLeaderboardRank:
+            type: integer
+          referralLink:
+            type: string
+          referrals:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.ReferralItemDTO'
+            type: array
+          totalReferrals:
+            type: integer
+        required:
+        - activeReferrals
+        - pendingRewards
+        - referralLeaderboardRank
+        - referralLink
+        - referrals
+        - totalReferrals
+        type: object
     type: object
   internal_infrastructure_http_handlers.GetRivalsResponse:
     properties:
@@ -1515,6 +1616,66 @@ definitions:
     - questions
     - timeLimit
     - title
+    type: object
+  internal_infrastructure_http_handlers.RecoverStreakData:
+    properties:
+      bonusPercent:
+        type: integer
+      coinsDeducted:
+        type: integer
+      currentStreak:
+        type: integer
+      recovered:
+        type: boolean
+    required:
+    - bonusPercent
+    - coinsDeducted
+    - currentStreak
+    - recovered
+    type: object
+  internal_infrastructure_http_handlers.RecoverStreakRequest:
+    properties:
+      paymentMethod:
+        description: '"coins" or "ad"'
+        type: string
+      playerId:
+        type: string
+    required:
+    - paymentMethod
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.RecoverStreakResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.RecoverStreakData'
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.ReferralItemDTO:
+    properties:
+      createdAt:
+        type: integer
+      id:
+        type: string
+      inviteeId:
+        type: string
+      inviteeUsername:
+        type: string
+      milestonesReached:
+        items:
+          type: string
+        type: array
+      pendingRewards:
+        items:
+          type: string
+        type: array
+    required:
+    - createdAt
+    - id
+    - inviteeId
+    - inviteeUsername
+    - milestonesReached
+    - pendingRewards
     type: object
   internal_infrastructure_http_handlers.RegisterUserData:
     properties:
@@ -2069,6 +2230,25 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.SubmitMarathonAnswerData'
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.SurrenderGameResponse:
+    properties:
+      data:
+        properties:
+          gameId:
+            type: string
+          mmrChange:
+            type: integer
+          newMmr:
+            type: integer
+          winnerId:
+            type: string
+        required:
+        - gameId
+        - mmrChange
+        - newMmr
+        - winnerId
+        type: object
     type: object
   internal_infrastructure_http_handlers.UpdateUserProfileRequest:
     properties:
@@ -2774,6 +2954,40 @@ paths:
       summary: Get player streak
       tags:
       - daily-challenge
+  /daily-challenge/streak/recover:
+    post:
+      consumes:
+      - application/json
+      description: Recover a broken streak by paying with coins or watching an ad
+      parameters:
+      - description: Recover streak request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.RecoverStreakRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Streak recovered
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.RecoverStreakResponse'
+        "400":
+          description: Invalid request or insufficient coins
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "409":
+          description: Streak not recoverable
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Recover daily challenge streak
+      tags:
+      - daily-challenge
   /duel/challenge:
     post:
       consumes:
@@ -3071,6 +3285,48 @@ paths:
       summary: Request rematch
       tags:
       - duel
+  /duel/game/{gameId}/surrender:
+    post:
+      consumes:
+      - application/json
+      description: Forfeit an active duel game. The surrendering player takes an ELO
+        loss; the opponent wins.
+      parameters:
+      - description: Game ID
+        in: path
+        name: gameId
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Surrender processed
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.SurrenderGameResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "403":
+          description: Player not in game
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Game not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "409":
+          description: Game is not active
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Surrender a duel game
+      tags:
+      - duel
   /duel/history:
     get:
       consumes:
@@ -3210,6 +3466,72 @@ paths:
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Leave matchmaking queue
+      tags:
+      - duel
+  /duel/referrals:
+    get:
+      consumes:
+      - application/json
+      description: List player's referrals with milestone progress and pending rewards
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Referrals list
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetReferralsResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get player referrals
+      tags:
+      - duel
+  /duel/referrals/{friendId}/claim:
+    post:
+      consumes:
+      - application/json
+      description: Claim the reward for a reached milestone with a referred friend
+      parameters:
+      - description: Friend (invitee) player ID
+        in: path
+        name: friendId
+        required: true
+        type: string
+      - description: Claim request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.ClaimReferralRewardRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Reward claimed
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ClaimReferralRewardResponse'
+        "400":
+          description: Invalid request or milestone not reached
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Referral not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "409":
+          description: Reward already claimed
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Claim referral milestone reward
       tags:
       - duel
   /duel/rivals:
@@ -3426,6 +3748,50 @@ paths:
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Use a bonus in marathon mode
+      tags:
+      - marathon
+  /marathon/{gameId}/complete:
+    post:
+      consumes:
+      - application/json
+      description: Complete a marathon game that is in game_over state (player declines
+        continue)
+      parameters:
+      - description: Game ID
+        in: path
+        name: gameId
+        required: true
+        type: string
+      - description: Complete game request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.AbandonMarathonRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Game completed with final statistics
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.AbandonMarathonResponse'
+        "400":
+          description: Invalid game ID or game not in game_over state
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "401":
+          description: Unauthorized - game belongs to another player
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: Game not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Complete a marathon game
       tags:
       - marathon
   /marathon/{gameId}/continue:

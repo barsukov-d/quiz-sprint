@@ -19,6 +19,8 @@ export type { InternalInfrastructureHttpHandlersAnswerDTO } from "./AnswerDTO.ts
 export type { InternalInfrastructureHttpHandlersAnsweredQuestionDTO } from "./AnsweredQuestionDTO.ts";
 export type { InternalInfrastructureHttpHandlersCategoryDTO } from "./CategoryDTO.ts";
 export type { InternalInfrastructureHttpHandlersChestRewardDTO } from "./ChestRewardDTO.ts";
+export type { InternalInfrastructureHttpHandlersClaimReferralRewardRequest } from "./ClaimReferralRewardRequest.ts";
+export type { InternalInfrastructureHttpHandlersClaimReferralRewardResponse } from "./ClaimReferralRewardResponse.ts";
 export type { InternalInfrastructureHttpHandlersContinueMarathonData } from "./ContinueMarathonData.ts";
 export type { InternalInfrastructureHttpHandlersContinueMarathonRequest } from "./ContinueMarathonRequest.ts";
 export type { InternalInfrastructureHttpHandlersContinueMarathonResponse } from "./ContinueMarathonResponse.ts";
@@ -38,6 +40,7 @@ export type { InternalInfrastructureHttpHandlersErrorDetail } from "./ErrorDetai
 export type { InternalInfrastructureHttpHandlersErrorResponse } from "./ErrorResponse.ts";
 export type { InternalInfrastructureHttpHandlersFinalResultDTO } from "./FinalResultDTO.ts";
 export type { InternalInfrastructureHttpHandlersGameHistoryEntryDTO } from "./GameHistoryEntryDTO.ts";
+export type { InternalInfrastructureHttpHandlersGameQuestionResultDTO } from "./GameQuestionResultDTO.ts";
 export type { InternalInfrastructureHttpHandlersGameResultsDTO } from "./GameResultsDTO.ts";
 export type { InternalInfrastructureHttpHandlersGetActiveSessionData } from "./GetActiveSessionData.ts";
 export type { InternalInfrastructureHttpHandlersGetActiveSessionRequest } from "./GetActiveSessionRequest.ts";
@@ -65,6 +68,7 @@ export type { InternalInfrastructureHttpHandlersGetPlayerStreakResponse } from "
 export type { InternalInfrastructureHttpHandlersGetQuizDetailsData } from "./GetQuizDetailsData.ts";
 export type { InternalInfrastructureHttpHandlersGetQuizDetailsResponse } from "./GetQuizDetailsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetRandomQuizResponse } from "./GetRandomQuizResponse.ts";
+export type { InternalInfrastructureHttpHandlersGetReferralsResponse } from "./GetReferralsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetRivalsResponse } from "./GetRivalsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetSessionResultsResponse } from "./GetSessionResultsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetUserActiveSessionsResponse } from "./GetUserActiveSessionsResponse.ts";
@@ -96,6 +100,10 @@ export type { InternalInfrastructureHttpHandlersPrepareShareResponse } from "./P
 export type { InternalInfrastructureHttpHandlersQuestionDTO } from "./QuestionDTO.ts";
 export type { InternalInfrastructureHttpHandlersQuizDetailDTO } from "./QuizDetailDTO.ts";
 export type { InternalInfrastructureHttpHandlersQuizDTO } from "./QuizDTO.ts";
+export type { InternalInfrastructureHttpHandlersRecoverStreakData } from "./RecoverStreakData.ts";
+export type { InternalInfrastructureHttpHandlersRecoverStreakRequest } from "./RecoverStreakRequest.ts";
+export type { InternalInfrastructureHttpHandlersRecoverStreakResponse } from "./RecoverStreakResponse.ts";
+export type { InternalInfrastructureHttpHandlersReferralItemDTO } from "./ReferralItemDTO.ts";
 export type { InternalInfrastructureHttpHandlersRegisterUserData } from "./RegisterUserData.ts";
 export type { InternalInfrastructureHttpHandlersRegisterUserResponse } from "./RegisterUserResponse.ts";
 export type { InternalInfrastructureHttpHandlersRequestRematchRequest } from "./RequestRematchRequest.ts";
@@ -132,6 +140,7 @@ export type { InternalInfrastructureHttpHandlersSubmitDailyAnswerResponse } from
 export type { InternalInfrastructureHttpHandlersSubmitMarathonAnswerData } from "./SubmitMarathonAnswerData.ts";
 export type { InternalInfrastructureHttpHandlersSubmitMarathonAnswerRequest } from "./SubmitMarathonAnswerRequest.ts";
 export type { InternalInfrastructureHttpHandlersSubmitMarathonAnswerResponse } from "./SubmitMarathonAnswerResponse.ts";
+export type { InternalInfrastructureHttpHandlersSurrenderGameResponse } from "./SurrenderGameResponse.ts";
 export type { InternalInfrastructureHttpHandlersUpdateUserProfileRequest } from "./UpdateUserProfileRequest.ts";
 export type { InternalInfrastructureHttpHandlersUpdateUserProfileResponse } from "./UpdateUserProfileResponse.ts";
 export type { InternalInfrastructureHttpHandlersUseMarathonBonusData } from "./UseMarathonBonusData.ts";

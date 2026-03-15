@@ -19,6 +19,8 @@ export { internalInfrastructureHttpHandlersAnswerDTOSchema } from "./answerDTOSc
 export { internalInfrastructureHttpHandlersAnsweredQuestionDTOSchema } from "./answeredQuestionDTOSchema.ts";
 export { internalInfrastructureHttpHandlersCategoryDTOSchema } from "./categoryDTOSchema.ts";
 export { internalInfrastructureHttpHandlersChestRewardDTOSchema } from "./chestRewardDTOSchema.ts";
+export { internalInfrastructureHttpHandlersClaimReferralRewardRequestSchema } from "./claimReferralRewardRequestSchema.ts";
+export { internalInfrastructureHttpHandlersClaimReferralRewardResponseSchema } from "./claimReferralRewardResponseSchema.ts";
 export { internalInfrastructureHttpHandlersContinueMarathonDataSchema } from "./continueMarathonDataSchema.ts";
 export { internalInfrastructureHttpHandlersContinueMarathonRequestSchema } from "./continueMarathonRequestSchema.ts";
 export { internalInfrastructureHttpHandlersContinueMarathonResponseSchema } from "./continueMarathonResponseSchema.ts";
@@ -38,6 +40,7 @@ export { internalInfrastructureHttpHandlersErrorDetailSchema } from "./errorDeta
 export { internalInfrastructureHttpHandlersErrorResponseSchema } from "./errorResponseSchema.ts";
 export { internalInfrastructureHttpHandlersFinalResultDTOSchema } from "./finalResultDTOSchema.ts";
 export { internalInfrastructureHttpHandlersGameHistoryEntryDTOSchema } from "./gameHistoryEntryDTOSchema.ts";
+export { internalInfrastructureHttpHandlersGameQuestionResultDTOSchema } from "./gameQuestionResultDTOSchema.ts";
 export { internalInfrastructureHttpHandlersGameResultsDTOSchema } from "./gameResultsDTOSchema.ts";
 export { internalInfrastructureHttpHandlersGetActiveSessionDataSchema } from "./getActiveSessionDataSchema.ts";
 export { internalInfrastructureHttpHandlersGetActiveSessionRequestSchema } from "./getActiveSessionRequestSchema.ts";
@@ -65,6 +68,7 @@ export { internalInfrastructureHttpHandlersGetPlayerStreakResponseSchema } from 
 export { internalInfrastructureHttpHandlersGetQuizDetailsDataSchema } from "./getQuizDetailsDataSchema.ts";
 export { internalInfrastructureHttpHandlersGetQuizDetailsResponseSchema } from "./getQuizDetailsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetRandomQuizResponseSchema } from "./getRandomQuizResponseSchema.ts";
+export { internalInfrastructureHttpHandlersGetReferralsResponseSchema } from "./getReferralsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetRivalsResponseSchema } from "./getRivalsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetSessionResultsResponseSchema } from "./getSessionResultsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetUserActiveSessionsResponseSchema } from "./getUserActiveSessionsResponseSchema.ts";
@@ -96,6 +100,10 @@ export { internalInfrastructureHttpHandlersPrepareShareResponseSchema } from "./
 export { internalInfrastructureHttpHandlersQuestionDTOSchema } from "./questionDTOSchema.ts";
 export { internalInfrastructureHttpHandlersQuizDetailDTOSchema } from "./quizDetailDTOSchema.ts";
 export { internalInfrastructureHttpHandlersQuizDTOSchema } from "./quizDTOSchema.ts";
+export { internalInfrastructureHttpHandlersRecoverStreakDataSchema } from "./recoverStreakDataSchema.ts";
+export { internalInfrastructureHttpHandlersRecoverStreakRequestSchema } from "./recoverStreakRequestSchema.ts";
+export { internalInfrastructureHttpHandlersRecoverStreakResponseSchema } from "./recoverStreakResponseSchema.ts";
+export { internalInfrastructureHttpHandlersReferralItemDTOSchema } from "./referralItemDTOSchema.ts";
 export { internalInfrastructureHttpHandlersRegisterUserDataSchema } from "./registerUserDataSchema.ts";
 export { internalInfrastructureHttpHandlersRegisterUserResponseSchema } from "./registerUserResponseSchema.ts";
 export { internalInfrastructureHttpHandlersRequestRematchRequestSchema } from "./requestRematchRequestSchema.ts";
@@ -132,6 +140,7 @@ export { internalInfrastructureHttpHandlersSubmitDailyAnswerResponseSchema } fro
 export { internalInfrastructureHttpHandlersSubmitMarathonAnswerDataSchema } from "./submitMarathonAnswerDataSchema.ts";
 export { internalInfrastructureHttpHandlersSubmitMarathonAnswerRequestSchema } from "./submitMarathonAnswerRequestSchema.ts";
 export { internalInfrastructureHttpHandlersSubmitMarathonAnswerResponseSchema } from "./submitMarathonAnswerResponseSchema.ts";
+export { internalInfrastructureHttpHandlersSurrenderGameResponseSchema } from "./surrenderGameResponseSchema.ts";
 export { internalInfrastructureHttpHandlersUpdateUserProfileRequestSchema } from "./updateUserProfileRequestSchema.ts";
 export { internalInfrastructureHttpHandlersUpdateUserProfileResponseSchema } from "./updateUserProfileResponseSchema.ts";
 export { internalInfrastructureHttpHandlersUseMarathonBonusDataSchema } from "./useMarathonBonusDataSchema.ts";

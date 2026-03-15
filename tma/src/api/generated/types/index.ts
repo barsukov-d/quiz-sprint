@@ -7,10 +7,12 @@ export type { PostDailyChallengeGameidAnswerPathParams, PostDailyChallengeGameid
 export type { PostDailyChallengeGameidChestOpenPathParams, PostDailyChallengeGameidChestOpen200, PostDailyChallengeGameidChestOpen400, PostDailyChallengeGameidChestOpen404, PostDailyChallengeGameidChestOpen500, PostDailyChallengeGameidChestOpenMutationRequest, PostDailyChallengeGameidChestOpenMutationResponse, PostDailyChallengeGameidChestOpenMutation } from "./dailyChallengeController/PostDailyChallengeGameidChestOpen.ts";
 export type { PostDailyChallengeGameidRetryPathParams, PostDailyChallengeGameidRetry201, PostDailyChallengeGameidRetry400, PostDailyChallengeGameidRetry404, PostDailyChallengeGameidRetry409, PostDailyChallengeGameidRetry500, PostDailyChallengeGameidRetryMutationRequest, PostDailyChallengeGameidRetryMutationResponse, PostDailyChallengeGameidRetryMutation } from "./dailyChallengeController/PostDailyChallengeGameidRetry.ts";
 export type { PostDailyChallengeStart201, PostDailyChallengeStart400, PostDailyChallengeStart409, PostDailyChallengeStart500, PostDailyChallengeStartMutationRequest, PostDailyChallengeStartMutationResponse, PostDailyChallengeStartMutation } from "./dailyChallengeController/PostDailyChallengeStart.ts";
+export type { PostDailyChallengeStreakRecover200, PostDailyChallengeStreakRecover400, PostDailyChallengeStreakRecover409, PostDailyChallengeStreakRecover500, PostDailyChallengeStreakRecoverMutationRequest, PostDailyChallengeStreakRecoverMutationResponse, PostDailyChallengeStreakRecoverMutation } from "./dailyChallengeController/PostDailyChallengeStreakRecover.ts";
 export type { DeleteDuelQueueLeaveQueryParams, DeleteDuelQueueLeave200, DeleteDuelQueueLeave400, DeleteDuelQueueLeave500, DeleteDuelQueueLeaveMutationResponse, DeleteDuelQueueLeaveMutation } from "./duelController/DeleteDuelQueueLeave.ts";
 export type { GetDuelGameGameidPathParams, GetDuelGameGameidQueryParams, GetDuelGameGameid200, GetDuelGameGameid400, GetDuelGameGameid404, GetDuelGameGameid500, GetDuelGameGameidQueryResponse, GetDuelGameGameidQuery } from "./duelController/GetDuelGameGameid.ts";
 export type { GetDuelHistoryQueryParams, GetDuelHistory200, GetDuelHistory400, GetDuelHistory500, GetDuelHistoryQueryResponse, GetDuelHistoryQuery } from "./duelController/GetDuelHistory.ts";
 export type { GetDuelLeaderboardQueryParams, GetDuelLeaderboard200, GetDuelLeaderboard400, GetDuelLeaderboard500, GetDuelLeaderboardQueryResponse, GetDuelLeaderboardQuery } from "./duelController/GetDuelLeaderboard.ts";
+export type { GetDuelReferrals200, GetDuelReferrals400, GetDuelReferrals500, GetDuelReferralsQueryResponse, GetDuelReferralsQuery } from "./duelController/GetDuelReferrals.ts";
 export type { GetDuelRivalsQueryParams, GetDuelRivals200, GetDuelRivals400, GetDuelRivals500, GetDuelRivalsQueryResponse, GetDuelRivalsQuery } from "./duelController/GetDuelRivals.ts";
 export type { GetDuelStatusQueryParams, GetDuelStatus200, GetDuelStatus400, GetDuelStatus500, GetDuelStatusQueryResponse, GetDuelStatusQuery } from "./duelController/GetDuelStatus.ts";
 export type { PostDuelChallenge201, PostDuelChallenge400, PostDuelChallenge409, PostDuelChallenge500, PostDuelChallengeMutationRequest, PostDuelChallengeMutationResponse, PostDuelChallengeMutation } from "./duelController/PostDuelChallenge.ts";
@@ -20,7 +22,9 @@ export type { PostDuelChallengeChallengeidStartPathParams, PostDuelChallengeChal
 export type { PostDuelChallengeLink201, PostDuelChallengeLink400, PostDuelChallengeLink500, PostDuelChallengeLinkMutationRequest, PostDuelChallengeLinkMutationResponse, PostDuelChallengeLinkMutation } from "./duelController/PostDuelChallengeLink.ts";
 export type { PostDuelChallengePrepareShare200, PostDuelChallengePrepareShare400, PostDuelChallengePrepareShare500, PostDuelChallengePrepareShareMutationRequest, PostDuelChallengePrepareShareMutationResponse, PostDuelChallengePrepareShareMutation } from "./duelController/PostDuelChallengePrepareShare.ts";
 export type { PostDuelGameGameidRematchPathParams, PostDuelGameGameidRematch200, PostDuelGameGameidRematch400, PostDuelGameGameidRematch404, PostDuelGameGameidRematch409, PostDuelGameGameidRematch500, PostDuelGameGameidRematchMutationRequest, PostDuelGameGameidRematchMutationResponse, PostDuelGameGameidRematchMutation } from "./duelController/PostDuelGameGameidRematch.ts";
+export type { PostDuelGameGameidSurrenderPathParams, PostDuelGameGameidSurrender200, PostDuelGameGameidSurrender400, PostDuelGameGameidSurrender403, PostDuelGameGameidSurrender404, PostDuelGameGameidSurrender409, PostDuelGameGameidSurrender500, PostDuelGameGameidSurrenderMutationResponse, PostDuelGameGameidSurrenderMutation } from "./duelController/PostDuelGameGameidSurrender.ts";
 export type { PostDuelQueueJoin200, PostDuelQueueJoin400, PostDuelQueueJoin409, PostDuelQueueJoin500, PostDuelQueueJoinMutationRequest, PostDuelQueueJoinMutationResponse, PostDuelQueueJoinMutation } from "./duelController/PostDuelQueueJoin.ts";
+export type { PostDuelReferralsFriendidClaimPathParams, PostDuelReferralsFriendidClaim200, PostDuelReferralsFriendidClaim400, PostDuelReferralsFriendidClaim404, PostDuelReferralsFriendidClaim409, PostDuelReferralsFriendidClaim500, PostDuelReferralsFriendidClaimMutationRequest, PostDuelReferralsFriendidClaimMutationResponse, PostDuelReferralsFriendidClaimMutation } from "./duelController/PostDuelReferralsFriendidClaim.ts";
 export type { InternalInfrastructureHttpHandlersAbandonMarathonRequest } from "./internalInfrastructureHttpHandlers/AbandonMarathonRequest.ts";
 export type { InternalInfrastructureHttpHandlersAbandonMarathonResponse } from "./internalInfrastructureHttpHandlers/AbandonMarathonResponse.ts";
 export type { InternalInfrastructureHttpHandlersAbandonSessionRequest } from "./internalInfrastructureHttpHandlers/AbandonSessionRequest.ts";
@@ -42,6 +46,8 @@ export type { InternalInfrastructureHttpHandlersAnswerDTO } from "./internalInfr
 export type { InternalInfrastructureHttpHandlersAnsweredQuestionDTO } from "./internalInfrastructureHttpHandlers/AnsweredQuestionDTO.ts";
 export type { InternalInfrastructureHttpHandlersCategoryDTO } from "./internalInfrastructureHttpHandlers/CategoryDTO.ts";
 export type { InternalInfrastructureHttpHandlersChestRewardDTO } from "./internalInfrastructureHttpHandlers/ChestRewardDTO.ts";
+export type { InternalInfrastructureHttpHandlersClaimReferralRewardRequest } from "./internalInfrastructureHttpHandlers/ClaimReferralRewardRequest.ts";
+export type { InternalInfrastructureHttpHandlersClaimReferralRewardResponse } from "./internalInfrastructureHttpHandlers/ClaimReferralRewardResponse.ts";
 export type { InternalInfrastructureHttpHandlersContinueMarathonData } from "./internalInfrastructureHttpHandlers/ContinueMarathonData.ts";
 export type { InternalInfrastructureHttpHandlersContinueMarathonRequest } from "./internalInfrastructureHttpHandlers/ContinueMarathonRequest.ts";
 export type { InternalInfrastructureHttpHandlersContinueMarathonResponse } from "./internalInfrastructureHttpHandlers/ContinueMarathonResponse.ts";
@@ -61,6 +67,7 @@ export type { InternalInfrastructureHttpHandlersErrorDetail } from "./internalIn
 export type { InternalInfrastructureHttpHandlersErrorResponse } from "./internalInfrastructureHttpHandlers/ErrorResponse.ts";
 export type { InternalInfrastructureHttpHandlersFinalResultDTO } from "./internalInfrastructureHttpHandlers/FinalResultDTO.ts";
 export type { InternalInfrastructureHttpHandlersGameHistoryEntryDTO } from "./internalInfrastructureHttpHandlers/GameHistoryEntryDTO.ts";
+export type { InternalInfrastructureHttpHandlersGameQuestionResultDTO } from "./internalInfrastructureHttpHandlers/GameQuestionResultDTO.ts";
 export type { InternalInfrastructureHttpHandlersGameResultsDTO } from "./internalInfrastructureHttpHandlers/GameResultsDTO.ts";
 export type { InternalInfrastructureHttpHandlersGetActiveSessionData } from "./internalInfrastructureHttpHandlers/GetActiveSessionData.ts";
 export type { InternalInfrastructureHttpHandlersGetActiveSessionRequest } from "./internalInfrastructureHttpHandlers/GetActiveSessionRequest.ts";
@@ -88,6 +95,7 @@ export type { InternalInfrastructureHttpHandlersGetPlayerStreakResponse } from "
 export type { InternalInfrastructureHttpHandlersGetQuizDetailsData } from "./internalInfrastructureHttpHandlers/GetQuizDetailsData.ts";
 export type { InternalInfrastructureHttpHandlersGetQuizDetailsResponse } from "./internalInfrastructureHttpHandlers/GetQuizDetailsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetRandomQuizResponse } from "./internalInfrastructureHttpHandlers/GetRandomQuizResponse.ts";
+export type { InternalInfrastructureHttpHandlersGetReferralsResponse } from "./internalInfrastructureHttpHandlers/GetReferralsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetRivalsResponse } from "./internalInfrastructureHttpHandlers/GetRivalsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetSessionResultsResponse } from "./internalInfrastructureHttpHandlers/GetSessionResultsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetUserActiveSessionsResponse } from "./internalInfrastructureHttpHandlers/GetUserActiveSessionsResponse.ts";
@@ -119,6 +127,10 @@ export type { InternalInfrastructureHttpHandlersPrepareShareResponse } from "./i
 export type { InternalInfrastructureHttpHandlersQuestionDTO } from "./internalInfrastructureHttpHandlers/QuestionDTO.ts";
 export type { InternalInfrastructureHttpHandlersQuizDetailDTO } from "./internalInfrastructureHttpHandlers/QuizDetailDTO.ts";
 export type { InternalInfrastructureHttpHandlersQuizDTO } from "./internalInfrastructureHttpHandlers/QuizDTO.ts";
+export type { InternalInfrastructureHttpHandlersRecoverStreakData } from "./internalInfrastructureHttpHandlers/RecoverStreakData.ts";
+export type { InternalInfrastructureHttpHandlersRecoverStreakRequest } from "./internalInfrastructureHttpHandlers/RecoverStreakRequest.ts";
+export type { InternalInfrastructureHttpHandlersRecoverStreakResponse } from "./internalInfrastructureHttpHandlers/RecoverStreakResponse.ts";
+export type { InternalInfrastructureHttpHandlersReferralItemDTO } from "./internalInfrastructureHttpHandlers/ReferralItemDTO.ts";
 export type { InternalInfrastructureHttpHandlersRegisterUserData } from "./internalInfrastructureHttpHandlers/RegisterUserData.ts";
 export type { InternalInfrastructureHttpHandlersRegisterUserResponse } from "./internalInfrastructureHttpHandlers/RegisterUserResponse.ts";
 export type { InternalInfrastructureHttpHandlersRequestRematchRequest } from "./internalInfrastructureHttpHandlers/RequestRematchRequest.ts";
@@ -155,6 +167,7 @@ export type { InternalInfrastructureHttpHandlersSubmitDailyAnswerResponse } from
 export type { InternalInfrastructureHttpHandlersSubmitMarathonAnswerData } from "./internalInfrastructureHttpHandlers/SubmitMarathonAnswerData.ts";
 export type { InternalInfrastructureHttpHandlersSubmitMarathonAnswerRequest } from "./internalInfrastructureHttpHandlers/SubmitMarathonAnswerRequest.ts";
 export type { InternalInfrastructureHttpHandlersSubmitMarathonAnswerResponse } from "./internalInfrastructureHttpHandlers/SubmitMarathonAnswerResponse.ts";
+export type { InternalInfrastructureHttpHandlersSurrenderGameResponse } from "./internalInfrastructureHttpHandlers/SurrenderGameResponse.ts";
 export type { InternalInfrastructureHttpHandlersUpdateUserProfileRequest } from "./internalInfrastructureHttpHandlers/UpdateUserProfileRequest.ts";
 export type { InternalInfrastructureHttpHandlersUpdateUserProfileResponse } from "./internalInfrastructureHttpHandlers/UpdateUserProfileResponse.ts";
 export type { InternalInfrastructureHttpHandlersUseMarathonBonusData } from "./internalInfrastructureHttpHandlers/UseMarathonBonusData.ts";
@@ -169,6 +182,7 @@ export type { GetMarathonPersonalBestsQueryParams, GetMarathonPersonalBests200, 
 export type { GetMarathonStatusQueryParams, GetMarathonStatus200, GetMarathonStatus400, GetMarathonStatus500, GetMarathonStatusQueryResponse, GetMarathonStatusQuery } from "./marathonController/GetMarathonStatus.ts";
 export type { PostMarathonGameidAnswerPathParams, PostMarathonGameidAnswer200, PostMarathonGameidAnswer400, PostMarathonGameidAnswer401, PostMarathonGameidAnswer404, PostMarathonGameidAnswer500, PostMarathonGameidAnswerMutationRequest, PostMarathonGameidAnswerMutationResponse, PostMarathonGameidAnswerMutation } from "./marathonController/PostMarathonGameidAnswer.ts";
 export type { PostMarathonGameidBonusPathParams, PostMarathonGameidBonus200, PostMarathonGameidBonus400, PostMarathonGameidBonus401, PostMarathonGameidBonus404, PostMarathonGameidBonus500, PostMarathonGameidBonusMutationRequest, PostMarathonGameidBonusMutationResponse, PostMarathonGameidBonusMutation } from "./marathonController/PostMarathonGameidBonus.ts";
+export type { PostMarathonGameidCompletePathParams, PostMarathonGameidComplete200, PostMarathonGameidComplete400, PostMarathonGameidComplete401, PostMarathonGameidComplete404, PostMarathonGameidComplete500, PostMarathonGameidCompleteMutationRequest, PostMarathonGameidCompleteMutationResponse, PostMarathonGameidCompleteMutation } from "./marathonController/PostMarathonGameidComplete.ts";
 export type { PostMarathonGameidContinuePathParams, PostMarathonGameidContinue200, PostMarathonGameidContinue400, PostMarathonGameidContinue401, PostMarathonGameidContinue404, PostMarathonGameidContinue500, PostMarathonGameidContinueMutationRequest, PostMarathonGameidContinueMutationResponse, PostMarathonGameidContinueMutation } from "./marathonController/PostMarathonGameidContinue.ts";
 export type { PostMarathonStart201, PostMarathonStart400, PostMarathonStart409, PostMarathonStart500, PostMarathonStartMutationRequest, PostMarathonStartMutationResponse, PostMarathonStartMutation } from "./marathonController/PostMarathonStart.ts";
 export type { DeleteQuizSessionSessionidPathParams, DeleteQuizSessionSessionid204, DeleteQuizSessionSessionid400, DeleteQuizSessionSessionid401, DeleteQuizSessionSessionid404, DeleteQuizSessionSessionid500, DeleteQuizSessionSessionidMutationRequest, DeleteQuizSessionSessionidMutationResponse, DeleteQuizSessionSessionidMutation } from "./quizController/DeleteQuizSessionSessionid.ts";

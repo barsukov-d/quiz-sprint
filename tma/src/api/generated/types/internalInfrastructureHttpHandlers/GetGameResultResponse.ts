@@ -3,6 +3,7 @@
 * Do not edit manually.
 */
 
+import type { InternalInfrastructureHttpHandlersGameQuestionResultDTO } from "./GameQuestionResultDTO.ts";
 import type { InternalInfrastructureHttpHandlersGetGameResultPlayerDTO } from "./GetGameResultPlayerDTO.ts";
 
 export type InternalInfrastructureHttpHandlersGetGameResultResponse = {
@@ -46,6 +47,19 @@ export type InternalInfrastructureHttpHandlersGetGameResultResponse = {
          * @type integer | undefined
         */
         playerScore?: number;
+        /**
+         * @type array | undefined
+        */
+        questions?: InternalInfrastructureHttpHandlersGameQuestionResultDTO[];
+        /**
+         * @description \"promoted\", \"demoted\", null
+         * @type string | undefined
+        */
+        rankChange?: string;
+        /**
+         * @type integer | undefined
+        */
+        rematchExpiresIn?: number;
         /**
          * @description \"win\", \"loss\", \"draw\"
          * @type string | undefined

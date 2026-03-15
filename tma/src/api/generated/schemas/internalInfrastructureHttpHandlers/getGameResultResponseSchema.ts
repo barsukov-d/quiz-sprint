@@ -4,6 +4,7 @@
 */
 
 import type { InternalInfrastructureHttpHandlersGetGameResultResponse } from "../../types/internalInfrastructureHttpHandlers/GetGameResultResponse.ts";
+import { internalInfrastructureHttpHandlersGameQuestionResultDTOSchema } from "./gameQuestionResultDTOSchema.ts";
 import { internalInfrastructureHttpHandlersGetGameResultPlayerDTOSchema } from "./getGameResultPlayerDTOSchema.ts";
 import { z } from "zod/v4";
 
@@ -20,6 +21,11 @@ get "opponent"(){
               },
 "opponentScore": z.optional(z.int()),
 "playerScore": z.optional(z.int()),
+get "questions"(){
+                return z.array(internalInfrastructureHttpHandlersGameQuestionResultDTOSchema).optional()
+              },
+"rankChange": z.optional(z.string().describe("\"promoted\", \"demoted\", null")),
+"rematchExpiresIn": z.optional(z.int()),
 "result": z.optional(z.string().describe("win\", \"loss\", \"draw"))
     }))
     }) as unknown as z.ZodType<InternalInfrastructureHttpHandlersGetGameResultResponse>
