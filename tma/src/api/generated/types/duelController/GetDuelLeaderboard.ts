@@ -4,7 +4,7 @@
 */
 
 import type { InternalInfrastructureHttpHandlersErrorResponse } from "../internalInfrastructureHttpHandlers/ErrorResponse.ts";
-import type { InternalInfrastructureHttpHandlersGetLeaderboardResponse } from "../internalInfrastructureHttpHandlers/GetLeaderboardResponse.ts";
+import type { InternalInfrastructureHttpHandlersGetDuelLeaderboardResponse } from "../internalInfrastructureHttpHandlers/GetDuelLeaderboardResponse.ts";
 
 export type GetDuelLeaderboardQueryParams = {
     /**
@@ -27,7 +27,7 @@ export type GetDuelLeaderboardQueryParams = {
 /**
  * @description Leaderboard
 */
-export type GetDuelLeaderboard200 = InternalInfrastructureHttpHandlersGetLeaderboardResponse;
+export type GetDuelLeaderboard200 = InternalInfrastructureHttpHandlersGetDuelLeaderboardResponse;
 
 /**
  * @description Invalid request

@@ -35,7 +35,7 @@ const goToQuizDetails = (quizId: string) => {
 </script>
 
 <template>
-	<div class="min-h-screen bg-(--ui-bg)">
+	<div class="mx-auto max-w-[800px]">
 		<!-- Header -->
 		<div class="flex items-center gap-3 px-4 py-4 border-b border-(--ui-border)">
 			<UButton

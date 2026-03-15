@@ -48,6 +48,10 @@ export type InternalInfrastructureHttpHandlersDuelPlayerRatingDTO = {
     /**
      * @type integer | undefined
     */
+    seasonDraws?: number;
+    /**
+     * @type integer | undefined
+    */
     seasonLosses?: number;
     /**
      * @type integer | undefined

@@ -73,7 +73,7 @@ onMounted(async () => {
 
 <template>
 	<div
-		class="min-h-screen bg-gradient-to-b from-primary-600 to-primary-900 flex flex-col px-4 pb-10"
+		class="min-h-screen bg-gradient-to-b from-primary-600 to-primary-900 flex flex-col px-4 pb-8"
 	>
 		<!-- Close button -->
 		<div class="pt-4 pb-2">

@@ -53,10 +53,6 @@ const feedbackGameCompleted = ref(false)
 // Computed
 // ===========================
 
-const questionProgress = computed(() =>
-	Math.round(((questionIndex.value + 1) / totalQuestions.value) * 100),
-)
-
 const canSubmit = computed(() => {
 	return selectedAnswerId.value !== null && !isSubmitting.value && !showFeedback.value
 })
@@ -242,7 +238,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<div class="min-h-screen mx-auto max-w-[800px] px-4 pt-14 pb-8 sm:px-3 sm:pt-12">
+	<div class="min-h-screen mx-auto max-w-[800px] pt-14 pb-4">
 		<!-- Loading State -->
 		<div v-if="!currentQuestion" class="flex flex-col items-center justify-center min-h-[50vh]">
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
@@ -251,12 +247,12 @@ onUnmounted(() => {
 
 		<!-- Game View -->
 		<div v-else class="flex flex-col gap-5">
-			<!-- Header row: counter + title -->
+			<!-- Header: counter + title + menu -->
 			<div class="flex items-center justify-between">
 				<span class="text-xl font-bold text-(--ui-text-highlighted) tabular-nums">
 					{{ questionIndex + 1 }}/{{ totalQuestions }}
 				</span>
-				<span class="text-base font-semibold text-(--ui-text-muted)">
+				<span class="text-sm font-semibold text-(--ui-text-muted)">
 					{{ t('daily.title') }}
 				</span>
 				<UIcon
@@ -265,36 +261,35 @@ onUnmounted(() => {
 				/>
 			</div>
 
-			<!-- Progress bar with timer inside -->
-			<div class="relative">
-				<div class="h-7 w-full rounded-full bg-(--ui-bg-accented) overflow-hidden">
-					<div
-						class="h-full rounded-full bg-gradient-to-r from-yellow-400 via-primary-500 to-primary-600 transition-all duration-300"
-						:style="{ width: `${questionProgress}%` }"
-					/>
-				</div>
+			<!-- Timer bar -->
+			<div class="relative h-6 rounded-full bg-(--ui-bg-accented) overflow-hidden">
+				<div
+					class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-yellow-400 via-primary-500 to-primary-600 transition-all duration-1000"
+					:style="{
+						width: `${((timerRef?.remainingTime ?? timeLimit) / timeLimit) * 100}%`,
+					}"
+				/>
 				<span
-					class="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums"
+					class="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums drop-shadow"
 					:class="
 						timerRef?.remainingTime !== undefined && timerRef.remainingTime <= 5
 							? 'text-red-400'
 							: 'text-white'
 					"
 				>
-					{{ timerRef?.remainingTime ?? timeLimit }}
+					{{ timerRef?.remainingTime ?? timeLimit }}s
 				</span>
-				<!-- Hidden GameTimer for logic -->
-				<GameTimer
-					ref="timerRef"
-					:initial-time="timeLimit"
-					:auto-start="false"
-					:warning-threshold="5"
-					:show-progress="false"
-					size="sm"
-					:on-timeout="handleTimeout"
-					class="sr-only"
-				/>
 			</div>
+			<GameTimer
+				ref="timerRef"
+				:initial-time="timeLimit"
+				:auto-start="false"
+				:warning-threshold="5"
+				:show-progress="false"
+				size="sm"
+				:on-timeout="handleTimeout"
+				class="sr-only"
+			/>
 
 			<!-- Question text (primary focus) -->
 			<QuestionCard :question="currentQuestion" :show-badge="false" />

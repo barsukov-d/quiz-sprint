@@ -82,7 +82,7 @@ const formattedTime = computed(() => {
 			<div class="flex flex-col gap-2">
 				<!-- Player answer -->
 				<div
-					class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm"
+					class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm"
 					:class="
 						answeredQuestion.isCorrect
 							? 'bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400'
@@ -103,7 +103,7 @@ const formattedTime = computed(() => {
 				<!-- Correct answer (if wrong) -->
 				<div
 					v-if="!answeredQuestion.isCorrect"
-					class="flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400"
+					class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400"
 				>
 					<UIcon name="i-heroicons-check-circle" class="w-4 h-4 shrink-0" />
 					<span class="font-medium">{{ answeredQuestion.correctAnswerText }}</span>

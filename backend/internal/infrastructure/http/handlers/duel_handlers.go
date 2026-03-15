@@ -363,7 +363,7 @@ func (h *DuelHandler) GetGameHistory(c fiber.Ctx) error {
 // @Param playerId query string true "Player ID"
 // @Param type query string false "Type: seasonal, friends, referrals (default seasonal)"
 // @Param limit query int false "Limit (default 10, max 100)"
-// @Success 200 {object} GetLeaderboardResponse "Leaderboard"
+// @Success 200 {object} GetDuelLeaderboardResponse "Leaderboard"
 // @Failure 400 {object} ErrorResponse "Invalid request"
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /duel/leaderboard [get]

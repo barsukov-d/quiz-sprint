@@ -77,7 +77,7 @@ onMounted(async () => {
 			<div class="review-header-section">
 				<div class="header-title">
 					<UIcon name="i-heroicons-document-text" class="size-7 text-primary" />
-					<h1 class="text-2xl font-bold">{{ t('daily.reviewTitle') }}</h1>
+					<h1 class="text-xl font-bold">{{ t('daily.reviewTitle') }}</h1>
 				</div>
 				<p class="header-subtitle">{{ t('daily.reviewDesc') }}</p>
 

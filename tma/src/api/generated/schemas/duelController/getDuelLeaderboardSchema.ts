@@ -5,7 +5,7 @@
 
 import type { GetDuelLeaderboardQueryParams, GetDuelLeaderboard200, GetDuelLeaderboard400, GetDuelLeaderboard500, GetDuelLeaderboardQueryResponse } from "../../types/duelController/GetDuelLeaderboard.ts";
 import { internalInfrastructureHttpHandlersErrorResponseSchema } from "../internalInfrastructureHttpHandlers/errorResponseSchema.ts";
-import { internalInfrastructureHttpHandlersGetLeaderboardResponseSchema } from "../internalInfrastructureHttpHandlers/getLeaderboardResponseSchema.ts";
+import { internalInfrastructureHttpHandlersGetDuelLeaderboardResponseSchema } from "../internalInfrastructureHttpHandlers/getDuelLeaderboardResponseSchema.ts";
 import { z } from "zod/v4";
 
 export const getDuelLeaderboardQueryParamsSchema = z.object({
@@ -17,7 +17,7 @@ export const getDuelLeaderboardQueryParamsSchema = z.object({
 /**
  * @description Leaderboard
  */
-export const getDuelLeaderboard200Schema = z.lazy(() => internalInfrastructureHttpHandlersGetLeaderboardResponseSchema) as unknown as z.ZodType<GetDuelLeaderboard200>
+export const getDuelLeaderboard200Schema = z.lazy(() => internalInfrastructureHttpHandlersGetDuelLeaderboardResponseSchema) as unknown as z.ZodType<GetDuelLeaderboard200>
 
 /**
  * @description Invalid request

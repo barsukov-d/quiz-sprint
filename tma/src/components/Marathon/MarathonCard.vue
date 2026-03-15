@@ -181,7 +181,7 @@ onMounted(async () => {
 					<div
 						v-for="b in bonusList"
 						:key="b.key"
-						class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs bg-(--ui-bg-muted)"
+						class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-(--ui-bg-muted)"
 						:title="b.description"
 					>
 						<UIcon :name="b.icon" :class="b.color" class="w-4 h-4" />

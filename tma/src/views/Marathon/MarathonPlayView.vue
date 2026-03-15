@@ -322,7 +322,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<div class="min-h-screen mx-auto max-w-[800px] px-4 pt-14 pb-8 sm:px-3 sm:pt-12">
+	<div class="min-h-screen mx-auto max-w-[800px] pt-14 pb-4">
 		<!-- Loading State -->
 		<div v-if="!currentQuestion" class="flex flex-col items-center justify-center min-h-[50vh]">
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
@@ -331,25 +331,22 @@ onUnmounted(() => {
 
 		<!-- Game View -->
 		<div v-else class="flex flex-col gap-4">
-			<!-- Header Row 1: question counter + title + menu -->
+			<!-- Header: counter + title + menu -->
 			<div class="flex items-center justify-between">
-				<span class="text-2xl font-bold tabular-nums leading-none">{{
-					state.totalQuestions
+				<span class="text-xl font-bold text-(--ui-text-highlighted) tabular-nums">
+					{{ state.totalQuestions }}
+				</span>
+				<span class="text-sm font-semibold text-(--ui-text-muted)">{{
+					t('marathon.title')
 				}}</span>
-				<span
-					class="text-sm font-semibold text-(--ui-text-muted) tracking-wide uppercase"
-					>{{ t('marathon.title') }}</span
-				>
-				<UButton
-					color="neutral"
-					variant="ghost"
-					icon="i-heroicons-ellipsis-vertical"
-					size="sm"
+				<UIcon
+					name="i-heroicons-ellipsis-horizontal-circle"
+					class="size-6 text-(--ui-text-dimmed)"
 				/>
 			</div>
 
-			<!-- Header Row 2: thick progress bar with seconds inside -->
-			<div class="relative h-7 rounded-full overflow-hidden bg-(--ui-bg-accented)">
+			<!-- Timer bar -->
+			<div class="relative h-6 rounded-full bg-(--ui-bg-accented) overflow-hidden">
 				<div
 					class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-yellow-400 via-primary-500 to-primary-600 transition-all duration-1000"
 					:style="{
@@ -358,11 +355,16 @@ onUnmounted(() => {
 							: '100%',
 					}"
 				/>
-				<div class="absolute inset-0 flex items-center justify-center">
-					<span class="text-xs font-bold text-white drop-shadow tabular-nums">
-						{{ timerRef?.remainingTime ?? state.timeLimit }}s
-					</span>
-				</div>
+				<span
+					class="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums drop-shadow"
+					:class="
+						timerRef?.remainingTime !== undefined && timerRef.remainingTime <= 5
+							? 'text-red-400'
+							: 'text-white'
+					"
+				>
+					{{ timerRef?.remainingTime ?? state.timeLimit }}s
+				</span>
 			</div>
 
 			<!-- Hidden functional timer -->

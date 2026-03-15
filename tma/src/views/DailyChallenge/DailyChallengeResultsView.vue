@@ -209,7 +209,7 @@ onMounted(async () => {
 		<div v-else class="flex flex-col">
 			<!-- Hero: Purple gradient card -->
 			<div
-				class="bg-gradient-to-b from-primary-600 to-primary-800 rounded-(--ui-radius) px-5 pt-8 pb-6 text-white text-center"
+				class="bg-gradient-to-b from-primary-600 to-primary-800 rounded-(--ui-radius) px-4 pt-8 pb-6 text-white text-center"
 			>
 				<!-- Performance emoji + label -->
 				<div class="text-5xl mb-2">{{ performanceLevel.emoji }}</div>

@@ -51,7 +51,7 @@ const handleClick = () => {
 			<div class="flex-1 min-w-0">
 				<div class="flex items-center gap-2">
 					<h4 class="font-bold text-base text-(--ui-text-highlighted)">{{ title }}</h4>
-					<UBadge v-if="badge" :color="badgeColor" size="xs" variant="subtle">
+					<UBadge v-if="badge" :color="badgeColor" size="sm" variant="subtle">
 						{{ badge }}
 					</UBadge>
 				</div>

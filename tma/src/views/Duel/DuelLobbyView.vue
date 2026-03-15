@@ -279,9 +279,9 @@ onMounted(async () => {
 </script>
 
 <template>
-	<div class="min-h-screen bg-(--ui-bg) p-4">
+	<div class="mx-auto max-w-[800px] pb-4">
 		<!-- Header -->
-		<div class="flex items-center justify-between mb-6">
+		<div class="flex items-center justify-between mb-5">
 			<button class="p-2 -ml-2" @click="navigateToHome">
 				<UIcon name="i-heroicons-arrow-left" class="size-6" />
 			</button>

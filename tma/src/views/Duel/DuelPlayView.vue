@@ -155,9 +155,14 @@ const handleTimeout = () => {
 	}
 }
 
-const isCorrectAnswer = (answerId: string) => {
-	if (!lastRoundResult.value) return false
-	return answerId === lastRoundResult.value.correctAnswerId
+const isCorrectAnswer = (answerId: string): boolean | null => {
+	if (!showFeedback.value || !lastRoundResult.value) return null
+	// Correct answer → green
+	if (answerId === lastRoundResult.value.correctAnswerId) return true
+	// Selected wrong answer → red
+	if (answerId === selectedAnswerId.value) return false
+	// Other answers → dimmed (null)
+	return null
 }
 
 // ===========================
@@ -184,7 +189,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<div class="min-h-screen bg-(--ui-bg) flex flex-col">
+	<div class="min-h-screen mx-auto max-w-[800px] flex flex-col">
 		<!-- Connection Status -->
 		<div
 			v-if="!isConnected || isReconnecting"
@@ -323,78 +328,67 @@ onUnmounted(() => {
 
 		<!-- Playing -->
 		<template v-else-if="isPlaying && currentQuestion">
-			<!-- Header: Players & Scores + Timer -->
-			<div class="bg-(--ui-bg-elevated) border-b border-(--ui-border) shadow-md">
-				<!-- Row 1: round counter left, title center, menu right -->
-				<div class="flex items-center justify-between px-4 pt-3 pb-1">
-					<span
-						class="text-2xl font-black text-(--ui-text-highlighted) tabular-nums leading-none"
-					>
-						{{ currentRound
-						}}<span class="text-sm font-normal text-(--ui-text-muted)"
-							>/{{ totalRounds }}</span
-						>
+			<!-- Header -->
+			<div class="px-4 pt-2 pb-3 space-y-3">
+				<!-- Row 1: round + title + menu -->
+				<div class="flex items-center justify-between">
+					<span class="text-xl font-bold text-(--ui-text-highlighted) tabular-nums">
+						{{ currentRound }}/{{ totalRounds }}
 					</span>
-					<span class="text-base font-bold text-(--ui-text-highlighted)">{{
+					<span class="text-sm font-semibold text-(--ui-text-muted)">{{
 						t('duel.title')
 					}}</span>
-					<UButton
-						size="xs"
-						color="neutral"
-						variant="ghost"
-						icon="i-heroicons-ellipsis-horizontal"
+					<UIcon
+						name="i-heroicons-ellipsis-horizontal-circle"
+						class="size-6 text-(--ui-text-dimmed)"
 					/>
 				</div>
 
 				<!-- Players row -->
-				<div class="flex items-center px-4 pb-2 gap-3">
-					<!-- Me — left -->
-					<div class="flex items-center gap-2.5 flex-1 min-w-0">
+				<div class="flex items-center gap-2">
+					<!-- Me -->
+					<div class="flex items-center gap-2 flex-1 min-w-0">
 						<UAvatar
 							:src="currentUser?.avatarUrl"
 							:alt="currentUser?.username"
-							size="md"
-							class="ring-2 ring-primary/40 shrink-0"
+							size="sm"
+							class="ring-2 ring-primary shrink-0"
 						/>
 						<div class="min-w-0">
-							<p
-								class="text-[11px] font-semibold uppercase tracking-wide text-(--ui-text-muted) truncate"
-							>
+							<p class="text-xs text-(--ui-text-muted) truncate">
 								{{ t('duel.you') }}
 							</p>
-							<p class="text-3xl font-black text-primary tabular-nums leading-none">
+							<p class="text-xl font-black text-primary tabular-nums leading-tight">
 								{{ myScore }}
 							</p>
 						</div>
 					</div>
 
-					<!-- VS divider -->
-					<span class="text-xs font-bold text-(--ui-text-dimmed) shrink-0">VS</span>
+					<!-- VS -->
+					<span class="text-[10px] font-bold text-(--ui-text-dimmed) px-1">VS</span>
 
-					<!-- Opponent — right (mirrored) -->
-					<div class="flex items-center gap-2.5 flex-row-reverse flex-1 min-w-0">
+					<!-- Opponent -->
+					<div class="flex items-center gap-2 flex-row-reverse flex-1 min-w-0">
 						<div class="relative shrink-0">
 							<UAvatar
 								:src="opponent?.avatar"
 								:alt="opponent?.username"
-								size="md"
-								class="ring-2 ring-orange-500/40"
+								size="sm"
+								class="ring-2 ring-orange-500"
 							/>
 							<div
 								v-if="opponentAnswered"
-								class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center shadow"
+								class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full flex items-center justify-center"
 							>
-								<UIcon name="i-heroicons-check" class="size-3 text-white" />
+								<UIcon name="i-heroicons-check" class="size-2.5 text-white" />
 							</div>
 						</div>
 						<div class="text-right min-w-0">
-							<p
-								class="text-[11px] font-semibold uppercase tracking-wide text-(--ui-text-muted) truncate"
-							>
+							<p class="text-xs text-(--ui-text-muted) truncate">
 								{{ opponent?.username }}
 							</p>
 							<p
-								class="text-3xl font-black text-orange-500 tabular-nums leading-none"
+								class="text-xl font-black text-orange-500 tabular-nums leading-tight"
 							>
 								{{ opponentScore }}
 							</p>
@@ -402,8 +396,8 @@ onUnmounted(() => {
 					</div>
 				</div>
 
-				<!-- Row 2: thick gradient progress bar with seconds inside -->
-				<div class="px-4 pb-3">
+				<!-- Timer bar -->
+				<div class="relative h-6 rounded-full bg-(--ui-bg-accented) overflow-hidden">
 					<GameTimer
 						ref="timerRef"
 						:initial-time="10"
@@ -414,17 +408,20 @@ onUnmounted(() => {
 						size="lg"
 						class="sr-only"
 					/>
-					<div class="relative h-7 rounded-full bg-(--ui-bg-accented) overflow-hidden">
-						<div
-							class="absolute inset-0 bg-gradient-to-r from-primary-500 to-primary-700 rounded-full transition-all duration-1000"
-							:style="{ width: `${(countdownSeconds / 10) * 100}%` }"
-						/>
-						<span
-							class="absolute inset-0 flex items-center justify-center text-sm font-bold text-white drop-shadow"
-						>
-							{{ countdownSeconds }}s
-						</span>
-					</div>
+					<div
+						class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-yellow-400 via-primary-500 to-primary-600 transition-all duration-1000"
+						:style="{ width: `${((timerRef?.remainingTime ?? 10) / 10) * 100}%` }"
+					/>
+					<span
+						class="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums drop-shadow"
+						:class="
+							timerRef?.remainingTime !== undefined && timerRef.remainingTime <= 3
+								? 'text-red-400'
+								: 'text-white'
+						"
+					>
+						{{ timerRef?.remainingTime ?? 10 }}s
+					</span>
 				</div>
 			</div>
 

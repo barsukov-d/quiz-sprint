@@ -1,5 +1,6 @@
 export type { GetUserByUsernameQueryKey } from "./useGetUserByUsername.ts";
 export type { GetUserIdQueryKey } from "./useGetUserId.ts";
+export type { GetUserIdStatsQueryKey } from "./useGetUserIdStats.ts";
 export type { GetUsersQueryKey } from "./useGetUsers.ts";
 export type { PostUserRegisterMutationKey } from "./usePostUserRegister.ts";
 export type { PutUserIdMutationKey } from "./usePutUserId.ts";
@@ -11,6 +12,10 @@ export { getUserIdQueryKey } from "./useGetUserId.ts";
 export { getUserId } from "./useGetUserId.ts";
 export { getUserIdQueryOptions } from "./useGetUserId.ts";
 export { useGetUserId } from "./useGetUserId.ts";
+export { getUserIdStatsQueryKey } from "./useGetUserIdStats.ts";
+export { getUserIdStats } from "./useGetUserIdStats.ts";
+export { getUserIdStatsQueryOptions } from "./useGetUserIdStats.ts";
+export { useGetUserIdStats } from "./useGetUserIdStats.ts";
 export { getUsersQueryKey } from "./useGetUsers.ts";
 export { getUsers } from "./useGetUsers.ts";
 export { getUsersQueryOptions } from "./useGetUsers.ts";

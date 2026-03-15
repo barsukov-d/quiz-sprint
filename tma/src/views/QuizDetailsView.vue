@@ -91,7 +91,7 @@ const formatTime = (seconds: number) => {
 			<!-- Scrollable content -->
 			<div class="flex-1 overflow-y-auto px-4 pb-32">
 				<!-- Title -->
-				<h1 class="text-2xl font-bold text-(--ui-text-highlighted) mb-4">
+				<h1 class="text-xl font-bold text-(--ui-text-highlighted) mb-4">
 					{{ quizData.data.quiz.title }}
 				</h1>
 

@@ -106,7 +106,7 @@ const goHome = () => {
 			</div>
 
 			<!-- Podium (single player — show as 1st place) -->
-			<div class="flex justify-center items-end gap-6 px-8 pt-6 pb-2">
+			<div class="flex justify-center items-end gap-6 px-4 pt-6 pb-2">
 				<!-- 1st place -->
 				<div class="flex flex-col items-center gap-2">
 					<div

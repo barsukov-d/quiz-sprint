@@ -226,12 +226,13 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 	// User use cases (only if database is available)
 	var (
-		registerUserUC       *appUser.RegisterUserUseCase
-		getUserUC            *appUser.GetUserUseCase
-		updateUserProfileUC  *appUser.UpdateUserProfileUseCase
-		updateUserLanguageUC *appUser.UpdateUserLanguageUseCase
-		listUsersUC          *appUser.ListUsersUseCase
-		getUserByUsernameUC  *appUser.GetUserByTelegramUsernameUseCase
+		registerUserUC        *appUser.RegisterUserUseCase
+		getUserUC             *appUser.GetUserUseCase
+		updateUserProfileUC   *appUser.UpdateUserProfileUseCase
+		updateUserLanguageUC  *appUser.UpdateUserLanguageUseCase
+		listUsersUC           *appUser.ListUsersUseCase
+		getUserByUsernameUC   *appUser.GetUserByTelegramUsernameUseCase
+		getUserProfileStatsUC *appUser.GetUserProfileStatsUseCase
 	)
 
 	if userRepo != nil {
@@ -241,6 +242,8 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		updateUserLanguageUC = appUser.NewUpdateUserLanguageUseCase(userRepo)
 		listUsersUC = appUser.NewListUsersUseCase(userRepo)
 		getUserByUsernameUC = appUser.NewGetUserByTelegramUsernameUseCase(userRepo)
+		profileStatsRepo := postgres.NewProfileStatsRepository(db)
+		getUserProfileStatsUC = appUser.NewGetUserProfileStatsUseCase(profileStatsRepo)
 	}
 
 	// Marathon use cases (only if database is available)
@@ -610,6 +613,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			updateUserLanguageUC,
 			listUsersUC,
 			getUserByUsernameUC,
+			getUserProfileStatsUC,
 		)
 	}
 
@@ -737,6 +741,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 		// Public routes (for now - can add auth later)
 		user.Get("/:id", userHandler.GetUser)
+		user.Get("/:id/stats", userHandler.GetUserProfileStats)
 		user.Get("/:userId/sessions/active", quizHandler.GetUserActiveSessions) // Active sessions
 		user.Put("/:id", userHandler.UpdateUserProfile)
 		user.Get("/by-username/:username", userHandler.GetUserByTelegramUsername)

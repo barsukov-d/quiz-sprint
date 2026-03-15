@@ -34,7 +34,7 @@ const handleBack = () => {
 </script>
 
 <template>
-	<div class="min-h-screen mx-auto max-w-[800px] px-4 pb-8">
+	<div class="mx-auto max-w-[800px] pb-4">
 		<!-- Header -->
 		<div class="flex items-center gap-3 pt-4 pb-6">
 			<UButton

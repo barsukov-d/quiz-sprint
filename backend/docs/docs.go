@@ -1012,6 +1012,52 @@ const docTemplate = `{
                 }
             }
         },
+        "/duel/challenge/prepare-share": {
+            "post": {
+                "description": "Creates a Telegram prepared inline message with an \"Accept Challenge\" button. Use the returned preparedMessageId with the TMA SDK shareMessage() call (Mini Apps v8.0+).",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Prepare inline message for sharing challenge",
+                "parameters": [
+                    {
+                        "description": "Prepare share request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.PrepareShareRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Prepared message ID",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.PrepareShareResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/duel/challenge/{challengeId}/respond": {
             "post": {
                 "description": "Accept or decline a friend challenge",
@@ -1358,7 +1404,7 @@ const docTemplate = `{
                     "200": {
                         "description": "Leaderboard",
                         "schema": {
-                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetLeaderboardResponse"
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetDuelLeaderboardResponse"
                         }
                     },
                     "400": {
@@ -2787,6 +2833,53 @@ const docTemplate = `{
                 }
             }
         },
+        "/user/{id}/stats": {
+            "get": {
+                "description": "Aggregated statistics across all game modes (quiz, daily challenge, marathon, duel)",
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "user"
+                ],
+                "summary": "Get user profile statistics",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "User ID (Telegram ID)",
+                        "name": "id",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "User profile statistics",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetUserProfileStatsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid user ID",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "User not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/user/{userId}/sessions/active": {
             "get": {
                 "description": "Get all active (not completed) quiz sessions for a user. Used for \"Continue Playing\" feature.",
@@ -3692,6 +3785,44 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.DuelLeaderboardEntryDTO": {
+            "type": "object",
+            "properties": {
+                "avatar": {
+                    "type": "string"
+                },
+                "draws": {
+                    "type": "integer"
+                },
+                "league": {
+                    "type": "string"
+                },
+                "leagueIcon": {
+                    "type": "string"
+                },
+                "losses": {
+                    "type": "integer"
+                },
+                "mmr": {
+                    "type": "integer"
+                },
+                "playerId": {
+                    "type": "string"
+                },
+                "rank": {
+                    "type": "integer"
+                },
+                "username": {
+                    "type": "string"
+                },
+                "winRate": {
+                    "type": "number"
+                },
+                "wins": {
+                    "type": "integer"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.DuelPlayerRatingDTO": {
             "type": "object",
             "properties": {
@@ -3724,6 +3855,9 @@ const docTemplate = `{
                 },
                 "playerId": {
                     "type": "string"
+                },
+                "seasonDraws": {
+                    "type": "integer"
                 },
                 "seasonLosses": {
                     "type": "integer"
@@ -4021,6 +4155,34 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.GetDailyStatusData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetDuelLeaderboardResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "properties": {
+                        "endsAt": {
+                            "type": "integer"
+                        },
+                        "entries": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.DuelLeaderboardEntryDTO"
+                            }
+                        },
+                        "playerRank": {
+                            "type": "integer"
+                        },
+                        "seasonId": {
+                            "type": "string"
+                        },
+                        "type": {
+                            "type": "string"
+                        }
+                    }
                 }
             }
         },
@@ -4398,6 +4560,17 @@ const docTemplate = `{
                     "items": {
                         "$ref": "#/definitions/internal_infrastructure_http_handlers.SessionSummaryDTO"
                     }
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetUserProfileStatsResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.UserProfileStatsDTO"
                 }
             }
         },
@@ -4899,6 +5072,41 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.OpenChestData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.PrepareShareRequest": {
+            "type": "object",
+            "required": [
+                "challengeLink",
+                "playerId"
+            ],
+            "properties": {
+                "challengeLink": {
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.PrepareShareResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "expiresAt",
+                        "preparedMessageId"
+                    ],
+                    "properties": {
+                        "expiresAt": {
+                            "type": "integer"
+                        },
+                        "preparedMessageId": {
+                            "type": "string"
+                        }
+                    }
                 }
             }
         },
@@ -5936,6 +6144,76 @@ const docTemplate = `{
                 },
                 "username": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.UserProfileStatsDTO": {
+            "type": "object",
+            "required": [
+                "averageScore",
+                "totalGamesCompleted",
+                "totalPoints"
+            ],
+            "properties": {
+                "averageScore": {
+                    "type": "integer",
+                    "example": 76
+                },
+                "currentStreak": {
+                    "type": "integer",
+                    "example": 7
+                },
+                "duelDivision": {
+                    "type": "integer",
+                    "example": 2
+                },
+                "duelLeague": {
+                    "type": "string",
+                    "example": "Silver"
+                },
+                "duelLeagueIcon": {
+                    "type": "string",
+                    "example": "🥈"
+                },
+                "duelLeagueLabel": {
+                    "type": "string",
+                    "example": "Silver II"
+                },
+                "duelLosses": {
+                    "type": "integer",
+                    "example": 8
+                },
+                "duelMmr": {
+                    "type": "integer",
+                    "example": 1250
+                },
+                "duelWins": {
+                    "type": "integer",
+                    "example": 15
+                },
+                "longestStreak": {
+                    "type": "integer",
+                    "example": 14
+                },
+                "marathonBestScore": {
+                    "type": "integer",
+                    "example": 847
+                },
+                "marathonBestStreak": {
+                    "type": "integer",
+                    "example": 23
+                },
+                "marathonCategory": {
+                    "type": "string",
+                    "example": "Science"
+                },
+                "totalGamesCompleted": {
+                    "type": "integer",
+                    "example": 42
+                },
+                "totalPoints": {
+                    "type": "integer",
+                    "example": 12850
                 }
             }
         }

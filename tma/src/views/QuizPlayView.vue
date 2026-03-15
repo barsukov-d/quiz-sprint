@@ -316,7 +316,7 @@ const resetQuestionState = () => {
 </script>
 
 <template>
-	<div class="min-h-screen bg-(--ui-bg) flex flex-col">
+	<div class="min-h-screen mx-auto max-w-[800px] flex flex-col">
 		<!-- Loading -->
 		<div
 			v-if="isInitializing || isStarting || isResuming"
@@ -354,7 +354,7 @@ const resetQuestionState = () => {
 					</div>
 
 					<!-- Question review content -->
-					<div class="flex-1 bg-(--ui-bg) px-5 py-6 space-y-5">
+					<div class="flex-1 bg-(--ui-bg) px-4 py-6 space-y-5">
 						<!-- Question text -->
 						<p class="text-(--ui-text-highlighted) text-xl font-bold text-center">
 							{{ currentQuestion.text }}
@@ -385,7 +385,7 @@ const resetQuestionState = () => {
 					</div>
 
 					<!-- Next button -->
-					<div class="px-5 pb-8 bg-(--ui-bg)">
+					<div class="px-4 pb-8 bg-(--ui-bg)">
 						<UProgress animation="carousel" size="xs" class="mb-4" />
 						<p class="text-center text-(--ui-text-dimmed) text-sm mb-3">
 							{{ t('quiz.loadingNext') }}
@@ -411,7 +411,7 @@ const resetQuestionState = () => {
 					</div>
 
 					<!-- Review content -->
-					<div class="flex-1 bg-(--ui-bg) px-5 py-6 space-y-5">
+					<div class="flex-1 bg-(--ui-bg) px-4 py-6 space-y-5">
 						<!-- Question text -->
 						<p class="text-(--ui-text-highlighted) text-xl font-bold text-center">
 							{{ currentQuestion.text }}
@@ -457,7 +457,7 @@ const resetQuestionState = () => {
 					</div>
 
 					<!-- Next indicator -->
-					<div class="px-5 pb-8 bg-(--ui-bg)">
+					<div class="px-4 pb-8 bg-(--ui-bg)">
 						<UProgress animation="carousel" size="xs" class="mb-4" />
 						<p class="text-center text-(--ui-text-dimmed) text-sm mb-3">
 							{{ t('quiz.loadingNext') }}
@@ -468,40 +468,40 @@ const resetQuestionState = () => {
 
 			<!-- Question UI -->
 			<template v-else>
-				<!-- Header -->
-				<div class="flex items-center justify-between px-5 pt-14 pb-3">
-					<span class="text-(--ui-text-highlighted) text-base font-bold">
+				<!-- Header: counter + title + menu -->
+				<div class="flex items-center justify-between px-4 pt-14 pb-3">
+					<span class="text-xl font-bold text-(--ui-text-highlighted) tabular-nums">
 						{{ currentQuestionIndex }}/{{ totalQuestions }}
 					</span>
-					<span class="text-(--ui-text-highlighted) text-base font-bold">Quiz</span>
-					<button
-						class="size-9 flex items-center justify-center rounded-full bg-(--ui-bg-elevated)"
-					>
-						<UIcon
-							name="i-heroicons-ellipsis-horizontal"
-							class="size-5 text-(--ui-text)"
-						/>
-					</button>
+					<span class="text-sm font-semibold text-(--ui-text-muted)">Quiz</span>
+					<UIcon
+						name="i-heroicons-ellipsis-horizontal-circle"
+						class="size-6 text-(--ui-text-dimmed)"
+					/>
 				</div>
 
-				<!-- Timer: purple gradient progress bar with seconds overlay -->
-				<div class="px-5 pb-4">
-					<div class="relative h-6 rounded-full overflow-hidden bg-(--ui-bg-elevated)">
+				<!-- Timer bar -->
+				<div class="px-4 pb-4">
+					<div class="relative h-6 rounded-full overflow-hidden bg-(--ui-bg-accented)">
 						<div
-							class="absolute inset-y-0 left-0 rounded-full transition-all duration-1000"
-							style="background: linear-gradient(90deg, #7c3aed 0%, #6d28d9 100%)"
+							class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-yellow-400 via-primary-500 to-primary-600 transition-all duration-1000"
 							:style="{ width: `${(timeRemaining / timeLimitPerQuestion) * 100}%` }"
 						/>
 						<span
-							class="absolute inset-0 flex items-center justify-end pr-3 text-white text-xs font-bold"
+							class="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums drop-shadow"
+							:class="
+								timeRemaining <= timeLimitPerQuestion * 0.25
+									? 'text-red-400'
+									: 'text-white'
+							"
 						>
-							{{ timeRemaining }}
+							{{ timeRemaining }}s
 						</span>
 					</div>
 				</div>
 
 				<!-- Question card -->
-				<div class="px-5 pb-5">
+				<div class="px-4 pb-5">
 					<div class="bg-(--ui-bg-elevated) rounded-2xl p-6 text-center">
 						<p class="text-(--ui-text-highlighted) text-xl font-bold leading-snug">
 							{{ currentQuestion.text }}
@@ -510,7 +510,7 @@ const resetQuestionState = () => {
 				</div>
 
 				<!-- Answer buttons (colored bars) -->
-				<div class="px-5 flex flex-col gap-3 pb-6">
+				<div class="px-4 flex flex-col gap-3 pb-6">
 					<AnswerButton
 						v-for="(answer, index) in currentQuestion.answers"
 						:key="answer.id"
@@ -524,7 +524,7 @@ const resetQuestionState = () => {
 				</div>
 
 				<!-- Submit button (shown when answer selected, before submission) -->
-				<div v-if="selectedAnswerId && !isAnswerSubmitted" class="px-5 pb-6">
+				<div v-if="selectedAnswerId && !isAnswerSubmitted" class="px-4 pb-6">
 					<UButton
 						:loading="isSubmitting"
 						size="xl"

@@ -1,5 +1,6 @@
 export type { GetUserByUsernamePathParams, GetUserByUsername200, GetUserByUsername400, GetUserByUsername404, GetUserByUsername500, GetUserByUsernameQueryResponse, GetUserByUsernameQuery } from "./GetUserByUsername.ts";
 export type { GetUserIdPathParams, GetUserId200, GetUserId400, GetUserId404, GetUserId500, GetUserIdQueryResponse, GetUserIdQuery } from "./GetUserId.ts";
+export type { GetUserIdStatsPathParams, GetUserIdStats200, GetUserIdStats400, GetUserIdStats404, GetUserIdStats500, GetUserIdStatsQueryResponse, GetUserIdStatsQuery } from "./GetUserIdStats.ts";
 export type { GetUsersQueryParams, GetUsers200, GetUsers500, GetUsersQueryResponse, GetUsersQuery } from "./GetUsers.ts";
 export type { PostUserRegister200, PostUserRegister401, PostUserRegister500, PostUserRegisterMutationResponse, PostUserRegisterMutation } from "./PostUserRegister.ts";
 export type { PutUserIdPathParams, PutUserId200, PutUserId400, PutUserId404, PutUserId500, PutUserIdMutationRequest, PutUserIdMutationResponse, PutUserIdMutation } from "./PutUserId.ts";
