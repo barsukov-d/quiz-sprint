@@ -144,6 +144,7 @@ func (uc *SubmitMarathonAnswerUseCase) Execute(input SubmitMarathonAnswerInput) 
 			IsNewPersonalBest: result.GameOverData.IsNewRecord,
 			PreviousRecord:    game.PersonalBestScore(),
 			ContinueOffer:     ToContinueOfferDTO(result.GameOverData.ContinueOffer),
+			Suspicious:        result.GameOverData.FinalScore > 200,
 		}
 	} else if !result.IsGameOver {
 		// Game continues - get next question

@@ -162,6 +162,7 @@ type GameResultsDTO struct {
 	RankLabel         string                  `json:"rankLabel"` // e.g. "#847 из 12,847"
 	ChestLabel        string                  `json:"chestLabel"` // e.g. "Золотой сундук"
 	ShareText         string                  `json:"shareText"` // Pre-formatted share string
+	SuspiciousScore   bool                    `json:"suspiciousScore"` // Anti-cheat: true if total time < 1s/question avg
 }
 
 // ========================================

@@ -257,11 +257,19 @@ func BuildGameResultsDTO(
 
 	shareText := fmt.Sprintf("Я набрал %d очков в Daily Challenge! Мой ранг: %s", finalScore, rankLabel)
 
+	// Anti-cheat: flag if total game time < 1 second per question on average
+	totalQuestions := session.Quiz().QuestionsCount()
+	var totalGameTimeMs int64
+	for _, answerData := range session.GetAllAnswers() {
+		totalGameTimeMs += answerData.TimeTaken()
+	}
+	suspiciousScore := totalQuestions > 0 && totalGameTimeMs < int64(totalQuestions)*1000
+
 	return GameResultsDTO{
 		BaseScore:         session.BaseScore().Value(),
 		FinalScore:        finalScore,
 		CorrectAnswers:    game.GetCorrectAnswersCount(),
-		TotalQuestions:    session.Quiz().QuestionsCount(),
+		TotalQuestions:    totalQuestions,
 		StreakBonus:       bonusPercent,
 		CurrentStreak:     streak.CurrentStreak(),
 		Rank:              rank,
@@ -273,5 +281,6 @@ func BuildGameResultsDTO(
 		RankLabel:         rankLabel,
 		ChestLabel:        chestLabel,
 		ShareText:         shareText,
+		SuspiciousScore:   suspiciousScore,
 	}
 }

@@ -154,6 +154,7 @@ type GameOverResultDTO struct {
 	IsNewPersonalBest bool             `json:"isNewPersonalBest"`
 	PreviousRecord    *int             `json:"previousRecord,omitempty"`
 	ContinueOffer     *ContinueOfferDTO `json:"continueOffer,omitempty"`
+	Suspicious        bool             `json:"suspicious"` // Anti-cheat: true if score > 200
 }
 
 // ========================================

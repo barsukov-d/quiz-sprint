@@ -619,6 +619,7 @@ func (uc *GetPlayerStreakUseCase) Execute(input GetPlayerStreakInput) (GetPlayer
 type OpenChestUseCase struct {
 	dailyGameRepo    daily_challenge.DailyGameRepository
 	inventoryService InventoryService
+	premiumService   PremiumService // optional, nil-guarded
 }
 
 func NewOpenChestUseCase(
@@ -675,12 +676,18 @@ func (uc *OpenChestUseCase) Execute(input OpenChestInput) (OpenChestOutput, erro
 		}
 	}
 
-	// 6. Build output (idempotent - just returns stored data)
+	// 6. Check premium status (nil-guarded)
+	premiumApplied := false
+	if uc.premiumService != nil {
+		premiumApplied, _ = uc.premiumService.IsPremium(input.PlayerID)
+	}
+
+	// 7. Build output (idempotent - just returns stored data)
 	return OpenChestOutput{
 		ChestType:      chestReward.ChestType().String(),
 		Rewards:        ToChestRewardDTO(*chestReward),
 		StreakBonus:    game.Streak().GetBonus(),
-		PremiumApplied: false, // TODO: check if player has premium
+		PremiumApplied: premiumApplied,
 	}, nil
 }
 
@@ -689,12 +696,13 @@ func (uc *OpenChestUseCase) Execute(input OpenChestInput) (OpenChestOutput, erro
 // ========================================
 
 type RetryChallengeUseCase struct {
-	dailyGameRepo       daily_challenge.DailyGameRepository
-	dailyQuizRepo       daily_challenge.DailyQuizRepository
-	questionRepo        quiz.QuestionRepository
-	eventBus            EventBus
-	inventoryService    InventoryService
-	adVerificationSvc   AdVerificationService
+	dailyGameRepo     daily_challenge.DailyGameRepository
+	dailyQuizRepo     daily_challenge.DailyQuizRepository
+	questionRepo      quiz.QuestionRepository
+	eventBus          EventBus
+	inventoryService  InventoryService
+	adVerificationSvc AdVerificationService
+	premiumService    PremiumService // optional, nil-guarded
 }
 
 func NewRetryChallengeUseCase(
@@ -746,9 +754,12 @@ func (uc *RetryChallengeUseCase) Execute(input RetryChallengeInput) (RetryChalle
 		return RetryChallengeOutput{}, err
 	}
 
-	// TODO: check premium status - for now limit to 2 attempts (1 free + 1 retry)
+	// Check premium status (nil-guarded); premium players get unlimited retries
 	isPremium := false
-	maxAttempts := 2
+	if uc.premiumService != nil {
+		isPremium, _ = uc.premiumService.IsPremium(input.PlayerID)
+	}
+	maxAttempts := 2 // 1 free + 1 retry for free users
 	if isPremium {
 		maxAttempts = 999 // Unlimited for premium
 	}

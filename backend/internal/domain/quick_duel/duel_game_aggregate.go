@@ -143,7 +143,15 @@ func (dg *DuelGame) SubmitAnswer(
 		return nil, ErrPlayerNotInGame
 	}
 
-	// 3. Anti-cheat: validate answer time
+	// 3. Anti-cheat: validate and clamp answer time
+	if timeTaken < 0 {
+		return nil, ErrInvalidAnswerTime
+	}
+	const maxTimeTakenMs = int64(TimePerQuestionSec * 1000)       // 10000ms
+	const networkToleranceMs = int64(500)                          // 500ms tolerance
+	if timeTaken > maxTimeTakenMs+networkToleranceMs {
+		timeTaken = maxTimeTakenMs // clamp to max, no speed bonus
+	}
 	if timeTaken < MinAnswerTimeMs {
 		return nil, ErrInvalidAnswerTime
 	}
