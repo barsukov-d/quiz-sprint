@@ -1,4 +1,7 @@
 export default {
+	common: {
+		continue: 'Продолжить',
+	},
 	app: {
 		loading: 'Загрузка...',
 		error: 'Ошибка',
@@ -236,6 +239,12 @@ export default {
 		scorePercent: '({percent}%)',
 		newStreakRecord: 'Новый рекорд серии!',
 		streakRecordDesc: 'Вы достигли серии в {days} дней!',
+		woodenChest: 'Деревянный сундук',
+		silverChest: 'Серебряный сундук',
+		goldenChest: 'Золотой сундук',
+		openChest: 'Открыть сундук',
+		yourReward: 'Ваша награда',
+		opening: 'Открываем',
 		yourRewards: 'Ваши награды',
 		coins: 'Монеты',
 		pvpTickets: 'PVP билеты',
