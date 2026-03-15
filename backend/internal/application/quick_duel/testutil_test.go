@@ -780,30 +780,30 @@ func (f *duelFixture) newGetDuelStatusUC() *GetDuelStatusUseCase {
 
 func (f *duelFixture) newJoinQueueUC() *JoinQueueUseCase {
 	return NewJoinQueueUseCase(
-		f.matchmakingQueue, f.playerRatingRepo, f.duelGameRepo, f.seasonRepo,
+		f.matchmakingQueue, f.playerRatingRepo, f.duelGameRepo, f.seasonRepo, nil,
 	)
 }
 
 func (f *duelFixture) newLeaveQueueUC() *LeaveQueueUseCase {
-	return NewLeaveQueueUseCase(f.matchmakingQueue)
+	return NewLeaveQueueUseCase(f.matchmakingQueue, nil)
 }
 
 func (f *duelFixture) newSendChallengeUC() *SendChallengeUseCase {
-	return NewSendChallengeUseCase(f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot")
+	return NewSendChallengeUseCase(f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot", nil)
 }
 
 func (f *duelFixture) newRespondChallengeUC() *RespondChallengeUseCase {
 	return NewRespondChallengeUseCase(
 		f.challengeRepo, f.duelGameRepo, f.playerRatingRepo,
 		f.seasonRepo, f.questionRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot",
-		&mockTxManager{},
+		&mockTxManager{}, nil,
 	)
 }
 
 func (f *duelFixture) newAcceptByLinkCodeUC() *AcceptByLinkCodeUseCase {
 	return NewAcceptByLinkCodeUseCase(
 		f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot",
-		&mockTxManager{},
+		&mockTxManager{}, nil,
 	)
 }
 

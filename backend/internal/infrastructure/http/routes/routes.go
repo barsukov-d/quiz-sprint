@@ -235,8 +235,13 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		getUserProfileStatsUC *appUser.GetUserProfileStatsUseCase
 	)
 
+	var inventoryService appUser.InventoryService
 	if userRepo != nil {
-		registerUserUC = appUser.NewRegisterUserUseCase(userRepo)
+		inventoryRepo := postgres.NewInventoryRepository(db)
+		txRepo := postgres.NewTransactionRepository(db)
+		inventoryService = appUser.NewInventoryService(inventoryRepo, txRepo)
+
+		registerUserUC = appUser.NewRegisterUserUseCase(userRepo, inventoryService)
 		getUserUC = appUser.NewGetUserUseCase(userRepo)
 		updateUserProfileUC = appUser.NewUpdateUserProfileUseCase(userRepo)
 		updateUserLanguageUC = appUser.NewUpdateUserLanguageUseCase(userRepo)
@@ -282,6 +287,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			marathonRepo,
 			questionRepo,
 			marathonEventBus,
+			inventoryService,
 		)
 		abandonMarathonUC = appMarathon.NewAbandonMarathonUseCase(
 			marathonRepo,
@@ -354,12 +360,14 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		)
 		openChestUC = appDaily.NewOpenChestUseCase(
 			dailyGameRepo,
+			inventoryService,
 		)
 		retryUC = appDaily.NewRetryChallengeUseCase(
 			dailyGameRepo,
 			dailyQuizRepo,
 			questionRepo,
 			dailyChallengeEventBus,
+			inventoryService,
 		)
 	}
 
@@ -408,9 +416,11 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				playerRatingRepo,
 				duelGameRepo,
 				seasonRepo,
+				inventoryService,
 			)
 			leaveQueueUC = appDuel.NewLeaveQueueUseCase(
 				matchmakingQueue,
+				inventoryService,
 			)
 		}
 		sendChallengeUC = appDuel.NewSendChallengeUseCase(
@@ -420,6 +430,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			telegramNotifier,
 			duelEventBus,
 			botUsername,
+			inventoryService,
 		)
 		acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
 			challengeRepo,
@@ -429,6 +440,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			duelEventBus,
 			botUsername,
 			txManager,
+			inventoryService,
 		)
 		// Build duel question adapter if questionRepo is available
 		if questionRepo != nil {
@@ -444,6 +456,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				duelEventBus,
 				botUsername,
 				txManager,
+				inventoryService,
 			)
 			startGameUC = appDuel.NewStartGameUseCase(
 				duelGameRepo,

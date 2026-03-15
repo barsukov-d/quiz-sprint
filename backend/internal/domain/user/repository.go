@@ -22,3 +22,13 @@ type UserRepository interface {
 	// Exists checks if a user exists by ID
 	Exists(id UserID) (bool, error)
 }
+
+type InventoryRepository interface {
+	FindByPlayerID(playerID UserID) (*Inventory, error)
+	Save(inventory *Inventory) error
+}
+
+type TransactionRepository interface {
+	Save(tx *TransactionLog) error
+	FindByPlayer(playerID UserID, limit int) ([]TransactionLog, error)
+}

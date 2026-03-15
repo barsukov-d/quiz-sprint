@@ -10,13 +10,15 @@ import (
 // This is typically called when a user first opens the Telegram Mini App
 // It creates a new user or returns an existing one (idempotent)
 type RegisterUserUseCase struct {
-	userRepo user.UserRepository
+	userRepo         user.UserRepository
+	inventoryService InventoryService
 }
 
 // NewRegisterUserUseCase creates a new RegisterUserUseCase
-func NewRegisterUserUseCase(userRepo user.UserRepository) *RegisterUserUseCase {
+func NewRegisterUserUseCase(userRepo user.UserRepository, inventoryService InventoryService) *RegisterUserUseCase {
 	return &RegisterUserUseCase{
-		userRepo: userRepo,
+		userRepo:         userRepo,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -88,7 +90,14 @@ func (uc *RegisterUserUseCase) Execute(input RegisterUserInput) (RegisterUserOut
 		return RegisterUserOutput{}, err
 	}
 
-	// 5. Return DTO
+	// 5. Create inventory with welcome bonus
+	if uc.inventoryService != nil {
+		_ = uc.inventoryService.Credit(input.UserID, "welcome_bonus", map[string]int{
+			"pvp_tickets": 3,
+		})
+	}
+
+	// 6. Return DTO
 	return RegisterUserOutput{
 		User:      ToUserDTO(newUser),
 		IsNewUser: true,

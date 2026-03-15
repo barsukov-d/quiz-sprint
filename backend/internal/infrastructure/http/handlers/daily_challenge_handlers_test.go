@@ -373,8 +373,8 @@ func setupHandlerFixture(t *testing.T) *handlerFixture {
 	submitUC := appDaily.NewSubmitDailyAnswerUseCase(dailyGameRepo, eventBus, leaderboardUC, chestCalc)
 	statusUC := appDaily.NewGetDailyGameStatusUseCase(dailyQuizRepo, dailyGameRepo, leaderboardUC)
 	streakUC := appDaily.NewGetPlayerStreakUseCase(dailyGameRepo)
-	openChestUC := appDaily.NewOpenChestUseCase(dailyGameRepo)
-	retryUC := appDaily.NewRetryChallengeUseCase(dailyGameRepo, dailyQuizRepo, questionRepo, eventBus)
+	openChestUC := appDaily.NewOpenChestUseCase(dailyGameRepo, nil)
+	retryUC := appDaily.NewRetryChallengeUseCase(dailyGameRepo, dailyQuizRepo, questionRepo, eventBus, nil)
 
 	handler := NewDailyChallengeHandler(getOrCreateQuizUC, startUC, submitUC, statusUC, leaderboardUC, streakUC, openChestUC, retryUC)
 

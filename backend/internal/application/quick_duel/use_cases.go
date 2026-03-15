@@ -188,6 +188,7 @@ type JoinQueueUseCase struct {
 	playerRatingRepo quick_duel.PlayerRatingRepository
 	duelGameRepo     quick_duel.DuelGameRepository
 	seasonRepo       quick_duel.SeasonRepository
+	inventoryService InventoryService
 }
 
 func NewJoinQueueUseCase(
@@ -195,12 +196,14 @@ func NewJoinQueueUseCase(
 	playerRatingRepo quick_duel.PlayerRatingRepository,
 	duelGameRepo quick_duel.DuelGameRepository,
 	seasonRepo quick_duel.SeasonRepository,
+	inventoryService InventoryService,
 ) *JoinQueueUseCase {
 	return &JoinQueueUseCase{
 		matchmakingQueue: matchmakingQueue,
 		playerRatingRepo: playerRatingRepo,
 		duelGameRepo:     duelGameRepo,
 		seasonRepo:       seasonRepo,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -234,7 +237,13 @@ func (uc *JoinQueueUseCase) Execute(input JoinQueueInput) (JoinQueueOutput, erro
 		return JoinQueueOutput{}, err
 	}
 
-	// TODO: Check and consume ticket
+	// Consume PvP ticket
+	if uc.inventoryService != nil {
+		err := uc.inventoryService.Debit(input.PlayerID, "pvp_entry", map[string]int{"pvp_tickets": 1})
+		if err != nil {
+			return JoinQueueOutput{}, quick_duel.ErrInsufficientTickets
+		}
+	}
 
 	// Add to queue
 	err = uc.matchmakingQueue.AddToQueue(playerID, rating.MMR(), now)
@@ -260,13 +269,16 @@ func (uc *JoinQueueUseCase) Execute(input JoinQueueInput) (JoinQueueOutput, erro
 
 type LeaveQueueUseCase struct {
 	matchmakingQueue quick_duel.MatchmakingQueue
+	inventoryService InventoryService
 }
 
 func NewLeaveQueueUseCase(
 	matchmakingQueue quick_duel.MatchmakingQueue,
+	inventoryService InventoryService,
 ) *LeaveQueueUseCase {
 	return &LeaveQueueUseCase{
 		matchmakingQueue: matchmakingQueue,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -296,7 +308,10 @@ func (uc *LeaveQueueUseCase) Execute(input LeaveQueueInput) (LeaveQueueOutput, e
 		return LeaveQueueOutput{}, err
 	}
 
-	// TODO: Refund ticket
+	// Refund PvP ticket
+	if uc.inventoryService != nil {
+		_ = uc.inventoryService.Credit(input.PlayerID, "pvp_refund", map[string]int{"pvp_tickets": 1})
+	}
 
 	return LeaveQueueOutput{
 		Success:        true,
@@ -310,12 +325,13 @@ func (uc *LeaveQueueUseCase) Execute(input LeaveQueueInput) (LeaveQueueOutput, e
 // ========================================
 
 type SendChallengeUseCase struct {
-	challengeRepo quick_duel.ChallengeRepository
-	duelGameRepo  quick_duel.DuelGameRepository
-	userRepo      domainUser.UserRepository
-	notifier      TelegramNotifier
-	eventBus      EventBus
-	botUsername   string
+	challengeRepo    quick_duel.ChallengeRepository
+	duelGameRepo     quick_duel.DuelGameRepository
+	userRepo         domainUser.UserRepository
+	notifier         TelegramNotifier
+	eventBus         EventBus
+	botUsername      string
+	inventoryService InventoryService
 }
 
 func NewSendChallengeUseCase(
@@ -325,14 +341,16 @@ func NewSendChallengeUseCase(
 	notifier TelegramNotifier,
 	eventBus EventBus,
 	botUsername string,
+	inventoryService InventoryService,
 ) *SendChallengeUseCase {
 	return &SendChallengeUseCase{
-		challengeRepo: challengeRepo,
-		duelGameRepo:  duelGameRepo,
-		userRepo:      userRepo,
-		notifier:      notifier,
-		eventBus:      eventBus,
-		botUsername:   botUsername,
+		challengeRepo:    challengeRepo,
+		duelGameRepo:     duelGameRepo,
+		userRepo:         userRepo,
+		notifier:         notifier,
+		eventBus:         eventBus,
+		botUsername:      botUsername,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -367,6 +385,14 @@ func (uc *SendChallengeUseCase) Execute(input SendChallengeInput) (SendChallenge
 			if c.ChallengedID() != nil && c.ChallengedID().Equals(friendID) {
 				return SendChallengeOutput{}, quick_duel.ErrChallengeAlreadySent
 			}
+		}
+	}
+
+	// Consume PvP ticket for sending a challenge
+	if uc.inventoryService != nil {
+		err := uc.inventoryService.Debit(input.PlayerID, "pvp_entry", map[string]int{"pvp_tickets": 1})
+		if err != nil {
+			return SendChallengeOutput{}, quick_duel.ErrInsufficientTickets
 		}
 	}
 
@@ -427,6 +453,7 @@ type RespondChallengeUseCase struct {
 	eventBus         EventBus
 	botUsername      string
 	txManager        TxManager
+	inventoryService InventoryService
 }
 
 func NewRespondChallengeUseCase(
@@ -440,6 +467,7 @@ func NewRespondChallengeUseCase(
 	eventBus EventBus,
 	botUsername string,
 	txManager TxManager,
+	inventoryService InventoryService,
 ) *RespondChallengeUseCase {
 	return &RespondChallengeUseCase{
 		challengeRepo:    challengeRepo,
@@ -452,6 +480,7 @@ func NewRespondChallengeUseCase(
 		eventBus:         eventBus,
 		botUsername:      botUsername,
 		txManager:        txManager,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -501,6 +530,14 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 
 	if uc.questionRepo == nil {
 		return RespondChallengeOutput{}, fmt.Errorf("question repository unavailable")
+	}
+
+	// Consume PvP ticket for accepting a challenge
+	if uc.inventoryService != nil {
+		err := uc.inventoryService.Debit(input.PlayerID, "pvp_entry", map[string]int{"pvp_tickets": 1})
+		if err != nil {
+			return RespondChallengeOutput{}, quick_duel.ErrInsufficientTickets
+		}
 	}
 
 	// Prepare data needed for game creation before entering tx
@@ -636,13 +673,14 @@ type TelegramNotifier interface {
 // ========================================
 
 type AcceptByLinkCodeUseCase struct {
-	challengeRepo quick_duel.ChallengeRepository
-	duelGameRepo  quick_duel.DuelGameRepository
-	userRepo      domainUser.UserRepository
-	notifier      TelegramNotifier
-	eventBus      EventBus
-	botUsername   string
-	txManager    TxManager
+	challengeRepo    quick_duel.ChallengeRepository
+	duelGameRepo     quick_duel.DuelGameRepository
+	userRepo         domainUser.UserRepository
+	notifier         TelegramNotifier
+	eventBus         EventBus
+	botUsername      string
+	txManager        TxManager
+	inventoryService InventoryService
 }
 
 func NewAcceptByLinkCodeUseCase(
@@ -653,15 +691,17 @@ func NewAcceptByLinkCodeUseCase(
 	eventBus EventBus,
 	botUsername string,
 	txManager TxManager,
+	inventoryService InventoryService,
 ) *AcceptByLinkCodeUseCase {
 	return &AcceptByLinkCodeUseCase{
-		challengeRepo: challengeRepo,
-		duelGameRepo:  duelGameRepo,
-		userRepo:      userRepo,
-		notifier:      notifier,
-		eventBus:      eventBus,
-		botUsername:   botUsername,
-		txManager:    txManager,
+		challengeRepo:    challengeRepo,
+		duelGameRepo:     duelGameRepo,
+		userRepo:         userRepo,
+		notifier:         notifier,
+		eventBus:         eventBus,
+		botUsername:      botUsername,
+		txManager:        txManager,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -702,6 +742,14 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 			}, nil
 		}
 		return AcceptByLinkCodeOutput{}, quick_duel.ErrChallengeNotPending
+	}
+
+	// Consume PvP ticket for accepting a challenge link
+	if uc.inventoryService != nil {
+		err := uc.inventoryService.Debit(input.PlayerID, "pvp_entry", map[string]int{"pvp_tickets": 1})
+		if err != nil {
+			return AcceptByLinkCodeOutput{}, quick_duel.ErrInsufficientTickets
+		}
 	}
 
 	// Check if accepter is already in a game

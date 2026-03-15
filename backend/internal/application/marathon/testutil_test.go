@@ -422,7 +422,7 @@ func (f *marathonFixture) newUseBonusUC() *UseMarathonBonusUseCase {
 }
 
 func (f *marathonFixture) newContinueUC() *ContinueMarathonUseCase {
-	return NewContinueMarathonUseCase(f.marathonRepo, f.questionRepo, f.eventBus)
+	return NewContinueMarathonUseCase(f.marathonRepo, f.questionRepo, f.eventBus, nil)
 }
 
 func (f *marathonFixture) newAbandonUC() *AbandonMarathonUseCase {

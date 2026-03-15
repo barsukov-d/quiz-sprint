@@ -601,14 +601,17 @@ func (uc *GetPlayerStreakUseCase) Execute(input GetPlayerStreakInput) (GetPlayer
 // ========================================
 
 type OpenChestUseCase struct {
-	dailyGameRepo daily_challenge.DailyGameRepository
+	dailyGameRepo    daily_challenge.DailyGameRepository
+	inventoryService InventoryService
 }
 
 func NewOpenChestUseCase(
 	dailyGameRepo daily_challenge.DailyGameRepository,
+	inventoryService InventoryService,
 ) *OpenChestUseCase {
 	return &OpenChestUseCase{
-		dailyGameRepo: dailyGameRepo,
+		dailyGameRepo:    dailyGameRepo,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -637,7 +640,26 @@ func (uc *OpenChestUseCase) Execute(input OpenChestInput) (OpenChestOutput, erro
 		return OpenChestOutput{}, daily_challenge.ErrGameNotFound
 	}
 
-	// 5. Build output (idempotent - just returns stored data)
+	// 5. Credit rewards to player's inventory
+	if uc.inventoryService != nil {
+		rewards := map[string]int{}
+		if chestReward.Coins() > 0 {
+			rewards["coins"] = chestReward.Coins()
+		}
+		if chestReward.PvpTickets() > 0 {
+			rewards["pvp_tickets"] = chestReward.PvpTickets()
+		}
+		for _, bonus := range chestReward.MarathonBonuses() {
+			rewards[string(bonus)] += 1
+		}
+		if len(rewards) > 0 {
+			if err := uc.inventoryService.Credit(input.PlayerID, "daily_chest", rewards); err != nil {
+				println("⚠️ [OpenChest] Failed to credit inventory:", err.Error())
+			}
+		}
+	}
+
+	// 6. Build output (idempotent - just returns stored data)
 	return OpenChestOutput{
 		ChestType:      chestReward.ChestType().String(),
 		Rewards:        ToChestRewardDTO(*chestReward),
@@ -651,10 +673,11 @@ func (uc *OpenChestUseCase) Execute(input OpenChestInput) (OpenChestOutput, erro
 // ========================================
 
 type RetryChallengeUseCase struct {
-	dailyGameRepo     daily_challenge.DailyGameRepository
-	dailyQuizRepo     daily_challenge.DailyQuizRepository
-	questionRepo      quiz.QuestionRepository
-	eventBus          EventBus
+	dailyGameRepo    daily_challenge.DailyGameRepository
+	dailyQuizRepo    daily_challenge.DailyQuizRepository
+	questionRepo     quiz.QuestionRepository
+	eventBus         EventBus
+	inventoryService InventoryService
 }
 
 func NewRetryChallengeUseCase(
@@ -662,12 +685,14 @@ func NewRetryChallengeUseCase(
 	dailyQuizRepo daily_challenge.DailyQuizRepository,
 	questionRepo quiz.QuestionRepository,
 	eventBus EventBus,
+	inventoryService InventoryService,
 ) *RetryChallengeUseCase {
 	return &RetryChallengeUseCase{
-		dailyGameRepo: dailyGameRepo,
-		dailyQuizRepo: dailyQuizRepo,
-		questionRepo:  questionRepo,
-		eventBus:      eventBus,
+		dailyGameRepo:    dailyGameRepo,
+		dailyQuizRepo:    dailyQuizRepo,
+		questionRepo:     questionRepo,
+		eventBus:         eventBus,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -717,8 +742,12 @@ func (uc *RetryChallengeUseCase) Execute(input RetryChallengeInput) (RetryChalle
 	coinsDeducted := 0
 	if input.PaymentMethod == "coins" {
 		coinsDeducted = 100
-		// TODO: deduct coins from user account
-		// For now just return the cost
+		if uc.inventoryService != nil {
+			err := uc.inventoryService.Debit(input.PlayerID, "daily_retry", map[string]int{"coins": coinsDeducted})
+			if err != nil {
+				return RetryChallengeOutput{}, err
+			}
+		}
 	} else if input.PaymentMethod == "ad" {
 		// TODO: verify ad was watched (via ad network callback)
 		coinsDeducted = 0

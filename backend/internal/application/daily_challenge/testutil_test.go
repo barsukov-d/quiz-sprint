@@ -592,9 +592,9 @@ func (f *testFixture) newGetStreakUC() *GetPlayerStreakUseCase {
 }
 
 func (f *testFixture) newOpenChestUC() *OpenChestUseCase {
-	return NewOpenChestUseCase(f.dailyGameRepo)
+	return NewOpenChestUseCase(f.dailyGameRepo, nil)
 }
 
 func (f *testFixture) newRetryUC() *RetryChallengeUseCase {
-	return NewRetryChallengeUseCase(f.dailyGameRepo, f.dailyQuizRepo, f.questionRepo, f.eventBus)
+	return NewRetryChallengeUseCase(f.dailyGameRepo, f.dailyQuizRepo, f.questionRepo, f.eventBus, nil)
 }
