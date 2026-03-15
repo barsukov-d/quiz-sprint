@@ -11,6 +11,7 @@ import (
 	"github.com/gofiber/fiber/v3/middleware/recover"
 	"github.com/joho/godotenv"
 
+	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/handlers"
 	"github.com/barsukov/quiz-sprint/backend/internal/infrastructure/http/routes"
 	"github.com/barsukov/quiz-sprint/backend/pkg/database"
 
@@ -116,19 +117,30 @@ func main() {
 }
 
 func errorHandler(c fiber.Ctx, err error) error {
-	code := fiber.StatusInternalServerError
+	httpCode := fiber.StatusInternalServerError
 	message := "Internal Server Error"
+	errorCode := ""
 
-	if e, ok := err.(*fiber.Error); ok {
-		code = e.Code
+	switch e := err.(type) {
+	case *handlers.AppError:
+		httpCode = e.HTTPCode
+		message = e.Message
+		errorCode = e.ErrorCode
+	case *fiber.Error:
+		httpCode = e.Code
 		message = e.Message
 	}
 
-	return c.Status(code).JSON(fiber.Map{
-		"error": fiber.Map{
-			"code":    code,
-			"message": message,
-		},
+	resp := fiber.Map{
+		"code":    httpCode,
+		"message": message,
+	}
+	if errorCode != "" {
+		resp["errorCode"] = errorCode
+	}
+
+	return c.Status(httpCode).JSON(fiber.Map{
+		"error": resp,
 	})
 }
 

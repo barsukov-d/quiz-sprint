@@ -140,6 +140,14 @@ func (m *MockDailyGameRepository) FindTopByDate(date daily_challenge.Date, limit
 	return games, nil
 }
 
+func (m *MockDailyGameRepository) FindTopByDateAndFriends(date daily_challenge.Date, playerID daily_challenge.UserID, limit int) ([]*daily_challenge.DailyGame, error) {
+	return m.FindTopByDate(date, limit)
+}
+
+func (m *MockDailyGameRepository) FindTopByDateAndCountry(date daily_challenge.Date, playerID daily_challenge.UserID, limit int) ([]*daily_challenge.DailyGame, error) {
+	return m.FindTopByDate(date, limit)
+}
+
 func (m *MockDailyGameRepository) GetPlayerRankByDate(playerID daily_challenge.UserID, date daily_challenge.Date) (int, error) {
 	topGames, _ := m.FindTopByDate(date, 0)
 	for i, g := range topGames {
@@ -166,6 +174,10 @@ func (m *MockDailyGameRepository) Delete(id daily_challenge.GameID) error {
 		return nil
 	}
 	return daily_challenge.ErrGameNotFound
+}
+
+func (m *MockDailyGameRepository) MarkAbandonedGames() (int, error) {
+	return 0, nil
 }
 
 // MockQuestionRepository is an in-memory QuestionRepository
@@ -592,9 +604,9 @@ func (f *testFixture) newGetStreakUC() *GetPlayerStreakUseCase {
 }
 
 func (f *testFixture) newOpenChestUC() *OpenChestUseCase {
-	return NewOpenChestUseCase(f.dailyGameRepo)
+	return NewOpenChestUseCase(f.dailyGameRepo, nil)
 }
 
 func (f *testFixture) newRetryUC() *RetryChallengeUseCase {
-	return NewRetryChallengeUseCase(f.dailyGameRepo, f.dailyQuizRepo, f.questionRepo, f.eventBus)
+	return NewRetryChallengeUseCase(f.dailyGameRepo, f.dailyQuizRepo, f.questionRepo, f.eventBus, nil, nil)
 }

@@ -159,6 +159,10 @@ type GameResultsDTO struct {
 	ChestReward       ChestRewardDTO          `json:"chestReward"` // Chest earned
 	AnsweredQuestions []AnsweredQuestionDTO   `json:"answeredQuestions"` // Full breakdown
 	Leaderboard       []LeaderboardEntryDTO   `json:"leaderboard"` // Top players
+	RankLabel         string                  `json:"rankLabel"` // e.g. "#847 из 12,847"
+	ChestLabel        string                  `json:"chestLabel"` // e.g. "Золотой сундук"
+	ShareText         string                  `json:"shareText"` // Pre-formatted share string
+	SuspiciousScore   bool                    `json:"suspiciousScore"` // Anti-cheat: true if total time < 1s/question avg
 }
 
 // ========================================
@@ -170,6 +174,12 @@ type GetDailyGameStatusInput struct {
 	Date     string `json:"date,omitempty"` // Optional, defaults to today
 }
 
+// RetryCostDTO represents the cost options for retrying a daily challenge
+type RetryCostDTO struct {
+	Coins int  `json:"coins"` // Coins required to retry
+	HasAd bool `json:"hasAd"` // Whether an ad option is available
+}
+
 type GetDailyGameStatusOutput struct {
 	HasPlayed       bool              `json:"hasPlayed"`
 	Game            *DailyGameDTO     `json:"game,omitempty"`
@@ -178,6 +188,9 @@ type GetDailyGameStatusOutput struct {
 	TimeRemaining   *int              `json:"timeRemaining,omitempty"` // Seconds remaining for current question (server-side timer)
 	TimeToExpire    int64             `json:"timeToExpire"` // Seconds until quiz resets
 	TotalPlayers    int               `json:"totalPlayers"` // Players who completed today
+	CanRetry        bool              `json:"canRetry"` // Player has < 2 attempts today and has coins or ad available
+	RetryCost       *RetryCostDTO     `json:"retryCost,omitempty"` // Retry cost options (populated when canRetry=true)
+	CanPlayNow      bool              `json:"canPlayNow"` // Hasn't played today OR canRetry
 }
 
 // ========================================
@@ -188,6 +201,7 @@ type GetDailyLeaderboardInput struct {
 	Date     string `json:"date,omitempty"` // Optional, defaults to today
 	Limit    int    `json:"limit"` // Max entries
 	PlayerID string `json:"playerId,omitempty"` // Optional, to find player's rank
+	Type     string `json:"type,omitempty"` // "global" (default) | "friends" | "country"
 }
 
 type GetDailyLeaderboardOutput struct {

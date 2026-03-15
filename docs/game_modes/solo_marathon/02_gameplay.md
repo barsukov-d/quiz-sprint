@@ -1,5 +1,8 @@
 # Solo Marathon - Gameplay Flow
 
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 11 | ⚠️ Расходится: 5 | ❌ Не реализовано: 4
+
 ## Entry Point
 Home → "Марафон" → Shows:
 - Personal best (e.g., "Рекорд: 87")
@@ -12,7 +15,7 @@ Home → "Марафон" → Shows:
 
 ## Game Flow
 
-### 1. Pre-Start Screen
+### 1. Pre-Start Screen <!-- ⚠️ Only category selection shown, no pre-start stats (no personal best, no weekly rank, no bonus inventory, no coin balance) -->
 ```
 ┌─────────────────────────────────────┐
 │  🏃 МАРАФОН                  💰 1,250│
@@ -61,20 +64,20 @@ Home → "Марафон" → Shows:
 ```
 
 **UI Elements:**
-- **Score:** `✅ 23` — count of correct answers (primary metric)
-- **Question number:** `Вопрос 24` — current question index
-- **Energy:** Visual lightning bolts (⚡ = active, depleted = lost)
-- **Timer:** Countdown (color changes: green → yellow → red)
-- **Milestone:** Progress toward next milestone (25, 50, 100, 200, 500)
-- **Bonuses:** Active buttons (grayed if 0 quantity, long-press for tooltip)
+- **Score:** `✅ 23` — count of correct answers (primary metric) <!-- ✅ -->
+- **Question number:** `Вопрос 24` — current question index <!-- ✅ -->
+- **Energy:** Visual lightning bolts (⚡ = active, depleted = lost) <!-- ✅ -->
+- **Timer:** Countdown (color changes: green → yellow → red) <!-- ✅ -->
+- **Milestone:** Progress toward next milestone (25, 50, 100, 200, 500) <!-- ✅ -->
+- **Bonuses:** Active buttons (grayed if 0 quantity, long-press for tooltip) <!-- ✅ -->
 
-**Timer behavior:**
+**Timer behavior:** <!-- ✅ 15s/12s/10s/8s progression implemented -->
 - Questions 1-10: 15 seconds
 - Questions 11-25: 12 seconds
 - Questions 26-50: 10 seconds
 - Questions 51+: 8 seconds
 
-**Difficulty transition notification:**
+**Difficulty transition notification:** <!-- ✅ difficultyChanged/difficultyMessage in question DTO; frontend toast component implemented -->
 When timer limit changes (e.g., question 11, 26, 51), show brief toast:
 ```
 ⚡ Сложность растёт! Время: 12 сек
@@ -89,7 +92,7 @@ Duration: 2 seconds, non-blocking.
 
 ### 3. Bonus Usage
 
-#### Using Shield 🛡️
+#### Using Shield 🛡️ <!-- ✅ -->
 ```
 Player taps Shield BEFORE answering
 → Visual indicator: "🛡️ Активен" above question
@@ -98,7 +101,7 @@ Player taps Shield BEFORE answering
 → Shield does NOT carry to next question (must re-activate manually)
 ```
 
-#### Using 50/50 🔀
+#### Using 50/50 🔀 <!-- ✅ -->
 ```
 Player taps 50/50
 → 2 wrong answers fade out instantly
@@ -106,7 +109,7 @@ Player taps 50/50
 → Bonus consumed (regardless of correctness)
 ```
 
-#### Using Skip ⏭️
+#### Using Skip ⏭️ <!-- ✅ -->
 ```
 Player taps Skip
 → Question skipped immediately
@@ -115,7 +118,7 @@ Player taps Skip
 → NO life lost
 ```
 
-#### Using Freeze ❄️
+#### Using Freeze ❄️ <!-- ✅ +10 seconds confirmed. ⚠️ ErrBonusAlreadyUsed prevents reuse of same bonus type per question, contradicting "can use multiple freezes" -->
 ```
 Player taps Freeze
 → Timer +10 seconds instantly
@@ -137,7 +140,7 @@ Player taps Freeze
 │  [ Далее ]                          │
 └─────────────────────────────────────┘
 ```
-Duration: 1.5 seconds → Auto-advance
+Duration: 1.5 seconds → Auto-advance <!-- ✅ (approximately) -->
 
 **Wrong Answer (with lives left):**
 ```
@@ -151,7 +154,7 @@ Duration: 1.5 seconds → Auto-advance
 │  [ Продолжить ]                     │
 └─────────────────────────────────────┘
 ```
-Duration: 3 seconds (read answer) → Continue
+Duration: 3 seconds (read answer) → Continue <!-- ⚠️ Frontend uses 1.8s, not 3s -->
 
 **Wrong Answer (last life) → See section 5**
 
@@ -177,12 +180,12 @@ Duration: 3 seconds (read answer) → Continue
 └─────────────────────────────────────┘
 ```
 
-**Continue options:**
+**Continue options:** <!-- ✅ Game over screen with continue offer implemented -->
 1. Pay coins (show current balance)
 2. Watch rewarded ad
 3. Decline → Go to results
 
-**Progress bar:** Visual comparison to personal best — motivates continue.
+**Progress bar:** Visual comparison to personal best — motivates continue. <!-- ⚠️ No visual progress bar comparing to personal best -->
 
 If continued:
 - Lives reset to 1 (❤️) — NOT "+1", always exactly 1
@@ -191,7 +194,7 @@ If continued:
 
 ---
 
-### 5b. Between-Run Screen (after declining Continue)
+### 5b. Between-Run Screen (after declining Continue) <!-- ✅ Session stats between runs -->
 ```
 ┌─────────────────────────────────────┐
 │  🏁 Забег завершён                  │
@@ -255,7 +258,7 @@ If continued:
 
 ## State Management (Backend)
 
-**Game states:**
+**Game states:** <!-- ✅ All four states implemented -->
 ```
 IN_PROGRESS → GAME_OVER → COMPLETED (declined continue / final game over)
      │             │
@@ -265,10 +268,10 @@ IN_PROGRESS → GAME_OVER → COMPLETED (declined continue / final game over)
 ```
 
 **Statuses:**
-- `in_progress` — actively playing
-- `game_over` — 0 lives, continue offer shown
-- `completed` — game ended normally (after game over, no more continues)
-- `abandoned` — player quit mid-game or inactivity timeout
+- `in_progress` — actively playing <!-- ✅ -->
+- `game_over` — 0 lives, continue offer shown <!-- ✅ -->
+- `completed` — game ended normally (after game over, no more continues) <!-- ✅ -->
+- `abandoned` — player quit mid-game or inactivity timeout <!-- ✅ -->
 
 **State stored on backend:**
 - Current question index
@@ -341,7 +344,7 @@ After 3 games → icons only + long-press tooltips.
 
 ---
 
-## First-Time Onboarding
+## First-Time Onboarding <!-- ❌ Not implemented -->
 
 **Trigger:** Player's first Marathon game ever (`gamesPlayed == 0`).
 
@@ -360,7 +363,7 @@ After 3 games → icons only + long-press tooltips.
 
 ## Pause / Quit
 
-**Pause NOT allowed** (integrity of run).
+**Pause NOT allowed** (integrity of run). <!-- ✅ -->
 
 **Quit:**
 - Shows warning: "Прогресс будет потерян!"
@@ -369,7 +372,7 @@ After 3 games → icons only + long-press tooltips.
 
 ---
 
-## Network Issues
+## Network Issues <!-- ❌ Network reconnect overlay not implemented -->
 
 **Disconnect during game:**
 - State saved after each answer

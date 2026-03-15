@@ -673,6 +673,58 @@ const docTemplate = `{
                 }
             }
         },
+        "/daily-challenge/streak/recover": {
+            "post": {
+                "description": "Recover a broken streak by paying with coins or watching an ad",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "daily-challenge"
+                ],
+                "summary": "Recover daily challenge streak",
+                "parameters": [
+                    {
+                        "description": "Recover streak request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RecoverStreakRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Streak recovered",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.RecoverStreakResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or insufficient coins",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Streak not recoverable",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/daily-challenge/{gameId}/answer": {
             "post": {
                 "description": "Submit answer for current question (no immediate feedback)",
@@ -1304,6 +1356,68 @@ const docTemplate = `{
                 }
             }
         },
+        "/duel/game/{gameId}/surrender": {
+            "post": {
+                "description": "Forfeit an active duel game. The surrendering player takes an ELO loss; the opponent wins.",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Surrender a duel game",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID",
+                        "name": "gameId",
+                        "in": "path",
+                        "required": true
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Surrender processed",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.SurrenderGameResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "403": {
+                        "description": "Player not in game",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Game is not active",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
         "/duel/history": {
             "get": {
                 "description": "Get player's duel game history with pagination",
@@ -1505,6 +1619,106 @@ const docTemplate = `{
                     },
                     "400": {
                         "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/referrals": {
+            "get": {
+                "description": "List player's referrals with milestone progress and pending rewards",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Get player referrals",
+                "responses": {
+                    "200": {
+                        "description": "Referrals list",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.GetReferralsResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/duel/referrals/{friendId}/claim": {
+            "post": {
+                "description": "Claim the reward for a reached milestone with a referred friend",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "duel"
+                ],
+                "summary": "Claim referral milestone reward",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Friend (invitee) player ID",
+                        "name": "friendId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Claim request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ClaimReferralRewardRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Reward claimed",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ClaimReferralRewardResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid request or milestone not reached",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Referral not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "409": {
+                        "description": "Reward already claimed",
                         "schema": {
                             "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
@@ -2026,6 +2240,71 @@ const docTemplate = `{
                     },
                     "404": {
                         "description": "Game or question not found",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "500": {
+                        "description": "Internal server error",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    }
+                }
+            }
+        },
+        "/marathon/{gameId}/complete": {
+            "post": {
+                "description": "Complete a marathon game that is in game_over state (player declines continue)",
+                "consumes": [
+                    "application/json"
+                ],
+                "produces": [
+                    "application/json"
+                ],
+                "tags": [
+                    "marathon"
+                ],
+                "summary": "Complete a marathon game",
+                "parameters": [
+                    {
+                        "type": "string",
+                        "description": "Game ID",
+                        "name": "gameId",
+                        "in": "path",
+                        "required": true
+                    },
+                    {
+                        "description": "Complete game request",
+                        "name": "request",
+                        "in": "body",
+                        "required": true,
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AbandonMarathonRequest"
+                        }
+                    }
+                ],
+                "responses": {
+                    "200": {
+                        "description": "Game completed with final statistics",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.AbandonMarathonResponse"
+                        }
+                    },
+                    "400": {
+                        "description": "Invalid game ID or game not in game_over state",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "401": {
+                        "description": "Unauthorized - game belongs to another player",
+                        "schema": {
+                            "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
+                        }
+                    },
+                    "404": {
+                        "description": "Game not found",
                         "schema": {
                             "$ref": "#/definitions/internal_infrastructure_http_handlers.ErrorResponse"
                         }
@@ -3495,6 +3774,62 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.ClaimReferralRewardRequest": {
+            "type": "object",
+            "required": [
+                "milestone"
+            ],
+            "properties": {
+                "milestone": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.ClaimReferralRewardResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "newCoinBalance",
+                        "newTicketBalance",
+                        "rewards",
+                        "success"
+                    ],
+                    "properties": {
+                        "newCoinBalance": {
+                            "type": "integer"
+                        },
+                        "newTicketBalance": {
+                            "type": "integer"
+                        },
+                        "rewards": {
+                            "type": "object",
+                            "properties": {
+                                "avatar": {
+                                    "type": "string"
+                                },
+                                "badge": {
+                                    "type": "string"
+                                },
+                                "coins": {
+                                    "type": "integer"
+                                },
+                                "tickets": {
+                                    "type": "integer"
+                                },
+                                "title": {
+                                    "type": "string"
+                                }
+                            }
+                        },
+                        "success": {
+                            "type": "boolean"
+                        }
+                    }
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.ContinueMarathonData": {
             "type": "object",
             "required": [
@@ -3959,6 +4294,38 @@ const docTemplate = `{
                 }
             }
         },
+        "internal_infrastructure_http_handlers.GameQuestionResultDTO": {
+            "type": "object",
+            "properties": {
+                "correctAnswerId": {
+                    "type": "string"
+                },
+                "opponentAnswerId": {
+                    "type": "string"
+                },
+                "opponentCorrect": {
+                    "type": "boolean"
+                },
+                "opponentTime": {
+                    "type": "integer"
+                },
+                "playerAnswerId": {
+                    "type": "string"
+                },
+                "playerCorrect": {
+                    "type": "boolean"
+                },
+                "playerTime": {
+                    "type": "integer"
+                },
+                "questionNumber": {
+                    "type": "integer"
+                },
+                "questionText": {
+                    "type": "string"
+                }
+            }
+        },
         "internal_infrastructure_http_handlers.GameResultsDTO": {
             "type": "object",
             "required": [
@@ -4202,6 +4569,13 @@ const docTemplate = `{
                         "activeGameId": {
                             "type": "string"
                         },
+                        "expiredChallenges": {
+                            "description": "B9: expired challenges visible in lobby",
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.DuelChallengeDTO"
+                            }
+                        },
                         "friendsOnline": {
                             "type": "array",
                             "items": {
@@ -4315,6 +4689,19 @@ const docTemplate = `{
                             "type": "integer"
                         },
                         "playerScore": {
+                            "type": "integer"
+                        },
+                        "questions": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.GameQuestionResultDTO"
+                            }
+                        },
+                        "rankChange": {
+                            "description": "\"promoted\", \"demoted\", null",
+                            "type": "string"
+                        },
+                        "rematchExpiresIn": {
                             "type": "integer"
                         },
                         "result": {
@@ -4516,6 +4903,48 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.GetQuizDetailsData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.GetReferralsResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "activeReferrals",
+                        "pendingRewards",
+                        "referralLeaderboardRank",
+                        "referralLink",
+                        "referrals",
+                        "totalReferrals"
+                    ],
+                    "properties": {
+                        "activeReferrals": {
+                            "type": "integer"
+                        },
+                        "pendingRewards": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "referralLeaderboardRank": {
+                            "type": "integer"
+                        },
+                        "referralLink": {
+                            "type": "string"
+                        },
+                        "referrals": {
+                            "type": "array",
+                            "items": {
+                                "$ref": "#/definitions/internal_infrastructure_http_handlers.ReferralItemDTO"
+                            }
+                        },
+                        "totalReferrals": {
+                            "type": "integer"
+                        }
+                    }
                 }
             }
         },
@@ -5214,6 +5643,93 @@ const docTemplate = `{
                 },
                 "title": {
                     "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.RecoverStreakData": {
+            "type": "object",
+            "required": [
+                "bonusPercent",
+                "coinsDeducted",
+                "currentStreak",
+                "recovered"
+            ],
+            "properties": {
+                "bonusPercent": {
+                    "type": "integer"
+                },
+                "coinsDeducted": {
+                    "type": "integer"
+                },
+                "currentStreak": {
+                    "type": "integer"
+                },
+                "recovered": {
+                    "type": "boolean"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.RecoverStreakRequest": {
+            "type": "object",
+            "required": [
+                "paymentMethod",
+                "playerId"
+            ],
+            "properties": {
+                "paymentMethod": {
+                    "description": "\"coins\" or \"ad\"",
+                    "type": "string"
+                },
+                "playerId": {
+                    "type": "string"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.RecoverStreakResponse": {
+            "type": "object",
+            "required": [
+                "data"
+            ],
+            "properties": {
+                "data": {
+                    "$ref": "#/definitions/internal_infrastructure_http_handlers.RecoverStreakData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.ReferralItemDTO": {
+            "type": "object",
+            "required": [
+                "createdAt",
+                "id",
+                "inviteeId",
+                "inviteeUsername",
+                "milestonesReached",
+                "pendingRewards"
+            ],
+            "properties": {
+                "createdAt": {
+                    "type": "integer"
+                },
+                "id": {
+                    "type": "string"
+                },
+                "inviteeId": {
+                    "type": "string"
+                },
+                "inviteeUsername": {
+                    "type": "string"
+                },
+                "milestonesReached": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
+                },
+                "pendingRewards": {
+                    "type": "array",
+                    "items": {
+                        "type": "string"
+                    }
                 }
             }
         },
@@ -6019,6 +6535,34 @@ const docTemplate = `{
             "properties": {
                 "data": {
                     "$ref": "#/definitions/internal_infrastructure_http_handlers.SubmitMarathonAnswerData"
+                }
+            }
+        },
+        "internal_infrastructure_http_handlers.SurrenderGameResponse": {
+            "type": "object",
+            "properties": {
+                "data": {
+                    "type": "object",
+                    "required": [
+                        "gameId",
+                        "mmrChange",
+                        "newMmr",
+                        "winnerId"
+                    ],
+                    "properties": {
+                        "gameId": {
+                            "type": "string"
+                        },
+                        "mmrChange": {
+                            "type": "integer"
+                        },
+                        "newMmr": {
+                            "type": "integer"
+                        },
+                        "winnerId": {
+                            "type": "string"
+                        }
+                    }
                 }
             }
         },

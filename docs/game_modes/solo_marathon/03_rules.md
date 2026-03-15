@@ -1,11 +1,15 @@
 # Solo Marathon - Business Rules
 
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 18 | ⚠️ Расходится: 4 | ❌ Не реализовано: 5
+
 ## Lives System
 
 ### Initial State
 ```
 lives = 5
 ```
+<!-- ✅ Реализовано -->
 
 ### Life Loss Rules
 ```
@@ -16,6 +20,7 @@ Wrong answer && shieldActive:
     lives -= 0
     shield consumed (was activated before answering)
 ```
+<!-- ✅ Реализовано -->
 
 ### Game Over Condition
 ```
@@ -36,6 +41,7 @@ On correct answer:
 On wrong answer:
     streakCount = 0  // always resets, even if shield saved the life
 ```
+<!-- ✅ Реализовано -->
 
 **Example:** 5 correct in a row → +1 life. 10 correct in a row → +2 lives total.
 
@@ -51,8 +57,9 @@ func Continue(continueCount int) {
     status = IN_PROGRESS
 }
 ```
+<!-- ✅ Реализовано: формула, lives=1, монеты списываются (real deduction) -->
 
-**Max continues:** Unlimited (but escalating cost).
+**Max continues:** Unlimited (but escalating cost). <!-- ✅ Реализовано -->
 
 ---
 
@@ -62,18 +69,22 @@ func Continue(continueCount int) {
 ```
 score = correctAnswersCount
 ```
+<!-- ✅ Реализовано -->
 
-**NO time bonus** (unlike Daily Challenge).
-**NO streak multiplier** (simplicity).
+**NO time bonus** (unlike Daily Challenge). <!-- ✅ Реализовано -->
+**NO streak multiplier** (simplicity). <!-- ✅ Реализовано -->
 
 ### Leaderboard Tiebreaker
 Primary: `score DESC`
+<!-- ⚠️ Расходится: код сортирует по best_streak DESC первым, затем best_score DESC (migration 023 persists streak_count/best_streak) -->
 Secondary: `questionCount ASC` (fewer total questions = better efficiency)
-Tertiary: `completedAt ASC` (earlier = better)
+<!-- ❌ Не реализовано: PersonalBest не хранит totalQuestions -->
+Tertiary: `completedAt ASC` (earlier = better) <!-- ✅ Реализовано -->
 
 ### Continue Flag
 Games with continues:
 - **Shown in leaderboard:** Yes (with asterisk *)
+<!-- ❌ Не реализовано: звёздочка не отображается в UI -->
 - **Separate leaderboard:** No (same pool)
 - **UI indicator:** "Продолжений: 2"
 
@@ -98,6 +109,7 @@ func GetTimeLimit(questionIndex int) int {
     }
 }
 ```
+<!-- ✅ Реализовано: точное совпадение -->
 
 ### Question Difficulty Distribution
 ```go
@@ -114,11 +126,13 @@ func SelectDifficulty(questionIndex int) string {
     }
 }
 ```
+<!-- ✅ Реализовано -->
 
 ### Question Selection
-- **No repeats** within same game
+- **No repeats** within same game <!-- ✅ Реализовано -->
 - **Random from pool** (filtered by difficulty)
 - **Category variety:** No more than 3 consecutive questions from same category
+<!-- ❌ Не реализовано: ограничение категорий не применяется -->
 
 ---
 
@@ -157,6 +171,7 @@ func AnswerQuestion(answerID) {
     shieldActive = false  // deactivates after every question
 }
 ```
+<!-- ✅ Реализовано -->
 
 #### 🔀 50/50
 ```
@@ -224,6 +239,7 @@ Shield:    2
 Skip:      0
 Freeze:    3
 ```
+<!-- ✅ Реализовано -->
 Plus accumulated bonuses from player's wallet (earned from Daily Challenge chests).
 Total = defaults + wallet.
 
@@ -260,6 +276,7 @@ func UseBonus(bonusType BonusType) error {
 Start: Monday 00:00 UTC
 End: Sunday 23:59 UTC
 ```
+<!-- ❌ Не реализовано: фильтрация по времени отсутствует -->
 
 ### Reset Logic
 ```
@@ -269,6 +286,7 @@ On Monday 00:00 UTC:
 3. Clear weekly leaderboard (Redis)
 4. All players start fresh
 ```
+<!-- ❌ Не реализовано: Redis-таблица лидеров недели отсутствует -->
 
 ### Ranking
 ```
@@ -278,6 +296,7 @@ Member: playerID
 
 Higher score = Better rank
 ```
+<!-- ❌ Не реализовано: Redis weekly leaderboard не реализован -->
 
 **Example:**
 ```
@@ -299,8 +318,9 @@ Primary: correctAnswers DESC
 Secondary: totalQuestions ASC
 Tertiary: completedAt ASC
 ```
+<!-- ⚠️ Расходится: код сортирует по best_streak DESC первым, затем best_score DESC -->
 
-**Stored in PostgreSQL** (permanent).
+**Stored in PostgreSQL** (permanent). <!-- ✅ Реализовано -->
 
 ```sql
 CREATE TABLE marathon_hall_of_fame (
@@ -321,12 +341,14 @@ CREATE TABLE marathon_hall_of_fame (
 ```
 0 < timeTaken ≤ timeLimit
 ```
+<!-- ⚠️ Расходится: валидирует только >=0 и <3600000, верхняя граница по timeLimit конкретного вопроса не применяется -->
 
 Violation: `ErrInvalidTimeTaken`
 
 ### Answer Once
 Cannot change answer after submission.
 Violation: `ErrQuestionAlreadyAnswered`
+<!-- ⚠️ Расходится: проверяется совпадение currentQuestion, отдельная ошибка ErrQuestionAlreadyAnswered не выделена -->
 
 ### Bonus Availability
 ```
@@ -363,27 +385,38 @@ func UpdatePersonalBest(playerID, score int) {
     }
 }
 ```
+<!-- ✅ Реализовано: milestone rewards implemented (5 thresholds + dedup via marathon_bonus_usage). ❌ Flat 500 coins "new record bonus" не начисляется (milestone coins only) -->
 
 ---
 
 ## Anti-Cheat
+
+### Impossible Score (High Score Threshold)
+```
+if correctAnswers > 200:
+    game.Suspicious = true  // flagged for review, not auto-banned
+```
+<!-- ✅ Реализовано: Suspicious поле на MarathonGameV2, порог >200 -->
 
 ### Impossible Times
 ```
 if timeTaken < 0.5:
     flagSuspiciousActivity(playerID, "too_fast")
 ```
+<!-- ❌ Не реализовано -->
 
 ### Question Skipping Pattern
 ```
 if skipCount > 50:
     flagSuspiciousActivity(playerID, "excessive_skips")
 ```
+<!-- ❌ Не реализовано -->
 
 ### Continue Abuse
 ```
 if continueCount > 10:
     flagSuspiciousActivity(playerID, "excessive_continues")
 ```
+<!-- ❌ Не реализовано -->
 
 **Note:** Flags for review, not auto-ban.

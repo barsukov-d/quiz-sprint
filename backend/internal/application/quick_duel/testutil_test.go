@@ -355,6 +355,44 @@ func (m *mockPlayerRatingRepo) GetTotalPlayers(seasonID string) (int, error) {
 	return count, nil
 }
 
+func (m *mockPlayerRatingRepo) FindAllBySeasonID(seasonID string) ([]*quick_duel.PlayerRating, error) {
+	var result []*quick_duel.PlayerRating
+	for _, r := range m.ratings {
+		if r.SeasonID() == seasonID {
+			result = append(result, r)
+		}
+	}
+	return result, nil
+}
+
+func (m *mockPlayerRatingRepo) ResetAllRatingsForSeason(newSeasonID string, resetFn func(currentMMR int) int) error {
+	// collect all ratings first to avoid modifying while iterating
+	var all []*quick_duel.PlayerRating
+	for _, r := range m.ratings {
+		all = append(all, r)
+	}
+	for _, r := range all {
+		newMMR := resetFn(r.MMR())
+		leagueInfo := quick_duel.GetLeagueFromMMR(newMMR)
+		updated := quick_duel.ReconstructPlayerRating(
+			r.PlayerID(),
+			newMMR,
+			leagueInfo.League(),
+			leagueInfo.Division(),
+			r.PeakMMR(),
+			r.PeakLeague(),
+			r.PeakDivision(),
+			0,
+			newSeasonID,
+			0, 0, 0,
+			r.UpdatedAt(),
+		)
+		delete(m.ratings, m.key(r.PlayerID(), r.SeasonID()))
+		m.ratings[m.key(updated.PlayerID(), updated.SeasonID())] = updated
+	}
+	return nil
+}
+
 // mockMatchmakingQueue is an in-memory matchmaking queue
 type mockMatchmakingQueue struct {
 	queue map[string]struct {
@@ -403,6 +441,28 @@ func (m *mockMatchmakingQueue) GetPlayerQueueInfo(playerID quick_duel.UserID) (i
 		return info.joinedAt, info.mmr, nil
 	}
 	return 0, 0, fmt.Errorf("player not in queue")
+}
+
+func (m *mockMatchmakingQueue) GetStaleQueueEntries(cutoffTime int64) ([]quick_duel.UserID, error) {
+	var stale []quick_duel.UserID
+	for idStr, info := range m.queue {
+		if info.joinedAt < cutoffTime {
+			uid, err := shared.NewUserID(idStr)
+			if err != nil {
+				continue
+			}
+			stale = append(stale, uid)
+		}
+	}
+	return stale, nil
+}
+
+func (m *mockMatchmakingQueue) RecordRecentOpponent(_, _ quick_duel.UserID) error {
+	return nil
+}
+
+func (m *mockMatchmakingQueue) IsRecentOpponent(_, _ quick_duel.UserID) (bool, error) {
+	return false, nil
 }
 
 // mockSeasonRepo is an in-memory season repository
@@ -774,36 +834,36 @@ func setupFixture(t *testing.T) *duelFixture {
 func (f *duelFixture) newGetDuelStatusUC() *GetDuelStatusUseCase {
 	return NewGetDuelStatusUseCase(
 		f.playerRatingRepo, f.duelGameRepo, f.challengeRepo,
-		f.seasonRepo, f.userRepo, f.onlineTracker,
+		f.seasonRepo, f.userRepo, f.onlineTracker, nil,
 	)
 }
 
 func (f *duelFixture) newJoinQueueUC() *JoinQueueUseCase {
 	return NewJoinQueueUseCase(
-		f.matchmakingQueue, f.playerRatingRepo, f.duelGameRepo, f.seasonRepo,
+		f.matchmakingQueue, f.playerRatingRepo, f.duelGameRepo, f.seasonRepo, nil,
 	)
 }
 
 func (f *duelFixture) newLeaveQueueUC() *LeaveQueueUseCase {
-	return NewLeaveQueueUseCase(f.matchmakingQueue)
+	return NewLeaveQueueUseCase(f.matchmakingQueue, nil)
 }
 
 func (f *duelFixture) newSendChallengeUC() *SendChallengeUseCase {
-	return NewSendChallengeUseCase(f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot")
+	return NewSendChallengeUseCase(f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot", nil)
 }
 
 func (f *duelFixture) newRespondChallengeUC() *RespondChallengeUseCase {
 	return NewRespondChallengeUseCase(
 		f.challengeRepo, f.duelGameRepo, f.playerRatingRepo,
 		f.seasonRepo, f.questionRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot",
-		&mockTxManager{},
+		&mockTxManager{}, nil,
 	)
 }
 
 func (f *duelFixture) newAcceptByLinkCodeUC() *AcceptByLinkCodeUseCase {
 	return NewAcceptByLinkCodeUseCase(
 		f.challengeRepo, f.duelGameRepo, f.userRepo, &noOpNotifier{}, f.eventBus, "quiz_sprint_test_bot",
-		&mockTxManager{},
+		&mockTxManager{}, nil,
 	)
 }
 
@@ -851,7 +911,7 @@ func (f *duelFixture) newGetLeaderboardUC() *GetLeaderboardUseCase {
 func (f *duelFixture) newStartGameUC() *StartGameUseCase {
 	return NewStartGameUseCase(
 		f.duelGameRepo, f.playerRatingRepo, f.questionRepo,
-		f.seasonRepo, f.eventBus,
+		f.seasonRepo, f.eventBus, f.matchmakingQueue,
 	)
 }
 
@@ -860,11 +920,12 @@ func (f *duelFixture) newSubmitDuelAnswerUC() *SubmitDuelAnswerUseCase {
 		f.duelGameRepo, f.playerRatingRepo, f.questionRepo,
 		f.seasonRepo, f.eventBus,
 		NewMemoryRoundCache(),
+		nil,
 	)
 }
 
 func (f *duelFixture) newRequestRematchUC() *RequestRematchUseCase {
-	return NewRequestRematchUseCase(f.duelGameRepo, f.challengeRepo, f.eventBus)
+	return NewRequestRematchUseCase(f.duelGameRepo, f.challengeRepo, f.playerRatingRepo, f.seasonRepo, f.questionRepo, f.userRepo, f.eventBus)
 }
 
 func (f *duelFixture) newGetOnlineFriendsUC() *GetOnlineFriendsUseCase {

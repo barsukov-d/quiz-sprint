@@ -74,6 +74,14 @@ const directChallenge = computed(() => {
 	return pendingChallenges.value.find((c) => c.id === directChallengeId.value) ?? null
 })
 
+// Hide pending challenges list when deep-link modal is showing to avoid duplication
+const filteredPendingChallenges = computed(() => {
+	if (showConfirmModal.value) {
+		return []
+	}
+	return pendingChallenges.value
+})
+
 const showConfirmModal = ref(false)
 const pendingLinkCode = ref<string | null>(null)
 
@@ -601,7 +609,7 @@ onMounted(async () => {
 
 		<!-- Pending Challenges -->
 		<div
-			v-if="pendingChallenges.length > 0"
+			v-if="filteredPendingChallenges.length > 0"
 			class="mb-4 rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4"
 		>
 			<div class="flex items-center justify-between mb-3">
@@ -610,12 +618,12 @@ onMounted(async () => {
 					<h3 class="text-base font-semibold">{{ t('duel.pendingChallenges') }}</h3>
 				</div>
 				<UBadge color="orange" variant="soft" size="sm">
-					{{ t('duel.pendingCount', { count: pendingChallenges.length }) }}
+					{{ t('duel.pendingCount', { count: filteredPendingChallenges.length }) }}
 				</UBadge>
 			</div>
 
 			<div class="space-y-4">
-				<div v-for="(challenge, index) in pendingChallenges" :key="challenge.id">
+				<div v-for="(challenge, index) in filteredPendingChallenges" :key="challenge.id">
 					<div v-if="index > 0" class="h-px bg-(--ui-border) mb-4" />
 					<!-- Challenger identity -->
 					<div class="flex items-center gap-4 mb-3">

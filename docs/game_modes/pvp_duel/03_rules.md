@@ -1,24 +1,26 @@
 # PvP Duel - Business Rules
 
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 11 | ⚠️ Расходится: 4 | ❌ Не реализовано: 7
+
 ## ELO/MMR System
 
 ### Rating Calculation
 ```go
-func CalculateMMRChange(winnerMMR, loserMMR int, result GameResult) (winnerDelta, loserDelta int) {
-    K := 32  // K-factor (sensitivity)
+func CalculateMMRChange(winnerMMR, loserMMR int, totalGames int) (winnerDelta, loserDelta int) {
+    // K-factor: K=32 for first <30 games, K=16 for 30+ games
+    K := 32
+    if totalGames >= 30 {
+        K = 16
+    }
 
     // Expected score (probability of winning)
     expectedWinner := 1.0 / (1.0 + math.Pow(10, float64(loserMMR-winnerMMR)/400))
-    expectedLoser := 1.0 - expectedWinner
 
-    // Actual score
-    actualWinner := 1.0  // Win = 1
-    actualLoser := 0.0   // Lose = 0
+    winnerDelta = int(math.Round(float64(K) * (1.0 - expectedWinner)))
+    loserDelta = -int(math.Round(float64(K) * expectedWinner))
 
-    winnerDelta = int(math.Round(float64(K) * (actualWinner - expectedWinner)))
-    loserDelta = int(math.Round(float64(K) * (actualLoser - expectedLoser)))
-
-    // Minimum change
+    // Minimum change ±10
     if winnerDelta < 10 {
         winnerDelta = 10
     }
@@ -29,6 +31,8 @@ func CalculateMMRChange(winnerMMR, loserMMR int, result GameResult) (winnerDelta
     return winnerDelta, loserDelta
 }
 ```
+
+> ✅ **Реализовано:** K=32 для <30 игр, K=16 для 30+ игр. Минимальное изменение ±10.
 
 ### MMR Examples
 
@@ -42,6 +46,8 @@ func CalculateMMRChange(winnerMMR, loserMMR int, result GameResult) (winnerDelta
 
 ### Initial MMR
 New players start at **1000 MMR** (Silver IV).
+
+> ✅ **Реализовано.**
 
 ---
 
@@ -75,6 +81,8 @@ New players start at **1000 MMR** (Silver IV).
 | 💎 Diamond I | 19 | 2875 | 2999 |
 | 👑 Legend | 20 | 3000 | ∞ |
 
+> ✅ **Реализовано:** league.go полностью совпадает.
+
 ### Promotion/Demotion
 
 **Promotion:**
@@ -96,11 +104,30 @@ func CanDemote(gamesAtCurrentRank int) bool {
 }
 ```
 
+> ✅ **Реализовано:** PlayerRating.ApplyGameResult обрабатывает promotion/demotion. DemotionProtection=3 совпадает.
+
 ---
 
 ## Win Conditions
 
-### Primary: Correct Answers
+### Scoring
+Each correct answer scores:
+```
+Score = 100 (base) + speed_bonus
+```
+
+| Time taken | Speed bonus |
+|-----------|-------------|
+| 0–3s      | +50         |
+| 3–6s      | +25         |
+| 6–9s      | +10         |
+| 9–10s     | +0          |
+
+Incorrect answer = 0 points. Max per question = 150. Max per duel (7 questions) = 1050.
+
+> ✅ **Реализовано:** 100 base + speed bonus (50/25/10/0). Winner = higher total score.
+
+### Primary: Total Points
 ```go
 func DetermineWinner(player1Score, player2Score int) int {
     if player1Score > player2Score {
@@ -113,7 +140,7 @@ func DetermineWinner(player1Score, player2Score int) int {
 }
 ```
 
-### Tiebreaker 1: Total Time
+### Tiebreaker: Total Time
 ```go
 func DetermineWinnerByTime(player1TotalTime, player2TotalTime int64) int {
     if player1TotalTime < player2TotalTime {
@@ -122,24 +149,11 @@ func DetermineWinnerByTime(player1TotalTime, player2TotalTime int64) int {
     if player2TotalTime < player1TotalTime {
         return 2
     }
-    return 0  // Still tied - extremely rare
+    return 0  // Still tied — resolved by playerID
 }
 ```
 
-### Tiebreaker 2: First Correct Answer
-```go
-func DetermineWinnerByFirstCorrect(answers1, answers2 []Answer) int {
-    for i := 0; i < len(answers1); i++ {
-        if answers1[i].IsCorrect && !answers2[i].IsCorrect {
-            return 1
-        }
-        if answers2[i].IsCorrect && !answers1[i].IsCorrect {
-            return 2
-        }
-    }
-    return 0  // Complete tie (both wrong all questions - impossibly rare)
-}
-```
+> ✅ **Реализовано:** При равных очках побеждает игрок с меньшим суммарным временем. Последний тайбрейк — по playerID (детерминированный).
 
 ---
 
@@ -188,10 +202,16 @@ func CalculateMMRRange(elapsed time.Duration) int {
 }
 ```
 
+> ⚠️ **Расходится:** Redis sorted set реализован (matchmaking_queue.go), но временные интервалы отличаются. Код: 5s/10s/15s/15s+. Документ: 10s/20s/30s/45s/60s.
+
 ### Matchmaking Constraints
 - Cannot be matched with same opponent twice in a row
 - Cannot be matched with blocked players
 - Bot games: No MMR change, ticket refunded
+
+> ❌ **Не реализовано:** Проверка "не тот же соперник дважды подряд" отсутствует.
+> ❌ **Не реализовано:** Система блокировок (blocked players) отсутствует.
+> ❌ **Не реализовано:** Бот-игры не реализованы (нет ни смены MMR, ни возврата билета).
 
 ---
 
@@ -216,6 +236,8 @@ func SelectDuelQuestions(player1Category, player2Category string) []Question {
 - All medium difficulty (balanced)
 - Neither player has seen questions in last 50 games
 - Answer order randomized (same for both players)
+
+> ⚠️ **Расходится:** 7 вопросов выбираются, но фильтр по сложности ("medium") отсутствует — используется случайная выборка из общего пула. Проверка "не видел в последних 50 играх" не реализована.
 
 ---
 
@@ -250,6 +272,8 @@ func HandleTimeout(playerID string) {
 }
 ```
 
+> ❌ **Не реализовано:** Серверная валидация времени (client vs server, 500ms tolerance) отсутствует.
+
 ---
 
 ## Ticket System
@@ -267,6 +291,8 @@ func StartDuel(player1, player2 *Player) error {
 }
 ```
 
+> ❌ **Не реализовано:** Система билетов (ticket system) не реализована.
+
 ### Ticket Refund Scenarios
 
 | Scenario | Refund |
@@ -277,6 +303,8 @@ func StartDuel(player1, player2 *Player) error {
 | Opponent disconnected (forfeit) | ❌ No (win awarded) |
 | Server error | ✅ Yes |
 | Bot game accepted | ✅ Yes |
+
+> ❌ **Не реализовано:** Возврат билетов не реализован (ticket system отсутствует).
 
 ---
 
@@ -309,10 +337,14 @@ func ForfeitGame(gameID, loserID string) {
 }
 ```
 
+> ⚠️ **Расходится:** HandlePlayerDisconnect реализован, но авто-forfeit после 3 пропущенных вопросов подряд при таймаутах не реализован.
+
 ### Voluntary Forfeit
 - "Surrender" button available after question 3
 - Immediate loss, normal MMR penalty
 - Opponent gets full win MMR
+
+> ✅ **Реализовано:** Surrender доступен после вопроса 3. WinReason = "forfeit".
 
 ---
 
@@ -335,10 +367,14 @@ func ValidateAnswer(playerID string, answer Answer) error {
 }
 ```
 
+> ✅ **Реализовано:** MinAnswerTimeMs=200 (строже документа: 0.2s вместо 0.5s).
+
 ### Pattern Detection
 - Same answer timing patterns across games
 - 100% accuracy over many games
 - Coordination with specific opponents (win trading)
+
+> ❌ **Не реализовано.**
 
 ### Penalties
 
@@ -348,6 +384,8 @@ func ValidateAnswer(playerID string, answer Answer) error {
 | Second offense | 24h ranked ban |
 | Third offense | Season ban, rank reset |
 | Confirmed cheating | Permanent ban |
+
+> ❌ **Не реализовано.**
 
 ---
 
@@ -378,6 +416,8 @@ CREATE TABLE duel_games (
     INDEX idx_player2 (player2_id, completed_at)
 );
 ```
+
+> ✅ **Реализовано:** duel_game_repository.go существует.
 
 ---
 
@@ -414,3 +454,5 @@ func CalculateSeasonalReset(currentMMR int) int {
 - Season ends: Last Sunday of month, 23:59 UTC
 - New season starts: First Monday of month, 00:00 UTC
 - Rewards distributed during reset window (~5 minutes)
+
+> ✅ **Реализовано:** Формула совпадает с документом точно (1000 + (current-1000)*0.5, min 500). Метод SeasonReset существует.

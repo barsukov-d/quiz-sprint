@@ -398,6 +398,7 @@ func (uc *GetDailyGameStatusUseCase) Execute(input GetDailyGameStatusInput) (Get
 	if err != nil || game == nil {
 		return GetDailyGameStatusOutput{
 			HasPlayed:    false,
+			CanPlayNow:   true,
 			TimeToExpire: timeToExpire,
 			TotalPlayers: totalPlayers,
 		}, nil
@@ -447,6 +448,18 @@ func (uc *GetDailyGameStatusUseCase) Execute(input GetDailyGameStatusInput) (Get
 	// HasPlayed = true ONLY if game is completed
 	hasPlayed := game.Status() == daily_challenge.GameStatusCompleted
 
+	// Determine retry eligibility: player has < 2 attempts today
+	attemptCount, _ := uc.dailyGameRepo.CountAttemptsByPlayerAndDate(playerID, date)
+	canRetry := hasPlayed && attemptCount < 2
+	var retryCost *RetryCostDTO
+	if canRetry {
+		retryCost = &RetryCostDTO{
+			Coins: 100,
+			HasAd: true,
+		}
+	}
+	canPlayNow := !hasPlayed || canRetry
+
 	return GetDailyGameStatusOutput{
 		HasPlayed:     hasPlayed,
 		Game:          &gameDTO,
@@ -455,6 +468,9 @@ func (uc *GetDailyGameStatusUseCase) Execute(input GetDailyGameStatusInput) (Get
 		TimeRemaining: timeRemaining,
 		TimeToExpire:  timeToExpire,
 		TotalPlayers:  totalPlayers,
+		CanRetry:      canRetry,
+		RetryCost:     retryCost,
+		CanPlayNow:    canPlayNow,
 	}, nil
 }
 
@@ -495,10 +511,44 @@ func (uc *GetDailyLeaderboardUseCase) Execute(input GetDailyLeaderboardInput) (G
 		limit = 100
 	}
 
-	// 3. Get top games
-	topGames, err := uc.dailyGameRepo.FindTopByDate(date, limit)
-	if err != nil {
-		return GetDailyLeaderboardOutput{}, err
+	// 3. Get top games (filtered by type)
+	var topGames []*daily_challenge.DailyGame
+	filterType := input.Type
+	if filterType == "" {
+		filterType = "global"
+	}
+
+	switch filterType {
+	case "friends":
+		if input.PlayerID == "" {
+			return GetDailyLeaderboardOutput{}, nil
+		}
+		playerID, err := shared.NewUserID(input.PlayerID)
+		if err != nil {
+			return GetDailyLeaderboardOutput{}, err
+		}
+		topGames, err = uc.dailyGameRepo.FindTopByDateAndFriends(date, playerID, limit)
+		if err != nil {
+			return GetDailyLeaderboardOutput{}, err
+		}
+	case "country":
+		if input.PlayerID == "" {
+			return GetDailyLeaderboardOutput{}, nil
+		}
+		playerID, err := shared.NewUserID(input.PlayerID)
+		if err != nil {
+			return GetDailyLeaderboardOutput{}, err
+		}
+		topGames, err = uc.dailyGameRepo.FindTopByDateAndCountry(date, playerID, limit)
+		if err != nil {
+			return GetDailyLeaderboardOutput{}, err
+		}
+	default: // "global"
+		var err error
+		topGames, err = uc.dailyGameRepo.FindTopByDate(date, limit)
+		if err != nil {
+			return GetDailyLeaderboardOutput{}, err
+		}
 	}
 
 	// 4. Build leaderboard entries
@@ -601,15 +651,25 @@ func (uc *GetPlayerStreakUseCase) Execute(input GetPlayerStreakInput) (GetPlayer
 // ========================================
 
 type OpenChestUseCase struct {
-	dailyGameRepo daily_challenge.DailyGameRepository
+	dailyGameRepo    daily_challenge.DailyGameRepository
+	inventoryService InventoryService
+	premiumService   PremiumService // optional, nil-guarded
 }
 
 func NewOpenChestUseCase(
 	dailyGameRepo daily_challenge.DailyGameRepository,
+	inventoryService InventoryService,
 ) *OpenChestUseCase {
 	return &OpenChestUseCase{
-		dailyGameRepo: dailyGameRepo,
+		dailyGameRepo:    dailyGameRepo,
+		inventoryService: inventoryService,
 	}
+}
+
+// WithPremiumService sets the optional premium service
+func (uc *OpenChestUseCase) WithPremiumService(ps PremiumService) *OpenChestUseCase {
+	uc.premiumService = ps
+	return uc
 }
 
 func (uc *OpenChestUseCase) Execute(input OpenChestInput) (OpenChestOutput, error) {
@@ -637,12 +697,37 @@ func (uc *OpenChestUseCase) Execute(input OpenChestInput) (OpenChestOutput, erro
 		return OpenChestOutput{}, daily_challenge.ErrGameNotFound
 	}
 
-	// 5. Build output (idempotent - just returns stored data)
+	// 5. Credit rewards to player's inventory
+	if uc.inventoryService != nil {
+		rewards := map[string]int{}
+		if chestReward.Coins() > 0 {
+			rewards["coins"] = chestReward.Coins()
+		}
+		if chestReward.PvpTickets() > 0 {
+			rewards["pvp_tickets"] = chestReward.PvpTickets()
+		}
+		for _, bonus := range chestReward.MarathonBonuses() {
+			rewards[string(bonus)] += 1
+		}
+		if len(rewards) > 0 {
+			if err := uc.inventoryService.Credit(input.PlayerID, "daily_chest", rewards); err != nil {
+				println("⚠️ [OpenChest] Failed to credit inventory:", err.Error())
+			}
+		}
+	}
+
+	// 6. Check premium status (nil-guarded)
+	premiumApplied := false
+	if uc.premiumService != nil {
+		premiumApplied, _ = uc.premiumService.IsPremium(input.PlayerID)
+	}
+
+	// 7. Build output (idempotent - just returns stored data)
 	return OpenChestOutput{
 		ChestType:      chestReward.ChestType().String(),
 		Rewards:        ToChestRewardDTO(*chestReward),
 		StreakBonus:    game.Streak().GetBonus(),
-		PremiumApplied: false, // TODO: check if player has premium
+		PremiumApplied: premiumApplied,
 	}, nil
 }
 
@@ -655,6 +740,9 @@ type RetryChallengeUseCase struct {
 	dailyQuizRepo     daily_challenge.DailyQuizRepository
 	questionRepo      quiz.QuestionRepository
 	eventBus          EventBus
+	inventoryService  InventoryService
+	adVerificationSvc AdVerificationService
+	premiumService    PremiumService // optional, nil-guarded
 }
 
 func NewRetryChallengeUseCase(
@@ -662,13 +750,23 @@ func NewRetryChallengeUseCase(
 	dailyQuizRepo daily_challenge.DailyQuizRepository,
 	questionRepo quiz.QuestionRepository,
 	eventBus EventBus,
+	inventoryService InventoryService,
+	adVerificationSvc AdVerificationService,
 ) *RetryChallengeUseCase {
 	return &RetryChallengeUseCase{
-		dailyGameRepo: dailyGameRepo,
-		dailyQuizRepo: dailyQuizRepo,
-		questionRepo:  questionRepo,
-		eventBus:      eventBus,
+		dailyGameRepo:     dailyGameRepo,
+		dailyQuizRepo:     dailyQuizRepo,
+		questionRepo:      questionRepo,
+		eventBus:          eventBus,
+		inventoryService:  inventoryService,
+		adVerificationSvc: adVerificationSvc,
 	}
+}
+
+// WithPremiumService sets the optional premium service
+func (uc *RetryChallengeUseCase) WithPremiumService(ps PremiumService) *RetryChallengeUseCase {
+	uc.premiumService = ps
+	return uc
 }
 
 func (uc *RetryChallengeUseCase) Execute(input RetryChallengeInput) (RetryChallengeOutput, error) {
@@ -702,9 +800,12 @@ func (uc *RetryChallengeUseCase) Execute(input RetryChallengeInput) (RetryChalle
 		return RetryChallengeOutput{}, err
 	}
 
-	// TODO: check premium status - for now limit to 2 attempts (1 free + 1 retry)
+	// Check premium status (nil-guarded); premium players get unlimited retries
 	isPremium := false
-	maxAttempts := 2
+	if uc.premiumService != nil {
+		isPremium, _ = uc.premiumService.IsPremium(input.PlayerID)
+	}
+	maxAttempts := 2 // 1 free + 1 retry for free users
 	if isPremium {
 		maxAttempts = 999 // Unlimited for premium
 	}
@@ -717,10 +818,19 @@ func (uc *RetryChallengeUseCase) Execute(input RetryChallengeInput) (RetryChalle
 	coinsDeducted := 0
 	if input.PaymentMethod == "coins" {
 		coinsDeducted = 100
-		// TODO: deduct coins from user account
-		// For now just return the cost
+		if uc.inventoryService != nil {
+			err := uc.inventoryService.Debit(input.PlayerID, "daily_retry", map[string]int{"coins": coinsDeducted})
+			if err != nil {
+				return RetryChallengeOutput{}, err
+			}
+		}
 	} else if input.PaymentMethod == "ad" {
-		// TODO: verify ad was watched (via ad network callback)
+		if uc.adVerificationSvc != nil {
+			watched, err := uc.adVerificationSvc.VerifyAdWatched(input.PlayerID, "daily_retry")
+			if err != nil || !watched {
+				return RetryChallengeOutput{}, daily_challenge.ErrInvalidGameID // ad not verified
+			}
+		}
 		coinsDeducted = 0
 	} else {
 		return RetryChallengeOutput{}, daily_challenge.ErrInvalidGameID // Invalid payment method
@@ -798,11 +908,18 @@ func (uc *RetryChallengeUseCase) Execute(input RetryChallengeInput) (RetryChalle
 		return RetryChallengeOutput{}, err
 	}
 
+	remainingCoins := 0
+	if uc.inventoryService != nil {
+		if coins, err := uc.inventoryService.GetCoins(input.PlayerID); err == nil {
+			remainingCoins = coins
+		}
+	}
+
 	return RetryChallengeOutput{
 		NewGameID:      newGame.ID().String(),
 		FirstQuestion:  ToQuestionDTO(firstQuestion),
 		CoinsDeducted:  coinsDeducted,
-		RemainingCoins: 0, // TODO: get from user account
+		RemainingCoins: remainingCoins,
 		TimeLimit:      15,
 	}, nil
 }

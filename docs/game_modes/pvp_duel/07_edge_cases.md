@@ -1,5 +1,12 @@
 # PvP Duel - Edge Cases & Error Handling
 
+> **Статус реализации (обновлено 2026-03-15)**
+> ✅ Реализовано: 13 | ⚠️ Расходится: 11 | ❌ Не реализовано: 3
+>
+> ✅ Challenge expired при открытии ссылки; challenge link wrong person (challengerID validation); challenge link 24h expiry; оба игрока отвечают одновременно; повторная отправка ответа (ErrPlayerAlreadyAnswered); MMR не уходит в минус (MinMMR=0); защита от демоции; формула season reset; ничья по очкам → tiebreaker по времени → playerID fallback (детерминировано); bot game fallback (60s timeout); same-opponent prevention (Redis duel:recent EX 300); time clamping (>10500ms → 10000ms); server-side time validation (negative/clamp)
+> ⚠️ Атомарное создание игры — matchmaking использует Redis sorted set, не SETNX; дисконнект из очереди — есть TTL, но нет явного heartbeat timeout 10s; вызов offline другу — push notification не реализован, но challenge link работает; оба вызывают друг друга — нет auto-convert логики; ответ на неверный вопрос — нет явной проверки, currentRound определяет вопрос; один дисконнектится mid-question — HandlePlayerDisconnect есть, но нет 10s grace timer и 3-timeout forfeit логики; дисконнект во время countdown — нет refund билетов; reconnect после завершения — HandlePlayerReconnect есть, но нет логики "показать результаты"; self-referral — базовая проверка есть, но нет device fingerprint; rematch timeout 15s — use case есть, но нет enforcement таймаута; оба 0 правильных — 0 pts, tiebreaker по времени → playerID
+> ❌ API error format — ошибки частично как plain text (structured JSON в процессе, task #1); мониторинг/алерты — нет; bot difficulty by league — не реализовано (бот отвечает фиксированно)
+
 ## Matchmaking Edge Cases
 
 ### Both players find each other simultaneously
@@ -23,21 +30,21 @@ if !redis.SetNX("game:pending:"+player1+":"+player2, gameID) {
 
 ### No opponent found in 60 seconds
 **Behavior:**
-- Offer bot game
+- Offer bot game (BotFallbackUseCase)
 - If declined → Return ticket
 - If accepted → Play vs bot, no MMR change
+
+> ✅ **Реализовано:** BotFallbackUseCase после 60с в очереди.
 
 ### Same player matched twice in a row
 **Prevention:**
 ```go
-func canBeMatched(player1, player2 PlayerID) bool {
-    lastGame := getLastGame(player1)
-    if lastGame != nil && lastGame.OpponentID == player2 {
-        return false  // Prevent immediate rematch
-    }
-    return true
-}
+// Redis key: duel:recent:{player1}:{player2}, TTL=300s (5 min)
+// Set on game creation. FindOpponent skips players with active recent key.
+// After 30s in queue: bypass prevention (no other opponents available)
 ```
+
+> ✅ **Реализовано:** Redis duel:recent:{p}:{o} EX 300, bypass after 30s in queue.
 
 ---
 
@@ -171,40 +178,27 @@ func handleDisconnect(gameID, playerID string) {
 ## Score & Tiebreaker Edge Cases
 
 ### Tied score (5:5)
-**Tiebreaker:** Total time
+**Tiebreaker:** Total time → playerID fallback
+
 ```go
-func determineWinner(game *DuelGame) PlayerID {
-    if game.Player1.Score > game.Player2.Score {
-        return game.Player1.ID
-    }
-    if game.Player2.Score > game.Player1.Score {
-        return game.Player2.ID
-    }
-
-    // Tied score - check time
-    if game.Player1.TotalTime < game.Player2.TotalTime {
-        return game.Player1.ID
-    }
-    if game.Player2.TotalTime < game.Player1.TotalTime {
-        return game.Player2.ID
-    }
-
-    // Extremely rare: same score, same time
-    // Use first correct answer
-    return firstCorrectPlayer(game)
-}
+// 1. Higher score wins
+// 2. If tied: lower totalTimeMs wins
+// 3. If still tied: lower playerID wins (deterministic)
+// CalculateDrawRating used for symmetric ELO when truly tied
 ```
+
+> ✅ **Реализовано:** Time tiebreaker + playerID fallback. Больше нет nil/draw.
 
 ### Both players get 0 correct
 **Behavior:**
-- Tiebreaker by time (who "failed faster")
-- If same time → First to answer any question
-- Winner still gets MMR (even 0:0)
+- Both 0 pts → tiebreaker by totalTimeMs → playerID fallback
+- Winner still gets MMR (CalculateDrawRating)
 
 ### Perfect tie (same score, same time)
 **Probability:** <0.001%
-**Tiebreaker:** First correct answer on any question
-**If still tied:** Lower playerID wins (arbitrary but deterministic)
+**Tiebreaker:** Lower playerID wins (deterministic)
+
+> ✅ **Реализовано:** Детерминированный исход во всех случаях.
 
 ---
 

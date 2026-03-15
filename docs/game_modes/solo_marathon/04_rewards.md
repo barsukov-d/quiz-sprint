@@ -1,6 +1,10 @@
 # Solo Marathon - Rewards System
 
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 6 | ⚠️ Расходится: 2 | ❌ Не реализовано: 8
+
 ## Weekly Leaderboard Rewards
+<!-- ⚠️ WeeklyRewardDistributionUseCase реализован (UC готов), но Redis weekly leaderboard не реализован → данные для распределения недоступны -->
 
 ### Week Schedule
 - **Start:** Monday 00:00 UTC
@@ -17,6 +21,8 @@
 | **26-50** | 1,000 | 10 | Standard Pack | 🏅 Expert |
 | **51-100** | 500 | 5 | Basic Pack | 🎖️ Challenger |
 | **101+** | 0 | 0 | - | - |
+
+<!-- ❌ Не реализовано: награды по таблице не начисляются -->
 
 ### Bonus Packs
 
@@ -38,6 +44,8 @@
 - ⏭️ Skip: 2
 - ❄️ Freeze: 4
 
+<!-- ❌ Не реализовано: бонусные паки не выдаются -->
+
 ### Badge Display
 Badges shown:
 - In leaderboard next to name
@@ -45,6 +53,8 @@ Badges shown:
 - In game results screen
 
 **Format:** "🥇 Legend (Week 42, 2026)"
+
+<!-- ❌ Не реализовано: система бейджей отсутствует -->
 
 ---
 
@@ -65,6 +75,7 @@ First time reaching new personal record:
 ```
 New record → +500 coins (one-time)
 ```
+<!-- ❌ Flat +500 coins for PB not implemented. Milestone coins ARE credited (see Milestones above) -->
 
 **Milestones:**
 | Score Reached | Bonus | Badge |
@@ -75,6 +86,8 @@ New record → +500 coins (one-time)
 | 200 | 1,000 coins | 💫 Expert |
 | 500 | 5,000 coins | 🌠 Master |
 
+<!-- ✅ Реализовано: 5 milestone порогов + coins начисляются + dedup через MilestoneClaimsRepository (marathon_bonus_usage). ❌ Бейджи не выдаются -->
+
 ---
 
 ## Continue Economics
@@ -82,6 +95,7 @@ New record → +500 coins (one-time)
 ### Cost Progression
 
 **Formula:** `cost = 200 + (continueCount * 200)` where `continueCount` = number of continues already used.
+<!-- ✅ Реализовано: формула верна -->
 
 ```
 Continue #1: 200 coins OR Rewarded Ad
@@ -90,7 +104,9 @@ Continue #3: 600 coins OR Rewarded Ad
 Continue #4+: 800+ coins (no ad option, cost keeps escalating)
 ```
 
-**Ad option:** Available for first 3 continues only (`continueCount < 3`).
+**Ad option:** Available for first 3 continues only (`continueCount < 3`). <!-- ✅ Реализовано: флаг присутствует -->
+
+<!-- ✅ Стоимость вычисляется корректно, монеты списываются (real deduction) -->
 
 ### Expected Value Analysis
 
@@ -123,6 +139,8 @@ Break-even: Need to reach top 100
 - ❄️ Freeze: 10
 - Cost: **800 coins** (vs 1,000 if bought separately)
 
+<!-- ❌ Не реализовано: магазин бонусов отсутствует -->
+
 **Emergency Pack (in-game offer):**
 Shown when all bonuses depleted during run:
 ```
@@ -135,6 +153,7 @@ Shown when all bonuses depleted during run:
 │  [ 150 💰 ]  или  [ 📺 ]        │
 └─────────────────────────────────┘
 ```
+<!-- ❌ Не реализовано: экстренный пак в игре не реализован -->
 
 ---
 
@@ -175,6 +194,8 @@ UPDATE user_inventory SET
 Твоё место: #15
 Получено: 2,000💰, 20🎟️, Standard Pack
 ```
+
+<!-- ⚠️ WeeklyRewardDistributionUseCase реализован (PostgreSQL), но scheduled job и Redis leaderboard не реализованы -->
 
 ---
 
@@ -227,6 +248,7 @@ CREATE TABLE marathon_weekly_leaderboard (
     INDEX idx_week_rank (week_id, rank)
 );
 ```
+<!-- ❌ Не реализовано: таблица marathon_weekly_leaderboard не создана -->
 
 ### Reward Claims
 ```sql
@@ -243,6 +265,7 @@ CREATE TABLE reward_claims (
     INDEX idx_player_unclaimed (player_id, claimed_at)
 );
 ```
+<!-- ❌ Не реализовано: таблица reward_claims не создана -->
 
 ---
 

@@ -667,9 +667,14 @@ func (mg *MarathonGameV2) ShieldActive() bool                          { return 
 func (mg *MarathonGameV2) ContinueCount() int                         { return mg.continueCount }
 func (mg *MarathonGameV2) PersonalBestScore() *int                     { return mg.personalBestScore }
 
+// Streak getters
+func (mg *MarathonGameV2) StreakCount() int    { return mg.streakCount }
+func (mg *MarathonGameV2) BestStreak() int     { return mg.bestStreak }
+func (mg *MarathonGameV2) LivesRestored() int  { return mg.livesRestored }
+
 // Backwards-compatible getters (transitional — some callers may still use streak/hints)
-func (mg *MarathonGameV2) CurrentStreak() int    { return mg.score }
-func (mg *MarathonGameV2) MaxStreak() int        { return mg.score }
+func (mg *MarathonGameV2) CurrentStreak() int    { return mg.streakCount }
+func (mg *MarathonGameV2) MaxStreak() int        { return mg.bestStreak }
 func (mg *MarathonGameV2) BaseScore() int        { return mg.score }
 
 // Events returns collected domain events and clears them

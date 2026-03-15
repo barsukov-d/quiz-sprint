@@ -25,6 +25,7 @@ type GetDuelStatusUseCase struct {
 	seasonRepo       quick_duel.SeasonRepository
 	userRepo         domainUser.UserRepository
 	onlineTracker    OnlineTracker // optional, nil if Redis unavailable
+	inventoryService InventoryService
 }
 
 func NewGetDuelStatusUseCase(
@@ -34,6 +35,7 @@ func NewGetDuelStatusUseCase(
 	seasonRepo quick_duel.SeasonRepository,
 	userRepo domainUser.UserRepository,
 	onlineTracker OnlineTracker,
+	inventoryService InventoryService,
 ) *GetDuelStatusUseCase {
 	return &GetDuelStatusUseCase{
 		playerRatingRepo: playerRatingRepo,
@@ -42,6 +44,7 @@ func NewGetDuelStatusUseCase(
 		seasonRepo:       seasonRepo,
 		userRepo:         userRepo,
 		onlineTracker:    onlineTracker,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -164,11 +167,18 @@ func (uc *GetDuelStatusUseCase) Execute(input GetDuelStatusInput) (GetDuelStatus
 		expiredDTOs = append(expiredDTOs, dto)
 	}
 
+	tickets := 0
+	if uc.inventoryService != nil {
+		if t, err := uc.inventoryService.GetPvpTickets(input.PlayerID); err == nil {
+			tickets = t
+		}
+	}
+
 	return GetDuelStatusOutput{
 		HasActiveDuel:      activeGameID != nil,
 		ActiveGameID:       activeGameID,
 		Player:             ToPlayerRatingDTO(rating),
-		Tickets:            10, // TODO: get from user wallet
+		Tickets:            tickets,
 		FriendsOnline:      []FriendDTO{}, // TODO: implement friends service
 		PendingChallenges:  challengeDTOs,
 		OutgoingChallenges: outgoingDTOs,
@@ -188,6 +198,7 @@ type JoinQueueUseCase struct {
 	playerRatingRepo quick_duel.PlayerRatingRepository
 	duelGameRepo     quick_duel.DuelGameRepository
 	seasonRepo       quick_duel.SeasonRepository
+	inventoryService InventoryService
 }
 
 func NewJoinQueueUseCase(
@@ -195,12 +206,14 @@ func NewJoinQueueUseCase(
 	playerRatingRepo quick_duel.PlayerRatingRepository,
 	duelGameRepo quick_duel.DuelGameRepository,
 	seasonRepo quick_duel.SeasonRepository,
+	inventoryService InventoryService,
 ) *JoinQueueUseCase {
 	return &JoinQueueUseCase{
 		matchmakingQueue: matchmakingQueue,
 		playerRatingRepo: playerRatingRepo,
 		duelGameRepo:     duelGameRepo,
 		seasonRepo:       seasonRepo,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -234,7 +247,13 @@ func (uc *JoinQueueUseCase) Execute(input JoinQueueInput) (JoinQueueOutput, erro
 		return JoinQueueOutput{}, err
 	}
 
-	// TODO: Check and consume ticket
+	// Consume PvP ticket
+	if uc.inventoryService != nil {
+		err := uc.inventoryService.Debit(input.PlayerID, "pvp_entry", map[string]int{"pvp_tickets": 1})
+		if err != nil {
+			return JoinQueueOutput{}, quick_duel.ErrInsufficientTickets
+		}
+	}
 
 	// Add to queue
 	err = uc.matchmakingQueue.AddToQueue(playerID, rating.MMR(), now)
@@ -260,13 +279,16 @@ func (uc *JoinQueueUseCase) Execute(input JoinQueueInput) (JoinQueueOutput, erro
 
 type LeaveQueueUseCase struct {
 	matchmakingQueue quick_duel.MatchmakingQueue
+	inventoryService InventoryService
 }
 
 func NewLeaveQueueUseCase(
 	matchmakingQueue quick_duel.MatchmakingQueue,
+	inventoryService InventoryService,
 ) *LeaveQueueUseCase {
 	return &LeaveQueueUseCase{
 		matchmakingQueue: matchmakingQueue,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -283,10 +305,16 @@ func (uc *LeaveQueueUseCase) Execute(input LeaveQueueInput) (LeaveQueueOutput, e
 	}
 
 	if !inQueue {
+		tickets := 0
+		if uc.inventoryService != nil {
+			if t, err := uc.inventoryService.GetPvpTickets(input.PlayerID); err == nil {
+				tickets = t
+			}
+		}
 		return LeaveQueueOutput{
 			Success:        true,
 			TicketRefunded: false,
-			NewTicketCount: 10, // TODO: get from wallet
+			NewTicketCount: tickets,
 		}, nil
 	}
 
@@ -296,12 +324,22 @@ func (uc *LeaveQueueUseCase) Execute(input LeaveQueueInput) (LeaveQueueOutput, e
 		return LeaveQueueOutput{}, err
 	}
 
-	// TODO: Refund ticket
+	// Refund PvP ticket
+	if uc.inventoryService != nil {
+		_ = uc.inventoryService.Credit(input.PlayerID, "pvp_refund", map[string]int{"pvp_tickets": 1})
+	}
+
+	tickets := 0
+	if uc.inventoryService != nil {
+		if t, err := uc.inventoryService.GetPvpTickets(input.PlayerID); err == nil {
+			tickets = t
+		}
+	}
 
 	return LeaveQueueOutput{
 		Success:        true,
 		TicketRefunded: true,
-		NewTicketCount: 10, // TODO: get from wallet
+		NewTicketCount: tickets,
 	}, nil
 }
 
@@ -310,12 +348,13 @@ func (uc *LeaveQueueUseCase) Execute(input LeaveQueueInput) (LeaveQueueOutput, e
 // ========================================
 
 type SendChallengeUseCase struct {
-	challengeRepo quick_duel.ChallengeRepository
-	duelGameRepo  quick_duel.DuelGameRepository
-	userRepo      domainUser.UserRepository
-	notifier      TelegramNotifier
-	eventBus      EventBus
-	botUsername   string
+	challengeRepo    quick_duel.ChallengeRepository
+	duelGameRepo     quick_duel.DuelGameRepository
+	userRepo         domainUser.UserRepository
+	notifier         TelegramNotifier
+	eventBus         EventBus
+	botUsername      string
+	inventoryService InventoryService
 }
 
 func NewSendChallengeUseCase(
@@ -325,14 +364,16 @@ func NewSendChallengeUseCase(
 	notifier TelegramNotifier,
 	eventBus EventBus,
 	botUsername string,
+	inventoryService InventoryService,
 ) *SendChallengeUseCase {
 	return &SendChallengeUseCase{
-		challengeRepo: challengeRepo,
-		duelGameRepo:  duelGameRepo,
-		userRepo:      userRepo,
-		notifier:      notifier,
-		eventBus:      eventBus,
-		botUsername:   botUsername,
+		challengeRepo:    challengeRepo,
+		duelGameRepo:     duelGameRepo,
+		userRepo:         userRepo,
+		notifier:         notifier,
+		eventBus:         eventBus,
+		botUsername:      botUsername,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -367,6 +408,14 @@ func (uc *SendChallengeUseCase) Execute(input SendChallengeInput) (SendChallenge
 			if c.ChallengedID() != nil && c.ChallengedID().Equals(friendID) {
 				return SendChallengeOutput{}, quick_duel.ErrChallengeAlreadySent
 			}
+		}
+	}
+
+	// Consume PvP ticket for sending a challenge
+	if uc.inventoryService != nil {
+		err := uc.inventoryService.Debit(input.PlayerID, "pvp_entry", map[string]int{"pvp_tickets": 1})
+		if err != nil {
+			return SendChallengeOutput{}, quick_duel.ErrInsufficientTickets
 		}
 	}
 
@@ -427,6 +476,7 @@ type RespondChallengeUseCase struct {
 	eventBus         EventBus
 	botUsername      string
 	txManager        TxManager
+	inventoryService InventoryService
 }
 
 func NewRespondChallengeUseCase(
@@ -440,6 +490,7 @@ func NewRespondChallengeUseCase(
 	eventBus EventBus,
 	botUsername string,
 	txManager TxManager,
+	inventoryService InventoryService,
 ) *RespondChallengeUseCase {
 	return &RespondChallengeUseCase{
 		challengeRepo:    challengeRepo,
@@ -452,6 +503,7 @@ func NewRespondChallengeUseCase(
 		eventBus:         eventBus,
 		botUsername:      botUsername,
 		txManager:        txManager,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -502,6 +554,8 @@ func (uc *RespondChallengeUseCase) Execute(input RespondChallengeInput) (Respond
 	if uc.questionRepo == nil {
 		return RespondChallengeOutput{}, fmt.Errorf("question repository unavailable")
 	}
+
+	// No ticket cost for accepting a challenge — only the challenger pays
 
 	// Prepare data needed for game creation before entering tx
 	challengerID := challenge.ChallengerID()
@@ -636,13 +690,14 @@ type TelegramNotifier interface {
 // ========================================
 
 type AcceptByLinkCodeUseCase struct {
-	challengeRepo quick_duel.ChallengeRepository
-	duelGameRepo  quick_duel.DuelGameRepository
-	userRepo      domainUser.UserRepository
-	notifier      TelegramNotifier
-	eventBus      EventBus
-	botUsername   string
-	txManager    TxManager
+	challengeRepo    quick_duel.ChallengeRepository
+	duelGameRepo     quick_duel.DuelGameRepository
+	userRepo         domainUser.UserRepository
+	notifier         TelegramNotifier
+	eventBus         EventBus
+	botUsername      string
+	txManager        TxManager
+	inventoryService InventoryService
 }
 
 func NewAcceptByLinkCodeUseCase(
@@ -653,15 +708,17 @@ func NewAcceptByLinkCodeUseCase(
 	eventBus EventBus,
 	botUsername string,
 	txManager TxManager,
+	inventoryService InventoryService,
 ) *AcceptByLinkCodeUseCase {
 	return &AcceptByLinkCodeUseCase{
-		challengeRepo: challengeRepo,
-		duelGameRepo:  duelGameRepo,
-		userRepo:      userRepo,
-		notifier:      notifier,
-		eventBus:      eventBus,
-		botUsername:   botUsername,
-		txManager:    txManager,
+		challengeRepo:    challengeRepo,
+		duelGameRepo:     duelGameRepo,
+		userRepo:         userRepo,
+		notifier:         notifier,
+		eventBus:         eventBus,
+		botUsername:      botUsername,
+		txManager:        txManager,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -703,6 +760,8 @@ func (uc *AcceptByLinkCodeUseCase) Execute(input AcceptByLinkCodeInput) (AcceptB
 		}
 		return AcceptByLinkCodeOutput{}, quick_duel.ErrChallengeNotPending
 	}
+
+	// No ticket cost for accepting a challenge link — only the challenger pays
 
 	// Check if accepter is already in a game
 	if activeGame, err := uc.duelGameRepo.FindActiveByPlayer(accepterID); err == nil && activeGame != nil {
@@ -985,6 +1044,209 @@ func (uc *GetLeaderboardUseCase) Execute(input GetLeaderboardInput) (GetLeaderbo
 }
 
 // ========================================
+// GetReferrals Use Case
+// ========================================
+
+type GetReferralsUseCase struct {
+	referralRepo    quick_duel.ReferralRepository
+	userRepo        domainUser.UserRepository
+	inventoryService InventoryService
+}
+
+func NewGetReferralsUseCase(
+	referralRepo quick_duel.ReferralRepository,
+	userRepo domainUser.UserRepository,
+	inventoryService InventoryService,
+) *GetReferralsUseCase {
+	return &GetReferralsUseCase{
+		referralRepo:    referralRepo,
+		userRepo:        userRepo,
+		inventoryService: inventoryService,
+	}
+}
+
+func (uc *GetReferralsUseCase) Execute(input GetReferralsInput) (GetReferralsOutput, error) {
+	playerID, err := shared.NewUserID(input.PlayerID)
+	if err != nil {
+		return GetReferralsOutput{}, err
+	}
+
+	referrals, err := uc.referralRepo.FindByInviter(playerID)
+	if err != nil {
+		return GetReferralsOutput{}, err
+	}
+
+	totalReferrals, err := uc.referralRepo.CountByInviter(playerID)
+	if err != nil {
+		totalReferrals = len(referrals)
+	}
+
+	activeReferrals, err := uc.referralRepo.CountActiveByInviter(playerID)
+	if err != nil {
+		activeReferrals = 0
+	}
+
+	referralLeaderboardRank, _ := uc.referralRepo.GetPlayerReferralRank(playerID)
+
+	// Collect all pending rewards across all referrals
+	var allPendingRewards []string
+	referralDTOs := make([]ReferralDTO, 0, len(referrals))
+
+	for _, r := range referrals {
+		inviteeUsername := r.InviteeID().String()
+		if user, err := uc.userRepo.FindByID(r.InviteeID()); err == nil && user != nil {
+			if !user.Username().IsAnonymous() {
+				inviteeUsername = user.Username().String()
+			} else if user.TelegramUsername().String() != "" {
+				inviteeUsername = user.TelegramUsername().String()
+			}
+		}
+
+		milestonesReached := make([]string, 0)
+		milestones := []string{
+			quick_duel.MilestoneRegistered,
+			quick_duel.MilestonePlayedFive,
+			quick_duel.MilestoneReachedSilver,
+			quick_duel.MilestoneReachedGold,
+			quick_duel.MilestoneReachedPlatinum,
+		}
+		for _, m := range milestones {
+			if r.IsMilestoneReached(m) {
+				milestonesReached = append(milestonesReached, m)
+			}
+		}
+
+		pendingRewards := r.GetPendingInviterRewards()
+		allPendingRewards = append(allPendingRewards, pendingRewards...)
+
+		referralDTOs = append(referralDTOs, ReferralDTO{
+			ID:                r.ID().String(),
+			InviteeID:         r.InviteeID().String(),
+			InviteeUsername:   inviteeUsername,
+			MilestonesReached: milestonesReached,
+			PendingRewards:    pendingRewards,
+			CreatedAt:         r.CreatedAt(),
+		})
+	}
+
+	// Build referral link from bot username — use PlayerID as ref parameter
+	referralLink := fmt.Sprintf("https://t.me/quiz_sprint_bot?start=ref_%s", input.PlayerID)
+
+	return GetReferralsOutput{
+		ReferralLink:            referralLink,
+		TotalReferrals:          totalReferrals,
+		ActiveReferrals:         activeReferrals,
+		PendingRewards:          allPendingRewards,
+		ReferralLeaderboardRank: referralLeaderboardRank,
+		Referrals:               referralDTOs,
+	}, nil
+}
+
+// ========================================
+// ClaimReferralReward Use Case
+// ========================================
+
+type ClaimReferralRewardUseCase struct {
+	referralRepo    quick_duel.ReferralRepository
+	inventoryService InventoryService
+}
+
+func NewClaimReferralRewardUseCase(
+	referralRepo quick_duel.ReferralRepository,
+	inventoryService InventoryService,
+) *ClaimReferralRewardUseCase {
+	return &ClaimReferralRewardUseCase{
+		referralRepo:    referralRepo,
+		inventoryService: inventoryService,
+	}
+}
+
+func (uc *ClaimReferralRewardUseCase) Execute(input ClaimReferralRewardInput) (ClaimReferralRewardOutput, error) {
+	playerID, err := shared.NewUserID(input.PlayerID)
+	if err != nil {
+		return ClaimReferralRewardOutput{}, err
+	}
+
+	friendID, err := shared.NewUserID(input.FriendID)
+	if err != nil {
+		return ClaimReferralRewardOutput{}, err
+	}
+
+	if input.Milestone == "" {
+		return ClaimReferralRewardOutput{}, quick_duel.ErrMilestoneNotReached
+	}
+
+	// Look up referral where player is inviter and friend is invitee
+	referral, err := uc.referralRepo.FindByInviterAndInvitee(playerID, friendID)
+	if err != nil {
+		// Also check if player is invitee and friend is inviter
+		referral, err = uc.referralRepo.FindByInviterAndInvitee(friendID, playerID)
+		if err != nil {
+			return ClaimReferralRewardOutput{}, quick_duel.ErrReferralNotFound
+		}
+
+		// Player is invitee — claim invitee reward
+		reward, err := referral.ClaimInviteeReward(input.Milestone)
+		if err != nil {
+			return ClaimReferralRewardOutput{}, err
+		}
+
+		if err := uc.referralRepo.Save(referral); err != nil {
+			return ClaimReferralRewardOutput{}, err
+		}
+
+		return uc.creditAndBuildOutput(input.PlayerID, reward)
+	}
+
+	// Player is inviter — claim inviter reward
+	reward, err := referral.ClaimInviterReward(input.Milestone)
+	if err != nil {
+		return ClaimReferralRewardOutput{}, err
+	}
+
+	if err := uc.referralRepo.Save(referral); err != nil {
+		return ClaimReferralRewardOutput{}, err
+	}
+
+	return uc.creditAndBuildOutput(input.PlayerID, reward)
+}
+
+func (uc *ClaimReferralRewardUseCase) creditAndBuildOutput(playerID string, reward *quick_duel.ReferralReward) (ClaimReferralRewardOutput, error) {
+	creditDetails := make(map[string]int)
+	if reward.Coins > 0 {
+		creditDetails["coins"] = reward.Coins
+	}
+	if reward.Tickets > 0 {
+		creditDetails["pvp_tickets"] = reward.Tickets
+	}
+
+	if len(creditDetails) > 0 && uc.inventoryService != nil {
+		if err := uc.inventoryService.Credit(playerID, "referral_milestone", creditDetails); err != nil {
+			return ClaimReferralRewardOutput{}, err
+		}
+	}
+
+	var newTicketBalance int
+	var newCoinBalance int
+	if uc.inventoryService != nil {
+		newTicketBalance, _ = uc.inventoryService.GetPvpTickets(playerID)
+	}
+
+	return ClaimReferralRewardOutput{
+		Success: true,
+		Rewards: ReferralRewardDTO{
+			Tickets: reward.Tickets,
+			Coins:   reward.Coins,
+			Badge:   reward.Badge,
+			Avatar:  reward.Avatar,
+			Title:   reward.Title,
+		},
+		NewTicketBalance: newTicketBalance,
+		NewCoinBalance:   newCoinBalance,
+	}, nil
+}
+
+// ========================================
 // StartGame Use Case
 // ========================================
 
@@ -994,6 +1256,7 @@ type StartGameUseCase struct {
 	questionRepo     QuestionRepository
 	seasonRepo       quick_duel.SeasonRepository
 	eventBus         EventBus
+	matchmakingQueue quick_duel.MatchmakingQueue // optional, for recording recent opponents
 }
 
 // QuestionRepository interface for getting questions
@@ -1024,6 +1287,7 @@ func NewStartGameUseCase(
 	questionRepo QuestionRepository,
 	seasonRepo quick_duel.SeasonRepository,
 	eventBus EventBus,
+	matchmakingQueue quick_duel.MatchmakingQueue,
 ) *StartGameUseCase {
 	return &StartGameUseCase{
 		duelGameRepo:     duelGameRepo,
@@ -1031,6 +1295,7 @@ func NewStartGameUseCase(
 		questionRepo:     questionRepo,
 		seasonRepo:       seasonRepo,
 		eventBus:         eventBus,
+		matchmakingQueue: matchmakingQueue,
 	}
 }
 
@@ -1096,6 +1361,11 @@ func (uc *StartGameUseCase) Execute(input StartGameInput) (StartGameOutput, erro
 	err = uc.duelGameRepo.Save(game)
 	if err != nil {
 		return StartGameOutput{}, err
+	}
+
+	// Record recent opponents so rematch is avoided for 5 minutes (best-effort)
+	if uc.matchmakingQueue != nil {
+		_ = uc.matchmakingQueue.RecordRecentOpponent(player1ID, player2ID)
 	}
 
 	return StartGameOutput{
@@ -1164,6 +1434,7 @@ type SubmitDuelAnswerUseCase struct {
 	seasonRepo       quick_duel.SeasonRepository
 	eventBus         EventBus
 	roundCache       DuelRoundCache
+	inventoryService InventoryService
 }
 
 // PlayerAnswer holds a single player's answer for one duel round.
@@ -1183,6 +1454,7 @@ func NewSubmitDuelAnswerUseCase(
 	seasonRepo quick_duel.SeasonRepository,
 	eventBus EventBus,
 	roundCache DuelRoundCache,
+	inventoryService InventoryService,
 ) *SubmitDuelAnswerUseCase {
 	return &SubmitDuelAnswerUseCase{
 		duelGameRepo:     duelGameRepo,
@@ -1191,6 +1463,7 @@ func NewSubmitDuelAnswerUseCase(
 		seasonRepo:       seasonRepo,
 		eventBus:         eventBus,
 		roundCache:       roundCache,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -1230,6 +1503,13 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 	}
 	currentQuestionID := questionIDs[currentRound-1]
 
+	// Detect stale round: if the client sent a questionID and it doesn't match
+	// the server's current round question, the round already advanced (timeout race).
+	// Treat as late/stale answer — return ErrPlayerAlreadyAnswered instead of confusing ErrAnswerNotFound.
+	if input.QuestionID != "" && input.QuestionID != currentQuestionID.String() {
+		return nil, quick_duel.ErrPlayerAlreadyAnswered
+	}
+
 	question, err := uc.questionRepo.FindByID(currentQuestionID)
 	if err != nil {
 		return nil, fmt.Errorf("submit duel answer: load question: %w", err)
@@ -1243,6 +1523,17 @@ func (uc *SubmitDuelAnswerUseCase) Execute(input SubmitDuelAnswerInput) (*Submit
 	answerID, err := quiz.NewAnswerIDFromString(input.AnswerID)
 	if err != nil {
 		return nil, err
+	}
+
+	// Pre-populate roundAnswers from Redis cache (roundAnswers are not persisted to DB).
+	// This ensures the domain aggregate knows about the opponent's already-submitted answer
+	// so that bothAnswered/completeRound logic works correctly.
+	if cachedAnswers, cacheErr := uc.roundCache.GetAnswers(input.GameID, currentRound); cacheErr == nil {
+		for _, ca := range cachedAnswers {
+			caPlayerID, _ := shared.NewUserID(ca.PlayerID)
+			caAnswerID, _ := quiz.NewAnswerIDFromString(ca.AnswerID)
+			game.ReplayRoundAnswer(currentRound, caPlayerID, caAnswerID, int64(ca.TimeTaken), ca.IsCorrect, ca.Points)
+		}
 	}
 
 	// Delegate correctness check and scoring to the domain aggregate
@@ -1386,6 +1677,34 @@ func (uc *SubmitDuelAnswerUseCase) finalizeGame(
 		uc.playerRatingRepo.Save(rating2)
 		output.Player2MMRChange = rating2.MMR() - oldMMR2
 		output.Player2NewMMR = rating2.MMR()
+	}
+
+	// Credit win rewards via inventory
+	if uc.inventoryService != nil {
+		if winnerID != "" {
+			// Winner gets coins based on their league
+			var winnerLeague quick_duel.League
+			if game.Player1().UserID().String() == winnerID && rating1 != nil {
+				winnerLeague = rating1.League()
+			} else if rating2 != nil {
+				winnerLeague = rating2.League()
+			}
+			reward := winnerLeague.GetWinReward()
+			if reward > 0 {
+				_ = uc.inventoryService.Credit(winnerID, "pvp_win", map[string]int{"coins": reward})
+			}
+		} else {
+			// Draw — both get draw reward
+			var league1, league2 quick_duel.League
+			if rating1 != nil {
+				league1 = rating1.League()
+			}
+			if rating2 != nil {
+				league2 = rating2.League()
+			}
+			_ = uc.inventoryService.Credit(game.Player1().UserID().String(), "pvp_draw", map[string]int{"coins": league1.GetDrawReward()})
+			_ = uc.inventoryService.Credit(game.Player2().UserID().String(), "pvp_draw", map[string]int{"coins": league2.GetDrawReward()})
+		}
 	}
 
 	// Save game (domain already updated status internally)
@@ -1563,6 +1882,109 @@ func (uc *GetGameResultUseCase) Execute(input GetGameResultInput) (*GetGameResul
 	}, nil
 }
 
+// ========================================
+// SurrenderGame Use Case
+// ========================================
+
+type SurrenderGameUseCase struct {
+	duelGameRepo     quick_duel.DuelGameRepository
+	playerRatingRepo quick_duel.PlayerRatingRepository
+	seasonRepo       quick_duel.SeasonRepository
+	eventBus         EventBus
+}
+
+func NewSurrenderGameUseCase(
+	duelGameRepo quick_duel.DuelGameRepository,
+	playerRatingRepo quick_duel.PlayerRatingRepository,
+	seasonRepo quick_duel.SeasonRepository,
+	eventBus EventBus,
+) *SurrenderGameUseCase {
+	return &SurrenderGameUseCase{
+		duelGameRepo:     duelGameRepo,
+		playerRatingRepo: playerRatingRepo,
+		seasonRepo:       seasonRepo,
+		eventBus:         eventBus,
+	}
+}
+
+func (uc *SurrenderGameUseCase) Execute(input SurrenderGameInput) (*SurrenderGameOutput, error) {
+	now := time.Now().UTC().Unix()
+
+	playerID, err := shared.NewUserID(input.PlayerID)
+	if err != nil {
+		return nil, err
+	}
+
+	gameID := quick_duel.NewGameIDFromString(input.GameID)
+	game, err := uc.duelGameRepo.FindByID(gameID)
+	if err != nil {
+		return nil, err
+	}
+
+	result, err := game.Surrender(playerID, now)
+	if err != nil {
+		return nil, err
+	}
+
+	// Publish domain events
+	for _, event := range game.Events() {
+		uc.eventBus.Publish(event)
+	}
+
+	// Save finished game
+	if err := uc.duelGameRepo.Save(game); err != nil {
+		return nil, err
+	}
+
+	// Update ELO ratings
+	seasonID, _ := uc.seasonRepo.GetCurrentSeason()
+	opponentID := result.WinnerID
+
+	// Surrendering player: loss
+	loserRating, err := uc.playerRatingRepo.FindOrCreate(playerID, seasonID, now)
+	if err != nil {
+		return nil, err
+	}
+	oldMMR := loserRating.MMR()
+	var opponentEloForLoser int
+	if game.Player1().UserID().Equals(playerID) {
+		opponentEloForLoser = game.Player2().Elo().Rating()
+	} else {
+		opponentEloForLoser = game.Player1().Elo().Rating()
+	}
+	loserRating.ApplyGameResult(quick_duel.GameResult{
+		Won:         false,
+		OpponentMMR: opponentEloForLoser,
+		GameTime:    now,
+	})
+	_ = uc.playerRatingRepo.Save(loserRating)
+	mmrChange := loserRating.MMR() - oldMMR
+
+	// Winning player (opponent): win
+	opponentRating, err := uc.playerRatingRepo.FindOrCreate(opponentID, seasonID, now)
+	if err == nil {
+		var opponentElo int
+		if game.Player1().UserID().Equals(opponentID) {
+			opponentElo = game.Player2().Elo().Rating()
+		} else {
+			opponentElo = game.Player1().Elo().Rating()
+		}
+		opponentRating.ApplyGameResult(quick_duel.GameResult{
+			Won:         true,
+			OpponentMMR: opponentElo,
+			GameTime:    now,
+		})
+		_ = uc.playerRatingRepo.Save(opponentRating)
+	}
+
+	return &SurrenderGameOutput{
+		GameID:    input.GameID,
+		WinnerID:  opponentID.String(),
+		MMRChange: mmrChange,
+		NewMMR:    loserRating.MMR(),
+	}, nil
+}
+
 // isErr reports whether err or any of its unwrapped causes equals target.
 func isErr(err, target error) bool {
 	if err == target {
@@ -1586,20 +2008,32 @@ func max(a, b int) int {
 // ========================================
 
 type RequestRematchUseCase struct {
-	duelGameRepo  quick_duel.DuelGameRepository
-	challengeRepo quick_duel.ChallengeRepository
-	eventBus      EventBus
+	duelGameRepo     quick_duel.DuelGameRepository
+	challengeRepo    quick_duel.ChallengeRepository
+	playerRatingRepo quick_duel.PlayerRatingRepository
+	seasonRepo       quick_duel.SeasonRepository
+	questionRepo     QuestionRepository
+	userRepo         domainUser.UserRepository
+	eventBus         EventBus
 }
 
 func NewRequestRematchUseCase(
 	duelGameRepo quick_duel.DuelGameRepository,
 	challengeRepo quick_duel.ChallengeRepository,
+	playerRatingRepo quick_duel.PlayerRatingRepository,
+	seasonRepo quick_duel.SeasonRepository,
+	questionRepo QuestionRepository,
+	userRepo domainUser.UserRepository,
 	eventBus EventBus,
 ) *RequestRematchUseCase {
 	return &RequestRematchUseCase{
-		duelGameRepo:  duelGameRepo,
-		challengeRepo: challengeRepo,
-		eventBus:      eventBus,
+		duelGameRepo:     duelGameRepo,
+		challengeRepo:    challengeRepo,
+		playerRatingRepo: playerRatingRepo,
+		seasonRepo:       seasonRepo,
+		questionRepo:     questionRepo,
+		userRepo:         userRepo,
+		eventBus:         eventBus,
 	}
 }
 
@@ -1638,16 +2072,22 @@ func (uc *RequestRematchUseCase) Execute(input RequestRematchInput) (RequestRema
 		opponentID = game.Player1().UserID()
 	}
 
-	// Check if opponent already requested rematch (auto-accept)
+	// Check if opponent already requested rematch (auto-accept + create game)
 	existingChallenges, err := uc.challengeRepo.FindPendingByChallenger(opponentID)
 	if err == nil {
 		for _, c := range existingChallenges {
-			// If opponent sent a rematch challenge to this player
 			if c.ChallengedID() != nil && c.ChallengedID().String() == input.PlayerID {
-				// Auto-accept the rematch
 				if err := c.Accept(playerID, now); err != nil {
-					continue // expired or invalid state, skip
+					continue
 				}
+
+				// Create the game immediately
+				gameID, err := uc.createRematchGame(c.ChallengerID(), playerID, now)
+				if err != nil {
+					return RequestRematchOutput{}, err
+				}
+
+				c.SetMatchID(quick_duel.NewGameIDFromString(gameID))
 				if err := uc.challengeRepo.Save(c); err != nil {
 					return RequestRematchOutput{}, err
 				}
@@ -1660,7 +2100,7 @@ func (uc *RequestRematchUseCase) Execute(input RequestRematchInput) (RequestRema
 					RematchID: c.ID().String(),
 					Status:    "accepted",
 					ExpiresIn: 0,
-					GameID:    nil, // Would be set when game starts
+					GameID:    &gameID,
 				}, nil
 			}
 		}
@@ -1688,6 +2128,59 @@ func (uc *RequestRematchUseCase) Execute(input RequestRematchInput) (RequestRema
 		Status:    "pending",
 		ExpiresIn: quick_duel.DirectChallengeExpirySeconds,
 	}, nil
+}
+
+func (uc *RequestRematchUseCase) createRematchGame(player1ID, player2ID quick_duel.UserID, now int64) (string, error) {
+	seasonID, _ := uc.seasonRepo.GetCurrentSeason()
+
+	rating1, err := uc.playerRatingRepo.FindOrCreate(player1ID, seasonID, now)
+	if err != nil {
+		return "", err
+	}
+	rating2, err := uc.playerRatingRepo.FindOrCreate(player2ID, seasonID, now)
+	if err != nil {
+		return "", err
+	}
+
+	name1 := player1ID.String()
+	if u, err := uc.userRepo.FindByID(player1ID); err == nil {
+		if n := u.Username().String(); n != "" {
+			name1 = n
+		}
+	}
+	name2 := player2ID.String()
+	if u, err := uc.userRepo.FindByID(player2ID); err == nil {
+		if n := u.Username().String(); n != "" {
+			name2 = n
+		}
+	}
+
+	questions, err := uc.questionRepo.FindRandomByDifficulty(quick_duel.QuestionsPerDuel, "medium")
+	if err != nil {
+		return "", err
+	}
+
+	questionIDs := make([]quick_duel.QuestionID, 0, len(questions))
+	for _, q := range questions {
+		qid, _ := quiz.NewQuestionIDFromString(q.ID)
+		questionIDs = append(questionIDs, qid)
+	}
+
+	p1 := quick_duel.NewDuelPlayer(player1ID, name1, quick_duel.ReconstructEloRating(rating1.MMR(), 0))
+	p2 := quick_duel.NewDuelPlayer(player2ID, name2, quick_duel.ReconstructEloRating(rating2.MMR(), 0))
+
+	game, err := quick_duel.NewDuelGame(p1, p2, questionIDs, now)
+	if err != nil {
+		return "", err
+	}
+	if err := game.Start(now); err != nil {
+		return "", err
+	}
+	if err := uc.duelGameRepo.Save(game); err != nil {
+		return "", err
+	}
+
+	return game.ID().String(), nil
 }
 
 // ========================================

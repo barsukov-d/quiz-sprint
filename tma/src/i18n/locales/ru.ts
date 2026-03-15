@@ -1,4 +1,7 @@
 export default {
+	common: {
+		continue: 'Продолжить',
+	},
 	app: {
 		loading: 'Загрузка...',
 		error: 'Ошибка',
@@ -205,6 +208,8 @@ export default {
 		allCategories: 'Все категории',
 		allCategoriesDesc: 'Вопросы по всем темам',
 		lives: '{count} жизней',
+		difficultyIncreased: 'Сложность выросла!',
+		difficultyDecreased: 'Сложность снизилась',
 	},
 	daily: {
 		title: 'Вызов дня',
@@ -236,6 +241,12 @@ export default {
 		scorePercent: '({percent}%)',
 		newStreakRecord: 'Новый рекорд серии!',
 		streakRecordDesc: 'Вы достигли серии в {days} дней!',
+		woodenChest: 'Деревянный сундук',
+		silverChest: 'Серебряный сундук',
+		goldenChest: 'Золотой сундук',
+		openChest: 'Открыть сундук',
+		yourReward: 'Ваша награда',
+		opening: 'Открываем',
 		yourRewards: 'Ваши награды',
 		coins: 'Монеты',
 		pvpTickets: 'PVP билеты',

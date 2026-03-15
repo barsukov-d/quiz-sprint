@@ -1,6 +1,8 @@
 package daily_challenge
 
 import (
+	"fmt"
+
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/daily_challenge"
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/kernel"
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
@@ -242,11 +244,32 @@ func BuildGameResultsDTO(
 		chestReward = ToChestRewardDTO(*game.ChestReward())
 	}
 
+	finalScore := game.GetFinalScore()
+	rankLabel := fmt.Sprintf("#%d из %d", rank, totalPlayers)
+
+	chestLabel := "Деревянный сундук"
+	switch chestReward.ChestType {
+	case "silver":
+		chestLabel = "Серебряный сундук"
+	case "golden":
+		chestLabel = "Золотой сундук"
+	}
+
+	shareText := fmt.Sprintf("Я набрал %d очков в Daily Challenge! Мой ранг: %s", finalScore, rankLabel)
+
+	// Anti-cheat: flag if total game time < 1 second per question on average
+	totalQuestions := session.Quiz().QuestionsCount()
+	var totalGameTimeMs int64
+	for _, answerData := range session.GetAllAnswers() {
+		totalGameTimeMs += answerData.TimeTaken()
+	}
+	suspiciousScore := totalQuestions > 0 && totalGameTimeMs < int64(totalQuestions)*1000
+
 	return GameResultsDTO{
 		BaseScore:         session.BaseScore().Value(),
-		FinalScore:        game.GetFinalScore(),
+		FinalScore:        finalScore,
 		CorrectAnswers:    game.GetCorrectAnswersCount(),
-		TotalQuestions:    session.Quiz().QuestionsCount(),
+		TotalQuestions:    totalQuestions,
 		StreakBonus:       bonusPercent,
 		CurrentStreak:     streak.CurrentStreak(),
 		Rank:              rank,
@@ -255,5 +278,9 @@ func BuildGameResultsDTO(
 		ChestReward:       chestReward,
 		AnsweredQuestions: answeredQuestions,
 		Leaderboard:       leaderboard,
+		RankLabel:         rankLabel,
+		ChestLabel:        chestLabel,
+		ShareText:         shareText,
+		SuspiciousScore:   suspiciousScore,
 	}
 }

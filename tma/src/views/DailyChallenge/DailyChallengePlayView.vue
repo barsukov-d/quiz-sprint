@@ -154,7 +154,7 @@ const handleNextStep = async () => {
 		// Game completed — fetch results from server, then navigate
 		await refetchStatus()
 		await refetchStreak()
-		router.push({ name: 'daily-challenge-results' })
+		router.push({ name: 'daily-challenge-chest' })
 	} else {
 		// Game continues — fetch next question from server, then reset timer
 		await refetchStatus()

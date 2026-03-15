@@ -22,6 +22,11 @@ export type InternalInfrastructureHttpHandlersGetDuelStatusResponse = {
         */
         activeGameId?: string;
         /**
+         * @description B9: expired challenges visible in lobby
+         * @type array | undefined
+        */
+        expiredChallenges?: InternalInfrastructureHttpHandlersDuelChallengeDTO[];
+        /**
          * @type array | undefined
         */
         friendsOnline?: InternalInfrastructureHttpHandlersDuelFriendDTO[];

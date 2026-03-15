@@ -3,6 +3,7 @@ package postgres
 import (
 	"database/sql"
 	"errors"
+	"time"
 
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quick_duel"
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/shared"
@@ -224,6 +225,126 @@ func (r *PlayerRatingRepository) GetTotalPlayers(seasonID string) (int, error) {
 	var count int
 	err := r.db.QueryRow(query, seasonID).Scan(&count)
 	return count, err
+}
+
+func (r *PlayerRatingRepository) FindAllBySeasonID(seasonID string) ([]*quick_duel.PlayerRating, error) {
+	query := `
+		SELECT player_id, mmr, league, division,
+			peak_mmr, peak_league, peak_division,
+			games_at_rank, season_id, season_wins, season_losses, season_draws, updated_at
+		FROM player_ratings
+		WHERE season_id = $1
+		ORDER BY player_id
+	`
+
+	rows, err := r.db.Query(query, seasonID)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	var ratings []*quick_duel.PlayerRating
+	for rows.Next() {
+		var (
+			playerIDStr   string
+			mmr           int
+			leagueStr     string
+			division      int
+			peakMMR       int
+			peakLeagueStr string
+			peakDivision  int
+			gamesAtRank   int
+			sid           string
+			seasonWins    int
+			seasonLosses  int
+			seasonDraws   int
+			updatedAt     int64
+		)
+
+		if err := rows.Scan(
+			&playerIDStr, &mmr, &leagueStr, &division,
+			&peakMMR, &peakLeagueStr, &peakDivision,
+			&gamesAtRank, &sid, &seasonWins, &seasonLosses, &seasonDraws, &updatedAt,
+		); err != nil {
+			return nil, err
+		}
+
+		pid, _ := shared.NewUserID(playerIDStr)
+		league := stringToLeague(leagueStr)
+		peakLeague := stringToLeague(peakLeagueStr)
+
+		ratings = append(ratings, quick_duel.ReconstructPlayerRating(
+			pid, mmr, league, quick_duel.Division(division),
+			peakMMR, peakLeague, quick_duel.Division(peakDivision),
+			gamesAtRank, sid, seasonWins, seasonLosses, seasonDraws, updatedAt,
+		))
+	}
+
+	return ratings, rows.Err()
+}
+
+func (r *PlayerRatingRepository) ResetAllRatingsForSeason(newSeasonID string, resetFn func(currentMMR int) int) error {
+	selectQuery := `
+		SELECT player_id, mmr
+		FROM player_ratings
+		ORDER BY player_id
+	`
+
+	rows, err := r.db.Query(selectQuery)
+	if err != nil {
+		return err
+	}
+	defer rows.Close()
+
+	type playerRow struct {
+		playerID string
+		mmr      int
+	}
+	var players []playerRow
+	for rows.Next() {
+		var p playerRow
+		if err := rows.Scan(&p.playerID, &p.mmr); err != nil {
+			return err
+		}
+		players = append(players, p)
+	}
+	if err := rows.Err(); err != nil {
+		return err
+	}
+
+	updateQuery := `
+		UPDATE player_ratings
+		SET mmr = $1,
+		    league = $2,
+		    division = $3,
+		    season_id = $4,
+		    season_wins = 0,
+		    season_losses = 0,
+		    season_draws = 0,
+		    games_at_rank = 0,
+		    updated_at = $5
+		WHERE player_id = $6
+	`
+
+	now := time.Now().UTC().Unix()
+
+	for _, p := range players {
+		newMMR := resetFn(p.mmr)
+		leagueInfo := quick_duel.GetLeagueFromMMR(newMMR)
+
+		if _, err := r.db.Exec(updateQuery,
+			newMMR,
+			leagueInfo.League().String(),
+			leagueInfo.Division().Value(),
+			newSeasonID,
+			now,
+			p.playerID,
+		); err != nil {
+			return err
+		}
+	}
+
+	return nil
 }
 
 // Helper function to convert string to League

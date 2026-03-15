@@ -1,5 +1,8 @@
 # Daily Challenge - Edge Cases & Error Handling
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 7 | ⚠️ Расходится: 3 | ❌ Не реализовано: 2
+
 ## Timing Edge Cases
 
 ### Started at 23:58, finished at 00:02
@@ -14,6 +17,9 @@ game.date = currentDate  // Fixed at start
 ```
 
 ### Server time vs Client time
+
+> ❌ Не реализовано: проверка abs(clientTime - serverTime) < 2s не реализована.
+
 **Problem:** Client can fake time.
 
 **Solution:**
@@ -23,6 +29,9 @@ game.date = currentDate  // Fixed at start
 - Violation → `ErrInvalidTimeTaken`
 
 ### Timeout at 15 seconds
+
+> ⚠️ Расходится: фронтенд отправляет первый выбранный ответ, а не пустой.
+
 **Behavior:**
 - Timer reaches 0:00
 - Answer auto-submitted as empty
@@ -30,6 +39,9 @@ game.date = currentDate  // Fixed at start
 - Next question appears automatically
 
 ### Game abandoned (24h timeout)
+
+> ✅ Реализовано: `GameStatusAbandoned` существует. `CleanupAbandonedGamesUseCase` помечает игры через `MarkAbandonedGames()` (запускается как cron).
+
 **Trigger:** Player started but didn't finish within 24h.
 
 **Behavior:**
@@ -70,6 +82,9 @@ if now - startedAt > 24h && status == "in_progress":
 - If invalid: Reject with `ErrInvalidTimeTaken`
 
 ### Duplicate answer submission
+
+> ✅ Реализовано: `ErrAlreadyAnswered` замаплен в handler → `409 Conflict`.
+
 **Scenario:** Double-tap or network retry.
 
 **Solution:**
@@ -111,6 +126,9 @@ Separate ZREVRANK call for player's rank.
 - No delay, no batch processing
 
 ### Historical leaderboards
+
+> ⚠️ Redis не используется. Все данные хранятся в PostgreSQL постоянно без архивации. Архивация через Redis не реализована (❌).
+
 **Retention:** 7 days in Redis.
 
 **Archival:**
@@ -302,6 +320,9 @@ if timeTaken < 0.5 {
 ```
 
 ### Answering questions out of order
+
+> ⚠️ Расходится: порядок не принудительно проверяется в kernel — фронтенд показывает только текущий вопрос, серверная проверка не реализована.
+
 **Protection:** Track `currentQuestionIndex`.
 
 **Validation:**
@@ -312,6 +333,9 @@ if questionID != session.CurrentQuestion().ID() {
 ```
 
 ### Total game time too fast
+
+> ✅ Реализовано: `SuspiciousScore = true` если средное время < 1s/вопрос. Флаг включён в `GameResultsDTO`. ⚠️ Инвалидация игры не реализована — только флаг.
+
 **Check:**
 ```go
 totalTime = completedAt - startedAt

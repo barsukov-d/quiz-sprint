@@ -5,6 +5,7 @@ export type { PostDailyChallengeGameidAnswerMutationKey } from "./usePostDailyCh
 export type { PostDailyChallengeGameidChestOpenMutationKey } from "./usePostDailyChallengeGameidChestOpen.ts";
 export type { PostDailyChallengeGameidRetryMutationKey } from "./usePostDailyChallengeGameidRetry.ts";
 export type { PostDailyChallengeStartMutationKey } from "./usePostDailyChallengeStart.ts";
+export type { PostDailyChallengeStreakRecoverMutationKey } from "./usePostDailyChallengeStreakRecover.ts";
 export { getDailyChallengeLeaderboardQueryKey } from "./useGetDailyChallengeLeaderboard.ts";
 export { getDailyChallengeLeaderboard } from "./useGetDailyChallengeLeaderboard.ts";
 export { getDailyChallengeLeaderboardQueryOptions } from "./useGetDailyChallengeLeaderboard.ts";
@@ -29,3 +30,6 @@ export { usePostDailyChallengeGameidRetry } from "./usePostDailyChallengeGameidR
 export { postDailyChallengeStartMutationKey } from "./usePostDailyChallengeStart.ts";
 export { postDailyChallengeStart } from "./usePostDailyChallengeStart.ts";
 export { usePostDailyChallengeStart } from "./usePostDailyChallengeStart.ts";
+export { postDailyChallengeStreakRecoverMutationKey } from "./usePostDailyChallengeStreakRecover.ts";
+export { postDailyChallengeStreakRecover } from "./usePostDailyChallengeStreakRecover.ts";
+export { usePostDailyChallengeStreakRecover } from "./usePostDailyChallengeStreakRecover.ts";

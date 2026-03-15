@@ -18,6 +18,7 @@ type DailyChallengeHandler struct {
 	getStreakUC       *appDaily.GetPlayerStreakUseCase
 	openChestUC       *appDaily.OpenChestUseCase
 	retryUC           *appDaily.RetryChallengeUseCase
+	recoverStreakUC   *appDaily.RecoverStreakUseCase
 }
 
 func NewDailyChallengeHandler(
@@ -29,6 +30,7 @@ func NewDailyChallengeHandler(
 	getStreakUC *appDaily.GetPlayerStreakUseCase,
 	openChestUC *appDaily.OpenChestUseCase,
 	retryUC *appDaily.RetryChallengeUseCase,
+	recoverStreakUC *appDaily.RecoverStreakUseCase,
 ) *DailyChallengeHandler {
 	return &DailyChallengeHandler{
 		getOrCreateQuizUC: getOrCreateQuizUC,
@@ -39,6 +41,7 @@ func NewDailyChallengeHandler(
 		getStreakUC:       getStreakUC,
 		openChestUC:       openChestUC,
 		retryUC:           retryUC,
+		recoverStreakUC:   recoverStreakUC,
 	}
 }
 
@@ -150,6 +153,7 @@ func (h *DailyChallengeHandler) GetDailyStatus(c fiber.Ctx) error {
 // @Param date query string false "Date (YYYY-MM-DD, defaults to today)"
 // @Param limit query int false "Limit (default 10, max 100)"
 // @Param playerId query string false "Player ID (to get rank)"
+// @Param type query string false "Filter type: global (default) | friends | country"
 // @Success 200 {object} GetDailyLeaderboardResponse "Leaderboard"
 // @Failure 500 {object} ErrorResponse "Internal error"
 // @Router /daily-challenge/leaderboard [get]
@@ -166,6 +170,7 @@ func (h *DailyChallengeHandler) GetDailyLeaderboard(c fiber.Ctx) error {
 		Date:     c.Query("date"),
 		Limit:    limit,
 		PlayerID: c.Query("playerId"),
+		Type:     c.Query("type"),
 	})
 	if err != nil {
 		return mapDailyChallengeError(err)
@@ -275,6 +280,44 @@ func (h *DailyChallengeHandler) RetryChallenge(c fiber.Ctx) error {
 	return c.Status(fiber.StatusCreated).JSON(fiber.Map{"data": output})
 }
 
+// RecoverStreak handles POST /api/v1/daily-challenge/streak/recover
+// @Summary Recover daily challenge streak
+// @Description Recover a broken streak by paying with coins or watching an ad
+// @Tags daily-challenge
+// @Accept json
+// @Produce json
+// @Param request body RecoverStreakRequest true "Recover streak request"
+// @Success 200 {object} RecoverStreakResponse "Streak recovered"
+// @Failure 400 {object} ErrorResponse "Invalid request or insufficient coins"
+// @Failure 409 {object} ErrorResponse "Streak not recoverable"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /daily-challenge/streak/recover [post]
+func (h *DailyChallengeHandler) RecoverStreak(c fiber.Ctx) error {
+	var req struct {
+		PlayerID      string `json:"playerId"`
+		PaymentMethod string `json:"paymentMethod"`
+	}
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+	if req.PlayerID == "" || req.PaymentMethod == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "Missing required fields")
+	}
+	if req.PaymentMethod != "coins" && req.PaymentMethod != "ad" {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid payment method")
+	}
+
+	output, err := h.recoverStreakUC.Execute(appDaily.RecoverStreakInput{
+		PlayerID:      req.PlayerID,
+		PaymentMethod: req.PaymentMethod,
+	})
+	if err != nil {
+		return mapDailyChallengeError(err)
+	}
+
+	return c.Status(fiber.StatusOK).JSON(fiber.Map{"data": output})
+}
+
 // ========================================
 // Error Mapping
 // ========================================
@@ -291,10 +334,14 @@ func mapDailyChallengeError(err error) error {
 		return fiber.NewError(fiber.StatusBadRequest, "Game already completed")
 	case domainDaily.ErrGameNotActive:
 		return fiber.NewError(fiber.StatusBadRequest, "Game not active")
+	case domainDaily.ErrStreakNotRecoverable:
+		return fiber.NewError(fiber.StatusConflict, "Streak is not recoverable")
 	case domainQuiz.ErrQuestionNotFound:
 		return fiber.NewError(fiber.StatusNotFound, "Question not found")
 	case domainQuiz.ErrAnswerNotFound:
 		return fiber.NewError(fiber.StatusNotFound, "Answer not found")
+	case domainQuiz.ErrAlreadyAnswered:
+		return fiber.NewError(fiber.StatusConflict, "Question already answered")
 	default:
 		return fiber.NewError(fiber.StatusInternalServerError, "Internal server error")
 	}

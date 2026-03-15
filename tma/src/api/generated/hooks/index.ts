@@ -7,10 +7,12 @@ export type { PostDailyChallengeGameidAnswerMutationKey } from "./dailyChallenge
 export type { PostDailyChallengeGameidChestOpenMutationKey } from "./dailyChallengeController/usePostDailyChallengeGameidChestOpen.ts";
 export type { PostDailyChallengeGameidRetryMutationKey } from "./dailyChallengeController/usePostDailyChallengeGameidRetry.ts";
 export type { PostDailyChallengeStartMutationKey } from "./dailyChallengeController/usePostDailyChallengeStart.ts";
+export type { PostDailyChallengeStreakRecoverMutationKey } from "./dailyChallengeController/usePostDailyChallengeStreakRecover.ts";
 export type { DeleteDuelQueueLeaveMutationKey } from "./duelController/useDeleteDuelQueueLeave.ts";
 export type { GetDuelGameGameidQueryKey } from "./duelController/useGetDuelGameGameid.ts";
 export type { GetDuelHistoryQueryKey } from "./duelController/useGetDuelHistory.ts";
 export type { GetDuelLeaderboardQueryKey } from "./duelController/useGetDuelLeaderboard.ts";
+export type { GetDuelReferralsQueryKey } from "./duelController/useGetDuelReferrals.ts";
 export type { GetDuelRivalsQueryKey } from "./duelController/useGetDuelRivals.ts";
 export type { GetDuelStatusQueryKey } from "./duelController/useGetDuelStatus.ts";
 export type { PostDuelChallengeMutationKey } from "./duelController/usePostDuelChallenge.ts";
@@ -20,7 +22,9 @@ export type { PostDuelChallengeChallengeidStartMutationKey } from "./duelControl
 export type { PostDuelChallengeLinkMutationKey } from "./duelController/usePostDuelChallengeLink.ts";
 export type { PostDuelChallengePrepareShareMutationKey } from "./duelController/usePostDuelChallengePrepareShare.ts";
 export type { PostDuelGameGameidRematchMutationKey } from "./duelController/usePostDuelGameGameidRematch.ts";
+export type { PostDuelGameGameidSurrenderMutationKey } from "./duelController/usePostDuelGameGameidSurrender.ts";
 export type { PostDuelQueueJoinMutationKey } from "./duelController/usePostDuelQueueJoin.ts";
+export type { PostDuelReferralsFriendidClaimMutationKey } from "./duelController/usePostDuelReferralsFriendidClaim.ts";
 export type { GetLeaderboardQueryKey } from "./leaderboardController/useGetLeaderboard.ts";
 export type { DeleteMarathonGameidMutationKey } from "./marathonController/useDeleteMarathonGameid.ts";
 export type { GetMarathonLeaderboardQueryKey } from "./marathonController/useGetMarathonLeaderboard.ts";
@@ -28,6 +32,7 @@ export type { GetMarathonPersonalBestsQueryKey } from "./marathonController/useG
 export type { GetMarathonStatusQueryKey } from "./marathonController/useGetMarathonStatus.ts";
 export type { PostMarathonGameidAnswerMutationKey } from "./marathonController/usePostMarathonGameidAnswer.ts";
 export type { PostMarathonGameidBonusMutationKey } from "./marathonController/usePostMarathonGameidBonus.ts";
+export type { PostMarathonGameidCompleteMutationKey } from "./marathonController/usePostMarathonGameidComplete.ts";
 export type { PostMarathonGameidContinueMutationKey } from "./marathonController/usePostMarathonGameidContinue.ts";
 export type { PostMarathonStartMutationKey } from "./marathonController/usePostMarathonStart.ts";
 export type { DeleteQuizSessionSessionidMutationKey } from "./quizController/useDeleteQuizSessionSessionid.ts";
@@ -78,6 +83,9 @@ export { usePostDailyChallengeGameidRetry } from "./dailyChallengeController/use
 export { postDailyChallengeStartMutationKey } from "./dailyChallengeController/usePostDailyChallengeStart.ts";
 export { postDailyChallengeStart } from "./dailyChallengeController/usePostDailyChallengeStart.ts";
 export { usePostDailyChallengeStart } from "./dailyChallengeController/usePostDailyChallengeStart.ts";
+export { postDailyChallengeStreakRecoverMutationKey } from "./dailyChallengeController/usePostDailyChallengeStreakRecover.ts";
+export { postDailyChallengeStreakRecover } from "./dailyChallengeController/usePostDailyChallengeStreakRecover.ts";
+export { usePostDailyChallengeStreakRecover } from "./dailyChallengeController/usePostDailyChallengeStreakRecover.ts";
 export { deleteDuelQueueLeaveMutationKey } from "./duelController/useDeleteDuelQueueLeave.ts";
 export { deleteDuelQueueLeave } from "./duelController/useDeleteDuelQueueLeave.ts";
 export { useDeleteDuelQueueLeave } from "./duelController/useDeleteDuelQueueLeave.ts";
@@ -93,6 +101,10 @@ export { getDuelLeaderboardQueryKey } from "./duelController/useGetDuelLeaderboa
 export { getDuelLeaderboard } from "./duelController/useGetDuelLeaderboard.ts";
 export { getDuelLeaderboardQueryOptions } from "./duelController/useGetDuelLeaderboard.ts";
 export { useGetDuelLeaderboard } from "./duelController/useGetDuelLeaderboard.ts";
+export { getDuelReferralsQueryKey } from "./duelController/useGetDuelReferrals.ts";
+export { getDuelReferrals } from "./duelController/useGetDuelReferrals.ts";
+export { getDuelReferralsQueryOptions } from "./duelController/useGetDuelReferrals.ts";
+export { useGetDuelReferrals } from "./duelController/useGetDuelReferrals.ts";
 export { getDuelRivalsQueryKey } from "./duelController/useGetDuelRivals.ts";
 export { getDuelRivals } from "./duelController/useGetDuelRivals.ts";
 export { getDuelRivalsQueryOptions } from "./duelController/useGetDuelRivals.ts";
@@ -122,9 +134,15 @@ export { usePostDuelChallengePrepareShare } from "./duelController/usePostDuelCh
 export { postDuelGameGameidRematchMutationKey } from "./duelController/usePostDuelGameGameidRematch.ts";
 export { postDuelGameGameidRematch } from "./duelController/usePostDuelGameGameidRematch.ts";
 export { usePostDuelGameGameidRematch } from "./duelController/usePostDuelGameGameidRematch.ts";
+export { postDuelGameGameidSurrenderMutationKey } from "./duelController/usePostDuelGameGameidSurrender.ts";
+export { postDuelGameGameidSurrender } from "./duelController/usePostDuelGameGameidSurrender.ts";
+export { usePostDuelGameGameidSurrender } from "./duelController/usePostDuelGameGameidSurrender.ts";
 export { postDuelQueueJoinMutationKey } from "./duelController/usePostDuelQueueJoin.ts";
 export { postDuelQueueJoin } from "./duelController/usePostDuelQueueJoin.ts";
 export { usePostDuelQueueJoin } from "./duelController/usePostDuelQueueJoin.ts";
+export { postDuelReferralsFriendidClaimMutationKey } from "./duelController/usePostDuelReferralsFriendidClaim.ts";
+export { postDuelReferralsFriendidClaim } from "./duelController/usePostDuelReferralsFriendidClaim.ts";
+export { usePostDuelReferralsFriendidClaim } from "./duelController/usePostDuelReferralsFriendidClaim.ts";
 export { getLeaderboardQueryKey } from "./leaderboardController/useGetLeaderboard.ts";
 export { getLeaderboard } from "./leaderboardController/useGetLeaderboard.ts";
 export { getLeaderboardQueryOptions } from "./leaderboardController/useGetLeaderboard.ts";
@@ -150,6 +168,9 @@ export { usePostMarathonGameidAnswer } from "./marathonController/usePostMaratho
 export { postMarathonGameidBonusMutationKey } from "./marathonController/usePostMarathonGameidBonus.ts";
 export { postMarathonGameidBonus } from "./marathonController/usePostMarathonGameidBonus.ts";
 export { usePostMarathonGameidBonus } from "./marathonController/usePostMarathonGameidBonus.ts";
+export { postMarathonGameidCompleteMutationKey } from "./marathonController/usePostMarathonGameidComplete.ts";
+export { postMarathonGameidComplete } from "./marathonController/usePostMarathonGameidComplete.ts";
+export { usePostMarathonGameidComplete } from "./marathonController/usePostMarathonGameidComplete.ts";
 export { postMarathonGameidContinueMutationKey } from "./marathonController/usePostMarathonGameidContinue.ts";
 export { postMarathonGameidContinue } from "./marathonController/usePostMarathonGameidContinue.ts";
 export { usePostMarathonGameidContinue } from "./marathonController/usePostMarathonGameidContinue.ts";

@@ -29,6 +29,9 @@ type PersonalBestRepository interface {
 	// FindTopByCategory retrieves top N players in a category
 	FindTopByCategory(category MarathonCategory, limit int) ([]*PersonalBest, error)
 
+	// FindTopByCategoryInTimeRange retrieves top N players whose best was achieved within time range
+	FindTopByCategoryInTimeRange(category MarathonCategory, limit int, from int64, to int64) ([]*PersonalBest, error)
+
 	// FindAllByPlayer retrieves all personal bests for a player (across all categories)
 	FindAllByPlayer(playerID UserID) ([]*PersonalBest, error)
 }

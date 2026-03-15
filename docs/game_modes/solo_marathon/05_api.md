@@ -1,5 +1,20 @@
 # Solo Marathon - API Specification
 
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 4 | ⚠️ Расходится: 6 | ❌ Не реализовано: 0
+>
+> - ✅ Domain events (все существуют + дополнительные)
+> - ✅ Error codes (все маппируются в HTTP)
+> - ✅ POST /marathon/:gameId/complete — реализован (CompleteMarathonUseCase)
+> - ✅ POST /marathon/:gameId/answer — response содержит `correctAnswerText` (добавлено)
+> - ⚠️ POST /marathon/start — endpoint есть, но `selectedBonuses` в request не используется (бонусы грузятся автоматически); response не содержит `milestone`, `onboarding`, `startedAt`
+> - ⚠️ POST /marathon/:gameId/bonus — endpoint есть, но нет `statusMessage`; 50/50 возвращает `hiddenAnswerIds` вместо `remainingAnswers`; skip возвращает `nextQuestion` ✅
+> - ⚠️ POST /marathon/:gameId/answer — `shieldActive` не принимается в request; response не содержит `feedbackMessage`, `explanation`; `gameOverData` не содержит `weeklyRank`; `Suspicious` field added
+> - ⚠️ POST /marathon/:gameId/continue — endpoint есть, но `remainingCoins` отсутствует в response
+> - ⚠️ GET /marathon/status — endpoint есть, `canStart` добавлен; но не содержит `weeklyBest`, `weeklyRank`
+> - ⚠️ GET /marathon/leaderboard — endpoint есть, но нет `weekId`, `endsAt`, `totalPlayers`; `playerRank` всегда nil
+> - ⚠️ Errors — маппируются как plain text, не как структурированный `{error: {code, message}}`
+
 ## Architecture Note: Thin Client Pattern
 
 Backend owns ALL game state. Frontend renders server responses.
@@ -21,6 +36,8 @@ Authorization: tma <base64_encoded_init_data>
 ## Endpoints
 
 ### 1. Start Marathon
+
+> ⚠️ Endpoint существует. `selectedBonuses` в request игнорируется (бонусы грузятся из инвентаря автоматически). Response не содержит `milestone`, `onboarding`, `startedAt`.
 
 ```http
 POST /api/v1/marathon/start
@@ -85,6 +102,8 @@ POST /api/v1/marathon/start
 ---
 
 ### 2. Use Bonus
+
+> ⚠️ Endpoint существует. Нет `statusMessage` в response. 50/50 возвращает `hiddenAnswerIds` вместо `remainingAnswers`. Skip возвращает `nextQuestion` ✅.
 
 ```http
 POST /api/v1/marathon/:gameId/bonus
@@ -163,6 +182,8 @@ POST /api/v1/marathon/:gameId/bonus
 ---
 
 ### 3. Submit Answer
+
+> ⚠️ Endpoint существует. `shieldActive` не принимается в request. Response содержит `correctAnswerText` ✅. Response не содержит `feedbackMessage`, `explanation`. `gameOverData` не содержит `weeklyRank`. Response содержит `Suspicious` bool поле.
 
 ```http
 POST /api/v1/marathon/:gameId/answer
@@ -249,6 +270,8 @@ POST /api/v1/marathon/:gameId/answer
 
 ### 4. Continue Game
 
+> ⚠️ Endpoint существует. `remainingCoins` отсутствует в response.
+
 ```http
 POST /api/v1/marathon/:gameId/continue
 ```
@@ -297,6 +320,8 @@ POST /api/v1/marathon/:gameId/continue
 
 ### 5. Get Marathon Status
 
+> ⚠️ Endpoint существует. Response содержит `canStart` ✅. Response не содержит `weeklyBest`, `weeklyRank`.
+
 ```http
 GET /api/v1/marathon/status?playerId=user_123
 ```
@@ -337,6 +362,8 @@ GET /api/v1/marathon/status?playerId=user_123
 ---
 
 ### 6. Get Leaderboard
+
+> ⚠️ Endpoint существует. Response не содержит `weekId`, `endsAt`, `totalPlayers`. `playerRank` всегда nil.
 
 ```http
 GET /api/v1/marathon/leaderboard?type=weekly&limit=10&playerId=user_123
@@ -385,6 +412,8 @@ GET /api/v1/marathon/leaderboard?type=weekly&limit=10&playerId=user_123
 ---
 
 ### 7. Complete Game (Quit)
+
+> ✅ Endpoint реализован (CompleteMarathonUseCase). `POST /marathon/:gameId/complete` завершает игру и сохраняет результат.
 
 ```http
 POST /api/v1/marathon/:gameId/complete
@@ -439,6 +468,8 @@ POST /api/v1/marathon/:gameId/complete
 
 ## Domain Events
 
+> ✅ Все события реализованы плюс дополнительные: `LifeLostEvent`, `DifficultyIncreasedEvent`.
+
 ```go
 type MarathonGameStartedEvent struct {
     GameID        string
@@ -491,6 +522,8 @@ type ContinueUsedEvent struct {
 ---
 
 ## Error Codes
+
+> ⚠️ Коды маппируются в HTTP-статусы, но возвращаются как plain text, не как структурированный `{"error": {"code": ..., "message": ...}}`.
 
 | HTTP | Code | Description |
 |------|------|-------------|

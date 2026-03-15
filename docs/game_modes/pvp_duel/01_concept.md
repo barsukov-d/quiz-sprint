@@ -1,5 +1,8 @@
 # PvP Duel - Concept
 
+> **Статус реализации (обновлено 2026-03-15)**
+> ✅ Реализовано: 14 | ⚠️ Расходится: 1 | ❌ Не реализовано: 3
+
 ## What?
 Competitive 1v1 ranked mode where players battle in real-time quiz duels using identical questions. **Designed for maximum virality and friend engagement.**
 
@@ -14,15 +17,15 @@ Competitive 1v1 ranked mode where players battle in real-time quiz duels using i
 
 ## Key Mechanics
 
-| Parameter | Value |
-|-----------|-------|
-| Players | 2 (1v1) |
-| Questions | 7 (identical for both) |
-| Time per question | 10 seconds |
-| Entry cost | 1 PvP ticket |
-| Bonuses/hints | **FORBIDDEN** |
-| Win condition | Most correct answers |
-| Tiebreaker | Total time spent |
+| Parameter | Value | Status |
+|-----------|-------|--------|
+| Players | 2 (1v1) | ✅ |
+| Questions | 7 (identical for both) | ✅ |
+| Time per question | 10 seconds | ✅ |
+| Entry cost | 1 PvP ticket | ❌ Ticket system not implemented — no consumption or refund logic |
+| Bonuses/hints | **FORBIDDEN** | ✅ |
+| Win condition | Most points (100 base + speed bonus 0–50 per answer) | ✅ |
+| Tiebreaker | Total time spent; final fallback — lower playerID | ✅ |
 
 ## Core Loop
 ```
@@ -42,9 +45,11 @@ Skill-based matchmaking:
 - Win against weaker opponent → less MMR (minimum +10)
 - Lose to stronger opponent → less MMR lost (minimum -10)
 - Lose to weaker opponent → more MMR lost (up to ~-30)
-- Exact values: ELO formula, K=32, min ±10. See `03_rules.md`.
+- K=32 for first <30 games, K=16 after. Min ±10. See `03_rules.md`.
 
-### 3. League System
+> ✅ **Реализовано.**
+
+### 3. League System <!-- ✅ Fully implemented with correct MMR ranges and 6 leagues × 4 divisions -->
 
 | League | Icon | MMR Range | Division Count |
 |--------|------|-----------|----------------|
@@ -58,63 +63,70 @@ Skill-based matchmaking:
 ### 4. Seasonal Structure
 - **Season duration:** 1 month
 - **Soft reset:** MMR compressed toward 1000 at season start
-- **Seasonal rewards:** Exclusive cosmetics based on peak rank
+- **Seasonal rewards:** Credits by peak league (DistributeSeasonalRewardsUseCase)
+
+> ✅ **Реализовано:** SeasonReset + DistributeSeasonalRewardsUseCase.
 
 ## Entry Requirement
 
-**PvP Ticket** (earned from Daily Challenge):
+**PvP Ticket** (earned from Daily Challenge): <!-- ❌ Not implemented — tickets are not consumed on duel entry or refunded on cancel -->
 - Free-to-play players: Limited tickets per day
 - No tickets → Cannot enter duel
-- Tickets purchasable in shop
+- Tickets purchasable in shop <!-- ❌ No shop system -->
+
+> ❌ **Не реализовано:** Тикет-система — тикеты не списываются при входе и не возвращаются при отмене.
 
 ## Matchmaking
 
 ### Queue Time Expectations
-| MMR Difference | Max Wait |
-|----------------|----------|
-| ±50 | 10s |
-| ±100 | 20s |
-| ±200 | 30s |
-| ±300 | 45s |
-| ±500 | 60s |
+
+| Time in queue | MMR Range | Статус |
+|---------------|-----------|--------|
+| 0–10s | ±50 | ✅ |
+| 10–20s | ±100 | ✅ |
+| 20–30s | ±200 | ✅ |
+| 30–45s | ±300 | ✅ |
+| 45s+ | ±500 | ✅ |
+
+> ✅ **Реализовано:** 5-тировый матчмейкинг (10/20/30/45/45+ секунд).
 
 ### Fallback
 If no opponent found in 60s → Offer bot game (clearly labeled as 🤖 Bot).
 
+> ✅ **Реализовано:** Bot game fallback после 60с.
+
 ## Victory Conditions
 
-### Primary: Correct Answers
+### Primary: Total Points
 ```
-Player A: 5/7 correct
-Player B: 4/7 correct
+Player A: 5/7 correct, 650 pts
+Player B: 4/7 correct, 510 pts
 Winner: Player A
 ```
+Each correct answer = 100 base + speed bonus (50/25/10/0). Max 150 pts/question.
 
-### Tiebreaker: Total Time
+### Tiebreaker 1: Total Time
 ```
 Player A: 5/7 correct, 42.5s total
 Player B: 5/7 correct, 38.2s total
 Winner: Player B (faster)
 ```
 
-### Second Tiebreaker: First Correct
-If total time equal (extremely rare):
-```
-Winner: First player to answer correctly on any question
-```
+### Tiebreaker 2: Lower playerID (deterministic)
+If total time equal (extremely rare) → lower playerID wins.
 
 ## Monetization
 
-| Feature | Cost | Effect |
-|---------|------|--------|
-| PvP Ticket | Daily Challenge reward | 1 duel entry |
-| Ticket Pack (5) | 300 coins | 5 duel entries |
-| Ticket Pack (15) | 750 coins | 15 entries (17% discount) |
-| Premium cosmetics | Seasonal rewards / Shop | Visual only, no gameplay effect |
+| Feature | Cost | Effect | Статус |
+|---------|------|--------|--------|
+| PvP Ticket | Daily Challenge reward | 1 duel entry | ❌ Не реализовано |
+| Ticket Pack (5) | 300 coins | 5 duel entries | ❌ Нет магазина |
+| Ticket Pack (15) | 750 coins | 15 entries (17% discount) | ❌ Нет магазина |
+| Premium cosmetics | Seasonal rewards / Shop | Visual only, no gameplay effect | ❌ Нет магазина |
 
 ## Virality & Social Features
 
-### 1. Friend Challenge (Direct Invite)
+### 1. Friend Challenge (Direct Invite) <!-- ✅ Both direct and link challenges implemented -->
 ```
 Challenge flow:
 Player A → "Вызвать друга" → Share link → Friend opens → Instant duel
@@ -122,7 +134,7 @@ Player A → "Вызвать друга" → Share link → Friend opens → Ins
 
 **No queue waiting** for friend games — instant start.
 
-### 2. Referral System
+### 2. Referral System <!-- ✅ Domain model exists (referral.go), repository exists -->
 | Milestone | Reward for Inviter | Reward for Invitee |
 |-----------|-------------------|-------------------|
 | Friend registers | 3 🎟️ + 100 coins | 3 🎟️ + 100 coins |
@@ -133,7 +145,7 @@ Player A → "Вызвать друга" → Share link → Friend opens → Ins
 
 **Referral link:** `https://t.me/quiz_sprint_dev_bot?startapp=ref_USER123`
 
-### 3. Friends Leaderboard
+### 3. Friends Leaderboard <!-- ⚠️ Leaderboard exists but no separate friends tab -->
 Separate tab showing only friends:
 ```
 ┌─────────────────────────────────┐
@@ -148,7 +160,9 @@ Separate tab showing only friends:
 └─────────────────────────────────┘
 ```
 
-### 4. Shareable Victory Cards
+> ⚠️ **Расхождение:** Лидерборд реализован, но отдельной вкладки "Друзья" нет.
+
+### 4. Shareable Victory Cards <!-- ❌ Not implemented — no image generation -->
 After each win, generate shareable image:
 ```
 ┌─────────────────────────────────┐
@@ -165,7 +179,9 @@ After each win, generate shareable image:
 
 **Share targets:** Telegram, Instagram Stories, Twitter.
 
-### 5. Revenge System
+> ❌ **Не реализовано:** Генерация Victory Card — нет image generation.
+
+### 5. Revenge System <!-- ❌ Not implemented — no revenge notifications -->
 After losing to a friend:
 ```
 💔 @Friend победил тебя!
@@ -175,6 +191,8 @@ After losing to a friend:
 ```
 
 Creates engagement loop: lose → revenge → rematch → repeat.
+
+> ❌ **Не реализовано:** Revenge System — уведомления реванша не реализованы.
 
 ### 6. Spectator Mode (Future)
 Friends can watch live duels. Deferred to Phase 4+.

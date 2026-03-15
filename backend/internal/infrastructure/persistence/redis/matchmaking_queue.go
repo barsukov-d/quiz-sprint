@@ -13,11 +13,13 @@ import (
 )
 
 const (
-	queueKey       = "duel:matchmaking:queue"    // ZSET: playerID -> MMR score
-	queueInfoKey   = "duel:matchmaking:info"     // HASH: playerID -> joinedAt
-	initialMMRRange = 100                        // Initial MMR search range
-	maxMMRRange     = 500                        // Maximum MMR range after expansion
-	rangeExpansion  = 50                         // Expand range by this much per second
+	queueKey            = "duel:matchmaking:queue" // ZSET: playerID -> MMR score
+	queueInfoKey        = "duel:matchmaking:info"  // HASH: playerID -> joinedAt
+	initialMMRRange     = 100                      // Initial MMR search range
+	maxMMRRange         = 500                      // Maximum MMR range after expansion
+	rangeExpansion      = 50                       // Expand range by this much per second
+	recentOpponentTTL   = 5 * time.Minute         // How long to remember a recent opponent
+	sameOpponentBypass  = 30                       // After this many seconds in queue, allow rematch
 )
 
 // MatchmakingQueue implements quick_duel.MatchmakingQueue using Redis
@@ -87,22 +89,47 @@ func (q *MatchmakingQueue) FindMatch(playerID quick_duel.UserID, mmr int, search
 		return nil, nil, err
 	}
 
-	// Find best match (closest MMR, not self)
+	// Find best match (closest MMR, not self, skip recent opponents when possible)
 	var bestMatch *redis.Z
+	var bestRecentMatch *redis.Z // fallback if only recent opponents are available
 	var bestDiff int = mmrRange + 1
+	var bestRecentDiff int = mmrRange + 1
 
-	for _, z := range results {
-		opponentID := z.Member.(string)
-		if opponentID == playerID.String() {
+	for i := range results {
+		z := results[i]
+		opponentIDStr := z.Member.(string)
+		if opponentIDStr == playerID.String() {
 			continue // Skip self
 		}
 
 		opponentMMR := int(z.Score)
 		diff := abs(opponentMMR - mmr)
-		if diff < bestDiff {
-			bestDiff = diff
-			bestMatch = &z
+
+		// Check if this candidate is a recent opponent
+		candidateID, err := shared.NewUserID(opponentIDStr)
+		if err != nil {
+			continue
 		}
+		recent, _ := q.IsRecentOpponent(playerID, candidateID)
+
+		if recent {
+			if diff < bestRecentDiff {
+				bestRecentDiff = diff
+				cp := z
+				bestRecentMatch = &cp
+			}
+		} else {
+			if diff < bestDiff {
+				bestDiff = diff
+				cp := z
+				bestMatch = &cp
+			}
+		}
+	}
+
+	// Use fallback (recent opponent) only if player has waited long enough
+	if bestMatch == nil && bestRecentMatch != nil && searchSeconds >= sameOpponentBypass {
+		bestMatch = bestRecentMatch
 	}
 
 	if bestMatch == nil {
@@ -174,6 +201,83 @@ func (q *MatchmakingQueue) GetPlayerQueueInfo(playerID quick_duel.UserID) (int64
 	}
 
 	return joinedAt, int(mmr), nil
+}
+
+// GetStaleQueueEntries returns IDs of players who joined before cutoffTime
+func (q *MatchmakingQueue) GetStaleQueueEntries(cutoffTime int64) ([]quick_duel.UserID, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	// Get all members from the sorted set (all queued players)
+	members, err := q.rdb.ZRange(ctx, queueKey, 0, -1).Result()
+	if err != nil {
+		return nil, err
+	}
+
+	if len(members) == 0 {
+		return nil, nil
+	}
+
+	// Get their join times from the hash
+	pipe := q.rdb.Pipeline()
+	cmds := make([]*redis.StringCmd, len(members))
+	for i, m := range members {
+		cmds[i] = pipe.HGet(ctx, queueInfoKey, m)
+	}
+	_, _ = pipe.Exec(ctx)
+
+	var stale []quick_duel.UserID
+	for i, m := range members {
+		joinedAtStr, err := cmds[i].Result()
+		if err != nil {
+			continue
+		}
+		joinedAt, err := strconv.ParseInt(joinedAtStr, 10, 64)
+		if err != nil {
+			continue
+		}
+		if joinedAt < cutoffTime {
+			uid, err := shared.NewUserID(m)
+			if err != nil {
+				continue
+			}
+			stale = append(stale, uid)
+		}
+	}
+
+	return stale, nil
+}
+
+// RecordRecentOpponent marks opponentID as a recent opponent of playerID (bidirectional).
+// Uses SET with EX so the key expires automatically after recentOpponentTTL.
+func (q *MatchmakingQueue) RecordRecentOpponent(playerID, opponentID quick_duel.UserID) error {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	key1 := fmt.Sprintf("duel:recent:%s:%s", playerID.String(), opponentID.String())
+	key2 := fmt.Sprintf("duel:recent:%s:%s", opponentID.String(), playerID.String())
+
+	pipe := q.rdb.Pipeline()
+	pipe.Set(ctx, key1, "1", recentOpponentTTL)
+	pipe.Set(ctx, key2, "1", recentOpponentTTL)
+	_, err := pipe.Exec(ctx)
+	return err
+}
+
+// IsRecentOpponent returns true if opponentID was a recent opponent of playerID.
+func (q *MatchmakingQueue) IsRecentOpponent(playerID, opponentID quick_duel.UserID) (bool, error) {
+	ctx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
+	defer cancel()
+
+	key := fmt.Sprintf("duel:recent:%s:%s", playerID.String(), opponentID.String())
+	err := q.rdb.Get(ctx, key).Err()
+	if err == redis.Nil {
+		return false, nil
+	}
+	if err != nil {
+		return false, err
+	}
+	return true, nil
 }
 
 func abs(x int) int {

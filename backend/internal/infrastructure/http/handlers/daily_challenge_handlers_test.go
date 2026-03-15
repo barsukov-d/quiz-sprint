@@ -141,6 +141,14 @@ func (m *mockDailyGameRepo) FindTopByDate(date domainDaily.Date, limit int) ([]*
 	return games, nil
 }
 
+func (m *mockDailyGameRepo) FindTopByDateAndFriends(date domainDaily.Date, playerID domainDaily.UserID, limit int) ([]*domainDaily.DailyGame, error) {
+	return m.FindTopByDate(date, limit)
+}
+
+func (m *mockDailyGameRepo) FindTopByDateAndCountry(date domainDaily.Date, playerID domainDaily.UserID, limit int) ([]*domainDaily.DailyGame, error) {
+	return m.FindTopByDate(date, limit)
+}
+
 func (m *mockDailyGameRepo) GetPlayerRankByDate(playerID domainDaily.UserID, date domainDaily.Date) (int, error) {
 	top, _ := m.FindTopByDate(date, 0)
 	for i, g := range top {
@@ -164,6 +172,10 @@ func (m *mockDailyGameRepo) GetTotalPlayersByDate(date domainDaily.Date) (int, e
 func (m *mockDailyGameRepo) Delete(id domainDaily.GameID) error {
 	delete(m.games, id.String())
 	return nil
+}
+
+func (m *mockDailyGameRepo) MarkAbandonedGames() (int, error) {
+	return 0, nil
 }
 
 // mockQuestionRepo is an in-memory QuestionRepository
@@ -373,10 +385,10 @@ func setupHandlerFixture(t *testing.T) *handlerFixture {
 	submitUC := appDaily.NewSubmitDailyAnswerUseCase(dailyGameRepo, eventBus, leaderboardUC, chestCalc)
 	statusUC := appDaily.NewGetDailyGameStatusUseCase(dailyQuizRepo, dailyGameRepo, leaderboardUC)
 	streakUC := appDaily.NewGetPlayerStreakUseCase(dailyGameRepo)
-	openChestUC := appDaily.NewOpenChestUseCase(dailyGameRepo)
-	retryUC := appDaily.NewRetryChallengeUseCase(dailyGameRepo, dailyQuizRepo, questionRepo, eventBus)
+	openChestUC := appDaily.NewOpenChestUseCase(dailyGameRepo, nil)
+	retryUC := appDaily.NewRetryChallengeUseCase(dailyGameRepo, dailyQuizRepo, questionRepo, eventBus, nil, nil)
 
-	handler := NewDailyChallengeHandler(getOrCreateQuizUC, startUC, submitUC, statusUC, leaderboardUC, streakUC, openChestUC, retryUC)
+	handler := NewDailyChallengeHandler(getOrCreateQuizUC, startUC, submitUC, statusUC, leaderboardUC, streakUC, openChestUC, retryUC, nil)
 
 	// Create Fiber app and register routes
 	app := fiber.New()

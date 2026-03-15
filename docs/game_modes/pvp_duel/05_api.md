@@ -1,5 +1,13 @@
 # PvP Duel - API Specification
 
+> **Статус реализации (обновлено 2026-03-15)**
+> ✅ Реализовано: 27 | ⚠️ Расходится: 1 | ❌ Не реализовано: 0
+>
+> ✅ REST+WS архитектура, queue/join, queue/leave, challenge (direct), challenge respond, challenge/link, accept-by-code, challenge/:id/start, game/:gameId, rematch, history, leaderboard, WS: connected, game_ready, new_question, answer_result, round_complete, round_timeout, game_complete, opponent_disconnected, submit_answer, player_ready, ping, domain events
+> ✅ POST /duel/game/:gameId/surrender — реализован (доступен после Q3)
+> ✅ GET /duel/referrals — реализован; POST /duel/referrals/:friendId/claim — реализован
+> ⚠️ error codes — ошибки частично как plain text; structured JSON с полями code/message/action в процессе (task #1)
+
 ## Architecture Note: Real-Time + REST
 
 - **REST API:** Game setup, results, history

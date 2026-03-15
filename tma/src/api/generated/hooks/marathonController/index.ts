@@ -4,6 +4,7 @@ export type { GetMarathonPersonalBestsQueryKey } from "./useGetMarathonPersonalB
 export type { GetMarathonStatusQueryKey } from "./useGetMarathonStatus.ts";
 export type { PostMarathonGameidAnswerMutationKey } from "./usePostMarathonGameidAnswer.ts";
 export type { PostMarathonGameidBonusMutationKey } from "./usePostMarathonGameidBonus.ts";
+export type { PostMarathonGameidCompleteMutationKey } from "./usePostMarathonGameidComplete.ts";
 export type { PostMarathonGameidContinueMutationKey } from "./usePostMarathonGameidContinue.ts";
 export type { PostMarathonStartMutationKey } from "./usePostMarathonStart.ts";
 export { deleteMarathonGameidMutationKey } from "./useDeleteMarathonGameid.ts";
@@ -27,6 +28,9 @@ export { usePostMarathonGameidAnswer } from "./usePostMarathonGameidAnswer.ts";
 export { postMarathonGameidBonusMutationKey } from "./usePostMarathonGameidBonus.ts";
 export { postMarathonGameidBonus } from "./usePostMarathonGameidBonus.ts";
 export { usePostMarathonGameidBonus } from "./usePostMarathonGameidBonus.ts";
+export { postMarathonGameidCompleteMutationKey } from "./usePostMarathonGameidComplete.ts";
+export { postMarathonGameidComplete } from "./usePostMarathonGameidComplete.ts";
+export { usePostMarathonGameidComplete } from "./usePostMarathonGameidComplete.ts";
 export { postMarathonGameidContinueMutationKey } from "./usePostMarathonGameidContinue.ts";
 export { postMarathonGameidContinue } from "./usePostMarathonGameidContinue.ts";
 export { usePostMarathonGameidContinue } from "./usePostMarathonGameidContinue.ts";

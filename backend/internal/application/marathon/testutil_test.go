@@ -105,6 +105,10 @@ func (m *mockPersonalBestRepo) FindTopByCategory(category solo_marathon.Marathon
 	return result, nil
 }
 
+func (m *mockPersonalBestRepo) FindTopByCategoryInTimeRange(category solo_marathon.MarathonCategory, limit int, from int64, to int64) ([]*solo_marathon.PersonalBest, error) {
+	return m.FindTopByCategory(category, limit)
+}
+
 func (m *mockPersonalBestRepo) FindAllByPlayer(playerID solo_marathon.UserID) ([]*solo_marathon.PersonalBest, error) {
 	var result []*solo_marathon.PersonalBest
 	prefix := playerID.String() + ":"
@@ -413,7 +417,7 @@ func (f *marathonFixture) newStartUC() *StartMarathonUseCase {
 
 func (f *marathonFixture) newSubmitAnswerUC() *SubmitMarathonAnswerUseCase {
 	return NewSubmitMarathonAnswerUseCase(
-		f.marathonRepo, f.personalBestRepo, f.questionRepo, f.eventBus,
+		f.marathonRepo, f.personalBestRepo, f.questionRepo, f.eventBus, nil,
 	)
 }
 
@@ -422,7 +426,7 @@ func (f *marathonFixture) newUseBonusUC() *UseMarathonBonusUseCase {
 }
 
 func (f *marathonFixture) newContinueUC() *ContinueMarathonUseCase {
-	return NewContinueMarathonUseCase(f.marathonRepo, f.questionRepo, f.eventBus)
+	return NewContinueMarathonUseCase(f.marathonRepo, f.questionRepo, f.eventBus, nil)
 }
 
 func (f *marathonFixture) newAbandonUC() *AbandonMarathonUseCase {

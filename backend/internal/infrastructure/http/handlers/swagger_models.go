@@ -234,8 +234,9 @@ type ErrorResponse struct {
 
 // ErrorDetail contains error details
 type ErrorDetail struct {
-	Code    int    `json:"code" validate:"required"`
-	Message string `json:"message" validate:"required"`
+	Code      int    `json:"code" validate:"required"`
+	Message   string `json:"message" validate:"required"`
+	ErrorCode string `json:"errorCode,omitempty"`
 }
 
 // @name ErrorDetail
@@ -1042,6 +1043,31 @@ type RetryChallengeResponse struct {
 
 // @name RetryChallengeResponse
 
+// RecoverStreakRequest is the HTTP request for recovering a broken streak
+type RecoverStreakRequest struct {
+	PlayerID      string `json:"playerId" validate:"required"`
+	PaymentMethod string `json:"paymentMethod" validate:"required"` // "coins" or "ad"
+}
+
+// @name RecoverStreakRequest
+
+// RecoverStreakData contains recover streak response data
+type RecoverStreakData struct {
+	Recovered     bool `json:"recovered" validate:"required"`
+	CurrentStreak int  `json:"currentStreak" validate:"required"`
+	BonusPercent  int  `json:"bonusPercent" validate:"required"`
+	CoinsDeducted int  `json:"coinsDeducted" validate:"required"`
+}
+
+// @name RecoverStreakData
+
+// RecoverStreakResponse wraps recover streak response
+type RecoverStreakResponse struct {
+	Data RecoverStreakData `json:"data" validate:"required"`
+}
+
+// @name RecoverStreakResponse
+
 // ========================================
 // Admin DTOs (for testing/debug endpoints)
 // ========================================
@@ -1335,6 +1361,7 @@ type GetDuelStatusResponse struct {
 		PendingChallenges  []DuelChallengeDTO  `json:"pendingChallenges"`
 		OutgoingChallenges []DuelChallengeDTO  `json:"outgoingChallenges"`
 		AcceptedChallenges []DuelChallengeDTO  `json:"acceptedChallenges"` // F1: added
+		ExpiredChallenges  []DuelChallengeDTO  `json:"expiredChallenges"`  // B9: expired challenges visible in lobby
 		SeasonID           string              `json:"seasonId"`
 		SeasonEndsAt       int64               `json:"seasonEndsAt"`
 	} `json:"data"`
@@ -1495,19 +1522,37 @@ type StartChallengeResponse struct {
 
 // @name StartChallengeResponse
 
+// GameQuestionResultDTO represents per-question breakdown in game result
+type GameQuestionResultDTO struct {
+	QuestionNum      int    `json:"questionNumber"`
+	QuestionText     string `json:"questionText"`
+	PlayerAnswerID   string `json:"playerAnswerId"`
+	PlayerCorrect    bool   `json:"playerCorrect"`
+	PlayerTime       int64  `json:"playerTime"`
+	OpponentAnswerID string `json:"opponentAnswerId"`
+	OpponentCorrect  bool   `json:"opponentCorrect"`
+	OpponentTime     int64  `json:"opponentTime"`
+	CorrectAnswerID  string `json:"correctAnswerId"`
+}
+
+// @name GameQuestionResultDTO
+
 // GetGameResultResponse wraps the game result response
 type GetGameResultResponse struct {
 	Data struct {
-		GameID        string                 `json:"gameId"`
-		Result        string                 `json:"result"` // "win", "loss", "draw"
-		PlayerScore   int                    `json:"playerScore"`
-		OpponentScore int                    `json:"opponentScore"`
-		MMRChange     int                    `json:"mmrChange"`
-		NewMMR        int                    `json:"newMmr"`
-		NewLeague     string                 `json:"newLeague"`
-		NewDivision   int                    `json:"newDivision"`
-		Opponent      GetGameResultPlayerDTO `json:"opponent"`
-		CanRematch    bool                   `json:"canRematch"`
+		GameID           string                  `json:"gameId"`
+		Result           string                  `json:"result"` // "win", "loss", "draw"
+		PlayerScore      int                     `json:"playerScore"`
+		OpponentScore    int                     `json:"opponentScore"`
+		MMRChange        int                     `json:"mmrChange"`
+		NewMMR           int                     `json:"newMmr"`
+		RankChange       *string                 `json:"rankChange,omitempty"` // "promoted", "demoted", null
+		NewLeague        string                  `json:"newLeague"`
+		NewDivision      int                     `json:"newDivision"`
+		Opponent         GetGameResultPlayerDTO  `json:"opponent"`
+		Questions        []GameQuestionResultDTO `json:"questions"`
+		CanRematch       bool                    `json:"canRematch"`
+		RematchExpiresIn *int                    `json:"rematchExpiresIn,omitempty"`
 	} `json:"data"`
 }
 
@@ -1553,3 +1598,66 @@ type PrepareShareResponse struct {
 }
 
 // @name PrepareShareResponse
+
+// ReferralItemDTO represents a single referral in Swagger docs
+type ReferralItemDTO struct {
+	ID                string   `json:"id" validate:"required"`
+	InviteeID         string   `json:"inviteeId" validate:"required"`
+	InviteeUsername   string   `json:"inviteeUsername" validate:"required"`
+	MilestonesReached []string `json:"milestonesReached" validate:"required"`
+	PendingRewards    []string `json:"pendingRewards" validate:"required"`
+	CreatedAt         int64    `json:"createdAt" validate:"required"`
+}
+
+// @name ReferralItemDTO
+
+// GetReferralsResponse is the Swagger response model for GET /duel/referrals
+type GetReferralsResponse struct {
+	Data struct {
+		ReferralLink            string            `json:"referralLink" validate:"required"`
+		TotalReferrals          int               `json:"totalReferrals" validate:"required"`
+		ActiveReferrals         int               `json:"activeReferrals" validate:"required"`
+		PendingRewards          []string          `json:"pendingRewards" validate:"required"`
+		ReferralLeaderboardRank int               `json:"referralLeaderboardRank" validate:"required"`
+		Referrals               []ReferralItemDTO `json:"referrals" validate:"required"`
+	} `json:"data"`
+}
+
+// @name GetReferralsResponse
+
+// ClaimReferralRewardRequest is the request body for POST /duel/referrals/:friendId/claim
+type ClaimReferralRewardRequest struct {
+	Milestone string `json:"milestone" validate:"required"`
+}
+
+// @name ClaimReferralRewardRequest
+
+// ClaimReferralRewardResponse is the Swagger response model for POST /duel/referrals/:friendId/claim
+type ClaimReferralRewardResponse struct {
+	Data struct {
+		Success          bool   `json:"success" validate:"required"`
+		Rewards          struct {
+			Tickets int    `json:"tickets"`
+			Coins   int    `json:"coins"`
+			Badge   string `json:"badge,omitempty"`
+			Avatar  string `json:"avatar,omitempty"`
+			Title   string `json:"title,omitempty"`
+		} `json:"rewards" validate:"required"`
+		NewTicketBalance int `json:"newTicketBalance" validate:"required"`
+		NewCoinBalance   int `json:"newCoinBalance" validate:"required"`
+	} `json:"data"`
+}
+
+// @name ClaimReferralRewardResponse
+
+// SurrenderGameResponse is the Swagger response model for POST /duel/game/:gameId/surrender
+type SurrenderGameResponse struct {
+	Data struct {
+		GameID    string `json:"gameId" validate:"required"`
+		WinnerID  string `json:"winnerId" validate:"required"`
+		MMRChange int    `json:"mmrChange" validate:"required"`
+		NewMMR    int    `json:"newMmr" validate:"required"`
+	} `json:"data"`
+}
+
+// @name SurrenderGameResponse

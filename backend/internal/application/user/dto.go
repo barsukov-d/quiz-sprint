@@ -122,3 +122,17 @@ type GetUserByTelegramUsernameInput struct {
 type GetUserByTelegramUsernameOutput struct {
 	User UserDTO `json:"user"`
 }
+
+// ========================================
+// Inventory DTOs
+// ========================================
+
+// InventoryDTO is a data transfer object for player inventory
+type InventoryDTO struct {
+	Coins      int `json:"coins"`
+	PvpTickets int `json:"pvpTickets"`
+	Shield     int `json:"shield"`
+	FiftyFifty int `json:"fiftyFifty"`
+	Skip       int `json:"skip"`
+	Freeze     int `json:"freeze"`
+}

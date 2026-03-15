@@ -1,4 +1,7 @@
 export default {
+	common: {
+		continue: 'Continue',
+	},
 	app: {
 		loading: 'Loading...',
 		error: 'Error',
@@ -205,6 +208,8 @@ export default {
 		allCategories: 'All Categories',
 		allCategoriesDesc: 'Questions from all topics',
 		lives: '{count} lives',
+		difficultyIncreased: 'Difficulty up!',
+		difficultyDecreased: 'Difficulty down',
 	},
 	daily: {
 		title: "Today's Challenge",
@@ -236,6 +241,12 @@ export default {
 		scorePercent: '({percent}%)',
 		newStreakRecord: 'New Streak Record!',
 		streakRecordDesc: "You've reached a {days} day streak!",
+		woodenChest: 'Wooden Chest',
+		silverChest: 'Silver Chest',
+		goldenChest: 'Golden Chest',
+		openChest: 'Open Chest',
+		yourReward: 'Your Reward',
+		opening: 'Opening',
 		yourRewards: 'Your Rewards',
 		coins: 'Coins',
 		pvpTickets: 'PVP Tickets',

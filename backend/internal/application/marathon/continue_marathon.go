@@ -10,9 +10,10 @@ import (
 
 // ContinueMarathonUseCase handles continuing a marathon game after game over
 type ContinueMarathonUseCase struct {
-	marathonRepo solo_marathon.Repository
-	questionRepo quiz.QuestionRepository
-	eventBus     EventBus
+	marathonRepo     solo_marathon.Repository
+	questionRepo     quiz.QuestionRepository
+	eventBus         EventBus
+	inventoryService InventoryService
 }
 
 // NewContinueMarathonUseCase creates a new ContinueMarathonUseCase
@@ -20,11 +21,13 @@ func NewContinueMarathonUseCase(
 	marathonRepo solo_marathon.Repository,
 	questionRepo quiz.QuestionRepository,
 	eventBus EventBus,
+	inventoryService InventoryService,
 ) *ContinueMarathonUseCase {
 	return &ContinueMarathonUseCase{
-		marathonRepo: marathonRepo,
-		questionRepo: questionRepo,
-		eventBus:     eventBus,
+		marathonRepo:     marathonRepo,
+		questionRepo:     questionRepo,
+		eventBus:         eventBus,
+		inventoryService: inventoryService,
 	}
 }
 
@@ -68,8 +71,12 @@ func (uc *ContinueMarathonUseCase) Execute(input ContinueMarathonInput) (Continu
 	costCoins := 0
 	if paymentMethod == solo_marathon.PaymentCoins {
 		costCoins = costCalc.GetCost(game.ContinueCount())
-		// TODO: Validate player has enough coins and deduct from balance
-		// This requires UserRepository integration
+		if uc.inventoryService != nil {
+			err := uc.inventoryService.Debit(input.PlayerID, "marathon_continue", map[string]int{"coins": costCoins})
+			if err != nil {
+				return ContinueMarathonOutput{}, err
+			}
+		}
 	}
 
 	// 5. Continue game (domain business logic)

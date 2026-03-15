@@ -27,6 +27,9 @@ type DuelHandler struct {
 	getGameResultUC      *appDuel.GetGameResultUseCase
 	getRivalsUC          *appDuel.GetRivalsUseCase
 	prepareShareUC       *appDuel.PrepareShareUseCase
+	getReferralsUC       *appDuel.GetReferralsUseCase
+	claimReferralUC      *appDuel.ClaimReferralRewardUseCase
+	surrenderGameUC      *appDuel.SurrenderGameUseCase
 }
 
 func NewDuelHandler(
@@ -44,6 +47,9 @@ func NewDuelHandler(
 	getGameResultUC *appDuel.GetGameResultUseCase,
 	getRivalsUC *appDuel.GetRivalsUseCase,
 	prepareShareUC *appDuel.PrepareShareUseCase,
+	getReferralsUC *appDuel.GetReferralsUseCase,
+	claimReferralUC *appDuel.ClaimReferralRewardUseCase,
+	surrenderGameUC *appDuel.SurrenderGameUseCase,
 ) *DuelHandler {
 	return &DuelHandler{
 		getStatusUC:          getStatusUC,
@@ -60,6 +66,9 @@ func NewDuelHandler(
 		getGameResultUC:      getGameResultUC,
 		getRivalsUC:          getRivalsUC,
 		prepareShareUC:       prepareShareUC,
+		getReferralsUC:       getReferralsUC,
+		claimReferralUC:      claimReferralUC,
+		surrenderGameUC:      surrenderGameUC,
 	}
 }
 
@@ -548,36 +557,121 @@ func (h *DuelHandler) PrepareShare(c fiber.Ctx) error {
 	return c.JSON(fiber.Map{"data": output})
 }
 
-// mapDuelError maps domain errors to HTTP errors
+// mapDuelError maps domain errors to HTTP errors with structured error codes.
+// The errorCode field allows frontend to handle errors programmatically.
 func mapDuelError(err error) error {
 	switch err {
 	case domainDuel.ErrGameNotFound:
-		return fiber.NewError(fiber.StatusNotFound, "Game not found")
+		return NewAppError(fiber.StatusNotFound, string(domainDuel.CodeGameNotFound), "Game not found")
 	case domainDuel.ErrGameNotActive:
-		return fiber.NewError(fiber.StatusConflict, "Game is not active")
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeGameNotActive), "Game is not active")
+	case domainDuel.ErrGameAlreadyFinished:
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeGameAlreadyFinished), "Game is already finished")
 	case domainDuel.ErrChallengeNotFound:
-		return fiber.NewError(fiber.StatusNotFound, "Challenge not found")
+		return NewAppError(fiber.StatusNotFound, string(domainDuel.CodeChallengeNotFound), "Challenge not found")
 	case domainDuel.ErrChallengeExpired:
-		return fiber.NewError(fiber.StatusConflict, "Challenge has expired")
-	case domainDuel.ErrAlreadyInQueue:
-		return fiber.NewError(fiber.StatusConflict, "Already in matchmaking queue")
-	case domainDuel.ErrAlreadyInGame:
-		return fiber.NewError(fiber.StatusConflict, "Already in an active game")
-	case domainDuel.ErrFriendBusy:
-		return fiber.NewError(fiber.StatusConflict, "Friend is already in a game")
-	case domainDuel.ErrChallengeAlreadySent:
-		return fiber.NewError(fiber.StatusConflict, "Challenge already sent to this player")
-	case domainDuel.ErrInsufficientTickets:
-		return fiber.NewError(fiber.StatusBadRequest, "Insufficient tickets")
-	case domainDuel.ErrCannotChallengeSelf:
-		return fiber.NewError(fiber.StatusBadRequest, "Cannot challenge yourself")
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeChallengeExpired), "Challenge has expired")
 	case domainDuel.ErrChallengeNotPending:
-		return fiber.NewError(fiber.StatusConflict, "Challenge is no longer pending")
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeChallengeNotPending), "Challenge is no longer pending")
+	case domainDuel.ErrAlreadyInQueue:
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeAlreadyInQueue), "Already in matchmaking queue")
+	case domainDuel.ErrAlreadyInGame:
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeAlreadyInGame), "Already in an active game")
+	case domainDuel.ErrFriendBusy:
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeFriendBusy), "Friend is already in a game")
+	case domainDuel.ErrChallengeAlreadySent:
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeChallengeAlreadySent), "Challenge already sent to this player")
+	case domainDuel.ErrInsufficientTickets:
+		return NewAppError(fiber.StatusPaymentRequired, string(domainDuel.CodeInsufficientTickets), "Insufficient tickets")
+	case domainDuel.ErrCannotChallengeSelf:
+		return NewAppError(fiber.StatusBadRequest, string(domainDuel.CodeCannotChallengeSelf), "Cannot challenge yourself")
 	case domainDuel.ErrNotChallengedPlayer:
-		return fiber.NewError(fiber.StatusForbidden, "Not the challenged player")
+		return NewAppError(fiber.StatusForbidden, string(domainDuel.CodeNotChallengedPlayer), "Not the challenged player")
+	case domainDuel.ErrPlayerNotInGame:
+		return NewAppError(fiber.StatusForbidden, string(domainDuel.CodePlayerNotInGame), "Player not in this game")
+	case domainDuel.ErrTooEarlyToSurrender:
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeTooEarlyToSurrender), "Cannot surrender before answering 3 questions")
+	case domainDuel.ErrReferralNotFound:
+		return NewAppError(fiber.StatusNotFound, string(domainDuel.CodeReferralNotFound), "Referral not found")
+	case domainDuel.ErrMilestoneNotReached:
+		return NewAppError(fiber.StatusBadRequest, string(domainDuel.CodeMilestoneNotReached), "Milestone not reached")
+	case domainDuel.ErrRewardAlreadyClaimed:
+		return NewAppError(fiber.StatusConflict, string(domainDuel.CodeRewardAlreadyClaimed), "Reward already claimed")
 	default:
 		return fiber.NewError(fiber.StatusInternalServerError, "Internal server error")
 	}
+}
+
+// GetReferrals handles GET /api/v1/duel/referrals
+// @Summary Get player referrals
+// @Description List player's referrals with milestone progress and pending rewards
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Success 200 {object} GetReferralsResponse "Referrals list"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /duel/referrals [get]
+func (h *DuelHandler) GetReferrals(c fiber.Ctx) error {
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
+	}
+
+	output, err := h.getReferralsUC.Execute(appDuel.GetReferralsInput{
+		PlayerID: playerID,
+	})
+	if err != nil {
+		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
+}
+
+// ClaimReferralReward handles POST /api/v1/duel/referrals/:friendId/claim
+// @Summary Claim referral milestone reward
+// @Description Claim the reward for a reached milestone with a referred friend
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Param friendId path string true "Friend (invitee) player ID"
+// @Param request body ClaimReferralRewardRequest true "Claim request"
+// @Success 200 {object} ClaimReferralRewardResponse "Reward claimed"
+// @Failure 400 {object} ErrorResponse "Invalid request or milestone not reached"
+// @Failure 404 {object} ErrorResponse "Referral not found"
+// @Failure 409 {object} ErrorResponse "Reward already claimed"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /duel/referrals/{friendId}/claim [post]
+func (h *DuelHandler) ClaimReferralReward(c fiber.Ctx) error {
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
+	}
+
+	friendID := c.Params("friendId")
+	if friendID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "friendId is required")
+	}
+
+	var req ClaimReferralRewardRequest
+	if err := c.Bind().Body(&req); err != nil {
+		return fiber.NewError(fiber.StatusBadRequest, "Invalid request body")
+	}
+
+	if req.Milestone == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "milestone is required")
+	}
+
+	output, err := h.claimReferralUC.Execute(appDuel.ClaimReferralRewardInput{
+		PlayerID:  playerID,
+		FriendID:  friendID,
+		Milestone: req.Milestone,
+	})
+	if err != nil {
+		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
 }
 
 // GetRivals handles GET /api/v1/duel/rivals
@@ -599,6 +693,46 @@ func (h *DuelHandler) GetRivals(c fiber.Ctx) error {
 
 	output, err := h.getRivalsUC.Execute(appDuel.GetRivalsInput{
 		PlayerID: playerID,
+	})
+	if err != nil {
+		return mapDuelError(err)
+	}
+
+	return c.JSON(fiber.Map{"data": output})
+}
+
+// SurrenderGame handles POST /api/v1/duel/game/:gameId/surrender
+// @Summary Surrender a duel game
+// @Description Forfeit an active duel game. The surrendering player takes an ELO loss; the opponent wins.
+// @Tags duel
+// @Accept json
+// @Produce json
+// @Param gameId path string true "Game ID"
+// @Success 200 {object} SurrenderGameResponse "Surrender processed"
+// @Failure 400 {object} ErrorResponse "Invalid request"
+// @Failure 403 {object} ErrorResponse "Player not in game"
+// @Failure 404 {object} ErrorResponse "Game not found"
+// @Failure 409 {object} ErrorResponse "Game is not active"
+// @Failure 500 {object} ErrorResponse "Internal error"
+// @Router /duel/game/{gameId}/surrender [post]
+func (h *DuelHandler) SurrenderGame(c fiber.Ctx) error {
+	playerID, err := getAuthPlayerID(c)
+	if err != nil {
+		return err
+	}
+
+	gameID := c.Params("gameId")
+	if gameID == "" {
+		return fiber.NewError(fiber.StatusBadRequest, "gameId is required")
+	}
+
+	if h.surrenderGameUC == nil {
+		return fiber.NewError(fiber.StatusServiceUnavailable, "Surrender not available")
+	}
+
+	output, err := h.surrenderGameUC.Execute(appDuel.SurrenderGameInput{
+		PlayerID: playerID,
+		GameID:   gameID,
 	})
 	if err != nil {
 		return mapDuelError(err)

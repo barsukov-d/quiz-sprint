@@ -17,4 +17,15 @@ var (
 	ErrUserNotFound      = errors.New("user not found")
 	ErrUserAlreadyExists = errors.New("user already exists")
 	ErrUserBlocked       = errors.New("user is blocked")
+
+	// Inventory errors
+	ErrInsufficientBalance = errors.New("insufficient balance")
+	ErrInvalidResource     = errors.New("invalid resource type")
+	ErrInvalidAmount       = errors.New("amount must be positive")
+
+	// Transaction errors
+	ErrInvalidTransactionID     = errors.New("transaction ID cannot be empty")
+	ErrInvalidTransactionType   = errors.New("invalid transaction type")
+	ErrInvalidTransactionSource = errors.New("transaction source cannot be empty")
+	ErrEmptyTransactionDetails  = errors.New("transaction details cannot be empty")
 )

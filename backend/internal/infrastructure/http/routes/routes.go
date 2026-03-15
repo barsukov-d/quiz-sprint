@@ -235,8 +235,13 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		getUserProfileStatsUC *appUser.GetUserProfileStatsUseCase
 	)
 
+	var inventoryService appUser.InventoryService
 	if userRepo != nil {
-		registerUserUC = appUser.NewRegisterUserUseCase(userRepo)
+		inventoryRepo := postgres.NewInventoryRepository(db)
+		txRepo := postgres.NewTransactionRepository(db)
+		inventoryService = appUser.NewInventoryService(inventoryRepo, txRepo)
+
+		registerUserUC = appUser.NewRegisterUserUseCase(userRepo, inventoryService)
 		getUserUC = appUser.NewGetUserUseCase(userRepo)
 		updateUserProfileUC = appUser.NewUpdateUserProfileUseCase(userRepo)
 		updateUserLanguageUC = appUser.NewUpdateUserLanguageUseCase(userRepo)
@@ -248,14 +253,16 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 
 	// Marathon use cases (only if database is available)
 	var (
-		startMarathonUC           *appMarathon.StartMarathonUseCase
-		submitMarathonAnswerUC    *appMarathon.SubmitMarathonAnswerUseCase
-		useMarathonBonusUC        *appMarathon.UseMarathonBonusUseCase
-		continueMarathonUC        *appMarathon.ContinueMarathonUseCase
-		abandonMarathonUC         *appMarathon.AbandonMarathonUseCase
-		getMarathonStatusUC       *appMarathon.GetMarathonStatusUseCase
-		getPersonalBestsUC        *appMarathon.GetPersonalBestsUseCase
-		getMarathonLeaderboardUC  *appMarathon.GetMarathonLeaderboardUseCase
+		startMarathonUC                    *appMarathon.StartMarathonUseCase
+		submitMarathonAnswerUC             *appMarathon.SubmitMarathonAnswerUseCase
+		useMarathonBonusUC                 *appMarathon.UseMarathonBonusUseCase
+		continueMarathonUC                 *appMarathon.ContinueMarathonUseCase
+		abandonMarathonUC                  *appMarathon.AbandonMarathonUseCase
+		completeMarathonUC                 *appMarathon.CompleteMarathonUseCase
+		getMarathonStatusUC                *appMarathon.GetMarathonStatusUseCase
+		getPersonalBestsUC                 *appMarathon.GetPersonalBestsUseCase
+		getMarathonLeaderboardUC           *appMarathon.GetMarathonLeaderboardUseCase
+		distributeWeeklyMarathonRewardsUC  *appMarathon.DistributeWeeklyMarathonRewardsUseCase
 	)
 
 	if marathonRepo != nil && personalBestRepo != nil && questionRepo != nil && categoryRepo != nil && userRepo != nil {
@@ -272,6 +279,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			personalBestRepo,
 			questionRepo,
 			marathonEventBus,
+			inventoryService,
 		)
 		useMarathonBonusUC = appMarathon.NewUseMarathonBonusUseCase(
 			marathonRepo,
@@ -282,12 +290,20 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			marathonRepo,
 			questionRepo,
 			marathonEventBus,
+			inventoryService,
 		)
 		abandonMarathonUC = appMarathon.NewAbandonMarathonUseCase(
 			marathonRepo,
 			personalBestRepo,
 			marathonEventBus,
 		)
+		milestoneClaimsRepo := postgres.NewMilestoneClaimsRepository(db)
+		completeMarathonUC = appMarathon.NewCompleteMarathonUseCase(
+			marathonRepo,
+			personalBestRepo,
+			marathonEventBus,
+			inventoryService,
+		).WithMilestoneClaimsRepository(milestoneClaimsRepo)
 		getMarathonStatusUC = appMarathon.NewGetMarathonStatusUseCase(
 			marathonRepo,
 			bonusWalletRepo,
@@ -299,6 +315,12 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			personalBestRepo,
 			categoryRepo,
 			userRepo,
+		)
+		weeklyDistributionRepo := postgres.NewWeeklyDistributionRepository(db)
+		distributeWeeklyMarathonRewardsUC = appMarathon.NewDistributeWeeklyMarathonRewardsUseCase(
+			personalBestRepo,
+			inventoryService,
+			weeklyDistributionRepo,
 		)
 	}
 
@@ -354,13 +376,16 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		)
 		openChestUC = appDaily.NewOpenChestUseCase(
 			dailyGameRepo,
-		)
+			inventoryService,
+		).WithPremiumService(&appUser.NoopPremiumService{})
 		retryUC = appDaily.NewRetryChallengeUseCase(
 			dailyGameRepo,
 			dailyQuizRepo,
 			questionRepo,
 			dailyChallengeEventBus,
-		)
+			inventoryService,
+			&appDaily.NoopAdVerificationService{},
+		).WithPremiumService(&appUser.NoopPremiumService{})
 	}
 
 	// Duel (PvP) use cases (only if database is available)
@@ -381,6 +406,9 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		getGameResultUC        *appDuel.GetGameResultUseCase
 		getRivalsUC            *appDuel.GetRivalsUseCase
 		prepareShareUC         *appDuel.PrepareShareUseCase
+		getReferralsUC         *appDuel.GetReferralsUseCase
+		claimReferralRewardUC  *appDuel.ClaimReferralRewardUseCase
+		surrenderGameUC        *appDuel.SurrenderGameUseCase
 	)
 
 	if duelGameRepo != nil && playerRatingRepo != nil && challengeRepo != nil && referralRepo != nil && seasonRepo != nil && userRepo != nil {
@@ -401,6 +429,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			seasonRepo,
 			userRepo,
 			duelOnlineTracker, // marks player online on each status poll
+			inventoryService,
 		)
 		if matchmakingQueue != nil {
 			joinQueueUC = appDuel.NewJoinQueueUseCase(
@@ -408,9 +437,11 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				playerRatingRepo,
 				duelGameRepo,
 				seasonRepo,
+				inventoryService,
 			)
 			leaveQueueUC = appDuel.NewLeaveQueueUseCase(
 				matchmakingQueue,
+				inventoryService,
 			)
 		}
 		sendChallengeUC = appDuel.NewSendChallengeUseCase(
@@ -420,6 +451,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			telegramNotifier,
 			duelEventBus,
 			botUsername,
+			inventoryService,
 		)
 		acceptByLinkCodeUC = appDuel.NewAcceptByLinkCodeUseCase(
 			challengeRepo,
@@ -429,6 +461,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			duelEventBus,
 			botUsername,
 			txManager,
+			inventoryService,
 		)
 		// Build duel question adapter if questionRepo is available
 		if questionRepo != nil {
@@ -444,6 +477,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				duelEventBus,
 				botUsername,
 				txManager,
+				inventoryService,
 			)
 			startGameUC = appDuel.NewStartGameUseCase(
 				duelGameRepo,
@@ -451,6 +485,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				duelQuestionRepo,
 				seasonRepo,
 				duelEventBus,
+				matchmakingQueue,
 			)
 			startChallengeUC = appDuel.NewStartChallengeUseCase(
 				challengeRepo,
@@ -470,6 +505,16 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				seasonRepo,
 				duelEventBus,
 				duelRoundCache,
+				inventoryService,
+			)
+			requestRematchUC = appDuel.NewRequestRematchUseCase(
+				duelGameRepo,
+				challengeRepo,
+				playerRatingRepo,
+				seasonRepo,
+				duelQuestionRepo,
+				userRepo,
+				duelEventBus,
 			)
 		}
 		createChallengeLinkUC = appDuel.NewCreateChallengeLinkUseCase(
@@ -487,11 +532,6 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			seasonRepo,
 			userRepo,
 		)
-		requestRematchUC = appDuel.NewRequestRematchUseCase(
-			duelGameRepo,
-			challengeRepo,
-			duelEventBus,
-		)
 		getGameResultUC = appDuel.NewGetGameResultUseCase(
 			duelGameRepo,
 			playerRatingRepo,
@@ -506,7 +546,41 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			challengeRepo,
 		)
 		prepareShareUC = appDuel.NewPrepareShareUseCase(telegramNotifier)
+		getReferralsUC = appDuel.NewGetReferralsUseCase(
+			referralRepo,
+			userRepo,
+			inventoryService,
+		)
+		claimReferralRewardUC = appDuel.NewClaimReferralRewardUseCase(
+			referralRepo,
+			inventoryService,
+		)
+		surrenderGameUC = appDuel.NewSurrenderGameUseCase(
+			duelGameRepo,
+			playerRatingRepo,
+			seasonRepo,
+			duelEventBus,
+		)
 
+		// Start bot fallback scheduler (pairs long-waiting queue players with a bot)
+		if matchmakingQueue != nil && startGameUC != nil {
+			duelQuestionRepoForBot := postgres.NewDuelQuestionRepositoryAdapter(questionRepo)
+			botFallbackUC := appDuel.NewBotFallbackUseCase(
+				matchmakingQueue,
+				duelGameRepo,
+				playerRatingRepo,
+				duelQuestionRepoForBot,
+				seasonRepo,
+				messaging.NewLobbyEventBus(lobbyHub),
+			)
+			go func() {
+				ticker := time.NewTicker(5 * time.Second)
+				defer ticker.Stop()
+				for range ticker.C {
+					botFallbackUC.Execute()
+				}
+			}()
+		}
 
 		// Start background challenge cleanup scheduler
 		go func() {
@@ -579,6 +653,94 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	}
 
 	// ========================================
+	// Background: Weekly Marathon Reward Distribution (Monday 00:01 UTC)
+	// ========================================
+	if distributeWeeklyMarathonRewardsUC != nil {
+		go func() {
+			for {
+				now := time.Now().UTC()
+				weekday := int(now.Weekday())
+				if weekday == 0 {
+					weekday = 7
+				}
+				daysUntilMonday := (8 - weekday) % 7
+				if daysUntilMonday == 0 {
+					daysUntilMonday = 7
+				}
+				nextMonday := time.Date(now.Year(), now.Month(), now.Day()+daysUntilMonday, 0, 1, 0, 0, time.UTC)
+				sleepDur := time.Until(nextMonday)
+				log.Printf("[Marathon Cron] Next weekly reward distribution in %s (at %s)", sleepDur.Round(time.Minute), nextMonday.Format(time.RFC3339))
+
+				<-time.After(sleepDur)
+				out, err := distributeWeeklyMarathonRewardsUC.Execute(appMarathon.DistributeWeeklyMarathonRewardsInput{})
+				if err != nil {
+					log.Printf("[Marathon Cron] Weekly reward distribution failed: %v", err)
+				} else if out.Skipped {
+					log.Printf("[Marathon Cron] Week %s already distributed — skipped", out.WeekID)
+				} else {
+					log.Printf("[Marathon Cron] Week %s: distributed to %d players", out.WeekID, out.Distributed)
+				}
+			}
+		}()
+	}
+
+	// ========================================
+	// Background: Daily Cleanup of Abandoned Games (01:00 UTC)
+	// ========================================
+	if dailyGameRepo != nil {
+		cleanupAbandonedGamesUC := appDaily.NewCleanupAbandonedGamesUseCase(dailyGameRepo)
+		go func() {
+			for {
+				now := time.Now().UTC()
+				next := time.Date(now.Year(), now.Month(), now.Day()+1, 1, 0, 0, 0, time.UTC)
+				<-time.After(time.Until(next))
+				if count, err := cleanupAbandonedGamesUC.Execute(context.Background()); err != nil {
+					log.Printf("[Daily Cron] Cleanup abandoned games failed: %v", err)
+				} else {
+					log.Printf("[Daily Cron] Marked %d abandoned games", count)
+				}
+			}
+		}()
+	}
+
+	// ========================================
+	// Background: End-of-Season Reward Distribution (last Sunday 23:59 UTC)
+	// ========================================
+	if playerRatingRepo != nil && seasonRepo != nil {
+		seasonalResetUC := appDuel.NewSeasonalResetUseCase(playerRatingRepo, seasonRepo)
+		distributeSeasonalRewardsUC := appDuel.NewDistributeSeasonalRewardsUseCase(
+			playerRatingRepo,
+			seasonRepo,
+			inventoryService,
+			seasonalResetUC,
+		)
+		go func() {
+			for {
+				now := time.Now().UTC()
+				// Last day of current month 23:59:00 UTC
+				firstOfNextMonth := time.Date(now.Year(), now.Month()+1, 1, 0, 0, 0, 0, time.UTC)
+				lastDayEnd := firstOfNextMonth.Add(-time.Minute) // 23:59 of last day
+				sleepDur := time.Until(lastDayEnd)
+				if sleepDur < 0 {
+					// Already past — aim for next month's last day
+					firstOfNextMonth = time.Date(now.Year(), now.Month()+2, 1, 0, 0, 0, 0, time.UTC)
+					lastDayEnd = firstOfNextMonth.Add(-time.Minute)
+					sleepDur = time.Until(lastDayEnd)
+				}
+				log.Printf("[Season Cron] Next seasonal reward distribution in %s (at %s)", sleepDur.Round(time.Minute), lastDayEnd.Format(time.RFC3339))
+
+				<-time.After(sleepDur)
+				out, err := distributeSeasonalRewardsUC.Execute(appDuel.DistributeSeasonalRewardsInput{})
+				if err != nil {
+					log.Printf("[Season Cron] Seasonal reward distribution failed: %v", err)
+				} else {
+					log.Printf("[Season Cron] Season %s: distributed to %d players", out.SeasonID, out.RewardsGranted)
+				}
+			}
+		}()
+	}
+
+	// ========================================
 	// Infrastructure Layer: HTTP Handlers
 	// ========================================
 	quizHandler := handlers.NewQuizHandler(
@@ -626,6 +788,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			useMarathonBonusUC,
 			continueMarathonUC,
 			abandonMarathonUC,
+			completeMarathonUC,
 			getMarathonStatusUC,
 			getPersonalBestsUC,
 			getMarathonLeaderboardUC,
@@ -635,6 +798,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 	// Daily Challenge handler (only if database is available)
 	var dailyChallengeHandler *handlers.DailyChallengeHandler
 	if startDailyChallengeUC != nil {
+		recoverStreakUC := appDaily.NewRecoverStreakUseCase(dailyGameRepo, inventoryService)
 		dailyChallengeHandler = handlers.NewDailyChallengeHandler(
 			getOrCreateDailyQuizUC,
 			startDailyChallengeUC,
@@ -644,6 +808,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			getPlayerStreakUC,
 			openChestUC,
 			retryUC,
+			recoverStreakUC,
 		)
 	}
 
@@ -665,6 +830,9 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			getGameResultUC,
 			getRivalsUC,
 			prepareShareUC,
+			getReferralsUC,
+			claimReferralRewardUC,
+			surrenderGameUC,
 		)
 	}
 
@@ -758,6 +926,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		marathon.Post("/:gameId/answer", marathonHandler.SubmitMarathonAnswer)
 		marathon.Post("/:gameId/bonus", marathonHandler.UseMarathonBonus)
 		marathon.Post("/:gameId/continue", marathonHandler.ContinueMarathon)
+		marathon.Post("/:gameId/complete", marathonHandler.CompleteMarathon)
 		marathon.Delete("/:gameId", marathonHandler.AbandonMarathon)
 		marathon.Get("/status", marathonHandler.GetMarathonStatus)
 		marathon.Get("/personal-bests", marathonHandler.GetPersonalBests)
@@ -774,6 +943,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		daily.Get("/status", dailyChallengeHandler.GetDailyStatus)
 		daily.Get("/leaderboard", dailyChallengeHandler.GetDailyLeaderboard)
 		daily.Get("/streak", dailyChallengeHandler.GetPlayerStreak)
+		daily.Post("/recover-streak", dailyChallengeHandler.RecoverStreak)
 	}
 
 	// Duel (PvP) routes (only if database is available)
@@ -792,7 +962,10 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 		duel.Get("/leaderboard", duelHandler.GetDuelLeaderboard)
 		duel.Get("/game/:gameId", duelHandler.GetGameResult)
 		duel.Post("/game/:gameId/rematch", duelHandler.RequestRematch)
+		duel.Post("/game/:gameId/surrender", duelHandler.SurrenderGame)
 		duel.Get("/rivals", duelHandler.GetRivals)
+		duel.Get("/referrals", duelHandler.GetReferrals)
+		duel.Post("/referrals/:friendId/claim", duelHandler.ClaimReferralReward)
 	}
 
 	// Admin routes (debug/testing, protected by API key)

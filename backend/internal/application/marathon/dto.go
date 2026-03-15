@@ -127,23 +127,24 @@ type SubmitMarathonAnswerInput struct {
 
 // SubmitMarathonAnswerOutput is the output for submitting an answer
 type SubmitMarathonAnswerOutput struct {
-	IsCorrect       bool              `json:"isCorrect"`
-	CorrectAnswerID string            `json:"correctAnswerId"`
-	TimeTaken       int64             `json:"timeTaken"`
-	Score           int               `json:"score"`           // Total correct answers
-	TotalQuestions  int               `json:"totalQuestions"`
-	DifficultyLevel string            `json:"difficultyLevel"`
-	LifeLost        bool              `json:"lifeLost"`
-	ShieldConsumed  bool              `json:"shieldConsumed"`
-	Lives           LivesDTO          `json:"lives"`           // Full lives state after answer
-	BonusInventory  BonusInventoryDTO `json:"bonusInventory"`  // Updated bonuses
-	IsGameOver      bool              `json:"isGameOver"`
-	NextQuestion    *QuestionDTO      `json:"nextQuestion,omitempty"`
-	NextTimeLimit   *int              `json:"nextTimeLimit,omitempty"` // Time limit for next question
-	GameOverResult  *GameOverResultDTO `json:"gameOverResult,omitempty"`
-	Milestone       *MilestoneDTO     `json:"milestone,omitempty"` // Next milestone progress
-	StreakCount     int               `json:"streakCount"`   // current streak after this answer
-	LifeRestored    bool              `json:"lifeRestored"`  // true if streak triggered life regen
+	IsCorrect          bool              `json:"isCorrect"`
+	CorrectAnswerID    string            `json:"correctAnswerId"`
+	CorrectAnswerText  string            `json:"correctAnswerText"` // Text of the correct answer
+	TimeTaken          int64             `json:"timeTaken"`
+	Score              int               `json:"score"`           // Total correct answers
+	TotalQuestions     int               `json:"totalQuestions"`
+	DifficultyLevel    string            `json:"difficultyLevel"`
+	LifeLost           bool              `json:"lifeLost"`
+	ShieldConsumed     bool              `json:"shieldConsumed"`
+	Lives              LivesDTO          `json:"lives"`           // Full lives state after answer
+	BonusInventory     BonusInventoryDTO `json:"bonusInventory"`  // Updated bonuses
+	IsGameOver         bool              `json:"isGameOver"`
+	NextQuestion       *QuestionDTO      `json:"nextQuestion,omitempty"`
+	NextTimeLimit      *int              `json:"nextTimeLimit,omitempty"` // Time limit for next question
+	GameOverResult     *GameOverResultDTO `json:"gameOverResult,omitempty"`
+	Milestone          *MilestoneDTO     `json:"milestone,omitempty"` // Next milestone progress
+	StreakCount        int               `json:"streakCount"`   // current streak after this answer
+	LifeRestored       bool              `json:"lifeRestored"`  // true if streak triggered life regen
 }
 
 // GameOverResultDTO contains game over statistics
@@ -153,6 +154,7 @@ type GameOverResultDTO struct {
 	IsNewPersonalBest bool             `json:"isNewPersonalBest"`
 	PreviousRecord    *int             `json:"previousRecord,omitempty"`
 	ContinueOffer     *ContinueOfferDTO `json:"continueOffer,omitempty"`
+	Suspicious        bool             `json:"suspicious"` // Anti-cheat: true if score > 200
 }
 
 // ========================================
@@ -211,6 +213,21 @@ type ContinueMarathonOutput struct {
 }
 
 // ========================================
+// CompleteMarathon Use Case
+// ========================================
+
+// CompleteMarathonInput is the input for completing a marathon game (player declines continue)
+type CompleteMarathonInput struct {
+	GameID   string `json:"gameId"`
+	PlayerID string `json:"playerId"` // For authorization
+}
+
+// CompleteMarathonOutput is the output for completing a marathon game
+type CompleteMarathonOutput struct {
+	GameOverResult GameOverResultDTO `json:"gameOverResult"`
+}
+
+// ========================================
 // AbandonMarathon Use Case
 // ========================================
 
@@ -236,9 +253,10 @@ type GetMarathonStatusInput struct {
 
 // GetMarathonStatusOutput is the output for getting marathon status
 type GetMarathonStatusOutput struct {
-	HasActiveGame  bool              `json:"hasActiveGame"`
-	Game           *MarathonGameDTO  `json:"game,omitempty"`
+	HasActiveGame  bool               `json:"hasActiveGame"`
+	Game           *MarathonGameDTO   `json:"game,omitempty"`
 	BonusInventory *BonusInventoryDTO `json:"bonusInventory,omitempty"` // Available bonuses (shown when idle too)
+	CanStart       bool               `json:"canStart"` // True if no active game in_progress
 }
 
 // ========================================

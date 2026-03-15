@@ -524,6 +524,34 @@ func (e GameReadyEvent) OccurredAt() int64 { return e.occurredAt }
 func (e GameReadyEvent) PlayerID() *UserID { return e.playerID }
 func (e GameReadyEvent) GameID() string    { return e.gameID }
 
+// PlayerSurrenderedEvent fired when a player surrenders mid-game
+type PlayerSurrenderedEvent struct {
+	gameID       GameID
+	playerID     UserID
+	opponentID   UserID
+	occurredAt   int64
+}
+
+func NewPlayerSurrenderedEvent(
+	gameID GameID,
+	playerID UserID,
+	opponentID UserID,
+	occurredAt int64,
+) PlayerSurrenderedEvent {
+	return PlayerSurrenderedEvent{
+		gameID:     gameID,
+		playerID:   playerID,
+		opponentID: opponentID,
+		occurredAt: occurredAt,
+	}
+}
+
+func (e PlayerSurrenderedEvent) EventType() string  { return "player_surrendered" }
+func (e PlayerSurrenderedEvent) OccurredAt() int64  { return e.occurredAt }
+func (e PlayerSurrenderedEvent) GameID() GameID     { return e.gameID }
+func (e PlayerSurrenderedEvent) PlayerID() UserID   { return e.playerID }
+func (e PlayerSurrenderedEvent) OpponentID() UserID { return e.opponentID }
+
 // Referral Events
 
 // ReferralCreatedEvent fired when a referral is created

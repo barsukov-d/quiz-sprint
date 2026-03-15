@@ -1,11 +1,16 @@
 # Daily Challenge - Domain Model
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 10 | ⚠️ Расходится: 6 | ❌ Не реализовано: 2
+
 ## Bounded Context
 `daily_challenge` - independent context for daily competitions.
 
 ## Aggregates
 
 ### 1. DailyQuiz (Root)
+
+> ⚠️ Расходится: реализован с полями id, date, questionIDs, expiresAt. Отсутствуют quizID, seed, isActive. Хранит questionIDs напрямую вместо ссылки на quiz.
 
 **Purpose:** Single daily quiz shared by all players.
 
@@ -25,6 +30,9 @@ type DailyQuiz struct {
 - ✅ Seed ensures same questions for all players
 
 **Repository:**
+
+> ⚠️ Расходится: методы используют префикс Find*. Метод GetOrCreate отсутствует — логика вынесена в application layer.
+
 ```go
 type DailyQuizRepository interface {
     GetByDate(date Date) (*DailyQuiz, error)
@@ -36,6 +44,8 @@ type DailyQuizRepository interface {
 ---
 
 ### 2. DailyGame (Root)
+
+> ✅ Реализовано: DailyGame с kernel.QuizGameplaySession и chestReward field.
 
 **Purpose:** Player's attempt at daily challenge.
 
@@ -90,6 +100,9 @@ func (dg *DailyGame) SetRank(rank int)
 ```
 
 **Repository:**
+
+> ⚠️ Расходится: метод HasPlayedToday отсутствует — заменён на FindByPlayerAndDate returning nil.
+
 ```go
 type DailyGameRepository interface {
     GetByID(id GameID) (*DailyGame, error)
@@ -122,6 +135,9 @@ func (s StreakSystem) LastPlayedDate() Date
 ---
 
 ### ChestType
+
+> ✅ Реализовано: функция названа CalculateChestType (не DetermineChestType).
+
 ```go
 type ChestType string
 
@@ -150,11 +166,15 @@ func (gs GameStatus) CanTransitionTo(next GameStatus) bool
 func (gs GameStatus) IsTerminal() bool
 ```
 
+> ✅ Реализовано — все 3 статуса, включая `abandoned`. Переходы: `in_progress → completed | abandoned`.
+
 ---
 
 ## Domain Services
 
 ### DailyQuizSelector
+
+> ❌ Не реализовано: отдельный domain service отсутствует. Логика выбора вопросов находится в application layer.
 
 **Purpose:** Select questions for daily quiz.
 
@@ -174,6 +194,8 @@ func (s *DailyQuizSelector) SelectQuestionsForDate(
 ---
 
 ### ChestRewardCalculator
+
+> ⚠️ Расходится: существует, но сигнатура отличается — принимает float64 streakBonus вместо streak int, параметр isPremium отсутствует.
 
 **Purpose:** Calculate chest rewards.
 
@@ -299,6 +321,9 @@ type QuizGameplaySession struct {
 ## Database Schema
 
 ### Table: daily_quizzes
+
+> ⚠️ Расходится: id использует UUID (не VARCHAR), колонки quiz_id и seed отсутствуют, вместо них question_ids JSONB. Колонка is_active отсутствует.
+
 ```sql
 CREATE TABLE daily_quizzes (
     id VARCHAR(36) PRIMARY KEY,
@@ -314,6 +339,9 @@ CREATE TABLE daily_quizzes (
 ```
 
 ### Table: daily_games
+
+> ⚠️ Расходится: использует session_state JSONB, есть chest columns и attempt_number. Отдельные колонки final_score и correct_answers отсутствуют.
+
 ```sql
 CREATE TABLE daily_games (
     id VARCHAR(36) PRIMARY KEY,
@@ -347,6 +375,8 @@ CREATE TABLE daily_games (
 ---
 
 ## Redis Structures
+
+> ❌ Не реализовано: Redis не используется. Лидерборд хранится только в PostgreSQL.
 
 ### Leaderboard
 ```

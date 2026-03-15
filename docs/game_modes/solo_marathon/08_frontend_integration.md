@@ -1,5 +1,29 @@
 # Solo Marathon - Frontend Integration
 
+> **Статус реализации (аудит 2026-03-15, обновлено 2026-03-15)**
+> ✅ Реализовано: 8 | ⚠️ Расходится: 7 | ❌ Не реализовано: 3
+>
+> - ✅ Frontend has ZERO game logic
+> - ✅ Lives from API
+> - ✅ Bonuses trigger API calls
+> - ✅ Vue Query for server state
+> - ✅ Tests only cover rendering
+> - ✅ QuestionScreen — реализован как `MarathonPlayView.vue`
+> - ✅ GameOverScreen — реализован как `MarathonGameOverView.vue`
+> - ✅ DifficultyTransition toast — реализован; backend возвращает `difficultyChanged`/`difficultyMessage` в question DTO
+> - ✅ CorrectAnswerText — доступен в answer response (`correctAnswerText` field)
+> - ✅ CanStart — доступен в GET /marathon/status response
+> - ⚠️ Timer visual only, server validates — таймер визуальный, но сервер НЕ валидирует `timeTaken` против `timeLimit`
+> - ⚠️ MarathonView.vue (pre-start) — существует только `MarathonCategoryView.vue`, нет отдельного pre-start экрана
+> - ⚠️ BonusControls — встроен inline в `MarathonPlayView.vue`, не отдельный компонент
+> - ⚠️ AnswerFeedback — inline alerts, не отдельный компонент
+> - ⚠️ ResultsScreen — не отдельный; GameOver screen совмещает обе функции
+> - ⚠️ MilestoneProgress — inline, не отдельный компонент
+> - ❌ PersonalBestProgress — не реализован
+> - ❌ OnboardingOverlay — не реализован
+> - ❌ NetworkOverlay — не реализован
+> - ❌ ShareCard — не реализован
+
 ## Thin Client Architecture
 
 **Critical:** Frontend has ZERO game logic. Backend owns everything.
@@ -9,6 +33,8 @@
 ## Component Responsibilities
 
 ### MarathonView.vue
+
+> ⚠️ Существует только `MarathonCategoryView.vue`. Отдельного pre-start экрана с personal best, бонусами и weekly rank нет.
 
 **Only does:**
 - Fetch status: `GET /api/v1/marathon/status`
@@ -23,6 +49,8 @@
 ---
 
 ### QuestionScreen.vue
+
+> ✅ Реализован как `MarathonPlayView.vue`. ⚠️ Сервер не валидирует `timeTaken` против `timeLimit` на вопрос.
 
 **Only does:**
 - Display question from API
@@ -77,6 +105,8 @@ const submitAnswer = async (answerId: string) => {
 ---
 
 ### BonusControls.vue
+
+> ⚠️ Встроен inline в `MarathonPlayView.vue`, не отдельный компонент.
 
 **Only does:**
 - Display bonus buttons with quantities (from API)
@@ -135,6 +165,8 @@ const useSkip = async () => {
 
 ### AnswerFeedback.vue
 
+> ⚠️ Не отдельный компонент. Inline alerts в `MarathonPlayView.vue`.
+
 **Only does:**
 - Display feedback from API response
 - Show correct answer if wrong
@@ -166,6 +198,8 @@ const useSkip = async () => {
 ---
 
 ### GameOverScreen.vue
+
+> ✅ Реализован как `MarathonGameOverView.vue`.
 
 **Only does:**
 - Display final score from API
@@ -215,6 +249,8 @@ const continueGame = async (method: 'coins' | 'ad') => {
 ---
 
 ### ResultsScreen.vue
+
+> ⚠️ Не отдельный компонент. `MarathonGameOverView.vue` совмещает GameOver и Results.
 
 **Only does:**
 - Display final stats from API
@@ -520,6 +556,8 @@ const visibleAnswers = response.data.remainingAnswers  // Backend decided
 
 ### MilestoneProgress.vue
 
+> ⚠️ Inline в `MarathonPlayView.vue`, не отдельный компонент.
+
 Displays progress toward next milestone (25, 50, 100, 200, 500).
 
 **Receives from backend:**
@@ -540,6 +578,8 @@ Displays progress toward next milestone (25, 50, 100, 200, 500).
 
 ### PersonalBestProgress.vue
 
+> ❌ Не реализован.
+
 Visual progress bar comparing current score to personal best.
 
 **Receives from backend:**
@@ -558,6 +598,8 @@ Visual progress bar comparing current score to personal best.
 
 ### DifficultyTransition.vue
 
+> ✅ Реализован. Backend возвращает `difficultyChanged`/`difficultyMessage` в question DTO; frontend toast component показывает уведомление.
+
 Brief toast notification when timer limit changes.
 
 **Receives from backend (in question response):**
@@ -573,6 +615,8 @@ Brief toast notification when timer limit changes.
 ---
 
 ### OnboardingOverlay.vue
+
+> ❌ Не реализован.
 
 Highlights bonus buttons for first-time players.
 
@@ -592,6 +636,8 @@ Highlights bonus buttons for first-time players.
 
 ### NetworkOverlay.vue
 
+> ❌ Не реализован.
+
 Shown on connection loss during game.
 
 **Triggered by:** Frontend detecting network failure (no backend involvement).
@@ -609,6 +655,8 @@ Shown on connection loss during game.
 ---
 
 ### ShareCard
+
+> ❌ Не реализован.
 
 Format for "Поделиться" button on Results screen.
 

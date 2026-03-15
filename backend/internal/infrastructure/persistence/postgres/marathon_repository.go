@@ -53,7 +53,8 @@ func (r *MarathonRepository) Save(game *solo_marathon.MarathonGameV2) error {
 			current_lives, lives_last_update,
 			bonus_shield, bonus_fifty_fifty, bonus_skip, bonus_freeze,
 			shield_active, continue_count,
-			difficulty_level, personal_best_score
+			difficulty_level, personal_best_score,
+			streak_count, best_streak, lives_restored
 		) VALUES (
 			$1, $2, $3, $4, $5, $6,
 			$7, $8, $9,
@@ -61,7 +62,8 @@ func (r *MarathonRepository) Save(game *solo_marathon.MarathonGameV2) error {
 			$12, $13,
 			$14, $15, $16, $17,
 			$18, $19,
-			$20, $21
+			$20, $21,
+			$22, $23, $24
 		)
 		ON CONFLICT (id) DO UPDATE SET
 			status = EXCLUDED.status,
@@ -79,7 +81,10 @@ func (r *MarathonRepository) Save(game *solo_marathon.MarathonGameV2) error {
 			bonus_freeze = EXCLUDED.bonus_freeze,
 			shield_active = EXCLUDED.shield_active,
 			continue_count = EXCLUDED.continue_count,
-			difficulty_level = EXCLUDED.difficulty_level
+			difficulty_level = EXCLUDED.difficulty_level,
+			streak_count = EXCLUDED.streak_count,
+			best_streak = EXCLUDED.best_streak,
+			lives_restored = EXCLUDED.lives_restored
 	`
 
 	// Get category ID (nullable for "all categories")
@@ -111,6 +116,9 @@ func (r *MarathonRepository) Save(game *solo_marathon.MarathonGameV2) error {
 		game.ContinueCount(),
 		string(game.Difficulty().Level()),
 		r.nullInt(game.PersonalBestScore()),
+		game.StreakCount(),
+		game.BestStreak(),
+		game.LivesRestored(),
 	)
 
 	if err != nil {
@@ -130,7 +138,8 @@ func (r *MarathonRepository) FindByID(id solo_marathon.GameID) (*solo_marathon.M
 			current_lives, lives_last_update,
 			bonus_shield, bonus_fifty_fifty, bonus_skip, bonus_freeze,
 			shield_active, continue_count,
-			difficulty_level, personal_best_score
+			difficulty_level, personal_best_score,
+			streak_count, best_streak, lives_restored
 		FROM marathon_games
 		WHERE id = $1
 	`
@@ -148,7 +157,8 @@ func (r *MarathonRepository) FindActiveByPlayer(playerID solo_marathon.UserID) (
 			current_lives, lives_last_update,
 			bonus_shield, bonus_fifty_fifty, bonus_skip, bonus_freeze,
 			shield_active, continue_count,
-			difficulty_level, personal_best_score
+			difficulty_level, personal_best_score,
+			streak_count, best_streak, lives_restored
 		FROM marathon_games
 		WHERE player_id = $1 AND status IN ('in_progress', 'game_over')
 		ORDER BY started_at DESC
@@ -207,6 +217,9 @@ func (r *MarathonRepository) scanGame(row *sql.Row) (*solo_marathon.MarathonGame
 		continueCount       int
 		difficultyLevel     string
 		personalBestScore   sql.NullInt32
+		streakCount         int
+		bestStreak          int
+		livesRestored       int
 	)
 
 	err := row.Scan(
@@ -217,6 +230,7 @@ func (r *MarathonRepository) scanGame(row *sql.Row) (*solo_marathon.MarathonGame
 		&bonusShield, &bonusFiftyFifty, &bonusSkip, &bonusFreeze,
 		&shieldActive, &continueCount,
 		&difficultyLevel, &personalBestScore,
+		&streakCount, &bestStreak, &livesRestored,
 	)
 
 	if err == sql.ErrNoRows {
@@ -234,6 +248,7 @@ func (r *MarathonRepository) scanGame(row *sql.Row) (*solo_marathon.MarathonGame
 		bonusShield, bonusFiftyFifty, bonusSkip, bonusFreeze,
 		shieldActive, continueCount,
 		difficultyLevel, personalBestScore,
+		streakCount, bestStreak, livesRestored,
 	)
 }
 
@@ -260,6 +275,9 @@ func (r *MarathonRepository) reconstructGame(
 	continueCount int,
 	difficultyLevel string,
 	personalBestScore sql.NullInt32,
+	streakCount int,
+	bestStreak int,
+	livesRestored int,
 ) (*solo_marathon.MarathonGameV2, error) {
 	// Parse IDs
 	id := solo_marathon.NewGameIDFromString(gameID)
@@ -338,7 +356,7 @@ func (r *MarathonRepository) reconstructGame(
 		continueCount,
 		pbScore,
 		make(map[solo_marathon.QuestionID][]solo_marathon.BonusType),
-		0, 0, 0, // streakCount, bestStreak, livesRestored (not yet persisted)
+		streakCount, bestStreak, livesRestored,
 	)
 
 	return game, nil

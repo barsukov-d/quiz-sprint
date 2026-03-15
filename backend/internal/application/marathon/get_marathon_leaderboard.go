@@ -1,6 +1,8 @@
 package marathon
 
 import (
+	"time"
+
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/quiz"
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/solo_marathon"
 	"github.com/barsukov/quiz-sprint/backend/internal/domain/user"
@@ -63,15 +65,26 @@ func (uc *GetMarathonLeaderboardUseCase) Execute(input GetMarathonLeaderboardInp
 		timeFrame = "all_time" // Default
 	}
 
-	// TODO: Implement time filtering for weekly/daily leaderboards
-	// For now, we only support "all_time"
-	if timeFrame != "all_time" {
-		// Return empty for now
-		// TODO: Filter personal bests by achievedAt timestamp
-	}
+	// 4. Get top personal bests for category (with optional time filtering)
+	var topRecords []*solo_marathon.PersonalBest
+	var err error
+	if timeFrame == "weekly" {
+		// Calculate current week boundaries (Monday 00:00 UTC - Sunday 23:59 UTC)
+		now := time.Now().UTC()
+		weekday := int(now.Weekday())
+		if weekday == 0 {
+			weekday = 7 // Sunday = 7
+		}
+		monday := now.AddDate(0, 0, -(weekday - 1))
+		monday = time.Date(monday.Year(), monday.Month(), monday.Day(), 0, 0, 0, 0, time.UTC)
+		nextMonday := monday.AddDate(0, 0, 7)
 
-	// 4. Get top personal bests for category
-	topRecords, err := uc.personalBestRepo.FindTopByCategory(category, input.Limit)
+		topRecords, err = uc.personalBestRepo.FindTopByCategoryInTimeRange(
+			category, input.Limit, monday.Unix(), nextMonday.Unix(),
+		)
+	} else {
+		topRecords, err = uc.personalBestRepo.FindTopByCategory(category, input.Limit)
+	}
 	if err != nil {
 		if err == solo_marathon.ErrPersonalBestNotFound {
 			// No records yet - return empty list

@@ -57,6 +57,16 @@ type MatchmakingQueue interface {
 
 	// GetPlayerQueueInfo returns player's queue info (joinedAt, mmr)
 	GetPlayerQueueInfo(playerID UserID) (int64, int, error)
+
+	// GetStaleQueueEntries returns IDs of players who joined before cutoffTime (unix sec)
+	GetStaleQueueEntries(cutoffTime int64) ([]UserID, error)
+
+	// RecordRecentOpponent marks opponentID as a recent opponent of playerID (and vice versa).
+	// The record expires after 5 minutes so the same pair can match again later.
+	RecordRecentOpponent(playerID, opponentID UserID) error
+
+	// IsRecentOpponent returns true if opponentID was a recent opponent of playerID.
+	IsRecentOpponent(playerID, opponentID UserID) (bool, error)
 }
 
 // PlayerRatingRepository defines the interface for player rating persistence
@@ -81,6 +91,13 @@ type PlayerRatingRepository interface {
 
 	// GetTotalPlayers returns total players in season
 	GetTotalPlayers(seasonID string) (int, error)
+
+	// FindAllBySeasonID retrieves all player ratings for a given season (used for reward distribution)
+	FindAllBySeasonID(seasonID string) ([]*PlayerRating, error)
+
+	// ResetAllRatingsForSeason applies soft reset to all players and moves them to newSeasonID.
+	// resetFn computes the new MMR from the current MMR.
+	ResetAllRatingsForSeason(newSeasonID string, resetFn func(currentMMR int) int) error
 }
 
 // ChallengeRepository defines the interface for duel challenge persistence

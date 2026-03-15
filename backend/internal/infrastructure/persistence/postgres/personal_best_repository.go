@@ -117,7 +117,7 @@ func (r *PersonalBestRepository) FindTopByCategory(
 			($1::uuid IS NULL AND category_id IS NULL) OR
 			(category_id = $1)
 		)
-		ORDER BY best_streak DESC, best_score DESC, achieved_at ASC
+		ORDER BY best_score DESC, best_streak DESC, achieved_at ASC
 		LIMIT $2
 	`
 
@@ -173,6 +173,72 @@ func (r *PersonalBestRepository) FindTopByCategory(
 	return results, nil
 }
 
+// FindTopByCategoryInTimeRange retrieves top N players whose best was achieved within time range
+func (r *PersonalBestRepository) FindTopByCategoryInTimeRange(
+	category solo_marathon.MarathonCategory,
+	limit int,
+	from int64,
+	to int64,
+) ([]*solo_marathon.PersonalBest, error) {
+	query := `
+		SELECT id, player_id, category_id, best_streak, best_score, achieved_at, updated_at
+		FROM marathon_personal_bests
+		WHERE (
+			($1::uuid IS NULL AND category_id IS NULL) OR
+			(category_id = $1)
+		)
+		AND achieved_at >= $3 AND achieved_at < $4
+		ORDER BY best_score DESC, best_streak DESC, achieved_at ASC
+		LIMIT $2
+	`
+
+	var categoryIDParam *string
+	if !category.IsAllCategories() {
+		cid := category.CategoryID().String()
+		categoryIDParam = &cid
+	}
+
+	rows, err := r.db.Query(query, categoryIDParam, limit, from, to)
+	if err != nil {
+		return nil, fmt.Errorf("failed to query weekly personal bests: %w", err)
+	}
+	defer rows.Close()
+
+	var results []*solo_marathon.PersonalBest
+	for rows.Next() {
+		var (
+			id         string
+			playerID   string
+			categoryID sql.NullString
+			bestStreak int
+			bestScore  int
+			achievedAt int64
+			updatedAt  int64
+		)
+
+		err := rows.Scan(&id, &playerID, &categoryID, &bestStreak, &bestScore, &achievedAt, &updatedAt)
+		if err != nil {
+			return nil, fmt.Errorf("failed to scan personal best row: %w", err)
+		}
+
+		pb, err := r.reconstructPersonalBest(id, playerID, categoryID, bestStreak, bestScore, achievedAt, updatedAt)
+		if err != nil {
+			return nil, err
+		}
+		results = append(results, pb)
+	}
+
+	if err = rows.Err(); err != nil {
+		return nil, fmt.Errorf("error iterating personal best rows: %w", err)
+	}
+
+	if len(results) == 0 {
+		return nil, solo_marathon.ErrPersonalBestNotFound
+	}
+
+	return results, nil
+}
+
 // FindAllByPlayer retrieves all personal bests for a player (across all categories)
 func (r *PersonalBestRepository) FindAllByPlayer(
 	playerID solo_marathon.UserID,
@@ -181,7 +247,7 @@ func (r *PersonalBestRepository) FindAllByPlayer(
 		SELECT id, player_id, category_id, best_streak, best_score, achieved_at, updated_at
 		FROM marathon_personal_bests
 		WHERE player_id = $1
-		ORDER BY best_streak DESC
+		ORDER BY best_score DESC, best_streak DESC
 	`
 
 	rows, err := r.db.Query(query, playerID.String())

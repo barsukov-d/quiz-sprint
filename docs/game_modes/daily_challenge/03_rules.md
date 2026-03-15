@@ -1,5 +1,8 @@
 # Daily Challenge - Business Rules
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 10 | ⚠️ Расходится: 5 | ❌ Не реализовано: 2
+
 ## Score Calculation
 
 ### Per Question
@@ -11,6 +14,7 @@ questionScore = isCorrect ? (basePoints + timeBonus) : 0
 Max per question: 175 (answered instantly)
 Min per question: 0 (wrong or timeout)
 ```
+> ✅ Реализовано — код использует миллисекунды внутри, но формула функционально эквивалентна
 
 ### Total Score
 ```
@@ -18,6 +22,7 @@ baseScore = sum(questionScores)  // 0 to 1750
 streakMultiplier = getStreakBonus(streak)
 finalScore = floor(baseScore * streakMultiplier)
 ```
+> ✅ Реализовано
 
 **Note:** Streak multiplier is applied to BOTH finalScore AND chest coins (see Rewards doc).
 
@@ -31,7 +36,10 @@ finalScore = floor(baseScore * streakMultiplier)
 | 14-29 days | 1.4 | +40% |
 | 30+ days | 1.5 | +50% |
 
+> ✅ Реализовано — все 5 уровней присутствуют в коде
+
 **Note:** Milestones trigger event at 3, 7, 14, 30, 100 days.
+> ⚠️ Расходится — код проверяет {3, 7, 14, 30}, milestone на 100 дней отсутствует
 
 ## Chest Type Determination
 
@@ -58,6 +66,7 @@ else if currentDate == lastPlayedDate:
 else:
     streak = 0  // Broken
 ```
+> ⚠️ Расходится — код сбрасывает streak до 1 (не 0): игрок сыграл сегодня, значит streak=1
 
 **Important:**
 - Streak updates ONLY on game completion
@@ -68,6 +77,7 @@ else:
 - Available: Within 24h after break
 - Cost: 50 coins OR Rewarded Ad
 - Effect: Restores previous streak
+> ✅ Реализовано — `RecoverStreakUseCase` через `InventoryService.Debit` (50 coins) или `AdVerificationService`
 
 ## Validation Rules
 
@@ -80,10 +90,15 @@ Violations:
 - `timeTaken > 15` → `ErrInvalidTimeTaken`
 - Server validates: `abs(clientTime - serverTime) < 2s` (anti-cheat)
 
+> ❌ Не реализовано — валидация timeTaken в daily challenge коде отсутствует
+> ❌ Не реализовано — проверка abs(clientTime - serverTime) < 2s не реализована
+
 ### Answer Submission
 - Each question answered exactly once
 - Cannot change answer after submission
 - Violation: `ErrQuestionAlreadyAnswered`
+
+> ✅ Реализовано — через kernel session
 
 ### Daily Limit
 ```
@@ -100,6 +115,8 @@ Violations:
 - Already played: `ErrAlreadyPlayedToday`
 - Can retry: 100 coins or Premium subscription
 
+> ✅ Реализовано
+
 ### Game State Transitions
 
 ```
@@ -110,17 +127,23 @@ IN_PROGRESS --[24h timeout]--> ABANDONED
 
 Invalid transitions throw `ErrInvalidGameStatus`.
 
+> ✅ Реализовано — `GameStatusAbandoned` существует. `CleanupAbandonedGamesUseCase.Execute()` помечает просроченные игры через `MarkAbandonedGames()`.
+
 ## Leaderboard Rules
 
 ### Ranking
 Primary sort: `finalScore DESC`
 Tiebreaker: `completedAt ASC` (earlier = better)
 
+> ✅ Реализовано
+
 ### Formula
 ```
 leaderboardScore = finalScore * 1000000 + (maxTimestamp - completedAt)
 ```
 Stored in Redis Sorted Set (higher = better rank).
+
+> ⚠️ Расходится — используется PostgreSQL, не Redis. Сортировка функционально корректна, архитектура иная
 
 ### Visibility
 - **Global:** All players worldwide
@@ -142,6 +165,8 @@ Stored in Redis Sorted Set (higher = better rank).
 - 100 coins (deducted upfront)
 - OR Rewarded Ad
 
+> ✅ Реализовано — `RetryChallengeUseCase` вызывает `InventoryService.Debit(100 coins)` или `AdVerificationService.VerifyAdWatched()`
+
 **Effect:**
 - Creates NEW `DailyGame` with same `date`
 - Both attempts saved
@@ -153,6 +178,8 @@ Stored in Redis Sorted Set (higher = better rank).
 - Premium users: Unlimited retries
 
 ## Premium Subscription Benefits
+
+> ❌ Не реализовано
 
 **Chest Upgrade:**
 ```
@@ -171,10 +198,10 @@ Applied automatically at chest opening.
 ## Anti-Cheat
 
 **Server validates:**
-1. Time taken (realistic range)
-2. Answer sequence (no skipping questions)
-3. Completion time (min 10 seconds total)
-4. Request signatures (Telegram auth)
+1. Time taken (realistic range) — ❌ Не реализовано (валидация diapason 0-15s отсутствует)
+2. Answer sequence (no skipping questions) — ✅ Реализовано через kernel session
+3. Completion time (suspicious avg < 1s/question) — ✅ Реализовано (`SuspiciousScore` flag в `GameResultsDTO`)
+4. Request signatures (Telegram auth) — ⚠️ Middleware существует, но handlers принимают PlayerID из тела запроса (риск bypass)
 
 **Penalties:**
 - Suspicious activity → Game invalidated

@@ -173,6 +173,31 @@ func (l League) MinMMR() int {
 	}
 }
 
+// GetWinReward returns coins awarded for winning a duel in this league
+func (l League) GetWinReward() int {
+	switch l {
+	case LeagueBronze:
+		return 25
+	case LeagueSilver:
+		return 50
+	case LeagueGold:
+		return 75
+	case LeaguePlatinum:
+		return 100
+	case LeagueDiamond:
+		return 150
+	case LeagueLegend:
+		return 200
+	default:
+		return 25
+	}
+}
+
+// GetDrawReward returns coins awarded on draw (half of win)
+func (l League) GetDrawReward() int {
+	return l.GetWinReward() / 2
+}
+
 // LeagueInfo methods
 func (li LeagueInfo) League() League     { return li.league }
 func (li LeagueInfo) Division() Division { return li.division }

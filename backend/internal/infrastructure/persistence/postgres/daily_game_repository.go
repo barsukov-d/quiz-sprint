@@ -202,6 +202,113 @@ func (r *DailyGameRepository) FindTopByDate(date daily_challenge.Date, limit int
 	return games, rows.Err()
 }
 
+// FindTopByDateAndFriends retrieves top N results for a date filtered to player's friends (referrals)
+func (r *DailyGameRepository) FindTopByDateAndFriends(date daily_challenge.Date, playerID daily_challenge.UserID, limit int) ([]*daily_challenge.DailyGame, error) {
+	query := `
+		WITH friend_ids AS (
+			SELECT invitee_id AS friend_id FROM referrals WHERE inviter_id = $2
+			UNION
+			SELECT inviter_id AS friend_id FROM referrals WHERE invitee_id = $2
+		),
+		best_attempts AS (
+			SELECT DISTINCT ON (dg.player_id)
+				dg.id, dg.player_id, dg.daily_quiz_id, dg.date, dg.status,
+				dg.session_state, dg.current_streak, dg.best_streak, dg.last_played_date, dg.rank,
+				dg.question_started_at,
+				dg.chest_type, dg.chest_coins, dg.chest_pvp_tickets, dg.chest_bonuses,
+				(dg.session_state->>'base_score')::int * (CASE
+					WHEN dg.current_streak >= 30 THEN 1.5
+					WHEN dg.current_streak >= 14 THEN 1.4
+					WHEN dg.current_streak >= 7 THEN 1.25
+					WHEN dg.current_streak >= 3 THEN 1.1
+					ELSE 1.0
+				END) as final_score,
+				(dg.session_state->>'completed_at')::bigint as completed_at
+			FROM daily_games dg
+			WHERE dg.date = $1 AND dg.status = 'completed'
+			  AND dg.player_id IN (SELECT friend_id FROM friend_ids)
+			ORDER BY dg.player_id, final_score DESC
+		)
+		SELECT id, player_id, daily_quiz_id, date, status,
+			session_state, current_streak, best_streak, last_played_date, rank,
+			question_started_at,
+			chest_type, chest_coins, chest_pvp_tickets, chest_bonuses
+		FROM best_attempts
+		ORDER BY final_score DESC, completed_at ASC
+		LIMIT $3
+	`
+
+	rows, err := r.db.Query(query, date.String(), playerID.String(), limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	games := make([]*daily_challenge.DailyGame, 0)
+	for rows.Next() {
+		game, err := r.scanGameFromRows(rows)
+		if err != nil {
+			return nil, err
+		}
+		games = append(games, game)
+	}
+
+	return games, rows.Err()
+}
+
+// FindTopByDateAndCountry retrieves top N results for a date filtered to players with same language_code
+func (r *DailyGameRepository) FindTopByDateAndCountry(date daily_challenge.Date, playerID daily_challenge.UserID, limit int) ([]*daily_challenge.DailyGame, error) {
+	query := `
+		WITH player_lang AS (
+			SELECT language_code FROM users WHERE id = $2
+		),
+		best_attempts AS (
+			SELECT DISTINCT ON (dg.player_id)
+				dg.id, dg.player_id, dg.daily_quiz_id, dg.date, dg.status,
+				dg.session_state, dg.current_streak, dg.best_streak, dg.last_played_date, dg.rank,
+				dg.question_started_at,
+				dg.chest_type, dg.chest_coins, dg.chest_pvp_tickets, dg.chest_bonuses,
+				(dg.session_state->>'base_score')::int * (CASE
+					WHEN dg.current_streak >= 30 THEN 1.5
+					WHEN dg.current_streak >= 14 THEN 1.4
+					WHEN dg.current_streak >= 7 THEN 1.25
+					WHEN dg.current_streak >= 3 THEN 1.1
+					ELSE 1.0
+				END) as final_score,
+				(dg.session_state->>'completed_at')::bigint as completed_at
+			FROM daily_games dg
+			JOIN users u ON u.id = dg.player_id
+			WHERE dg.date = $1 AND dg.status = 'completed'
+			  AND u.language_code = (SELECT language_code FROM player_lang)
+			ORDER BY dg.player_id, final_score DESC
+		)
+		SELECT id, player_id, daily_quiz_id, date, status,
+			session_state, current_streak, best_streak, last_played_date, rank,
+			question_started_at,
+			chest_type, chest_coins, chest_pvp_tickets, chest_bonuses
+		FROM best_attempts
+		ORDER BY final_score DESC, completed_at ASC
+		LIMIT $3
+	`
+
+	rows, err := r.db.Query(query, date.String(), playerID.String(), limit)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+
+	games := make([]*daily_challenge.DailyGame, 0)
+	for rows.Next() {
+		game, err := r.scanGameFromRows(rows)
+		if err != nil {
+			return nil, err
+		}
+		games = append(games, game)
+	}
+
+	return games, rows.Err()
+}
+
 // GetPlayerRankByDate calculates player's rank for a specific date
 func (r *DailyGameRepository) GetPlayerRankByDate(playerID daily_challenge.UserID, date daily_challenge.Date) (int, error) {
 	query := `
@@ -281,6 +388,23 @@ func (r *DailyGameRepository) CountAttemptsByPlayerAndDate(playerID daily_challe
 	var count int
 	err := r.db.QueryRow(query, playerID.String(), date.String()).Scan(&count)
 	return count, err
+}
+
+// MarkAbandonedGames marks in_progress games older than yesterday as abandoned.
+// Returns the number of games updated.
+func (r *DailyGameRepository) MarkAbandonedGames() (int, error) {
+	query := `
+		UPDATE daily_games
+		SET status = 'abandoned'
+		WHERE status = 'in_progress'
+		  AND date < CURRENT_DATE - INTERVAL '1 day'
+	`
+	result, err := r.db.Exec(query)
+	if err != nil {
+		return 0, err
+	}
+	affected, err := result.RowsAffected()
+	return int(affected), err
 }
 
 // Delete removes a daily game
