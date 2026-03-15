@@ -27,7 +27,7 @@ func (r *TransactionRepository) Save(tx *user.TransactionLog) error {
 	}
 
 	query := `
-		INSERT INTO user_transactions (id, player_id, tx_type, source, details, created_at)
+		INSERT INTO user_transactions (id, player_id, "type", source, details, created_at)
 		VALUES ($1, $2, $3, $4, $5, $6)
 	`
 
@@ -35,6 +35,7 @@ func (r *TransactionRepository) Save(tx *user.TransactionLog) error {
 		tx.ID(),
 		tx.PlayerID().String(),
 		string(tx.Type()),
+		tx.Source(),
 		detailsJSON,
 		tx.CreatedAt(),
 	)
@@ -49,7 +50,7 @@ func (r *TransactionRepository) Save(tx *user.TransactionLog) error {
 // FindByPlayer retrieves transactions for a player ordered by created_at DESC
 func (r *TransactionRepository) FindByPlayer(playerID user.UserID, limit int) ([]user.TransactionLog, error) {
 	query := `
-		SELECT id, player_id, tx_type, source, details, created_at
+		SELECT id, player_id, "type", source, details, created_at
 		FROM user_transactions
 		WHERE player_id = $1
 		ORDER BY created_at DESC
