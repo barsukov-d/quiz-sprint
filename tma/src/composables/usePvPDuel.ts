@@ -176,7 +176,6 @@ export function usePvPDuel(playerIdRef: MaybeRef<string>) {
 	const division = computed(() => player.value?.division ?? 4)
 	const seasonWins = computed(() => player.value?.seasonWins ?? 0)
 	const seasonLosses = computed(() => player.value?.seasonLosses ?? 0)
-	// @ts-expect-error seasonDraws will be added to DTO when backend migration 021 is deployed
 	const seasonDraws = computed(() => player.value?.seasonDraws ?? 0)
 	const winRate = computed(() => player.value?.winRate ?? 0)
 

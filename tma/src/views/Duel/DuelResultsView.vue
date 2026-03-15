@@ -38,26 +38,12 @@ const gameData = computed(() => gameResult.value?.data)
 const didWin = computed(() => gameData.value?.result === 'win')
 const isDraw = computed(() => gameData.value?.result === 'draw')
 
-const resultIcon = computed(() => {
-	if (isDraw.value) return 'i-heroicons-minus-circle'
-	return didWin.value ? 'i-heroicons-trophy' : 'i-heroicons-x-circle'
-})
-
-const resultColor = computed(() => {
-	if (isDraw.value) return 'text-gray-500 dark:text-gray-400'
-	return didWin.value ? 'text-yellow-500' : 'text-red-500'
-})
-
 const resultText = computed(() => {
 	if (isDraw.value) return t('duel.draw')
 	return didWin.value ? t('duel.victory') : t('duel.defeat')
 })
 
 const mmrChange = computed(() => gameData.value?.mmrChange ?? 0)
-const mmrChangeColor = computed(() =>
-	mmrChange.value >= 0 ? 'text-green-600 dark:text-green-400' : 'text-red-600 dark:text-red-400',
-)
-
 // ===========================
 // Actions
 // ===========================
@@ -106,109 +92,97 @@ const handleShare = () => {
 </script>
 
 <template>
-	<div class="min-h-screen bg-(--ui-bg) flex flex-col">
+	<div class="fixed inset-0 flex flex-col bg-(--ui-bg) z-40">
 		<!-- Header -->
-		<div class="px-4 py-3 flex items-center justify-between">
-			<button class="p-2 -ml-2" @click="handleHome">
-				<UIcon name="i-heroicons-x-mark" class="size-6" />
+		<div
+			class="flex items-center justify-between px-4 pt-3 pb-2 shrink-0 border-b border-(--ui-border)"
+		>
+			<button class="p-1 text-(--ui-text-muted) hover:text-(--ui-text)" @click="handleHome">
+				<UIcon name="i-heroicons-x-mark" class="size-5" />
 			</button>
-			<h1 class="text-lg font-semibold">{{ t('duel.gameResult') }}</h1>
-			<div class="w-10" />
+			<span class="text-sm font-semibold text-(--ui-text-highlighted)">{{
+				t('duel.gameResult')
+			}}</span>
+			<div class="w-7" />
 		</div>
 
-		<!-- Result Hero -->
-		<div class="flex-1 flex flex-col items-center justify-center p-6">
-			<!-- Result Icon -->
-			<div class="mb-6">
-				<UIcon :name="resultIcon" :class="resultColor" class="size-24" />
+		<!-- Content centered vertically -->
+		<div class="flex-1 flex flex-col items-center justify-center px-4">
+			<div class="text-6xl mb-3">{{ isDraw ? '🤝' : didWin ? '🏆' : '💔' }}</div>
+			<h2 class="text-2xl font-black text-(--ui-text-highlighted)">{{ resultText }}</h2>
+			<span
+				class="mt-2 mb-6 px-3 py-1 rounded-full text-sm font-bold"
+				:class="
+					mmrChange >= 0 ? 'bg-green-500/15 text-green-500' : 'bg-red-500/15 text-red-500'
+				"
+			>
+				{{ t('duel.mmrChange', { sign: mmrChange >= 0 ? '+' : '', amount: mmrChange }) }}
+			</span>
+
+			<!-- Score card -->
+			<div
+				class="w-full max-w-[280px] rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4 mb-8"
+			>
+				<div class="flex items-center">
+					<div class="text-center flex-1">
+						<p class="text-xs text-(--ui-text-muted) mb-1">{{ t('duel.you') }}</p>
+						<p class="text-4xl font-black text-(--ui-text-highlighted) tabular-nums">
+							{{ gameData?.playerScore ?? 0 }}
+						</p>
+					</div>
+					<span class="text-lg text-(--ui-text-dimmed) font-bold mx-2">—</span>
+					<div class="text-center flex-1">
+						<p class="text-xs text-(--ui-text-muted) mb-1 truncate">
+							{{ gameData?.opponent?.username ?? t('duel.opponent') }}
+						</p>
+						<p class="text-4xl font-black text-(--ui-text-muted) tabular-nums">
+							{{ gameData?.opponentScore ?? 0 }}
+						</p>
+					</div>
+				</div>
 			</div>
 
-			<!-- Result Text -->
-			<h2 class="text-4xl font-bold mb-4">{{ resultText }}</h2>
-
-			<!-- Score -->
-			<div class="flex items-center gap-6 mb-6">
-				<div class="text-center">
-					<p class="text-sm text-gray-500 dark:text-gray-400">{{ t('duel.you') }}</p>
-					<p class="text-5xl font-bold text-primary">
-						{{ gameData?.playerScore ?? 0 }}
-					</p>
+			<!-- Actions -->
+			<div class="w-full flex flex-col gap-3">
+				<UButton
+					v-if="rematchStatus === 'idle'"
+					icon="i-heroicons-arrow-path"
+					color="primary"
+					size="lg"
+					block
+					:loading="isRematchLoading"
+					@click="handleRematch"
+				>
+					{{ t('duel.requestRematch') }}
+				</UButton>
+				<div
+					v-else-if="rematchStatus === 'pending'"
+					class="flex items-center justify-center gap-2 py-3 text-(--ui-text-muted)"
+				>
+					<UIcon name="i-heroicons-clock" class="size-4 animate-pulse" />
+					<span class="text-sm">{{ t('duel.waitingOpponent') }}</span>
 				</div>
-				<span class="text-2xl text-(--ui-text-dimmed)">-</span>
-				<div class="text-center">
-					<p class="text-sm text-gray-500 dark:text-gray-400">
-						{{ gameData?.opponent?.username ?? t('duel.opponent') }}
-					</p>
-					<p class="text-5xl font-bold text-orange-500">
-						{{ gameData?.opponentScore ?? 0 }}
-					</p>
-				</div>
-			</div>
-
-			<!-- MMR Change -->
-			<div class="mb-8">
-				<p :class="mmrChangeColor" class="text-2xl font-bold">
-					{{
-						t('duel.mmrChange', { sign: mmrChange >= 0 ? '+' : '', amount: mmrChange })
-					}}
+				<p v-if="rematchError" class="text-center text-red-500 text-xs">
+					{{ rematchError }}
 				</p>
+				<div class="flex items-center justify-center gap-4 pt-1">
+					<button
+						class="text-sm text-(--ui-text-muted) hover:text-(--ui-text) flex items-center gap-1.5 transition-colors"
+						@click="handleShare"
+					>
+						<UIcon name="i-heroicons-share" class="size-4" />
+						{{ t('duel.shareResult') }}
+					</button>
+					<span class="w-px h-4 bg-(--ui-border)" />
+					<button
+						class="text-sm text-(--ui-text-muted) hover:text-(--ui-text) flex items-center gap-1.5 transition-colors"
+						@click="handleBackToLobby"
+					>
+						<UIcon name="i-heroicons-arrow-left" class="size-4" />
+						{{ t('duel.backToLobby') }}
+					</button>
+				</div>
 			</div>
-		</div>
-
-		<!-- Actions -->
-		<div class="p-4 space-y-3">
-			<!-- Rematch Button -->
-			<UButton
-				v-if="rematchStatus === 'idle'"
-				icon="i-heroicons-arrow-path"
-				color="primary"
-				size="xl"
-				block
-				:loading="isRematchLoading"
-				@click="handleRematch"
-			>
-				{{ t('duel.requestRematch') }}
-			</UButton>
-
-			<UButton
-				v-else-if="rematchStatus === 'pending'"
-				icon="i-heroicons-clock"
-				color="gray"
-				variant="soft"
-				size="xl"
-				block
-				disabled
-			>
-				{{ t('duel.waitingOpponent') }}
-			</UButton>
-
-			<UAlert v-if="rematchError" color="red" variant="soft" class="mb-2">
-				{{ rematchError }}
-			</UAlert>
-
-			<!-- Share Button -->
-			<UButton
-				icon="i-heroicons-share"
-				color="gray"
-				variant="soft"
-				size="lg"
-				block
-				@click="handleShare"
-			>
-				{{ t('duel.shareResult') }}
-			</UButton>
-
-			<!-- Back to Lobby -->
-			<UButton
-				icon="i-heroicons-arrow-left"
-				color="gray"
-				variant="ghost"
-				size="lg"
-				block
-				@click="handleBackToLobby"
-			>
-				{{ t('duel.backToLobby') }}
-			</UButton>
 		</div>
 	</div>
 </template>

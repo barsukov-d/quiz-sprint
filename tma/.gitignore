@@ -44,3 +44,5 @@ components.d.ts
 
 # Kubb сгенерированный код
 src/api/generated/
+
+.omc

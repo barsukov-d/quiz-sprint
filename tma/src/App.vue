@@ -19,9 +19,20 @@ const nuxtLocale = computed(
 const route = useRoute()
 const router = useRouter()
 
-// Show bottom navigation only on main screens, hide during quiz play and results
+// Hide bottom nav on screens that require completing an action (gameplay, results)
+// Show on browsable/navigation screens (home, lobby, category selection, etc.)
 const showBottomNav = computed(() => {
-	const hiddenRoutes = ['quiz-play', 'quiz-results', 'quiz-details']
+	const hiddenRoutes = [
+		'quiz-play',
+		'quiz-results',
+		'quiz-details',
+		'daily-challenge-play',
+		'daily-challenge-results',
+		'marathon-play',
+		'marathon-gameover',
+		'duel-play',
+		'duel-results',
+	]
 	return !hiddenRoutes.includes(route.name as string)
 })
 
@@ -161,7 +172,15 @@ onMounted(async () => {
 		</div>
 
 		<!-- Основное приложение -->
-		<div v-else class="min-h-svh bg-(--ui-bg) p-4 pt-4 pb-20 sm:p-3 sm:pt-20">
+		<div
+			v-else
+			class="min-h-svh bg-(--ui-bg) px-4 pt-4"
+			:style="{
+				paddingBottom: showBottomNav
+					? 'calc(5rem + env(safe-area-inset-bottom, 0px))'
+					: 'env(safe-area-inset-bottom, 1rem)',
+			}"
+		>
 			<RouterView />
 			<BottomTabBar v-if="showBottomNav" />
 		</div>

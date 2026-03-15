@@ -69,8 +69,6 @@ const feedbackShieldConsumed = ref(false)
 // Computed
 // ===========================
 
-const answerLabels = ['A', 'B', 'C', 'D']
-
 const bonusButtons = [
 	{
 		type: 'shield' as BonusType,
@@ -324,16 +322,64 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<div class="min-h-screen mx-auto max-w-[800px] px-4 pt-14 pb-8 sm:px-3 sm:pt-12">
+	<div class="min-h-screen mx-auto max-w-[800px] pt-14 pb-4">
 		<!-- Loading State -->
 		<div v-if="!currentQuestion" class="flex flex-col items-center justify-center min-h-[50vh]">
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('marathon.loadingQuestion') }}</p>
+			<p class="text-(--ui-text-muted) mt-4">{{ t('marathon.loadingQuestion') }}</p>
 		</div>
 
 		<!-- Game View -->
 		<div v-else class="flex flex-col gap-4">
-			<!-- Header: energy + score + timer -->
+			<!-- Header: counter + title + menu -->
+			<div class="flex items-center justify-between">
+				<span class="text-xl font-bold text-(--ui-text-highlighted) tabular-nums">
+					{{ state.totalQuestions }}
+				</span>
+				<span class="text-sm font-semibold text-(--ui-text-muted)">{{
+					t('marathon.title')
+				}}</span>
+				<UIcon
+					name="i-heroicons-ellipsis-horizontal-circle"
+					class="size-6 text-(--ui-text-dimmed)"
+				/>
+			</div>
+
+			<!-- Timer bar -->
+			<div class="relative h-6 rounded-full bg-(--ui-bg-accented) overflow-hidden">
+				<div
+					class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-yellow-400 via-primary-500 to-primary-600 transition-all duration-1000"
+					:style="{
+						width: timerRef
+							? `${(timerRef.remainingTime / state.timeLimit) * 100}%`
+							: '100%',
+					}"
+				/>
+				<span
+					class="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums drop-shadow"
+					:class="
+						timerRef?.remainingTime !== undefined && timerRef.remainingTime <= 5
+							? 'text-red-400'
+							: 'text-white'
+					"
+				>
+					{{ timerRef?.remainingTime ?? state.timeLimit }}s
+				</span>
+			</div>
+
+			<!-- Hidden functional timer -->
+			<GameTimer
+				ref="timerRef"
+				:initial-time="state.timeLimit"
+				:auto-start="false"
+				:warning-threshold="5"
+				:show-progress="false"
+				size="sm"
+				:on-timeout="handleTimeout"
+				class="sr-only"
+			/>
+
+			<!-- Energy + score + streak row -->
 			<div class="flex items-center gap-3">
 				<!-- Energy bar -->
 				<div class="flex items-center gap-1.5 shrink-0 relative">
@@ -346,7 +392,7 @@ onUnmounted(() => {
 							:class="
 								filled
 									? 'bg-amber-400 shadow-[0_0_5px_rgba(251,191,36,0.55)]'
-									: 'bg-gray-700'
+									: 'bg-(--ui-bg-accented)'
 							"
 						/>
 					</div>
@@ -380,26 +426,12 @@ onUnmounted(() => {
 					name="i-heroicons-shield-check"
 					class="size-4 text-blue-500 shrink-0"
 				/>
-
-				<div class="flex-1" />
-
-				<!-- Timer -->
-				<GameTimer
-					ref="timerRef"
-					:initial-time="state.timeLimit"
-					:auto-start="false"
-					:warning-threshold="5"
-					:show-progress="false"
-					size="sm"
-					:on-timeout="handleTimeout"
-					class="shrink-0"
-				/>
 			</div>
 
 			<!-- Milestone progress -->
 			<div
 				v-if="state.milestone && state.milestone.next > 0"
-				class="text-xs text-center text-gray-500 dark:text-gray-400"
+				class="text-xs text-center text-(--ui-text-muted)"
 			>
 				{{
 					t('marathon.nextMilestone', {
@@ -416,12 +448,14 @@ onUnmounted(() => {
 				:show-badge="false"
 			/>
 
-			<!-- Answer Buttons -->
+			<!-- Answer Buttons (colored bars) -->
 			<div class="flex flex-col gap-3">
 				<AnswerButton
 					v-for="(answer, index) in visibleAnswers"
 					:key="answer.id"
 					:answer="answer"
+					:color-index="index % 4"
+					:color-bar="true"
 					:selected="selectedAnswerId === answer.id"
 					:disabled="
 						isSubmitting ||
@@ -431,7 +465,6 @@ onUnmounted(() => {
 					"
 					:show-feedback="getAnswerFeedback(answer.id).showFeedback"
 					:is-correct="getAnswerFeedback(answer.id).isCorrect"
-					:label="answerLabels[index]"
 					:class="{ 'opacity-0 pointer-events-none': answer.hidden }"
 					@click="handleAnswerSelect"
 				/>
@@ -445,8 +478,8 @@ onUnmounted(() => {
 					class="bonus-btn flex flex-col items-center gap-0.5 px-3 py-2 rounded-xl transition-all duration-200"
 					:class="[
 						b.canUse.value
-							? 'bg-gray-100 dark:bg-gray-800 hover:scale-105 active:scale-95 cursor-pointer'
-							: 'bg-gray-100/50 dark:bg-gray-800/30 opacity-35 cursor-not-allowed',
+							? 'bg-(--ui-bg-elevated) hover:scale-105 active:scale-95 cursor-pointer'
+							: 'bg-(--ui-bg-elevated) opacity-35 cursor-not-allowed',
 						activatedBonus === b.type
 							? 'bonus-activated ring-2 ring-offset-1 ring-offset-transparent'
 							: '',
@@ -460,15 +493,15 @@ onUnmounted(() => {
 				>
 					<UIcon
 						:name="b.icon"
-						:class="b.canUse.value ? b.activeColor : 'text-gray-400 dark:text-gray-600'"
+						:class="b.canUse.value ? b.activeColor : 'text-(--ui-text-dimmed)'"
 						class="w-5 h-5"
 					/>
 					<span
 						class="text-[10px] font-bold tabular-nums"
 						:class="
 							b.canUse.value
-								? 'text-gray-900 dark:text-gray-100'
-								: 'text-gray-400 dark:text-gray-600'
+								? 'text-(--ui-text-highlighted)'
+								: 'text-(--ui-text-dimmed)'
 						"
 					>
 						{{ state.bonusInventory[b.key] }}
@@ -476,9 +509,7 @@ onUnmounted(() => {
 					<span
 						class="text-[9px] leading-tight"
 						:class="
-							b.canUse.value
-								? 'text-gray-500 dark:text-gray-400'
-								: 'text-gray-400/60 dark:text-gray-600'
+							b.canUse.value ? 'text-(--ui-text-muted)' : 'text-(--ui-text-dimmed)'
 						"
 					>
 						{{ b.label }}
@@ -490,7 +521,7 @@ onUnmounted(() => {
 			<div v-if="isSubmitting || showFeedback" class="mt-2">
 				<UAlert
 					v-if="isSubmitting"
-					color="gray"
+					color="neutral"
 					variant="soft"
 					:title="t('marathon.submittingAnswer')"
 				>

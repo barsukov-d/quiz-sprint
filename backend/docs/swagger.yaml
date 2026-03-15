@@ -548,6 +548,31 @@ definitions:
       username:
         type: string
     type: object
+  internal_infrastructure_http_handlers.DuelLeaderboardEntryDTO:
+    properties:
+      avatar:
+        type: string
+      draws:
+        type: integer
+      league:
+        type: string
+      leagueIcon:
+        type: string
+      losses:
+        type: integer
+      mmr:
+        type: integer
+      playerId:
+        type: string
+      rank:
+        type: integer
+      username:
+        type: string
+      winRate:
+        type: number
+      wins:
+        type: integer
+    type: object
   internal_infrastructure_http_handlers.DuelPlayerRatingDTO:
     properties:
       canDemote:
@@ -570,6 +595,8 @@ definitions:
         type: integer
       playerId:
         type: string
+      seasonDraws:
+        type: integer
       seasonLosses:
         type: integer
       seasonWins:
@@ -773,6 +800,24 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.GetDailyStatusData'
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.GetDuelLeaderboardResponse:
+    properties:
+      data:
+        properties:
+          endsAt:
+            type: integer
+          entries:
+            items:
+              $ref: '#/definitions/internal_infrastructure_http_handlers.DuelLeaderboardEntryDTO'
+            type: array
+          playerRank:
+            type: integer
+          seasonId:
+            type: string
+          type:
+            type: string
+        type: object
     type: object
   internal_infrastructure_http_handlers.GetDuelStatusResponse:
     properties:
@@ -1017,6 +1062,13 @@ definitions:
         items:
           $ref: '#/definitions/internal_infrastructure_http_handlers.SessionSummaryDTO'
         type: array
+    required:
+    - data
+    type: object
+  internal_infrastructure_http_handlers.GetUserProfileStatsResponse:
+    properties:
+      data:
+        $ref: '#/definitions/internal_infrastructure_http_handlers.UserProfileStatsDTO'
     required:
     - data
     type: object
@@ -1365,6 +1417,29 @@ definitions:
         $ref: '#/definitions/internal_infrastructure_http_handlers.OpenChestData'
     required:
     - data
+    type: object
+  internal_infrastructure_http_handlers.PrepareShareRequest:
+    properties:
+      challengeLink:
+        type: string
+      playerId:
+        type: string
+    required:
+    - challengeLink
+    - playerId
+    type: object
+  internal_infrastructure_http_handlers.PrepareShareResponse:
+    properties:
+      data:
+        properties:
+          expiresAt:
+            type: integer
+          preparedMessageId:
+            type: string
+        required:
+        - expiresAt
+        - preparedMessageId
+        type: object
     type: object
   internal_infrastructure_http_handlers.QuestionDTO:
     properties:
@@ -2079,6 +2154,58 @@ definitions:
     - languageCode
     - updatedAt
     - username
+    type: object
+  internal_infrastructure_http_handlers.UserProfileStatsDTO:
+    properties:
+      averageScore:
+        example: 76
+        type: integer
+      currentStreak:
+        example: 7
+        type: integer
+      duelDivision:
+        example: 2
+        type: integer
+      duelLeague:
+        example: Silver
+        type: string
+      duelLeagueIcon:
+        example: "\U0001F948"
+        type: string
+      duelLeagueLabel:
+        example: Silver II
+        type: string
+      duelLosses:
+        example: 8
+        type: integer
+      duelMmr:
+        example: 1250
+        type: integer
+      duelWins:
+        example: 15
+        type: integer
+      longestStreak:
+        example: 14
+        type: integer
+      marathonBestScore:
+        example: 847
+        type: integer
+      marathonBestStreak:
+        example: 23
+        type: integer
+      marathonCategory:
+        example: Science
+        type: string
+      totalGamesCompleted:
+        example: 42
+        type: integer
+      totalPoints:
+        example: 12850
+        type: integer
+    required:
+    - averageScore
+    - totalGamesCompleted
+    - totalPoints
     type: object
 host: localhost:3000
 info:
@@ -2831,6 +2958,38 @@ paths:
       summary: Create challenge link
       tags:
       - duel
+  /duel/challenge/prepare-share:
+    post:
+      consumes:
+      - application/json
+      description: Creates a Telegram prepared inline message with an "Accept Challenge"
+        button. Use the returned preparedMessageId with the TMA SDK shareMessage()
+        call (Mini Apps v8.0+).
+      parameters:
+      - description: Prepare share request
+        in: body
+        name: request
+        required: true
+        schema:
+          $ref: '#/definitions/internal_infrastructure_http_handlers.PrepareShareRequest'
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: Prepared message ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.PrepareShareResponse'
+        "400":
+          description: Invalid request
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Prepare inline message for sharing challenge
+      tags:
+      - duel
   /duel/game/{gameId}:
     get:
       consumes:
@@ -2978,7 +3137,7 @@ paths:
         "200":
           description: Leaderboard
           schema:
-            $ref: '#/definitions/internal_infrastructure_http_handlers.GetLeaderboardResponse'
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetDuelLeaderboardResponse'
         "400":
           description: Invalid request
           schema:
@@ -3870,6 +4029,38 @@ paths:
           schema:
             $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
       summary: Update user profile
+      tags:
+      - user
+  /user/{id}/stats:
+    get:
+      description: Aggregated statistics across all game modes (quiz, daily challenge,
+        marathon, duel)
+      parameters:
+      - description: User ID (Telegram ID)
+        in: path
+        name: id
+        required: true
+        type: string
+      produces:
+      - application/json
+      responses:
+        "200":
+          description: User profile statistics
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.GetUserProfileStatsResponse'
+        "400":
+          description: Invalid user ID
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "404":
+          description: User not found
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+        "500":
+          description: Internal server error
+          schema:
+            $ref: '#/definitions/internal_infrastructure_http_handlers.ErrorResponse'
+      summary: Get user profile statistics
       tags:
       - user
   /user/{userId}/sessions/active:

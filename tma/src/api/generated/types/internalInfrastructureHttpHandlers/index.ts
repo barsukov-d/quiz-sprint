@@ -32,6 +32,7 @@ export type { InternalInfrastructureHttpHandlersDailyQuizData } from "./DailyQui
 export type { InternalInfrastructureHttpHandlersDailyQuizUserResultDTO } from "./DailyQuizUserResultDTO.ts";
 export type { InternalInfrastructureHttpHandlersDuelChallengeDTO } from "./DuelChallengeDTO.ts";
 export type { InternalInfrastructureHttpHandlersDuelFriendDTO } from "./DuelFriendDTO.ts";
+export type { InternalInfrastructureHttpHandlersDuelLeaderboardEntryDTO } from "./DuelLeaderboardEntryDTO.ts";
 export type { InternalInfrastructureHttpHandlersDuelPlayerRatingDTO } from "./DuelPlayerRatingDTO.ts";
 export type { InternalInfrastructureHttpHandlersErrorDetail } from "./ErrorDetail.ts";
 export type { InternalInfrastructureHttpHandlersErrorResponse } from "./ErrorResponse.ts";
@@ -46,6 +47,7 @@ export type { InternalInfrastructureHttpHandlersGetDailyLeaderboardResponse } fr
 export type { InternalInfrastructureHttpHandlersGetDailyQuizResponse } from "./GetDailyQuizResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetDailyStatusData } from "./GetDailyStatusData.ts";
 export type { InternalInfrastructureHttpHandlersGetDailyStatusResponse } from "./GetDailyStatusResponse.ts";
+export type { InternalInfrastructureHttpHandlersGetDuelLeaderboardResponse } from "./GetDuelLeaderboardResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetDuelStatusResponse } from "./GetDuelStatusResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetGameHistoryResponse } from "./GetGameHistoryResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetGameResultPlayerDTO } from "./GetGameResultPlayerDTO.ts";
@@ -66,6 +68,7 @@ export type { InternalInfrastructureHttpHandlersGetRandomQuizResponse } from "./
 export type { InternalInfrastructureHttpHandlersGetRivalsResponse } from "./GetRivalsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetSessionResultsResponse } from "./GetSessionResultsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetUserActiveSessionsResponse } from "./GetUserActiveSessionsResponse.ts";
+export type { InternalInfrastructureHttpHandlersGetUserProfileStatsResponse } from "./GetUserProfileStatsResponse.ts";
 export type { InternalInfrastructureHttpHandlersGetUserResponse } from "./GetUserResponse.ts";
 export type { InternalInfrastructureHttpHandlersGlobalLeaderboardEntryDTO } from "./GlobalLeaderboardEntryDTO.ts";
 export type { InternalInfrastructureHttpHandlersJoinQueueRequest } from "./JoinQueueRequest.ts";
@@ -88,6 +91,8 @@ export type { InternalInfrastructureHttpHandlersMarathonPersonalBestDTO } from "
 export type { InternalInfrastructureHttpHandlersOpenChestData } from "./OpenChestData.ts";
 export type { InternalInfrastructureHttpHandlersOpenChestRequest } from "./OpenChestRequest.ts";
 export type { InternalInfrastructureHttpHandlersOpenChestResponse } from "./OpenChestResponse.ts";
+export type { InternalInfrastructureHttpHandlersPrepareShareRequest } from "./PrepareShareRequest.ts";
+export type { InternalInfrastructureHttpHandlersPrepareShareResponse } from "./PrepareShareResponse.ts";
 export type { InternalInfrastructureHttpHandlersQuestionDTO } from "./QuestionDTO.ts";
 export type { InternalInfrastructureHttpHandlersQuizDetailDTO } from "./QuizDetailDTO.ts";
 export type { InternalInfrastructureHttpHandlersQuizDTO } from "./QuizDTO.ts";
@@ -133,3 +138,4 @@ export type { InternalInfrastructureHttpHandlersUseMarathonBonusData } from "./U
 export type { InternalInfrastructureHttpHandlersUseMarathonBonusRequest } from "./UseMarathonBonusRequest.ts";
 export type { InternalInfrastructureHttpHandlersUseMarathonBonusResponse } from "./UseMarathonBonusResponse.ts";
 export type { InternalInfrastructureHttpHandlersUserDTO } from "./UserDTO.ts";
+export type { InternalInfrastructureHttpHandlersUserProfileStatsDTO } from "./UserProfileStatsDTO.ts";

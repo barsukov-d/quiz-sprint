@@ -74,8 +74,6 @@ let stuckTimeout: ReturnType<typeof setTimeout> | null = null
 
 const totalRounds = computed(() => game.value?.totalRounds ?? 7)
 
-const answerLabels = ['A', 'B', 'C', 'D']
-
 // Cast question to expected DTO format
 const formattedQuestion = computed(() => {
 	if (!currentQuestion.value) return null
@@ -157,9 +155,14 @@ const handleTimeout = () => {
 	}
 }
 
-const isCorrectAnswer = (answerId: string) => {
-	if (!lastRoundResult.value) return false
-	return answerId === lastRoundResult.value.correctAnswerId
+const isCorrectAnswer = (answerId: string): boolean | null => {
+	if (!showFeedback.value || !lastRoundResult.value) return null
+	// Correct answer → green
+	if (answerId === lastRoundResult.value.correctAnswerId) return true
+	// Selected wrong answer → red
+	if (answerId === selectedAnswerId.value) return false
+	// Other answers → dimmed (null)
+	return null
 }
 
 // ===========================
@@ -186,7 +189,7 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<div class="min-h-screen bg-gray-900 flex flex-col">
+	<div class="min-h-screen mx-auto max-w-[800px] flex flex-col">
 		<!-- Connection Status -->
 		<div
 			v-if="!isConnected || isReconnecting"
@@ -217,12 +220,14 @@ onUnmounted(() => {
 				<UIcon name="i-heroicons-bolt" class="size-14 text-primary relative z-10" />
 			</div>
 			<div class="text-center space-y-1">
-				<p class="text-white font-bold text-xl">{{ t('duel.connecting') }}</p>
-				<p class="text-gray-500 text-sm">{{ t('duel.waitingDesc') }}</p>
+				<p class="text-(--ui-text-highlighted) font-bold text-xl">
+					{{ t('duel.connecting') }}
+				</p>
+				<p class="text-(--ui-text-muted) text-sm">{{ t('duel.waitingDesc') }}</p>
 			</div>
 			<UButton
 				v-if="isStuck"
-				color="gray"
+				color="neutral"
 				variant="soft"
 				icon="i-heroicons-arrow-left"
 				@click="router.push({ name: 'duel-lobby', query: { skipRedirect: '1' } })"
@@ -245,28 +250,30 @@ onUnmounted(() => {
 						size="xl"
 						class="ring-2 ring-primary/40"
 					/>
-					<p class="text-sm font-semibold text-gray-300">{{ t('duel.you') }}</p>
+					<p class="text-sm font-semibold text-(--ui-text-muted)">{{ t('duel.you') }}</p>
 				</div>
 
-				<span class="text-2xl font-black text-gray-600">VS</span>
+				<span class="text-2xl font-black text-(--ui-text-dimmed)">VS</span>
 
 				<!-- Unknown opponent -->
 				<div class="flex flex-col items-center gap-2">
 					<div
-						class="size-16 rounded-full bg-gray-700 border-2 border-dashed border-gray-600 flex items-center justify-center"
+						class="size-16 rounded-full bg-(--ui-bg-accented) border-2 border-dashed border-(--ui-border) flex items-center justify-center"
 					>
 						<UIcon
 							name="i-heroicons-question-mark-circle"
-							class="size-8 text-gray-500"
+							class="size-8 text-(--ui-text-muted)"
 						/>
 					</div>
-					<p class="text-sm font-semibold text-gray-600">?</p>
+					<p class="text-sm font-semibold text-(--ui-text-dimmed)">?</p>
 				</div>
 			</div>
 
 			<div class="text-center">
-				<p class="text-white font-semibold mb-1">{{ t('duel.waitingOpponent') }}</p>
-				<p class="text-sm text-gray-500">{{ t('duel.waitingDesc') }}</p>
+				<p class="text-(--ui-text-highlighted) font-semibold mb-1">
+					{{ t('duel.waitingOpponent') }}
+				</p>
+				<p class="text-sm text-(--ui-text-muted)">{{ t('duel.waitingDesc') }}</p>
 			</div>
 		</div>
 
@@ -285,13 +292,13 @@ onUnmounted(() => {
 						class="ring-2 ring-primary/40"
 					/>
 					<p
-						class="text-sm font-semibold text-gray-300 truncate max-w-[80px] text-center"
+						class="text-sm font-semibold text-(--ui-text-muted) truncate max-w-[80px] text-center"
 					>
 						{{ t('duel.you') }}
 					</p>
 				</div>
 
-				<span class="text-xl font-black text-gray-600 shrink-0">VS</span>
+				<span class="text-xl font-black text-(--ui-text-dimmed) shrink-0">VS</span>
 
 				<div class="flex-1 flex flex-col items-center gap-2">
 					<UAvatar
@@ -301,7 +308,7 @@ onUnmounted(() => {
 						class="ring-2 ring-orange-500/40"
 					/>
 					<p
-						class="text-sm font-semibold text-gray-300 truncate max-w-[80px] text-center"
+						class="text-sm font-semibold text-(--ui-text-muted) truncate max-w-[80px] text-center"
 					>
 						{{ opponent?.username || '...' }}
 					</p>
@@ -310,7 +317,7 @@ onUnmounted(() => {
 
 			<!-- Countdown number -->
 			<div class="text-center">
-				<p class="text-xs uppercase tracking-widest text-gray-500 mb-2">
+				<p class="text-xs uppercase tracking-widest text-(--ui-text-muted) mb-2">
 					{{ t('duel.getReady') }}
 				</p>
 				<p class="text-9xl font-black text-primary tabular-nums leading-none">
@@ -321,68 +328,67 @@ onUnmounted(() => {
 
 		<!-- Playing -->
 		<template v-else-if="isPlaying && currentQuestion">
-			<!-- Header: Players & Scores + Timer -->
-			<div class="bg-gray-800 dark:bg-gray-900 border-b border-gray-700/50 shadow-md">
-				<!-- Round row -->
-				<div class="flex items-center justify-center gap-1.5 pt-2.5 pb-1">
-					<span class="text-[10px] uppercase tracking-widest text-gray-500">
-						{{ t('duel.round') }}
+			<!-- Header -->
+			<div class="px-4 pt-2 pb-3 space-y-3">
+				<!-- Row 1: round + title + menu -->
+				<div class="flex items-center justify-between">
+					<span class="text-xl font-bold text-(--ui-text-highlighted) tabular-nums">
+						{{ currentRound }}/{{ totalRounds }}
 					</span>
-					<span class="text-sm font-bold text-white tabular-nums">
-						{{ currentRound
-						}}<span class="text-gray-500 font-normal">/{{ totalRounds }}</span>
-					</span>
+					<span class="text-sm font-semibold text-(--ui-text-muted)">{{
+						t('duel.title')
+					}}</span>
+					<UIcon
+						name="i-heroicons-ellipsis-horizontal-circle"
+						class="size-6 text-(--ui-text-dimmed)"
+					/>
 				</div>
 
 				<!-- Players row -->
-				<div class="flex items-center px-4 pb-2 gap-3">
-					<!-- Me — left -->
-					<div class="flex items-center gap-2.5 flex-1 min-w-0">
+				<div class="flex items-center gap-2">
+					<!-- Me -->
+					<div class="flex items-center gap-2 flex-1 min-w-0">
 						<UAvatar
 							:src="currentUser?.avatarUrl"
 							:alt="currentUser?.username"
-							size="md"
-							class="ring-2 ring-primary/40 shrink-0"
+							size="sm"
+							class="ring-2 ring-primary shrink-0"
 						/>
 						<div class="min-w-0">
-							<p
-								class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 truncate"
-							>
+							<p class="text-xs text-(--ui-text-muted) truncate">
 								{{ t('duel.you') }}
 							</p>
-							<p class="text-3xl font-black text-primary tabular-nums leading-none">
+							<p class="text-xl font-black text-primary tabular-nums leading-tight">
 								{{ myScore }}
 							</p>
 						</div>
 					</div>
 
-					<!-- VS divider -->
-					<span class="text-xs font-bold text-gray-600 shrink-0">VS</span>
+					<!-- VS -->
+					<span class="text-[10px] font-bold text-(--ui-text-dimmed) px-1">VS</span>
 
-					<!-- Opponent — right (mirrored) -->
-					<div class="flex items-center gap-2.5 flex-row-reverse flex-1 min-w-0">
+					<!-- Opponent -->
+					<div class="flex items-center gap-2 flex-row-reverse flex-1 min-w-0">
 						<div class="relative shrink-0">
 							<UAvatar
 								:src="opponent?.avatar"
 								:alt="opponent?.username"
-								size="md"
-								class="ring-2 ring-orange-500/40"
+								size="sm"
+								class="ring-2 ring-orange-500"
 							/>
 							<div
 								v-if="opponentAnswered"
-								class="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 rounded-full flex items-center justify-center shadow"
+								class="absolute -bottom-0.5 -right-0.5 w-3.5 h-3.5 bg-green-500 rounded-full flex items-center justify-center"
 							>
-								<UIcon name="i-heroicons-check" class="size-3 text-white" />
+								<UIcon name="i-heroicons-check" class="size-2.5 text-white" />
 							</div>
 						</div>
 						<div class="text-right min-w-0">
-							<p
-								class="text-[11px] font-semibold uppercase tracking-wide text-gray-400 truncate"
-							>
+							<p class="text-xs text-(--ui-text-muted) truncate">
 								{{ opponent?.username }}
 							</p>
 							<p
-								class="text-3xl font-black text-orange-500 tabular-nums leading-none"
+								class="text-xl font-black text-orange-500 tabular-nums leading-tight"
 							>
 								{{ opponentScore }}
 							</p>
@@ -390,8 +396,8 @@ onUnmounted(() => {
 					</div>
 				</div>
 
-				<!-- Timer row -->
-				<div class="px-4 pb-3">
+				<!-- Timer bar -->
+				<div class="relative h-6 rounded-full bg-(--ui-bg-accented) overflow-hidden">
 					<GameTimer
 						ref="timerRef"
 						:initial-time="10"
@@ -400,7 +406,22 @@ onUnmounted(() => {
 						:on-timeout="handleTimeout"
 						show-progress
 						size="lg"
+						class="sr-only"
 					/>
+					<div
+						class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-yellow-400 via-primary-500 to-primary-600 transition-all duration-1000"
+						:style="{ width: `${((timerRef?.remainingTime ?? 10) / 10) * 100}%` }"
+					/>
+					<span
+						class="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums drop-shadow"
+						:class="
+							timerRef?.remainingTime !== undefined && timerRef.remainingTime <= 3
+								? 'text-red-400'
+								: 'text-white'
+						"
+					>
+						{{ timerRef?.remainingTime ?? 10 }}s
+					</span>
 				</div>
 			</div>
 
@@ -412,13 +433,14 @@ onUnmounted(() => {
 					:total-questions="totalRounds"
 				/>
 
-				<!-- Answers -->
-				<div class="mt-6 space-y-3">
+				<!-- Answers (colored bars) -->
+				<div class="mt-6 flex flex-col gap-3">
 					<AnswerButton
 						v-for="(answer, index) in formattedAnswers"
 						:key="answer.id"
 						:answer="answer"
-						:label="answerLabels[index]"
+						:color-index="index % 4"
+						:color-bar="true"
 						:selected="selectedAnswerId === answer.id"
 						:disabled="hasAnswered"
 						:show-feedback="showFeedback"
@@ -445,9 +467,7 @@ onUnmounted(() => {
 									: '❌ ' + t('duel.wrong')
 							}}
 						</p>
-						<div
-							class="flex justify-center gap-6 text-sm text-gray-600 dark:text-gray-300"
-						>
+						<div class="flex justify-center gap-6 text-sm text-(--ui-text-muted)">
 							<span
 								>{{ t('duel.yourTime') }}:
 								{{ (myAnswerTime / 1000).toFixed(1) }}s</span
@@ -465,12 +485,12 @@ onUnmounted(() => {
 					<button
 						v-for="emote in unlockedEmotes"
 						:key="emote"
-						class="text-2xl w-10 h-10 rounded-full bg-gray-100 dark:bg-gray-700 flex items-center justify-center hover:scale-110 transition-transform"
+						class="text-2xl w-10 h-10 rounded-full bg-(--ui-bg-accented) flex items-center justify-center hover:scale-110 transition-transform"
 						@click="() => sendEmote(emote)"
 					>
 						{{ emote }}
 					</button>
-					<span class="text-xs text-gray-400">{{ emotesLeft }}/3</span>
+					<span class="text-xs text-(--ui-text-dimmed)">{{ emotesLeft }}/3</span>
 				</div>
 			</div>
 
@@ -481,13 +501,15 @@ onUnmounted(() => {
 					class="fixed inset-0 bg-black/50 flex items-center justify-center z-50"
 				>
 					<div
-						class="bg-white dark:bg-gray-800 rounded-2xl p-6 mx-4 text-center max-w-sm w-full"
+						class="bg-(--ui-bg-elevated) rounded-2xl p-6 mx-4 text-center max-w-sm w-full"
 					>
 						<div class="text-4xl mb-3">🔄</div>
 						<h3 class="text-lg font-bold mb-1">
 							{{ opponent?.username }} {{ t('duel.reconnecting') }}
 						</h3>
-						<p class="text-gray-500 text-sm mb-3">{{ t('duel.reconnectingDesc') }}</p>
+						<p class="text-(--ui-text-muted) text-sm mb-3">
+							{{ t('duel.reconnectingDesc') }}
+						</p>
 						<div class="text-3xl font-bold text-primary">
 							{{ opponentReconnectCountdown }}s
 						</div>

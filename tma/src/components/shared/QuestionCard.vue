@@ -18,11 +18,11 @@ withDefaults(defineProps<Props>(), {
 </script>
 
 <template>
-	<div class="py-6">
+	<div class="bg-(--ui-bg-elevated) rounded-(--ui-radius) p-6">
 		<!-- Optional badge header -->
 		<div
 			v-if="showBadge && questionNumber && totalQuestions"
-			class="flex items-center justify-between mb-3"
+			class="flex items-center justify-between mb-4"
 		>
 			<UBadge color="primary" variant="subtle">
 				{{ t('shared.questionOf', { current: questionNumber, total: totalQuestions }) }}
@@ -34,9 +34,7 @@ withDefaults(defineProps<Props>(), {
 		</div>
 
 		<!-- Question text — primary focus -->
-		<p
-			class="text-xl sm:text-2xl font-semibold leading-relaxed text-gray-900 dark:text-gray-100"
-		>
+		<p class="text-xl font-bold leading-relaxed text-(--ui-text-highlighted) text-center">
 			{{ question.text }}
 		</p>
 	</div>

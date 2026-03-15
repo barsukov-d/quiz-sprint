@@ -18,6 +18,7 @@ export type { PostDuelChallengeAcceptByCodeMutationKey } from "./duelController/
 export type { PostDuelChallengeChallengeidRespondMutationKey } from "./duelController/usePostDuelChallengeChallengeidRespond.ts";
 export type { PostDuelChallengeChallengeidStartMutationKey } from "./duelController/usePostDuelChallengeChallengeidStart.ts";
 export type { PostDuelChallengeLinkMutationKey } from "./duelController/usePostDuelChallengeLink.ts";
+export type { PostDuelChallengePrepareShareMutationKey } from "./duelController/usePostDuelChallengePrepareShare.ts";
 export type { PostDuelGameGameidRematchMutationKey } from "./duelController/usePostDuelGameGameidRematch.ts";
 export type { PostDuelQueueJoinMutationKey } from "./duelController/usePostDuelQueueJoin.ts";
 export type { GetLeaderboardQueryKey } from "./leaderboardController/useGetLeaderboard.ts";
@@ -42,6 +43,7 @@ export type { PostQuizIdStartMutationKey } from "./quizController/usePostQuizIdS
 export type { PostQuizSessionSessionidAnswerMutationKey } from "./quizController/usePostQuizSessionSessionidAnswer.ts";
 export type { GetUserByUsernameQueryKey } from "./userController/useGetUserByUsername.ts";
 export type { GetUserIdQueryKey } from "./userController/useGetUserId.ts";
+export type { GetUserIdStatsQueryKey } from "./userController/useGetUserIdStats.ts";
 export type { GetUsersQueryKey } from "./userController/useGetUsers.ts";
 export type { PostUserRegisterMutationKey } from "./userController/usePostUserRegister.ts";
 export type { PutUserIdMutationKey } from "./userController/usePutUserId.ts";
@@ -114,6 +116,9 @@ export { usePostDuelChallengeChallengeidStart } from "./duelController/usePostDu
 export { postDuelChallengeLinkMutationKey } from "./duelController/usePostDuelChallengeLink.ts";
 export { postDuelChallengeLink } from "./duelController/usePostDuelChallengeLink.ts";
 export { usePostDuelChallengeLink } from "./duelController/usePostDuelChallengeLink.ts";
+export { postDuelChallengePrepareShareMutationKey } from "./duelController/usePostDuelChallengePrepareShare.ts";
+export { postDuelChallengePrepareShare } from "./duelController/usePostDuelChallengePrepareShare.ts";
+export { usePostDuelChallengePrepareShare } from "./duelController/usePostDuelChallengePrepareShare.ts";
 export { postDuelGameGameidRematchMutationKey } from "./duelController/usePostDuelGameGameidRematch.ts";
 export { postDuelGameGameidRematch } from "./duelController/usePostDuelGameGameidRematch.ts";
 export { usePostDuelGameGameidRematch } from "./duelController/usePostDuelGameGameidRematch.ts";
@@ -200,6 +205,10 @@ export { getUserIdQueryKey } from "./userController/useGetUserId.ts";
 export { getUserId } from "./userController/useGetUserId.ts";
 export { getUserIdQueryOptions } from "./userController/useGetUserId.ts";
 export { useGetUserId } from "./userController/useGetUserId.ts";
+export { getUserIdStatsQueryKey } from "./userController/useGetUserIdStats.ts";
+export { getUserIdStats } from "./userController/useGetUserIdStats.ts";
+export { getUserIdStatsQueryOptions } from "./userController/useGetUserIdStats.ts";
+export { useGetUserIdStats } from "./userController/useGetUserIdStats.ts";
 export { getUsersQueryKey } from "./userController/useGetUsers.ts";
 export { getUsers } from "./userController/useGetUsers.ts";
 export { getUsersQueryOptions } from "./userController/useGetUsers.ts";

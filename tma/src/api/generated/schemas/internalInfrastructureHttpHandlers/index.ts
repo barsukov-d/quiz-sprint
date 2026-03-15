@@ -32,6 +32,7 @@ export { internalInfrastructureHttpHandlersDailyQuizDataSchema } from "./dailyQu
 export { internalInfrastructureHttpHandlersDailyQuizUserResultDTOSchema } from "./dailyQuizUserResultDTOSchema.ts";
 export { internalInfrastructureHttpHandlersDuelChallengeDTOSchema } from "./duelChallengeDTOSchema.ts";
 export { internalInfrastructureHttpHandlersDuelFriendDTOSchema } from "./duelFriendDTOSchema.ts";
+export { internalInfrastructureHttpHandlersDuelLeaderboardEntryDTOSchema } from "./duelLeaderboardEntryDTOSchema.ts";
 export { internalInfrastructureHttpHandlersDuelPlayerRatingDTOSchema } from "./duelPlayerRatingDTOSchema.ts";
 export { internalInfrastructureHttpHandlersErrorDetailSchema } from "./errorDetailSchema.ts";
 export { internalInfrastructureHttpHandlersErrorResponseSchema } from "./errorResponseSchema.ts";
@@ -46,6 +47,7 @@ export { internalInfrastructureHttpHandlersGetDailyLeaderboardResponseSchema } f
 export { internalInfrastructureHttpHandlersGetDailyQuizResponseSchema } from "./getDailyQuizResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetDailyStatusDataSchema } from "./getDailyStatusDataSchema.ts";
 export { internalInfrastructureHttpHandlersGetDailyStatusResponseSchema } from "./getDailyStatusResponseSchema.ts";
+export { internalInfrastructureHttpHandlersGetDuelLeaderboardResponseSchema } from "./getDuelLeaderboardResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetDuelStatusResponseSchema } from "./getDuelStatusResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetGameHistoryResponseSchema } from "./getGameHistoryResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetGameResultPlayerDTOSchema } from "./getGameResultPlayerDTOSchema.ts";
@@ -66,6 +68,7 @@ export { internalInfrastructureHttpHandlersGetRandomQuizResponseSchema } from ".
 export { internalInfrastructureHttpHandlersGetRivalsResponseSchema } from "./getRivalsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetSessionResultsResponseSchema } from "./getSessionResultsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetUserActiveSessionsResponseSchema } from "./getUserActiveSessionsResponseSchema.ts";
+export { internalInfrastructureHttpHandlersGetUserProfileStatsResponseSchema } from "./getUserProfileStatsResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGetUserResponseSchema } from "./getUserResponseSchema.ts";
 export { internalInfrastructureHttpHandlersGlobalLeaderboardEntryDTOSchema } from "./globalLeaderboardEntryDTOSchema.ts";
 export { internalInfrastructureHttpHandlersJoinQueueRequestSchema } from "./joinQueueRequestSchema.ts";
@@ -88,6 +91,8 @@ export { internalInfrastructureHttpHandlersMarathonPersonalBestDTOSchema } from 
 export { internalInfrastructureHttpHandlersOpenChestDataSchema } from "./openChestDataSchema.ts";
 export { internalInfrastructureHttpHandlersOpenChestRequestSchema } from "./openChestRequestSchema.ts";
 export { internalInfrastructureHttpHandlersOpenChestResponseSchema } from "./openChestResponseSchema.ts";
+export { internalInfrastructureHttpHandlersPrepareShareRequestSchema } from "./prepareShareRequestSchema.ts";
+export { internalInfrastructureHttpHandlersPrepareShareResponseSchema } from "./prepareShareResponseSchema.ts";
 export { internalInfrastructureHttpHandlersQuestionDTOSchema } from "./questionDTOSchema.ts";
 export { internalInfrastructureHttpHandlersQuizDetailDTOSchema } from "./quizDetailDTOSchema.ts";
 export { internalInfrastructureHttpHandlersQuizDTOSchema } from "./quizDTOSchema.ts";
@@ -133,3 +138,4 @@ export { internalInfrastructureHttpHandlersUseMarathonBonusDataSchema } from "./
 export { internalInfrastructureHttpHandlersUseMarathonBonusRequestSchema } from "./useMarathonBonusRequestSchema.ts";
 export { internalInfrastructureHttpHandlersUseMarathonBonusResponseSchema } from "./useMarathonBonusResponseSchema.ts";
 export { internalInfrastructureHttpHandlersUserDTOSchema } from "./userDTOSchema.ts";
+export { internalInfrastructureHttpHandlersUserProfileStatsDTOSchema } from "./userProfileStatsDTOSchema.ts";

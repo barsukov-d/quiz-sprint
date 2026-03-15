@@ -19,6 +19,7 @@ type UserHandler struct {
 	updateUserLanguageUC *appUser.UpdateUserLanguageUseCase
 	listUsersUC          *appUser.ListUsersUseCase
 	getUserByUsernameUC  *appUser.GetUserByTelegramUsernameUseCase
+	getUserProfileStatsUC *appUser.GetUserProfileStatsUseCase
 }
 
 // NewUserHandler creates a new UserHandler
@@ -29,14 +30,16 @@ func NewUserHandler(
 	updateUserLanguageUC *appUser.UpdateUserLanguageUseCase,
 	listUsersUC *appUser.ListUsersUseCase,
 	getUserByUsernameUC *appUser.GetUserByTelegramUsernameUseCase,
+	getUserProfileStatsUC *appUser.GetUserProfileStatsUseCase,
 ) *UserHandler {
 	return &UserHandler{
-		registerUserUC:       registerUserUC,
-		getUserUC:            getUserUC,
-		updateUserProfileUC:  updateUserProfileUC,
-		updateUserLanguageUC: updateUserLanguageUC,
-		listUsersUC:          listUsersUC,
-		getUserByUsernameUC:  getUserByUsernameUC,
+		registerUserUC:        registerUserUC,
+		getUserUC:             getUserUC,
+		updateUserProfileUC:   updateUserProfileUC,
+		updateUserLanguageUC:  updateUserLanguageUC,
+		listUsersUC:           listUsersUC,
+		getUserByUsernameUC:   getUserByUsernameUC,
+		getUserProfileStatsUC: getUserProfileStatsUC,
 	}
 }
 
@@ -234,6 +237,49 @@ func (h *UserHandler) GetUserByTelegramUsername(c fiber.Ctx) error {
 	// 3. Return response
 	return c.JSON(fiber.Map{
 		"data": output.User,
+	})
+}
+
+// GetUserProfileStats handles GET /api/v1/user/:id/stats
+// @Summary Get user profile statistics
+// @Description Aggregated statistics across all game modes (quiz, daily challenge, marathon, duel)
+// @Tags user
+// @Produce json
+// @Param id path string true "User ID (Telegram ID)"
+// @Success 200 {object} GetUserProfileStatsResponse "User profile statistics"
+// @Failure 400 {object} ErrorResponse "Invalid user ID"
+// @Failure 404 {object} ErrorResponse "User not found"
+// @Failure 500 {object} ErrorResponse "Internal server error"
+// @Router /user/{id}/stats [get]
+func (h *UserHandler) GetUserProfileStats(c fiber.Ctx) error {
+	// 1. Extract path parameter
+	userID := c.Params("id")
+
+	// 2. Execute use case
+	output, err := h.getUserProfileStatsUC.Execute(c.Context(), userID)
+	if err != nil {
+		return mapUserError(err)
+	}
+
+	// 3. Map to DTO and return response
+	return c.JSON(fiber.Map{
+		"data": UserProfileStatsDTO{
+			TotalGamesCompleted: output.TotalGamesCompleted,
+			TotalPoints:         output.TotalPoints,
+			AverageScore:        output.AverageScore,
+			CurrentStreak:       output.CurrentStreak,
+			LongestStreak:       output.LongestStreak,
+			DuelMMR:             output.DuelMMR,
+			DuelLeague:          output.DuelLeague,
+			DuelDivision:        output.DuelDivision,
+			DuelLeagueLabel:     output.DuelLeagueLabel,
+			DuelLeagueIcon:      output.DuelLeagueIcon,
+			DuelWins:            output.DuelWins,
+			DuelLosses:          output.DuelLosses,
+			MarathonBestScore:   output.MarathonBestScore,
+			MarathonBestStreak:  output.MarathonBestStreak,
+			MarathonCategory:    output.MarathonCategory,
+		},
 	})
 }
 

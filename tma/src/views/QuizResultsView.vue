@@ -49,11 +49,6 @@ const formatTime = computed(() => {
 	return `${minutes}:${seconds.toString().padStart(2, '0')}`
 })
 
-const avgAnswerTime = computed(() => {
-	const avgTime = results.value?.avgAnswerTime || 0
-	return avgTime.toFixed(1)
-})
-
 const performanceEmoji = computed(() => {
 	const percentage = scorePercentage.value
 	if (percentage >= 90) return '🏆'
@@ -78,28 +73,21 @@ const tryAgain = () => {
 	}
 }
 
-const viewLeaderboard = () => {
-	const quizId = results.value?.quiz.id
-	if (quizId) {
-		router.push({ name: 'leaderboard', params: { quizId } })
-	}
-}
-
 const goHome = () => {
 	router.push({ name: 'categories' })
 }
 </script>
 
 <template>
-	<div class="mx-auto max-w-2xl">
+	<div class="min-h-screen bg-gradient-to-b from-primary-600 to-primary-900 flex flex-col">
 		<!-- Loading -->
-		<div v-if="isLoading" class="flex justify-center items-center py-12">
-			<UProgress animation="carousel" />
-			<span class="ml-4">{{ t('quiz.loadingResults') }}</span>
+		<div v-if="isLoading" class="flex flex-1 justify-center items-center py-12">
+			<UProgress animation="carousel" class="w-48" />
+			<span class="ml-4 text-white">{{ t('quiz.loadingResults') }}</span>
 		</div>
 
 		<!-- Error -->
-		<div v-else-if="isError" class="text-center py-12">
+		<div v-else-if="isError" class="flex flex-1 items-center justify-center p-6">
 			<UAlert
 				color="red"
 				:title="t('quiz.loadResultsFailed')"
@@ -108,133 +96,91 @@ const goHome = () => {
 		</div>
 
 		<!-- Results -->
-		<div v-else-if="results">
-			<!-- Main Result Card -->
-			<UCard class="mb-6 text-center">
-				<div class="py-8">
-					<div class="text-8xl mb-4">{{ performanceEmoji }}</div>
-					<h1 class="text-3xl font-bold mb-2">{{ t('quiz.completed') }}</h1>
-					<p class="text-xl text-(--ui-text-muted) mb-6">{{ performanceMessage }}</p>
+		<template v-else-if="results">
+			<!-- Header -->
+			<div class="relative flex items-center justify-center pt-4 pb-2 px-4">
+				<button class="absolute left-4 text-white p-2" @click="goHome">
+					<UIcon name="i-heroicons-x-mark" class="text-2xl" />
+				</button>
+				<h1 class="text-xl font-bold text-white">{{ t('quiz.finalScoreboard') }}</h1>
+			</div>
 
-					<!-- Score Circle -->
-					<div class="flex justify-center mb-6">
-						<div
-							class="w-40 h-40 rounded-full border-8 flex items-center justify-center"
-							:class="{
-								'border-emerald-500 bg-emerald-50 dark:bg-emerald-950/30':
-									results.passed,
-								'border-rose-500 bg-rose-50 dark:bg-rose-950/30': !results.passed,
-							}"
-						>
-							<div>
-								<div class="text-5xl font-bold">{{ scorePercentage }}%</div>
-								<div class="text-sm text-(--ui-text-muted)">
-									{{ results.session.score }}/{{
-										results.quiz.passingScore * results.totalQuestions
-									}}
-								</div>
-							</div>
-						</div>
-					</div>
-
-					<!-- Pass/Fail Badge -->
-					<UBadge
-						:color="results.passed ? 'green' : 'red'"
-						variant="solid"
-						size="lg"
-						class="mb-4"
+			<!-- Podium (single player — show as 1st place) -->
+			<div class="flex justify-center items-end gap-6 px-4 pt-6 pb-2">
+				<!-- 1st place -->
+				<div class="flex flex-col items-center gap-2">
+					<div
+						class="w-20 h-20 rounded-full bg-white/20 border-4 border-yellow-400 flex items-center justify-center text-3xl font-bold text-white"
 					>
-						{{ results.passed ? t('quiz.passed') : t('quiz.notPassed') }}
-					</UBadge>
-
-					<!-- Quiz Title -->
-					<p class="text-sm text-(--ui-text-dimmed) mt-4">{{ results.quiz.title }}</p>
+						{{ results.quiz.title?.[0]?.toUpperCase() || 'U' }}
+					</div>
+					<span class="text-white font-semibold text-sm">{{
+						results.quiz.title || 'You'
+					}}</span>
+					<div class="bg-gray-900 rounded-full px-3 py-1 text-white text-sm font-bold">
+						{{ results.session.score }}
+					</div>
+					<!-- Podium block -->
+					<div
+						class="w-24 h-20 bg-white/20 rounded-t-lg flex items-center justify-center"
+					>
+						<span class="text-4xl">🥇</span>
+					</div>
 				</div>
-			</UCard>
+			</div>
 
-			<!-- Stats Grid -->
-			<div class="grid grid-cols-2 gap-4 mb-6">
-				<UCard>
-					<div class="text-center py-4">
-						<div class="text-3xl font-bold mb-2">
+			<!-- Stats Summary -->
+			<div class="mx-4 mt-4 bg-black/20 rounded-2xl px-4 py-4">
+				<div class="grid grid-cols-3 gap-4 text-center">
+					<div>
+						<div class="text-2xl font-bold text-white">
 							{{ results.correctAnswers }}/{{ results.totalQuestions }}
 						</div>
-						<div class="text-sm text-(--ui-text-muted)">
-							{{ t('quiz.correctAnswers') }}
-						</div>
+						<div class="text-xs text-white/70 mt-1">{{ t('quiz.correctAnswers') }}</div>
 					</div>
-				</UCard>
-
-				<UCard>
-					<div class="text-center py-4">
-						<div class="text-3xl font-bold mb-2">{{ formatTime }}</div>
-						<div class="text-sm text-(--ui-text-muted)">{{ t('quiz.timeSpent') }}</div>
+					<div>
+						<div class="text-2xl font-bold text-white">{{ formatTime }}</div>
+						<div class="text-xs text-white/70 mt-1">{{ t('quiz.timeSpent') }}</div>
 					</div>
-				</UCard>
-
-				<UCard>
-					<div class="text-center py-4">
-						<div class="text-3xl font-bold mb-2">{{ results.session.score }}</div>
-						<div class="text-sm text-(--ui-text-muted)">
-							{{ t('quiz.pointsEarnedLabel') }}
-						</div>
-					</div>
-				</UCard>
-
-				<UCard>
-					<div class="text-center py-4">
-						<div class="text-3xl font-bold mb-2">{{ results.scorePercentage }}%</div>
-						<div class="text-sm text-(--ui-text-muted)">{{ t('quiz.accuracy') }}</div>
-					</div>
-				</UCard>
-
-				<UCard>
-					<div class="text-center py-4">
-						<div class="text-3xl font-bold mb-2 text-orange-500">
-							🔥 {{ results.longestStreak }}
-						</div>
-						<div class="text-sm text-(--ui-text-muted)">
-							{{ t('quiz.longestStreak') }}
-						</div>
-					</div>
-				</UCard>
-
-				<UCard>
-					<div class="text-center py-4">
-						<div class="text-3xl font-bold mb-2">{{ avgAnswerTime }}s</div>
-						<div class="text-sm text-(--ui-text-muted)">
-							{{ t('quiz.avgResponse') }}
-						</div>
-					</div>
-				</UCard>
-			</div>
-
-			<!-- Actions -->
-			<div class="space-y-3">
-				<UButton size="xl" color="primary" block @click="tryAgain">
-					{{ t('quiz.tryAgainBtn') }}
-				</UButton>
-				<UButton size="xl" color="gray" variant="outline" block @click="viewLeaderboard">
-					{{ t('quiz.viewLeaderboard') }}
-				</UButton>
-				<UButton size="xl" color="gray" variant="ghost" block @click="goHome">
-					{{ t('quiz.backToHome') }}
-				</UButton>
-			</div>
-
-			<!-- Share Section (Optional) -->
-			<UCard class="mt-6">
-				<div class="text-center py-4">
-					<p class="text-sm text-(--ui-text-muted) mb-3">
-						{{ t('quiz.shareAchievement') }}
-					</p>
-					<div class="flex justify-center gap-3">
-						<UButton icon="i-heroicons-share" color="gray" variant="outline">
-							{{ t('quiz.share') }}
-						</UButton>
+					<div>
+						<div class="text-2xl font-bold text-white">{{ scorePercentage }}%</div>
+						<div class="text-xs text-white/70 mt-1">{{ t('quiz.accuracy') }}</div>
 					</div>
 				</div>
-			</UCard>
-		</div>
+			</div>
+
+			<!-- Performance message -->
+			<div class="text-center mt-4 px-4">
+				<p class="text-white/90 text-lg font-medium">
+					{{ performanceEmoji }} {{ performanceMessage }}
+				</p>
+				<p class="text-white/60 text-sm mt-1">{{ results.quiz.title }}</p>
+			</div>
+
+			<!-- Spacer -->
+			<div class="flex-1" />
+
+			<!-- Bottom Buttons -->
+			<div class="flex gap-3 px-4 pb-8 pt-4">
+				<UButton
+					size="xl"
+					class="flex-1 border border-white/60 text-white bg-transparent hover:bg-white/10"
+					variant="outline"
+					color="neutral"
+					@click="tryAgain"
+				>
+					{{ t('quiz.tryAgainBtn') }}
+				</UButton>
+				<UButton
+					size="xl"
+					class="flex-1 border border-white/60 text-white bg-transparent hover:bg-white/10"
+					variant="outline"
+					color="neutral"
+					icon="i-heroicons-share"
+				>
+					{{ t('quiz.share') }}
+				</UButton>
+			</div>
+		</template>
 	</div>
 </template>

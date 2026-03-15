@@ -1,298 +1,66 @@
 <script setup lang="ts">
-import { computed, watch } from 'vue'
-import { useRoute } from 'vue-router'
-import { useGetQuiz, useGetLeaderboard } from '@/api'
-import { useAuth } from '@/composables/useAuth'
-import { useLastQuiz } from '@/composables/useLastQuiz'
+import { ref } from 'vue'
 import { useI18n } from 'vue-i18n'
+import DailyLeaderboardTab from '@/components/Leaderboard/DailyLeaderboardTab.vue'
+import MarathonLeaderboardTab from '@/components/Leaderboard/MarathonLeaderboardTab.vue'
+import DuelLeaderboardTab from '@/components/Leaderboard/DuelLeaderboardTab.vue'
+import GlobalLeaderboardTab from '@/components/Leaderboard/GlobalLeaderboardTab.vue'
 
-const route = useRoute()
-const { currentUser } = useAuth()
-const { lastQuizId, saveLastQuizId } = useLastQuiz()
 const { t } = useI18n()
 
-// Get quizId from route params or localStorage
-const routeQuizId = computed(() => route.params.quizId as string | undefined)
+const activeTab = ref('daily')
 
-// Determine which quiz ID to use
-// Priority: route param > localStorage > fetch first available quiz
-const activeQuizId = computed(() => {
-	return routeQuizId.value || lastQuizId.value || null
-})
-
-// Fetch first available quiz if no ID is available
-const { data: quizzesResponse, isLoading: isLoadingQuizzes } = useGetQuiz(undefined, {
-	query: {
-		enabled: computed(() => !activeQuizId.value),
+const tabs = [
+	{ value: 'daily', label: () => t('leaderboard.tabs.daily'), icon: 'i-heroicons-calendar' },
+	{
+		value: 'marathon',
+		label: () => t('leaderboard.tabs.marathon'),
+		icon: 'i-heroicons-fire',
 	},
-})
-
-// Get first quiz ID from the list if needed
-const firstQuizId = computed(() => {
-	return quizzesResponse.value?.data?.[0]?.id
-})
-
-// Final quiz ID to use (route > localStorage > first available)
-const quizId = computed(() => {
-	return activeQuizId.value || firstQuizId.value || null
-})
-
-// Save quiz ID to localStorage when it changes
-watch(
-	quizId,
-	(newId) => {
-		if (newId) {
-			saveLastQuizId(newId)
-		}
+	{ value: 'duel', label: () => t('leaderboard.tabs.duel'), icon: 'i-heroicons-bolt' },
+	{
+		value: 'global',
+		label: () => t('leaderboard.tabs.global'),
+		icon: 'i-heroicons-globe-alt',
 	},
-	{ immediate: true },
-)
-
-// Fetch leaderboard data
-const {
-	data: leaderboardResponse,
-	isLoading: isLoadingLeaderboard,
-	isError,
-	error,
-	refetch,
-} = useGetLeaderboard({ limit: 50 })
-
-// Combined loading state
-const isLoading = computed(() => isLoadingQuizzes.value || isLoadingLeaderboard.value)
-
-// Extract entries
-const entries = computed(() => leaderboardResponse.value?.data || [])
-
-// Find current user's rank
-const currentUserRank = computed(() => {
-	if (!currentUser.value) return null
-	const entry = entries.value.find((e) => e.userId === currentUser.value?.id)
-	return entry?.rank || null
-})
-
-// Medal emoji for top 3
-const getMedalEmoji = (rank: number) => {
-	switch (rank) {
-		case 1:
-			return '🥇'
-		case 2:
-			return '🥈'
-		case 3:
-			return '🥉'
-		default:
-			return ''
-	}
-}
-
-// Format date
-const formatDate = (timestamp: number) => {
-	const now = Date.now()
-	const diff = now - timestamp * 1000
-	const days = Math.floor(diff / (1000 * 60 * 60 * 24))
-
-	if (days === 0) return 'today'
-	if (days === 1) return '1d'
-	if (days < 30) return `${days}d`
-	return new Date(timestamp * 1000).toLocaleDateString()
-}
-
-// Check if entry is current user
-const isCurrentUser = (userId: string) => {
-	return currentUser.value?.id === userId
-}
+]
 </script>
 
 <template>
-	<div class="container mx-auto">
-		<div class="max-w-4xl mx-auto">
-			<!-- Header -->
-			<div class="mb-6 mx-auto text-center">
-				<h1 class="text-3xl font-bold mb-2">{{ t('leaderboard.title') }}</h1>
-				<p class="text-(--ui-text-muted)">{{ t('leaderboard.subtitle') }}</p>
-			</div>
-
-			<!-- Loading -->
-			<div v-if="isLoading" class="flex justify-center items-center py-12">
-				<UProgress animation="carousel" />
-				<span class="ml-4">{{ t('leaderboard.loading') }}</span>
-			</div>
-
-			<!-- Error -->
-			<div v-else-if="isError" class="mb-4">
-				<UAlert
-					color="red"
-					variant="soft"
-					:title="t('leaderboard.loadFailed')"
-					:description="error?.error?.message || t('quiz.tryAgain2')"
-				/>
-				<UButton
-					color="red"
-					class="mt-2"
-					@click="
-						() => {
-							refetch()
-						}
-					"
-				>
-					{{ t('leaderboard.retry') }}
-				</UButton>
-			</div>
-
-			<!-- Empty state -->
-			<div v-else-if="entries.length === 0" class="text-center py-12">
-				<div class="text-6xl mb-4">🏆</div>
-				<h2 class="text-2xl font-bold mb-2">{{ t('leaderboard.empty') }}</h2>
-				<p class="text-(--ui-text-muted)">{{ t('leaderboard.emptyDesc') }}</p>
-			</div>
-
-			<!-- Leaderboard Table -->
-			<div v-else>
-				<!-- Current user rank badge (if not in top 10) -->
-				<UCard
-					v-if="currentUserRank && currentUserRank > 10"
-					class="mb-4 bg-indigo-50 dark:bg-indigo-950/30"
-				>
-					<div class="flex items-center justify-between">
-						<div>
-							<p class="text-sm text-(--ui-text-muted)">
-								{{ t('leaderboard.yourRank') }}
-							</p>
-							<p class="text-2xl font-bold text-indigo-600 dark:text-indigo-400">
-								#{{ currentUserRank }}
-							</p>
-						</div>
-						<UIcon
-							name="i-heroicons-star"
-							class="text-4xl text-indigo-600 dark:text-indigo-400"
-						/>
-					</div>
-				</UCard>
-
-				<!-- Leaderboard entries -->
-				<UCard>
-					<div class="overflow-x-auto">
-						<table class="w-full">
-							<thead>
-								<tr class="border-b border-(--ui-border)">
-									<th
-										class="text-left py-3 px-4 font-semibold text-(--ui-text-toned)"
-									>
-										{{ t('leaderboard.colRank') }}
-									</th>
-									<th
-										class="text-left py-3 px-4 font-semibold text-(--ui-text-toned)"
-									>
-										{{ t('leaderboard.colPlayer') }}
-									</th>
-									<th
-										class="text-right py-3 px-4 font-semibold text-(--ui-text-toned)"
-									>
-										{{ t('leaderboard.colScore') }}
-									</th>
-									<th
-										class="text-right py-3 px-4 font-semibold text-(--ui-text-toned)"
-									>
-										{{ t('leaderboard.colDate') }}
-									</th>
-								</tr>
-							</thead>
-							<tbody>
-								<tr
-									v-for="entry in entries"
-									:key="entry.userId"
-									:class="[
-										'border-b border-(--ui-border-muted) transition-colors',
-										isCurrentUser(entry.userId)
-											? 'current-user-row bg-indigo-50 dark:bg-indigo-950/30 hover:bg-indigo-100 dark:hover:bg-indigo-900/30'
-											: 'hover:bg-(--ui-bg-muted)',
-									]"
-								>
-									<!-- Rank -->
-									<td class="py-3 px-4">
-										<div class="flex items-center gap-2">
-											<span v-if="entry.rank <= 3" class="text-2xl">
-												{{ getMedalEmoji(entry.rank) }}
-											</span>
-											<span class="font-semibold text-(--ui-text-toned)">
-												{{ entry.rank }}
-											</span>
-										</div>
-									</td>
-
-									<!-- Player -->
-									<td class="py-3 px-4">
-										<div class="flex items-center gap-2">
-											<span class="font-medium">{{
-												entry.username || t('leaderboard.anonymous')
-											}}</span>
-											<UIcon
-												v-if="isCurrentUser(entry.userId)"
-												name="i-heroicons-star-solid"
-												class="text-indigo-600 dark:text-indigo-400"
-											/>
-										</div>
-									</td>
-
-									<!-- Score -->
-									<td class="py-3 px-4 text-right">
-										<span class="font-bold text-(--ui-text-highlighted)">{{
-											entry.totalScore
-										}}</span>
-									</td>
-
-									<!-- Date -->
-									<td class="py-3 px-4 text-right">
-										<span class="text-sm text-(--ui-text-dimmed)">
-											{{ formatDate(entry.rank) }}
-										</span>
-									</td>
-								</tr>
-							</tbody>
-						</table>
-					</div>
-				</UCard>
-
-				<!-- Stats footer -->
-				<div class="mt-4 text-center text-sm text-(--ui-text-dimmed)">
-					{{ t('leaderboard.showingTop', { count: entries.length }) }}
-				</div>
-			</div>
+	<div class="mx-auto max-w-[800px] pb-4">
+		<!-- Header -->
+		<div class="text-center mb-4">
+			<h1 class="text-xl font-bold text-(--ui-text-highlighted)">
+				{{ t('leaderboard.title') }}
+			</h1>
 		</div>
+
+		<!-- Tab Bar -->
+		<div
+			class="flex gap-1 mb-4 p-1 rounded-xl bg-(--ui-bg-elevated) border border-(--ui-border)"
+		>
+			<button
+				v-for="tab in tabs"
+				:key="tab.value"
+				class="flex-1 flex items-center justify-center gap-1.5 px-2 py-2 rounded-lg text-xs font-semibold transition-all duration-200"
+				:class="
+					activeTab === tab.value
+						? 'bg-primary text-white shadow-sm'
+						: 'text-(--ui-text-muted) hover:text-(--ui-text) hover:bg-(--ui-bg-accented)'
+				"
+				@click="activeTab = tab.value"
+			>
+				<UIcon :name="tab.icon" class="size-4" />
+				<span>{{ tab.label() }}</span>
+			</button>
+		</div>
+
+		<!-- Tab Content -->
+		<KeepAlive>
+			<DailyLeaderboardTab v-if="activeTab === 'daily'" />
+			<MarathonLeaderboardTab v-else-if="activeTab === 'marathon'" />
+			<DuelLeaderboardTab v-else-if="activeTab === 'duel'" />
+			<GlobalLeaderboardTab v-else-if="activeTab === 'global'" />
+		</KeepAlive>
 	</div>
 </template>
-
-<style scoped>
-.container {
-	max-width: 1200px;
-}
-
-/* Highlight animation for current user — light mode */
-@keyframes highlight-pulse {
-	0%,
-	100% {
-		background-color: rgb(238 242 255);
-	}
-	50% {
-		background-color: rgb(199 210 254);
-	}
-}
-
-/* Dark mode override using Tailwind's .dark class strategy */
-:global(.dark) .current-user-row {
-	animation: highlight-pulse-dark 2s ease-in-out infinite;
-}
-
-@keyframes highlight-pulse-dark {
-	0%,
-	100% {
-		background-color: rgb(49 46 129 / 0.3);
-	}
-	50% {
-		background-color: rgb(49 46 129 / 0.5);
-	}
-}
-
-.current-user-row {
-	animation: highlight-pulse 2s ease-in-out infinite;
-}
-</style>

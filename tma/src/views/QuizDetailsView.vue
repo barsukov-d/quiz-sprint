@@ -42,26 +42,35 @@ const formatTime = (seconds: number) => {
 </script>
 
 <template>
-	<div class="container mx-auto p-4 pt-32">
-		<!-- Header with back button -->
-		<div class="flex items-center gap-3 mb-6">
+	<div class="min-h-screen bg-(--ui-bg) flex flex-col">
+		<!-- Top bar -->
+		<div class="flex items-center justify-between px-4 pt-4 pb-2">
 			<UButton
-				icon="i-heroicons-arrow-left"
-				color="gray"
+				icon="i-heroicons-x-mark"
+				color="neutral"
 				variant="ghost"
-				size="lg"
+				size="md"
 				@click="goBack"
 			/>
+			<div class="flex items-center gap-2">
+				<UButton icon="i-heroicons-star" color="warning" variant="ghost" size="md" />
+				<UButton
+					icon="i-heroicons-ellipsis-horizontal"
+					color="neutral"
+					variant="ghost"
+					size="md"
+				/>
+			</div>
 		</div>
 
 		<!-- Loading state -->
-		<div v-if="isLoading" class="flex justify-center items-center py-12">
-			<UProgress animation="carousel" />
-			<span class="ml-4">{{ t('quiz.loadingQuiz') }}</span>
+		<div v-if="isLoading" class="flex-1 flex justify-center items-center py-12">
+			<UProgress animation="carousel" class="w-32" />
+			<span class="ml-4 text-(--ui-text-muted)">{{ t('quiz.loadingQuiz') }}</span>
 		</div>
 
 		<!-- Error state -->
-		<div v-else-if="isError" class="mb-4">
+		<div v-else-if="isError" class="px-4 pt-2">
 			<UAlert
 				color="red"
 				variant="soft"
@@ -71,98 +80,133 @@ const formatTime = (seconds: number) => {
 		</div>
 
 		<!-- Success state -->
-		<div v-else-if="quizData?.data?.quiz" class="max-w-2xl mx-auto">
-			<!-- Quiz Header -->
-			<div class="text-center mb-8">
-				<div class="text-6xl mb-4">🧠</div>
-				<h1 class="text-3xl font-bold mb-4 text-(--ui-text-highlighted)">
-					{{ quizData.data.quiz.title }}
-				</h1>
-				<p class="text-(--ui-text-muted)">{{ quizData.data.quiz.description }}</p>
+		<template v-else-if="quizData?.data?.quiz">
+			<!-- Cover area: emoji gradient placeholder -->
+			<div
+				class="mx-4 rounded-2xl overflow-hidden bg-gradient-to-br from-yellow-400 to-amber-500 h-48 flex items-center justify-center mb-4"
+			>
+				<span class="text-8xl">🧠</span>
 			</div>
 
-			<!-- Quiz Stats Card -->
-			<UCard class="mb-6">
-				<template #header>
-					<h2 class="text-xl font-semibold">{{ t('quiz.stats') }}</h2>
-				</template>
+			<!-- Scrollable content -->
+			<div class="flex-1 overflow-y-auto px-4 pb-32">
+				<!-- Title -->
+				<h1 class="text-xl font-bold text-(--ui-text-highlighted) mb-4">
+					{{ quizData.data.quiz.title }}
+				</h1>
 
-				<div class="space-y-3">
-					<div class="flex justify-between items-center">
-						<span class="text-(--ui-text-muted)">{{ t('quiz.questions') }}</span>
-						<span class="font-semibold">{{
-							quizData.data.quiz.questions?.length || 0
+				<!-- Stats row: 4 columns -->
+				<div class="grid grid-cols-4 gap-2 py-4 border-y border-(--ui-border) mb-4">
+					<div class="flex flex-col items-center gap-1">
+						<span class="text-xl font-bold text-(--ui-text-highlighted)">
+							{{ quizData.data.quiz.questions?.length || 0 }}
+						</span>
+						<span class="text-xs text-(--ui-text-muted)">{{
+							t('quiz.questions')
 						}}</span>
 					</div>
-					<div class="flex justify-between items-center">
-						<span class="text-(--ui-text-muted)">{{ t('quiz.timeLimitLabel') }}</span>
-						<span class="font-semibold">{{
-							formatTime(quizData.data.quiz.timeLimit || 0)
+					<div class="flex flex-col items-center gap-1">
+						<span class="text-xl font-bold text-(--ui-text-highlighted)">
+							{{ formatTime(quizData.data.quiz.timeLimit || 0) }}
+						</span>
+						<span class="text-xs text-(--ui-text-muted)">{{
+							t('quiz.timeLimitLabel')
 						}}</span>
 					</div>
-					<div class="flex justify-between items-center">
-						<span class="text-(--ui-text-muted)">{{
+					<div class="flex flex-col items-center gap-1">
+						<span class="text-xl font-bold text-(--ui-text-highlighted)">
+							{{ quizData.data.quiz.passingScore || 0 }}%
+						</span>
+						<span class="text-xs text-(--ui-text-muted)">{{
 							t('quiz.passingScoreLabel')
 						}}</span>
-						<span class="font-semibold"
-							>{{ quizData.data.quiz.passingScore || 0 }}%</span
-						>
+					</div>
+					<div class="flex flex-col items-center gap-1">
+						<span class="text-xl font-bold text-(--ui-text-highlighted)">—</span>
+						<span class="text-xs text-(--ui-text-muted)">{{ t('quiz.category') }}</span>
 					</div>
 				</div>
-			</UCard>
 
-			<!-- Top 3 Leaderboard Card -->
-			<UCard
-				v-if="quizData?.data?.topScores && quizData.data.topScores.length > 0"
-				class="mb-8"
-			>
-				<template #header>
-					<div class="flex justify-between items-center">
-						<h2 class="text-xl font-semibold">{{ t('quiz.topLeaders') }}</h2>
-					</div>
-				</template>
-
-				<div class="space-y-3">
+				<!-- Author/category section -->
+				<div class="flex items-center gap-3 mb-4">
 					<div
-						v-for="(entry, index) in quizData.data.topScores.slice(0, 3)"
-						:key="entry.userId"
-						class="flex items-center justify-between p-3 rounded-lg"
-						:class="{
-							'bg-yellow-50 dark:bg-yellow-950/30': index === 0,
-							'bg-(--ui-bg-muted)': index === 1,
-							'bg-orange-50 dark:bg-orange-950/30': index === 2,
-						}"
+						class="w-10 h-10 rounded-full bg-(--ui-bg-accented) flex items-center justify-center text-lg shrink-0"
 					>
-						<div class="flex items-center gap-3">
-							<span class="text-2xl">
-								{{ index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉' }}
-							</span>
-							<div>
-								<div class="font-semibold">
-									{{ entry.username || t('quiz.anonymous') }}
-								</div>
-								<div class="text-sm text-(--ui-text-dimmed)">
-									{{ new Date(entry.completedAt * 1000).toLocaleDateString() }}
+						🎓
+					</div>
+					<div class="flex-1 min-w-0">
+						<div class="font-semibold text-(--ui-text-highlighted) truncate">
+							{{ quizData.data.quiz.categoryId || t('quiz.defaultCategory') }}
+						</div>
+						<div class="text-sm text-(--ui-text-muted) truncate">
+							{{ quizData.data.quiz.description }}
+						</div>
+					</div>
+				</div>
+
+				<!-- Description label + text -->
+				<div v-if="quizData.data.quiz.description" class="mb-4">
+					<h2 class="text-base font-bold text-(--ui-text-highlighted) mb-1">
+						{{ t('quiz.description') }}
+					</h2>
+					<p class="text-sm text-(--ui-text-muted)">
+						{{ quizData.data.quiz.description }}
+					</p>
+				</div>
+
+				<!-- Top 3 Leaderboard -->
+				<div
+					v-if="quizData?.data?.topScores && quizData.data.topScores.length > 0"
+					class="mb-4"
+				>
+					<h2 class="text-base font-bold text-(--ui-text-highlighted) mb-3">
+						{{ t('quiz.topLeaders') }}
+					</h2>
+					<div class="space-y-2">
+						<div
+							v-for="(entry, index) in quizData.data.topScores.slice(0, 3)"
+							:key="entry.userId"
+							class="flex items-center justify-between p-3 rounded-xl bg-(--ui-bg-elevated) border border-(--ui-border)"
+						>
+							<div class="flex items-center gap-3">
+								<span class="text-2xl">
+									{{ index === 0 ? '🥇' : index === 1 ? '🥈' : '🥉' }}
+								</span>
+								<div>
+									<div class="font-semibold text-(--ui-text-highlighted) text-sm">
+										{{ entry.username || t('quiz.anonymous') }}
+									</div>
+									<div class="text-xs text-(--ui-text-dimmed)">
+										{{
+											new Date(entry.completedAt * 1000).toLocaleDateString()
+										}}
+									</div>
 								</div>
 							</div>
+							<div class="font-bold text-(--ui-text-highlighted)">
+								{{ entry.score }}
+							</div>
 						</div>
-						<div class="font-bold text-lg">{{ entry.score }}</div>
 					</div>
 				</div>
-			</UCard>
+			</div>
 
-			<!-- Start Quiz Button -->
-			<div class="text-center">
-				<UButton size="xl" color="primary" class="px-12 py-4" @click="startQuiz">
+			<!-- Sticky bottom: Start Quiz button -->
+			<div
+				class="fixed bottom-0 left-0 right-0 px-4 pb-6 pt-3 bg-(--ui-bg)/90 backdrop-blur-sm border-t border-(--ui-border)"
+			>
+				<UButton
+					size="xl"
+					color="primary"
+					block
+					class="rounded-full font-bold"
+					@click="startQuiz"
+				>
 					{{ t('quiz.startQuiz') }}
 				</UButton>
 			</div>
-		</div>
+		</template>
 	</div>
 </template>
 
-<style scoped>
-.container {
-	max-width: 1200px;
-}
-</style>
+<style scoped></style>

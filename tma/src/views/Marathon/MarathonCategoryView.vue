@@ -34,22 +34,17 @@ const handleBack = () => {
 </script>
 
 <template>
-	<div class="min-h-screen mx-auto max-w-[800px] px-4 pt-14 pb-8 sm:px-3 sm:pt-12">
+	<div class="mx-auto max-w-[800px] pb-4">
 		<!-- Header -->
-		<div class="flex items-center gap-3 mb-6">
+		<div class="flex items-center gap-3 pt-4 pb-6">
 			<UButton
-				color="gray"
+				color="neutral"
 				variant="ghost"
 				icon="i-heroicons-arrow-left"
 				size="sm"
 				@click="handleBack"
 			/>
-			<div>
-				<h1 class="text-xl font-bold">{{ t('marathon.chooseCategory') }}</h1>
-				<p class="text-sm text-gray-500 dark:text-gray-400">
-					{{ t('marathon.chooseCategoryDesc') }}
-				</p>
-			</div>
+			<h1 class="text-lg font-bold">{{ t('marathon.chooseCategory') }}</h1>
 		</div>
 
 		<!-- Loading -->
@@ -58,65 +53,65 @@ const handleBack = () => {
 			class="flex flex-col items-center justify-center min-h-[30vh]"
 		>
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">
+			<p class="text-(--ui-text-muted) mt-4">
 				{{ t('marathon.loadingCategories') }}
 			</p>
 		</div>
 
-		<!-- Category List -->
-		<div v-else class="flex flex-col gap-3">
+		<!-- Category Grid -->
+		<div v-else class="grid grid-cols-2 gap-3">
 			<!-- All Categories option -->
-			<UCard
-				:class="[
-					'cursor-pointer transition-all',
+			<div
+				class="rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4 cursor-pointer transition-all active:scale-95"
+				:class="
 					selectedCategory === 'all'
 						? 'ring-2 ring-primary'
-						: 'hover:ring-1 hover:ring-gray-300',
-				]"
+						: 'hover:border-(--ui-border-accented)'
+				"
 				@click="handleSelectCategory('all')"
 			>
-				<div class="flex items-center gap-3">
-					<UIcon name="i-heroicons-squares-2x2" class="size-6 text-primary" />
-					<div class="flex-1">
-						<p class="font-semibold">{{ t('marathon.allCategories') }}</p>
-						<p class="text-sm text-gray-500 dark:text-gray-400">
-							{{ t('marathon.allCategoriesDesc') }}
-						</p>
+				<div class="flex flex-col gap-2">
+					<div class="flex items-center justify-between">
+						<UIcon name="i-heroicons-squares-2x2" class="size-6 text-primary" />
+						<UIcon
+							v-if="isLoading && selectedCategory === 'all'"
+							name="i-heroicons-arrow-path"
+							class="size-4 animate-spin text-primary"
+						/>
 					</div>
-					<UIcon
-						v-if="isLoading && selectedCategory === 'all'"
-						name="i-heroicons-arrow-path"
-						class="size-5 animate-spin text-primary"
-					/>
-					<UIcon v-else name="i-heroicons-chevron-right" class="size-5 text-gray-400" />
+					<p class="font-semibold text-sm leading-tight">
+						{{ t('marathon.allCategories') }}
+					</p>
+					<p class="text-xs text-(--ui-text-muted)">
+						{{ t('marathon.allCategoriesDesc') }}
+					</p>
 				</div>
-			</UCard>
+			</div>
 
 			<!-- Dynamic categories -->
-			<UCard
+			<div
 				v-for="category in categoriesData?.data"
 				:key="category.id"
-				:class="[
-					'cursor-pointer transition-all',
+				class="rounded-(--ui-radius) bg-(--ui-bg-elevated) border border-(--ui-border) p-4 cursor-pointer transition-all active:scale-95"
+				:class="
 					selectedCategory === category.id
 						? 'ring-2 ring-primary'
-						: 'hover:ring-1 hover:ring-gray-300',
-				]"
+						: 'hover:border-(--ui-border-accented)'
+				"
 				@click="() => handleSelectCategory(category.id)"
 			>
-				<div class="flex items-center gap-3">
-					<UIcon name="i-heroicons-tag" class="size-6 text-gray-500" />
-					<div class="flex-1">
-						<p class="font-semibold">{{ category.name }}</p>
+				<div class="flex flex-col gap-2">
+					<div class="flex items-center justify-between">
+						<UIcon name="i-heroicons-tag" class="size-6 text-primary" />
+						<UIcon
+							v-if="isLoading && selectedCategory === category.id"
+							name="i-heroicons-arrow-path"
+							class="size-4 animate-spin text-primary"
+						/>
 					</div>
-					<UIcon
-						v-if="isLoading && selectedCategory === category.id"
-						name="i-heroicons-arrow-path"
-						class="size-5 animate-spin text-primary"
-					/>
-					<UIcon v-else name="i-heroicons-chevron-right" class="size-5 text-gray-400" />
+					<p class="font-semibold text-sm leading-tight">{{ category.name }}</p>
 				</div>
-			</UCard>
+			</div>
 		</div>
 	</div>
 </template>

@@ -39,45 +39,54 @@ const formattedTime = computed(() => {
 </script>
 
 <template>
-	<UCard class="w-full">
-		<!-- Header with result badge -->
-		<template #header>
-			<div class="flex justify-between items-center">
-				<UBadge color="gray" variant="subtle">
-					{{ t('shared.questionOf', { current: questionNumber, total: totalQuestions }) }}
-				</UBadge>
-				<UBadge
-					:color="resultBadge.color"
-					:icon="resultBadge.icon"
-					variant="solid"
-					size="lg"
-				>
-					{{ resultBadge.label }}
-				</UBadge>
-			</div>
-		</template>
-
-		<div class="flex flex-col gap-6">
-			<!-- Question -->
-			<div class="py-2">
-				<h3 class="text-lg font-semibold leading-relaxed text-gray-900 dark:text-gray-100">
-					{{ answeredQuestion.questionText }}
-				</h3>
-			</div>
-
-			<!-- Your Answer -->
-			<div class="flex flex-col gap-2">
-				<div
-					class="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider"
-				>
-					{{ t('daily.yourAnswer') }}
-				</div>
-				<div
-					class="flex items-center gap-3 p-4 rounded-lg border-2"
+	<div
+		class="w-full rounded-(--ui-radius) border border-(--ui-border) overflow-hidden"
+		:class="
+			answeredQuestion.isCorrect
+				? 'border-l-4 border-l-green-500'
+				: 'border-l-4 border-l-red-500'
+		"
+	>
+		<!-- Header -->
+		<div
+			class="flex justify-between items-center px-4 py-2.5 bg-(--ui-bg-elevated) border-b border-(--ui-border)"
+		>
+			<span class="text-xs text-(--ui-text-dimmed)">
+				{{ t('shared.questionOf', { current: questionNumber, total: totalQuestions }) }}
+			</span>
+			<div class="flex items-center gap-1.5">
+				<UIcon
+					:name="resultBadge.icon"
+					class="w-4 h-4"
+					:class="answeredQuestion.isCorrect ? 'text-green-500' : 'text-red-500'"
+				/>
+				<span
+					class="text-xs font-semibold"
 					:class="
 						answeredQuestion.isCorrect
-							? 'bg-green-50 dark:bg-green-900/30 border-green-500 dark:border-green-600 text-green-700 dark:text-green-400'
-							: 'bg-red-50 dark:bg-red-900/30 border-red-500 dark:border-red-600 text-red-700 dark:text-red-400'
+							? 'text-green-600 dark:text-green-400'
+							: 'text-red-600 dark:text-red-400'
+					"
+					>{{ resultBadge.label }}</span
+				>
+			</div>
+		</div>
+
+		<div class="px-4 py-3 flex flex-col gap-3 bg-(--ui-bg)">
+			<!-- Question -->
+			<p class="text-sm font-semibold leading-snug text-(--ui-text-highlighted)">
+				{{ answeredQuestion.questionText }}
+			</p>
+
+			<!-- Answers -->
+			<div class="flex flex-col gap-2">
+				<!-- Player answer -->
+				<div
+					class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm"
+					:class="
+						answeredQuestion.isCorrect
+							? 'bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400'
+							: 'bg-red-500/10 border border-red-500/30 text-red-700 dark:text-red-400'
 					"
 				>
 					<UIcon
@@ -86,52 +95,40 @@ const formattedTime = computed(() => {
 								? 'i-heroicons-check-circle'
 								: 'i-heroicons-x-circle'
 						"
-						class="text-xl flex-shrink-0"
+						class="w-4 h-4 shrink-0"
 					/>
-					<span class="font-medium text-[15px]">{{
-						answeredQuestion.playerAnswerText
-					}}</span>
+					<span class="font-medium">{{ answeredQuestion.playerAnswerText }}</span>
+				</div>
+
+				<!-- Correct answer (if wrong) -->
+				<div
+					v-if="!answeredQuestion.isCorrect"
+					class="flex items-center gap-2.5 px-3 py-2.5 rounded-lg text-sm bg-green-500/10 border border-green-500/30 text-green-700 dark:text-green-400"
+				>
+					<UIcon name="i-heroicons-check-circle" class="w-4 h-4 shrink-0" />
+					<span class="font-medium">{{ answeredQuestion.correctAnswerText }}</span>
 				</div>
 			</div>
 
-			<!-- Correct Answer (if wrong) -->
-			<div v-if="!answeredQuestion.isCorrect" class="flex flex-col gap-2">
-				<div
-					class="text-sm font-medium text-gray-600 dark:text-gray-400 uppercase tracking-wider"
-				>
-					{{ t('daily.correctAnswer') }}
-				</div>
-				<div
-					class="flex items-center gap-3 p-4 rounded-lg border-2 bg-green-50 dark:bg-green-900/30 border-green-500 dark:border-green-600 text-green-700 dark:text-green-400"
-				>
-					<UIcon name="i-heroicons-check-circle" class="text-xl flex-shrink-0" />
-					<span class="font-medium text-[15px]">{{
-						answeredQuestion.correctAnswerText
-					}}</span>
-				</div>
-			</div>
-
-			<!-- Stats -->
-			<div class="flex gap-4 pt-2 border-t border-gray-200 dark:border-gray-700">
-				<div
-					class="flex items-center gap-2 px-3 py-2 rounded-md bg-gray-100 dark:bg-gray-800 text-gray-700 dark:text-gray-300 text-sm font-medium"
-				>
-					<UIcon name="i-heroicons-clock" class="w-4 h-4" />
+			<!-- Stats row -->
+			<div class="flex items-center gap-2 pt-1 border-t border-(--ui-border)">
+				<div class="flex items-center gap-1.5 text-xs text-(--ui-text-muted)">
+					<UIcon name="i-heroicons-clock" class="w-3.5 h-3.5" />
 					<span>{{ formattedTime }}</span>
 				</div>
 				<div
-					class="flex items-center gap-2 px-3 py-2 rounded-md text-sm font-medium"
+					class="flex items-center gap-1.5 text-xs ml-auto"
 					:class="
 						answeredQuestion.isCorrect
-							? 'bg-green-50 dark:bg-green-900/30 text-green-700 dark:text-green-400'
-							: 'bg-gray-100 dark:bg-gray-800 text-gray-600 dark:text-gray-400'
+							? 'text-green-600 dark:text-green-400'
+							: 'text-(--ui-text-dimmed)'
 					"
 				>
 					<UIcon
 						:name="
 							answeredQuestion.isCorrect ? 'i-heroicons-star' : 'i-heroicons-x-mark'
 						"
-						class="w-4 h-4"
+						class="w-3.5 h-3.5"
 					/>
 					<span>
 						{{
@@ -143,5 +140,5 @@ const formattedTime = computed(() => {
 				</div>
 			</div>
 		</div>
-	</UCard>
+	</div>
 </template>

@@ -13,6 +13,7 @@ import type {
 	InternalInfrastructureHttpHandlersSessionDTO as SessionDTO,
 } from '@/api/generated/types/internalInfrastructureHttpHandlers'
 import axios from 'axios'
+import AnswerButton from '@/components/shared/AnswerButton.vue'
 
 const route = useRoute()
 const router = useRouter()
@@ -240,12 +241,6 @@ watch(currentQuestion, (newQuestion) => {
 	}
 })
 
-// Progress percentage
-const progress = computed(() => {
-	if (!totalQuestions.value) return 0
-	return (currentQuestionIndex.value / totalQuestions.value) * 100
-})
-
 // Выбрать ответ
 const selectAnswer = (answerId: string) => {
 	if (isAnswerSubmitted.value || isSubmitting.value) return
@@ -318,33 +313,17 @@ const resetQuestionState = () => {
 	isAnswerSubmitted.value = false
 	answerResult.value = null
 }
-
-// Стили для кнопки ответа
-const getAnswerButtonClass = (answerId: string) => {
-	if (!isAnswerSubmitted.value) {
-		return selectedAnswerId.value === answerId ? 'ring-2 ring-primary bg-primary-50' : ''
-	}
-
-	// После отправки показываем правильный/неправильный
-	if (answerResult.value?.correctAnswerId === answerId) {
-		return 'ring-2 ring-green-500 bg-green-50'
-	}
-	if (selectedAnswerId.value === answerId && !answerResult.value?.isCorrect) {
-		return 'ring-2 ring-red-500 bg-red-50'
-	}
-	return 'opacity-50'
-}
 </script>
 
 <template>
-	<div class="container mx-auto p-4 pt-20">
+	<div class="min-h-screen mx-auto max-w-[800px] flex flex-col">
 		<!-- Loading -->
 		<div
 			v-if="isInitializing || isStarting || isResuming"
-			class="flex justify-center items-center py-12"
+			class="flex-1 flex flex-col justify-center items-center gap-4 p-8"
 		>
-			<UProgress animation="carousel" />
-			<span class="ml-4">
+			<UProgress animation="carousel" class="w-48" />
+			<span class="text-(--ui-text-muted) text-sm">
 				{{
 					isResuming
 						? t('quiz.resumingSession')
@@ -356,156 +335,212 @@ const getAnswerButtonClass = (answerId: string) => {
 		</div>
 
 		<!-- Quiz Interface -->
-		<div v-else-if="session && currentQuestion" class="max-w-2xl mx-auto">
-			<!-- Header with progress -->
-			<div class="mb-6">
-				<div class="flex justify-between items-center mb-2">
-					<span class="text-sm font-semibold text-(--ui-text-muted)">{{
-						t('quiz.questionOf', {
-							current: currentQuestionIndex,
-							total: totalQuestions,
-						})
-					}}</span>
-					<div class="flex items-center gap-4">
-						<!-- Timer -->
-						<div
-							class="flex items-center gap-1"
-							:class="{
-								'text-yellow-500':
-									timeRemaining <= timeLimitPerQuestion * 0.5 &&
-									timeRemaining > timeLimitPerQuestion * 0.25,
-								'text-red-500 font-bold':
-									timeRemaining <= timeLimitPerQuestion * 0.25,
-							}"
+		<template v-else-if="session && currentQuestion">
+			<!-- Feedback overlay (correct/incorrect) — replaces question UI -->
+			<template v-if="answerResult">
+				<!-- Correct feedback -->
+				<div v-if="answerResult.isCorrect" class="flex flex-col min-h-screen">
+					<!-- Green gradient header -->
+					<div
+						class="px-6 pt-12 pb-8 text-center"
+						style="background: linear-gradient(180deg, #2ecc71 0%, #27ae60 100%)"
+					>
+						<h2 class="text-white text-3xl font-bold mb-3">{{ t('quiz.correct') }}</h2>
+						<span
+							class="inline-block bg-white text-green-600 font-bold text-lg px-6 py-2 rounded-full"
 						>
-							<span>⏱</span>
-							<span class="text-sm font-semibold">{{ timeRemaining }}s</span>
+							+{{ answerResult.pointsEarned }}
+						</span>
+					</div>
+
+					<!-- Question review content -->
+					<div class="flex-1 bg-(--ui-bg) px-4 py-6 space-y-5">
+						<!-- Question text -->
+						<p class="text-(--ui-text-highlighted) text-xl font-bold text-center">
+							{{ currentQuestion.text }}
+						</p>
+
+						<div class="border-t border-(--ui-border)" />
+
+						<!-- Your answer -->
+						<div class="text-center">
+							<span class="text-(--ui-text-muted) text-base">You answered: </span>
+							<span class="text-purple-500 font-semibold text-base">
+								{{
+									currentQuestion.answers.find((a) => a.id === selectedAnswerId)
+										?.text
+								}}
+							</span>
 						</div>
-						<!-- Score -->
-						<span class="text-sm font-semibold text-(--ui-text-muted)">{{
-							t('quiz.score', { score: session.score })
-						}}</span>
+
+						<div class="border-t border-(--ui-border)" />
+
+						<!-- Streak bonus if any -->
+						<div
+							v-if="answerResult.streakBonus > 0"
+							class="text-center text-sm text-orange-500 font-semibold"
+						>
+							{{ t('quiz.streakBonus', { points: answerResult.streakBonus }) }}
+						</div>
+					</div>
+
+					<!-- Next button -->
+					<div class="px-4 pb-8 bg-(--ui-bg)">
+						<UProgress animation="carousel" size="xs" class="mb-4" />
+						<p class="text-center text-(--ui-text-dimmed) text-sm mb-3">
+							{{ t('quiz.loadingNext') }}
+						</p>
 					</div>
 				</div>
-				<UProgress v-model="progress" color="primary" />
-			</div>
 
-			<!-- Streak Indicator -->
-			<div
-				v-if="answerResult && answerResult.currentStreak > 0"
-				class="mb-4 p-3 bg-orange-50 dark:bg-orange-950/30 border-2 border-orange-300 dark:border-orange-700 rounded-lg text-center"
-			>
-				<span class="text-orange-700 dark:text-orange-400 font-bold">
-					{{ t('quiz.streakLabel', { count: answerResult.currentStreak }) }}
-				</span>
-			</div>
-
-			<!-- Question Card -->
-			<UCard class="mb-6">
-				<div class="text-center py-6">
-					<h2 class="text-2xl font-bold mb-4">{{ currentQuestion.text }}</h2>
-				</div>
-			</UCard>
-
-			<!-- Answers -->
-			<div class="space-y-3 mb-6">
-				<button
-					v-for="answer in currentQuestion.answers"
-					:key="answer.id"
-					:disabled="isAnswerSubmitted || isSubmitting"
-					class="w-full p-4 text-left border-2 rounded-lg transition-all hover:border-primary disabled:cursor-not-allowed"
-					:class="getAnswerButtonClass(answer.id)"
-					@click="() => selectAnswer(answer.id)"
-				>
-					<div class="flex items-center justify-between">
-						<span class="font-medium">{{ answer.text }}</span>
+				<!-- Incorrect feedback -->
+				<div v-else class="flex flex-col min-h-screen">
+					<!-- Red gradient header -->
+					<div
+						class="px-6 pt-12 pb-8 text-center"
+						style="background: linear-gradient(180deg, #e74c3c 0%, #c0392b 100%)"
+					>
+						<h2 class="text-white text-3xl font-bold mb-3">
+							{{ t('quiz.incorrect') || 'Incorrect!' }}
+						</h2>
 						<span
-							v-if="isAnswerSubmitted && answerResult?.correctAnswerId === answer.id"
+							class="inline-block bg-white text-red-500 font-semibold text-base px-5 py-2 rounded-full"
 						>
-							✓
+							{{ t('quiz.wrongAnswer') }}
 						</span>
+					</div>
+
+					<!-- Review content -->
+					<div class="flex-1 bg-(--ui-bg) px-4 py-6 space-y-5">
+						<!-- Question text -->
+						<p class="text-(--ui-text-highlighted) text-xl font-bold text-center">
+							{{ currentQuestion.text }}
+						</p>
+
+						<div class="border-t border-(--ui-border)" />
+
+						<!-- Correct answer -->
+						<div class="space-y-3">
+							<p class="text-(--ui-text-muted) text-center text-base font-semibold">
+								Correct answer:
+							</p>
+							<div class="grid grid-cols-2 gap-3">
+								<div
+									v-for="(answer, index) in currentQuestion.answers"
+									:key="answer.id"
+									class="rounded-2xl min-h-[80px] flex items-center justify-center px-3"
+									:style="{
+										backgroundColor:
+											answer.id === answerResult.correctAnswerId
+												? ['#4A90D9', '#E74C3C', '#F39C12', '#2ECC71'][
+														index % 4
+													]
+												: 'var(--ui-bg-elevated)',
+										opacity:
+											answer.id === answerResult.correctAnswerId ? 1 : 0.35,
+									}"
+								>
+									<span
+										class="text-center text-sm font-bold leading-snug"
+										:style="{
+											color:
+												answer.id === answerResult.correctAnswerId
+													? '#fff'
+													: 'var(--ui-text)',
+										}"
+									>
+										{{ answer.text }}
+									</span>
+								</div>
+							</div>
+						</div>
+					</div>
+
+					<!-- Next indicator -->
+					<div class="px-4 pb-8 bg-(--ui-bg)">
+						<UProgress animation="carousel" size="xs" class="mb-4" />
+						<p class="text-center text-(--ui-text-dimmed) text-sm mb-3">
+							{{ t('quiz.loadingNext') }}
+						</p>
+					</div>
+				</div>
+			</template>
+
+			<!-- Question UI -->
+			<template v-else>
+				<!-- Header: counter + title + menu -->
+				<div class="flex items-center justify-between px-4 pt-14 pb-3">
+					<span class="text-xl font-bold text-(--ui-text-highlighted) tabular-nums">
+						{{ currentQuestionIndex }}/{{ totalQuestions }}
+					</span>
+					<span class="text-sm font-semibold text-(--ui-text-muted)">Quiz</span>
+					<UIcon
+						name="i-heroicons-ellipsis-horizontal-circle"
+						class="size-6 text-(--ui-text-dimmed)"
+					/>
+				</div>
+
+				<!-- Timer bar -->
+				<div class="px-4 pb-4">
+					<div class="relative h-6 rounded-full overflow-hidden bg-(--ui-bg-accented)">
+						<div
+							class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-yellow-400 via-primary-500 to-primary-600 transition-all duration-1000"
+							:style="{ width: `${(timeRemaining / timeLimitPerQuestion) * 100}%` }"
+						/>
 						<span
-							v-if="
-								isAnswerSubmitted &&
-								selectedAnswerId === answer.id &&
-								!answerResult?.isCorrect
+							class="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums drop-shadow"
+							:class="
+								timeRemaining <= timeLimitPerQuestion * 0.25
+									? 'text-red-400'
+									: 'text-white'
 							"
 						>
-							✗
+							{{ timeRemaining }}s
 						</span>
 					</div>
-				</button>
-			</div>
+				</div>
 
-			<!-- Answer feedback banners -->
-			<div v-if="answerResult" class="mb-6 space-y-3">
-				<!-- Main feedback -->
-				<UAlert
-					:color="answerResult.isCorrect ? 'green' : 'red'"
-					:title="answerResult.isCorrect ? t('quiz.correct') : '✗ Incorrect'"
-				>
-					<template #description>
-						<div v-if="answerResult.isCorrect" class="space-y-1">
-							<div class="font-semibold text-lg">
-								{{ t('quiz.pointsEarned', { points: answerResult.pointsEarned }) }}
-							</div>
-							<div class="text-sm mt-2 space-y-1">
-								<div>
-									{{ t('quiz.basePoints', { points: answerResult.basePoints }) }}
-								</div>
-								<div v-if="answerResult.timeBonus > 0" class="text-green-700">
-									{{ t('quiz.speedBonus', { points: answerResult.timeBonus }) }}
-								</div>
-								<div v-if="answerResult.streakBonus > 0" class="text-orange-700">
-									{{
-										t('quiz.streakBonus', { points: answerResult.streakBonus })
-									}}
-								</div>
-							</div>
-						</div>
-						<div v-else>{{ t('quiz.wrongAnswer') }}</div>
-					</template>
-				</UAlert>
+				<!-- Question card -->
+				<div class="px-4 pb-5">
+					<div class="bg-(--ui-bg-elevated) rounded-2xl p-6 text-center">
+						<p class="text-(--ui-text-highlighted) text-xl font-bold leading-snug">
+							{{ currentQuestion.text }}
+						</p>
+					</div>
+				</div>
 
-				<!-- Streak achievement notification -->
-				<UAlert
-					v-if="answerResult.streakBonus > 0"
-					color="orange"
-					:title="t('quiz.streakBonusTitle')"
-				>
-					<template #description>
-						{{
-							t('quiz.streakBonusDesc', {
-								count: answerResult.currentStreak,
-								bonus: answerResult.streakBonus,
-							})
-						}}
-					</template>
-				</UAlert>
-			</div>
+				<!-- Answer buttons (colored bars) -->
+				<div class="px-4 flex flex-col gap-3 pb-6">
+					<AnswerButton
+						v-for="(answer, index) in currentQuestion.answers"
+						:key="answer.id"
+						:answer="answer"
+						:color-index="index % 4"
+						:color-bar="true"
+						:disabled="isAnswerSubmitted || isSubmitting"
+						:selected="selectedAnswerId === answer.id"
+						@click="selectAnswer"
+					/>
+				</div>
 
-			<!-- Submit button -->
-			<UButton
-				v-if="!isAnswerSubmitted"
-				:disabled="!selectedAnswerId || isSubmitting"
-				:loading="isSubmitting"
-				size="xl"
-				color="primary"
-				block
-				@click="confirmAnswer"
-			>
-				{{ isSubmitting ? t('quiz.submitting') : t('quiz.submit') }}
-			</UButton>
-
-			<!-- Next question indicator -->
-			<div v-else class="text-center text-(--ui-text-dimmed)">
-				<UProgress animation="carousel" size="sm" />
-				<p class="mt-2">{{ t('quiz.loadingNext') }}</p>
-			</div>
-		</div>
+				<!-- Submit button (shown when answer selected, before submission) -->
+				<div v-if="selectedAnswerId && !isAnswerSubmitted" class="px-4 pb-6">
+					<UButton
+						:loading="isSubmitting"
+						size="xl"
+						block
+						class="rounded-full"
+						style="background: linear-gradient(135deg, #7c3aed 0%, #6d28d9 100%)"
+						@click="confirmAnswer"
+					>
+						{{ isSubmitting ? t('quiz.submitting') : t('quiz.submit') }}
+					</UButton>
+				</div>
+			</template>
+		</template>
 
 		<!-- Error state -->
-		<div v-else-if="!showConflictModal" class="text-center py-12">
+		<div v-else-if="!showConflictModal" class="flex-1 flex items-center justify-center p-6">
 			<UAlert
 				color="red"
 				:title="t('quiz.loadFailed2')"
@@ -514,7 +549,6 @@ const getAnswerButtonClass = (answerId: string) => {
 		</div>
 
 		<!-- Active Session Conflict Modal -->
-		<!-- Only show when explicitly requested and not during initialization -->
 		<UModal
 			v-if="showConflictModal && !isInitializing && (!session || !currentQuestion)"
 			v-model="showConflictModal"
@@ -543,7 +577,7 @@ const getAnswerButtonClass = (answerId: string) => {
 						</UButton>
 						<UButton
 							size="lg"
-							color="gray"
+							color="neutral"
 							variant="outline"
 							block
 							:loading="isAbandoning"

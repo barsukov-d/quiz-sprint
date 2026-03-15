@@ -9,6 +9,7 @@ export type { PostDuelChallengeAcceptByCodeMutationKey } from "./usePostDuelChal
 export type { PostDuelChallengeChallengeidRespondMutationKey } from "./usePostDuelChallengeChallengeidRespond.ts";
 export type { PostDuelChallengeChallengeidStartMutationKey } from "./usePostDuelChallengeChallengeidStart.ts";
 export type { PostDuelChallengeLinkMutationKey } from "./usePostDuelChallengeLink.ts";
+export type { PostDuelChallengePrepareShareMutationKey } from "./usePostDuelChallengePrepareShare.ts";
 export type { PostDuelGameGameidRematchMutationKey } from "./usePostDuelGameGameidRematch.ts";
 export type { PostDuelQueueJoinMutationKey } from "./usePostDuelQueueJoin.ts";
 export { deleteDuelQueueLeaveMutationKey } from "./useDeleteDuelQueueLeave.ts";
@@ -49,6 +50,9 @@ export { usePostDuelChallengeChallengeidStart } from "./usePostDuelChallengeChal
 export { postDuelChallengeLinkMutationKey } from "./usePostDuelChallengeLink.ts";
 export { postDuelChallengeLink } from "./usePostDuelChallengeLink.ts";
 export { usePostDuelChallengeLink } from "./usePostDuelChallengeLink.ts";
+export { postDuelChallengePrepareShareMutationKey } from "./usePostDuelChallengePrepareShare.ts";
+export { postDuelChallengePrepareShare } from "./usePostDuelChallengePrepareShare.ts";
+export { usePostDuelChallengePrepareShare } from "./usePostDuelChallengePrepareShare.ts";
 export { postDuelGameGameidRematchMutationKey } from "./usePostDuelGameGameidRematch.ts";
 export { postDuelGameGameidRematch } from "./usePostDuelGameGameidRematch.ts";
 export { usePostDuelGameGameidRematch } from "./usePostDuelGameGameidRematch.ts";

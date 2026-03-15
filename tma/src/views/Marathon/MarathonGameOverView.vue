@@ -72,131 +72,109 @@ onMounted(async () => {
 </script>
 
 <template>
-	<div class="min-h-screen mx-auto max-w-[800px] px-4 pt-14 pb-8 sm:px-3 sm:pt-12">
-		<div class="flex flex-col items-center gap-6">
-			<!-- Game Over Header -->
-			<div class="text-center">
-				<UIcon name="i-heroicons-trophy" class="size-16 text-yellow-500 mb-4" />
-				<h1 class="text-2xl font-bold">{{ t('marathon.runCompleted') }}</h1>
-				<p class="text-gray-500 dark:text-gray-400 mt-1">{{ t('marathon.title') }}</p>
-			</div>
+	<div
+		class="min-h-screen bg-gradient-to-b from-primary-600 to-primary-900 flex flex-col px-4 pb-8"
+	>
+		<!-- Close button -->
+		<div class="pt-4 pb-2">
+			<UButton
+				color="neutral"
+				variant="ghost"
+				icon="i-heroicons-x-mark"
+				size="sm"
+				class="text-white/70 hover:text-white"
+				@click="handleBackToHome"
+			/>
+		</div>
 
-			<!-- Score Card -->
-			<UCard class="w-full">
-				<div class="text-center space-y-4">
-					<div>
-						<p class="text-sm text-gray-500 dark:text-gray-400">
-							{{ t('marathon.correctAnswers') }}
-						</p>
-						<p class="text-4xl font-bold text-primary">
-							{{ gameOverResult?.finalScore ?? state.score }}
-						</p>
-					</div>
-
-					<div class="grid grid-cols-2 gap-4">
-						<div>
-							<p class="text-xs text-gray-500 dark:text-gray-400">
-								{{ t('marathon.questions') }}
-							</p>
-							<p class="text-lg font-semibold">
-								{{ gameOverResult?.totalQuestions ?? state.totalQuestions }}
-							</p>
-						</div>
-						<div>
-							<p class="text-xs text-gray-500 dark:text-gray-400">
-								{{ t('marathon.personalBest') }}
-							</p>
-							<p class="text-lg font-semibold">
-								<template v-if="gameOverResult?.isNewPersonalBest">
-									<span class="text-green-500">{{
-										t('marathon.newRecord')
-									}}</span>
-								</template>
-								<template v-else>
-									{{
-										gameOverResult?.previousRecord ?? state.personalBest ?? '-'
-									}}
-								</template>
-							</p>
-						</div>
-					</div>
-				</div>
-			</UCard>
-
-			<!-- Continue Offer -->
-			<UCard v-if="canContinue && continueOffer" class="w-full">
-				<div class="text-center space-y-3">
-					<h3 class="font-semibold">{{ t('marathon.continueRun') }}</h3>
-					<p class="text-sm text-gray-500 dark:text-gray-400">
-						{{ t('marathon.continueRunDesc') }}
-					</p>
-
-					<div class="flex flex-col gap-2">
-						<UButton
-							color="primary"
-							block
-							size="lg"
-							:loading="isLoading"
-							icon="i-heroicons-currency-dollar"
-							@click="handleContinueWithCoins"
-						>
-							{{
-								t('marathon.continueWithCoins', { coins: continueOffer.costCoins })
-							}}
-						</UButton>
-
-						<UButton
-							v-if="continueOffer.hasAd"
-							color="gray"
-							variant="soft"
-							block
-							size="lg"
-							:loading="isLoading"
-							icon="i-heroicons-play"
-							@click="handleContinueWithAd"
-						>
-							{{ t('marathon.watchAd') }}
-						</UButton>
-					</div>
-				</div>
-			</UCard>
-
-			<!-- Session Stats (shown from 2nd run onward) -->
-			<div
-				v-if="session.runCount.value >= 2"
-				class="w-full text-center text-sm text-gray-500 dark:text-gray-400"
+		<!-- Score section -->
+		<div class="flex flex-col items-center gap-2 py-8">
+			<UIcon name="i-heroicons-trophy" class="size-14 text-yellow-300 mb-2" />
+			<p class="text-white/60 text-sm uppercase tracking-wide font-medium">
+				{{ t('marathon.correctAnswers') }}
+			</p>
+			<p class="text-6xl font-bold text-white tabular-nums">
+				{{ gameOverResult?.finalScore ?? state.score }}
+			</p>
+			<span
+				v-if="gameOverResult?.isNewPersonalBest"
+				class="mt-1 px-3 py-1 rounded-full bg-yellow-400/20 text-yellow-300 text-xs font-bold uppercase tracking-wide"
 			>
-				{{ session.sessionLabel.value }}
-			</div>
+				{{ t('marathon.newRecord') }}
+			</span>
+		</div>
 
-			<!-- Motivational Prompt -->
-			<div class="w-full text-center text-sm font-medium text-primary">
-				{{ motivationalPrompt }}
+		<!-- Stats summary -->
+		<div class="grid grid-cols-2 gap-3 mb-6">
+			<div class="rounded-(--ui-radius) bg-white/10 p-4 text-center">
+				<p class="text-white/60 text-xs mb-1">{{ t('marathon.questions') }}</p>
+				<p class="text-xl font-bold text-white tabular-nums">
+					{{ gameOverResult?.totalQuestions ?? state.totalQuestions }}
+				</p>
 			</div>
+			<div class="rounded-(--ui-radius) bg-white/10 p-4 text-center">
+				<p class="text-white/60 text-xs mb-1">{{ t('marathon.personalBest') }}</p>
+				<p class="text-xl font-bold text-white tabular-nums">
+					{{ gameOverResult?.previousRecord ?? state.personalBest ?? '-' }}
+				</p>
+			</div>
+		</div>
 
-			<!-- Actions -->
-			<div class="w-full flex flex-col gap-2">
+		<!-- Continue Offer -->
+		<div
+			v-if="canContinue && continueOffer"
+			class="rounded-(--ui-radius) bg-white/10 p-4 mb-6 space-y-3"
+		>
+			<h3 class="font-semibold text-white text-center">{{ t('marathon.continueRun') }}</h3>
+			<p class="text-sm text-white/60 text-center">{{ t('marathon.continueRunDesc') }}</p>
+			<div class="flex flex-col gap-2">
 				<UButton
 					color="primary"
 					block
 					size="lg"
-					icon="i-heroicons-bolt"
-					@click="handleStartNewRun"
+					:loading="isLoading"
+					icon="i-heroicons-currency-dollar"
+					@click="handleContinueWithCoins"
 				>
-					{{ t('marathon.newRun') }}
+					{{ t('marathon.continueWithCoins', { coins: continueOffer.costCoins }) }}
 				</UButton>
-
 				<UButton
-					color="gray"
-					variant="ghost"
+					v-if="continueOffer.hasAd"
+					color="neutral"
+					variant="soft"
 					block
 					size="lg"
-					icon="i-heroicons-home"
-					@click="handleBackToHome"
+					:loading="isLoading"
+					icon="i-heroicons-play"
+					@click="handleContinueWithAd"
 				>
-					{{ t('marathon.home') }}
+					{{ t('marathon.watchAd') }}
 				</UButton>
 			</div>
+		</div>
+
+		<!-- Motivational Prompt -->
+		<p class="text-center text-sm text-white/70 font-medium mb-2">{{ motivationalPrompt }}</p>
+
+		<!-- Session Stats -->
+		<p v-if="session.runCount.value >= 2" class="text-center text-xs text-white/50 mb-6">
+			{{ session.sessionLabel.value }}
+		</p>
+
+		<!-- Actions as text links -->
+		<div class="flex flex-col items-center gap-4 mt-auto pt-4">
+			<button
+				class="text-white font-semibold text-base hover:opacity-80 active:opacity-60 transition-opacity"
+				@click="handleStartNewRun"
+			>
+				{{ t('marathon.newRun') }}
+			</button>
+			<button
+				class="text-white/50 text-sm hover:opacity-80 active:opacity-60 transition-opacity"
+				@click="handleBackToHome"
+			>
+				{{ t('marathon.home') }}
+			</button>
 		</div>
 	</div>
 </template>

@@ -17,6 +17,7 @@ export const internalInfrastructureHttpHandlersDuelPlayerRatingDTOSchema = z.obj
 "peakLeague": z.optional(z.string()),
 "peakMmr": z.optional(z.int()),
 "playerId": z.optional(z.string()),
+"seasonDraws": z.optional(z.int()),
 "seasonLosses": z.optional(z.int()),
 "seasonWins": z.optional(z.int()),
 "winRate": z.optional(z.number())

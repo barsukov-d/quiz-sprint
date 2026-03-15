@@ -374,6 +374,34 @@ type ListUsersResponse struct {
 
 // @name ListUsersResponse
 
+// UserProfileStatsDTO contains aggregated player statistics for profile display
+type UserProfileStatsDTO struct {
+	TotalGamesCompleted int    `json:"totalGamesCompleted" validate:"required" example:"42"`
+	TotalPoints         int    `json:"totalPoints" validate:"required" example:"12850"`
+	AverageScore        int    `json:"averageScore" validate:"required" example:"76"`
+	CurrentStreak       int    `json:"currentStreak" example:"7"`
+	LongestStreak       int    `json:"longestStreak" example:"14"`
+	DuelMMR             int    `json:"duelMmr" example:"1250"`
+	DuelLeague          string `json:"duelLeague" example:"Silver"`
+	DuelDivision        int    `json:"duelDivision" example:"2"`
+	DuelLeagueLabel     string `json:"duelLeagueLabel" example:"Silver II"`
+	DuelLeagueIcon      string `json:"duelLeagueIcon" example:"🥈"`
+	DuelWins            int    `json:"duelWins" example:"15"`
+	DuelLosses          int    `json:"duelLosses" example:"8"`
+	MarathonBestScore   int    `json:"marathonBestScore" example:"847"`
+	MarathonBestStreak  int    `json:"marathonBestStreak" example:"23"`
+	MarathonCategory    string `json:"marathonCategory,omitempty" example:"Science"`
+}
+
+// @name UserProfileStatsDTO
+
+// GetUserProfileStatsResponse wraps the user profile stats response
+type GetUserProfileStatsResponse struct {
+	Data UserProfileStatsDTO `json:"data" validate:"required"`
+}
+
+// @name GetUserProfileStatsResponse
+
 // ========================================
 // Session Results
 // ========================================

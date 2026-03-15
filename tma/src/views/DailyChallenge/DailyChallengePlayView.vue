@@ -53,12 +53,6 @@ const feedbackGameCompleted = ref(false)
 // Computed
 // ===========================
 
-const answerLabels = ['A', 'B', 'C', 'D']
-
-const questionProgress = computed(() =>
-	Math.round(((questionIndex.value + 1) / totalQuestions.value) * 100),
-)
-
 const canSubmit = computed(() => {
 	return selectedAnswerId.value !== null && !isSubmitting.value && !showFeedback.value
 })
@@ -244,41 +238,63 @@ onUnmounted(() => {
 </script>
 
 <template>
-	<div class="min-h-screen mx-auto max-w-[800px] px-4 pt-14 pb-8 sm:px-3 sm:pt-12">
+	<div class="min-h-screen mx-auto max-w-[800px] pt-14 pb-4">
 		<!-- Loading State -->
 		<div v-if="!currentQuestion" class="flex flex-col items-center justify-center min-h-[50vh]">
 			<UIcon name="i-heroicons-arrow-path" class="size-8 animate-spin text-primary" />
-			<p class="text-gray-500 dark:text-gray-400 mt-4">{{ t('daily.loadingQuestion') }}</p>
+			<p class="text-(--ui-text-muted) mt-4">{{ t('daily.loadingQuestion') }}</p>
 		</div>
 
 		<!-- Game View -->
-		<div v-else class="flex flex-col gap-4">
-			<!-- Header: counter + progress + timer (single row) -->
-			<div class="flex items-center gap-3">
-				<span
-					class="shrink-0 text-sm font-semibold text-gray-500 dark:text-gray-400 tabular-nums"
-				>
+		<div v-else class="flex flex-col gap-5">
+			<!-- Header: counter + title + menu -->
+			<div class="flex items-center justify-between">
+				<span class="text-xl font-bold text-(--ui-text-highlighted) tabular-nums">
 					{{ questionIndex + 1 }}/{{ totalQuestions }}
 				</span>
-
-				<UProgress v-model="questionProgress" color="primary" size="xs" class="flex-1" />
-
-				<GameTimer
-					ref="timerRef"
-					:initial-time="timeLimit"
-					:auto-start="false"
-					:warning-threshold="5"
-					:show-progress="false"
-					size="sm"
-					:on-timeout="handleTimeout"
-					class="shrink-0"
+				<span class="text-sm font-semibold text-(--ui-text-muted)">
+					{{ t('daily.title') }}
+				</span>
+				<UIcon
+					name="i-heroicons-ellipsis-horizontal-circle"
+					class="size-6 text-(--ui-text-dimmed)"
 				/>
 			</div>
+
+			<!-- Timer bar -->
+			<div class="relative h-6 rounded-full bg-(--ui-bg-accented) overflow-hidden">
+				<div
+					class="absolute inset-y-0 left-0 rounded-full bg-gradient-to-r from-yellow-400 via-primary-500 to-primary-600 transition-all duration-1000"
+					:style="{
+						width: `${((timerRef?.remainingTime ?? timeLimit) / timeLimit) * 100}%`,
+					}"
+				/>
+				<span
+					class="absolute inset-0 flex items-center justify-center text-xs font-bold tabular-nums drop-shadow"
+					:class="
+						timerRef?.remainingTime !== undefined && timerRef.remainingTime <= 5
+							? 'text-red-400'
+							: 'text-white'
+					"
+				>
+					{{ timerRef?.remainingTime ?? timeLimit }}s
+				</span>
+			</div>
+			<GameTimer
+				ref="timerRef"
+				:initial-time="timeLimit"
+				:auto-start="false"
+				:warning-threshold="5"
+				:show-progress="false"
+				size="sm"
+				:on-timeout="handleTimeout"
+				class="sr-only"
+			/>
 
 			<!-- Question text (primary focus) -->
 			<QuestionCard :question="currentQuestion" :show-badge="false" />
 
-			<!-- Answer Buttons -->
+			<!-- Answer Buttons (colored bars) -->
 			<div class="flex flex-col gap-3">
 				<AnswerButton
 					v-for="(answer, index) in currentQuestion.answers"
@@ -288,7 +304,8 @@ onUnmounted(() => {
 					:disabled="isSubmitting || showFeedback || timerRef?.remainingTime === 0"
 					:show-feedback="getAnswerFeedback(answer.id).showFeedback"
 					:is-correct="getAnswerFeedback(answer.id).isCorrect"
-					:label="answerLabels[index]"
+					:color-index="index % 4"
+					:color-bar="true"
 					@click="handleAnswerSelect"
 				/>
 			</div>
@@ -297,7 +314,7 @@ onUnmounted(() => {
 			<div v-if="isSubmitting || showFeedback" class="mt-2">
 				<UAlert
 					v-if="isSubmitting"
-					color="gray"
+					color="neutral"
 					variant="soft"
 					:title="t('daily.submitting')"
 				>

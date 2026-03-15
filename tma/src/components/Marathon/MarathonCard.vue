@@ -81,11 +81,6 @@ const handleResume = () => {
 	router.push({ name: 'marathon-play' })
 }
 
-const handleViewGameOver = () => {
-	if (isLoading.value) return
-	router.push({ name: 'marathon-gameover' })
-}
-
 // ===========================
 // Lifecycle
 // ===========================
@@ -96,133 +91,71 @@ onMounted(async () => {
 </script>
 
 <template>
-	<UCard>
-		<!-- Header -->
-		<template #header>
-			<div class="flex items-center justify-between">
-				<div class="flex items-center gap-2.5">
-					<span class="text-2xl">🏃</span>
-					<h3 class="text-lg font-bold">{{ t('marathon.title') }}</h3>
-				</div>
-			</div>
-		</template>
-
-		<!-- ==================== -->
-		<!-- IN PROGRESS STATE    -->
-		<!-- ==================== -->
-		<div v-if="isPlaying" class="space-y-4">
-			<!-- Current game stats -->
-			<div class="flex items-center justify-between">
-				<div class="text-center flex-1">
-					<p class="text-xs text-(--ui-text-dimmed)">
-						{{ t('marathon.score') }}
-					</p>
-					<p class="text-2xl font-bold text-primary">{{ state.score }}</p>
-				</div>
-				<div class="w-px h-10 bg-(--ui-border)" />
-				<div class="text-center flex-1">
-					<p class="text-xs text-(--ui-text-dimmed)">
-						{{ t('marathon.question') }}
-					</p>
-					<p class="text-2xl font-bold text-(--ui-text-highlighted)">
-						{{ state.totalQuestions }}
-					</p>
-				</div>
-			</div>
-
-			<!-- Progress to record (if has personal best) -->
-			<div v-if="state.personalBest && state.personalBest > 0">
-				<div class="flex justify-between text-xs mb-1">
-					<span class="text-(--ui-text-dimmed)">
-						{{
-							t('marathon.recordLabel', {
-								score: state.score,
-								best: state.personalBest,
-							})
-						}}
-					</span>
-					<span
-						:class="
-							progressToRecord >= 100
-								? 'text-green-500 font-semibold'
-								: 'text-(--ui-text-dimmed)'
-						"
-					>
-						{{ progressToRecord }}%
-					</span>
-				</div>
-				<UProgress
-					v-model="progressToRecord"
-					:color="progressToRecord >= 100 ? 'success' : 'primary'"
-					size="xs"
-				/>
-			</div>
-
-			<!-- Bonuses -->
-			<div class="flex gap-2 justify-center">
+	<div
+		class="rounded-(--ui-radius) overflow-hidden bg-(--ui-bg-elevated) border border-(--ui-border) transition-all hover:shadow-lg hover:scale-[1.01] active:scale-[0.99]"
+	>
+		<!-- Header row -->
+		<div class="flex items-center justify-between px-4 pt-4 pb-3">
+			<div class="flex items-center gap-3">
 				<div
-					v-for="b in bonusList"
-					:key="b.key"
-					class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs"
-					:class="
-						state.bonusInventory[b.key] > 0
-							? 'bg-(--ui-bg-muted)'
-							: 'bg-(--ui-bg-muted) opacity-40'
-					"
-					:title="b.label"
+					class="flex items-center justify-center size-10 rounded-xl bg-orange-500/15 dark:bg-orange-400/15"
 				>
-					<UIcon :name="b.icon" :class="b.color" class="w-4 h-4" />
-					<span class="font-semibold text-(--ui-text-highlighted)">
-						{{ state.bonusInventory[b.key] }}
-					</span>
+					<span class="text-xl">🏃</span>
+				</div>
+				<div>
+					<h3 class="text-base font-bold text-(--ui-text-highlighted)">
+						{{ t('marathon.title') }}
+					</h3>
+					<p
+						v-if="state.personalBest !== null && state.personalBest > 0"
+						class="text-xs text-(--ui-text-dimmed)"
+					>
+						🏆 {{ t('marathon.personalBest') }}: {{ state.personalBest }}
+					</p>
 				</div>
 			</div>
+			<UBadge v-if="isPlaying" color="blue" variant="subtle" size="sm">
+				<UIcon name="i-heroicons-play-circle" class="size-3.5 mr-0.5" />
+				{{ state.score }} pts
+			</UBadge>
+			<UBadge v-else-if="isGameOver" color="red" variant="subtle" size="sm">
+				{{ t('marathon.gameOver') }}
+			</UBadge>
 		</div>
 
-		<!-- ==================== -->
-		<!-- GAME OVER STATE      -->
-		<!-- ==================== -->
-		<div v-else-if="isGameOver" class="space-y-4">
-			<div class="text-center">
-				<p class="text-sm text-(--ui-text-dimmed)">{{ t('marathon.gameOver') }}</p>
-				<p class="text-3xl font-bold text-primary mt-1">{{ state.score }}</p>
-				<p class="text-xs text-(--ui-text-dimmed) mt-1">
-					{{ t('marathon.questionsAnswered', { count: state.totalQuestions }) }}
-				</p>
-			</div>
-		</div>
-
-		<!-- ==================== -->
-		<!-- IDLE / READY STATE   -->
-		<!-- ==================== -->
-		<div v-else class="space-y-4">
-			<!-- Personal Best -->
-			<div
-				v-if="state.personalBest !== null && state.personalBest > 0"
-				class="flex items-center justify-between"
-			>
-				<span class="text-sm text-(--ui-text-dimmed)">{{
-					t('marathon.personalBest')
-				}}</span>
-				<span class="font-bold text-yellow-500"> 🏆 {{ state.personalBest }} </span>
-			</div>
-
-			<!-- Bonuses available -->
-			<div>
-				<p class="text-xs text-(--ui-text-dimmed) mb-2">
-					{{ t('marathon.bonuses') }}
-				</p>
+		<!-- Body -->
+		<div class="px-4 pb-3">
+			<!-- In Progress: compact stats + bonuses -->
+			<div v-if="isPlaying">
+				<div class="flex items-center justify-between mb-2">
+					<span class="text-sm text-(--ui-text-muted)">
+						{{ t('marathon.question') }} #{{ state.totalQuestions }}
+					</span>
+					<div v-if="state.personalBest && state.personalBest > 0" class="text-right">
+						<span
+							class="text-xs"
+							:class="
+								progressToRecord >= 100
+									? 'text-green-500 font-semibold'
+									: 'text-(--ui-text-dimmed)'
+							"
+						>
+							{{ progressToRecord }}% {{ t('marathon.personalBest').toLowerCase() }}
+						</span>
+					</div>
+				</div>
+				<!-- Bonuses row -->
 				<div class="flex gap-2">
 					<div
 						v-for="b in bonusList"
 						:key="b.key"
-						class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg text-xs"
+						class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs"
 						:class="
 							state.bonusInventory[b.key] > 0
 								? 'bg-(--ui-bg-muted)'
 								: 'bg-(--ui-bg-muted) opacity-40'
 						"
-						:title="b.description"
+						:title="b.label"
 					>
 						<UIcon :name="b.icon" :class="b.color" class="w-4 h-4" />
 						<span class="font-semibold text-(--ui-text-highlighted)">
@@ -232,69 +165,61 @@ onMounted(async () => {
 				</div>
 			</div>
 
-			<!-- Rules hint (only when no personal best = likely new player) -->
-			<div
-				v-if="state.personalBest === null || state.personalBest === 0"
-				class="text-xs text-(--ui-text-dimmed) space-y-1"
-			>
-				<p>{{ t('marathon.energyRule1') }}</p>
-				<p>{{ t('marathon.energyRule2') }}</p>
-				<p>{{ t('marathon.difficultyRule') }}</p>
+			<!-- Game Over: score summary -->
+			<div v-else-if="isGameOver" class="flex items-center justify-between">
+				<div>
+					<p class="text-2xl font-black text-primary">{{ state.score }}</p>
+					<p class="text-xs text-(--ui-text-dimmed)">
+						{{ t('marathon.questionsAnswered', { count: state.totalQuestions }) }}
+					</p>
+				</div>
+			</div>
+
+			<!-- Idle: bonuses preview -->
+			<div v-else>
+				<div class="flex gap-2">
+					<div
+						v-for="b in bonusList"
+						:key="b.key"
+						class="flex items-center gap-1 px-2 py-1 rounded-lg text-xs bg-(--ui-bg-muted)"
+						:title="b.description"
+					>
+						<UIcon :name="b.icon" :class="b.color" class="w-4 h-4" />
+						<span class="font-semibold text-(--ui-text-highlighted)">
+							{{ state.bonusInventory[b.key] }}
+						</span>
+					</div>
+				</div>
 			</div>
 		</div>
 
-		<!-- Footer -->
-		<template #footer>
-			<!-- In progress: resume button -->
-			<UButton
-				v-if="isPlaying"
-				icon="i-heroicons-play"
-				color="primary"
-				:loading="isLoading"
-				block
-				size="lg"
-				@click="handleResume"
+		<!-- Footer action -->
+		<div
+			class="px-4 pb-4 pt-2 border-t border-(--ui-border-muted) cursor-pointer"
+			@click="isPlaying ? handleResume() : isGameOver ? handleStart() : handleStart()"
+		>
+			<div
+				class="flex items-center justify-center gap-2 text-sm font-semibold"
+				:class="isGameOver ? 'text-orange-500' : 'text-primary'"
 			>
-				{{ t('marathon.continueMarathon') }}
-			</UButton>
-
-			<!-- Game over: new run (primary) + view results (secondary) -->
-			<div v-else-if="isGameOver" class="flex flex-col gap-2">
-				<UButton
-					icon="i-heroicons-arrow-path"
-					color="primary"
-					:loading="isLoading"
-					block
-					size="lg"
-					@click="handleStart"
-				>
-					{{ t('marathon.newRun') }}
-				</UButton>
-				<UButton
-					icon="i-heroicons-flag"
-					color="neutral"
-					variant="ghost"
-					:loading="isLoading"
-					block
-					size="sm"
-					@click="handleViewGameOver"
-				>
-					{{ t('marathon.viewResults') }}
-				</UButton>
+				<UIcon
+					:name="
+						isPlaying
+							? 'i-heroicons-play'
+							: isGameOver
+								? 'i-heroicons-arrow-path'
+								: 'i-heroicons-bolt'
+					"
+					class="size-4"
+				/>
+				<span>{{
+					isPlaying
+						? t('marathon.continueMarathon')
+						: isGameOver
+							? t('marathon.newRun')
+							: t('marathon.startMarathon')
+				}}</span>
 			</div>
-
-			<!-- Ready: start button (new game always starts with 3 lives) -->
-			<UButton
-				v-else
-				icon="i-heroicons-bolt"
-				color="primary"
-				:loading="isLoading"
-				block
-				size="lg"
-				@click="handleStart"
-			>
-				{{ t('marathon.startMarathon') }}
-			</UButton>
-		</template>
-	</UCard>
+		</div>
+	</div>
 </template>
