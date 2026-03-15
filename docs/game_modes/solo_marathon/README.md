@@ -1,18 +1,18 @@
 # Solo Marathon Documentation
 
-> **Аудит реализации: 2026-03-15**
+> **Аудит реализации: 2026-03-15 | Обновлено: 2026-03-15 (post-implementation)**
 
 ## Статус документации vs кода
 
 | Файл | ✅ | ⚠️ | ❌ | Главные расхождения |
 |------|----|----|----|--------------------|
-| 01_concept.md | 9 | 3 | 3 | Нет weekly leaderboard, нет shop, coins не списываются |
-| 02_gameplay.md | 10 | 6 | 4 | Freeze +5 вместо +10, feedback 1.8с вместо 3с |
-| 03_rules.md | 15 | 4 | 8 | Leaderboard sort по streak, нет античита, нет weekly |
-| 04_rewards.md | 3 | 2 | 11 | Система наград почти полностью отсутствует |
-| 05_api.md | 2 | 7 | 1 | Response shapes расходятся, нет thin-client лейблов |
-| 06_domain.md | 10 | 8 | 3 | Нет Redis, сервисы встроены в value objects |
-| 07_edge_cases.md | 8 | 6 | 3 | Abandon обновляет personal best (баг) |
+| 01_concept.md | 12 | 2 | 1 | Нет shop |
+| 02_gameplay.md | 13 | 4 | 3 | feedback 1.8с вместо 3с |
+| 03_rules.md | 21 | 3 | 3 | Anti-cheat добавлен, weekly rewards use case готов |
+| 04_rewards.md | 9 | 2 | 5 | Milestone rewards добавлены, weekly use case готов |
+| 05_api.md | 5 | 4 | 1 | Complete endpoint добавлен, correctAnswerText добавлен |
+| 06_domain.md | 13 | 5 | 3 | Streak персистируется, нет Redis |
+| 07_edge_cases.md | 12 | 4 | 1 | Abandon NOT updating PB (исправлено) |
 | 08_frontend_integration.md | 6 | 8 | 5 | Компоненты inline, нет отдельных виджетов |
 
 ## Quick Navigation
@@ -34,18 +34,22 @@
 - [x] Frontend views (Category, Play, GameOver)
 - [x] Bonus UI controls (inline в PlayView)
 - [x] Personal best tracking
-- [ ] Weekly leaderboard (Redis, Mon-Sun UTC)
-- [ ] Reward distribution (coins, badges, packs)
-- [ ] Coin deduction for continues (TODO stub)
-- [ ] Personal best +500 coins bonus
-- [ ] Milestone rewards (tracked but no rewards)
+- [x] POST /marathon/:gameId/complete endpoint (отдельный от abandon)
+- [x] Coin deduction for continues (реально работает через InventoryService)
+- [x] Milestone rewards (25→100, 50→250, 100→500, 200→1000, 500→5000 coins)
+- [x] Weekly reward distribution use case (DistributeWeeklyMarathonRewardsUseCase, 5 tier'ов)
+- [x] Anti-cheat (suspicious flag для score > 200)
+- [x] marathon_bonus_usage table (migration 024, аналитика бонусов)
+- [x] API: CorrectAnswerText в answer output, CanStart в status
+- [x] Fix: Abandon should NOT update personal best (dead code removed)
+- [x] Fix: streakCount/bestStreak/livesRestored persisted (migration 023)
+- [x] Fix: CurrentStreak()/MaxStreak() getters fixed (returned score → streak)
+- [ ] Weekly leaderboard (Redis sorted set, needs infra implementation)
+- [ ] WeeklyRewardDistributionRepository (PostgreSQL impl needed)
+- [ ] Milestone deduplication (prevent re-crediting same threshold)
 - [ ] Bonus shop / packs
-- [ ] Anti-cheat (timeTaken validation, flags)
-- [ ] Difficulty transition toasts
-- [ ] Onboarding overlay
-- [ ] Network disconnect overlay
-- [ ] Share card
-- [ ] Fix: Freeze frontend +5s → +10s
-- [ ] Fix: Abandon should NOT update personal best
-- [ ] Fix: Leaderboard sort by score DESC (not streak)
-- [ ] Fix: streakCount lost on DB reconstruction
+- [ ] Difficulty transition toasts (frontend)
+- [ ] Onboarding overlay (frontend)
+- [ ] Network disconnect overlay (frontend)
+- [ ] Share card (frontend)
+- [ ] Fix: Freeze frontend +5s → +10s (verify current state)

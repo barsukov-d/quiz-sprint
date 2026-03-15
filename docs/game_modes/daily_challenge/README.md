@@ -1,18 +1,18 @@
 # Daily Challenge Documentation
 
-> **Аудит реализации: 2026-03-15**
+> **Аудит реализации: 2026-03-15 | Обновлено: 2026-03-15 (post-implementation)**
 
 ## Статус документации vs кода
 
 | Файл | ✅ | ⚠️ | ❌ | Главные расхождения |
 |------|----|----|----|--------------------|
-| 01_concept.md | 6 | 2 | 3 | Streak recovery, Premium не реализованы |
-| 02_gameplay.md | 6 | 6 | 2 | Нет ABANDONED статуса, нет анимации сундука |
-| 03_rules.md | 7 | 6 | 4 | Нет валидации timeTaken, нет античита |
-| 04_rewards.md | 5 | 1 | 2 | Нет inventory системы, нет Premium |
-| 05_api.md | 2 | 7 | 0 | Response shapes расходятся, нет thin-client лейблов |
-| 06_domain.md | 8 | 7 | 3 | DailyQuiz структура другая, нет Redis |
-| 07_edge_cases.md | 5 | 3 | 4 | Нет серверной валидации времени |
+| 01_concept.md | 9 | 1 | 1 | Нет анимации сундука |
+| 02_gameplay.md | 10 | 4 | 0 | ABANDONED добавлен, лейблы добавлены |
+| 03_rules.md | 13 | 4 | 0 | Anti-cheat добавлен (suspicious flag) |
+| 04_rewards.md | 7 | 1 | 0 | Inventory работает, Premium stub |
+| 05_api.md | 7 | 2 | 0 | Основные поля добавлены (rankLabel, chestLabel, shareText) |
+| 06_domain.md | 10 | 5 | 3 | DailyQuiz структура другая, нет Redis |
+| 07_edge_cases.md | 8 | 3 | 1 | Серверная валидация времени добавлена |
 | 08_frontend_integration.md | 4 | 4 | 2 | Thin client нарушения, нет ChestOpening |
 
 ## Quick Navigation
@@ -30,13 +30,17 @@
 - [x] Streak system (5 тиров, immutable value object)
 - [x] Leaderboard (PostgreSQL, не Redis как в доках)
 - [x] Chest rewards (ChestRewardCalculator, 3 типа, вероятности)
-- [x] Second attempt (use case есть, но оплата заглушена)
+- [x] Second attempt (use case + реальное списание монет)
 - [x] Frontend views (Play, Results, Review)
-- [ ] Streak recovery
-- [ ] Premium подписка
-- [ ] User inventory (rewards хранятся, но не в inventory)
-- [ ] Chest opening анимация
-- [ ] Anti-cheat (timeTaken validation, server time check)
-- [ ] ABANDONED статус + 24h timeout
-- [ ] Thin-client лейблы от бэкенда
+- [x] Streak recovery (use case + интеграция с inventoryService, 50 coins)
+- [x] Premium подписка (interface + NoopPremiumService stub, nil-guarded)
+- [x] User inventory (InventoryService: coins, tickets, bonuses — полностью работает)
+- [x] Anti-cheat (suspicious score flag: avg time < 1s/question)
+- [x] ABANDONED статус + CleanupAbandonedGamesUseCase (24h timeout)
+- [x] Thin-client лейблы от бэкенда (RankLabel, ChestLabel, ShareText, CanRetry, RetryCost, CanPlayNow)
+- [x] Ad verification interface (NoopAdVerificationService stub)
+- [x] Swagger: RecoverStreak аннотации, ErrAlreadyAnswered → HTTP 409
+- [ ] Chest opening анимация (frontend)
 - [ ] Push notifications
+- [ ] Redis-лидерборд (вместо PostgreSQL)
+- [ ] Фильтрация лидерборда (friends/country)
