@@ -1,5 +1,8 @@
 # Solo Marathon - Concept
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 9 | ⚠️ Расходится: 3 | ❌ Не реализовано: 3
+
 ## What?
 Endless PvE mode where player answers questions until losing 3 lives.
 
@@ -17,11 +20,11 @@ Endless PvE mode where player answers questions until losing 3 lives.
 | Parameter | Value |
 |-----------|-------|
 | Questions | Endless (until energy runs out) |
-| Starting energy | 5 ⚡ |
-| Time per question | 15s → 8s (adaptive) |
-| Wrong answer penalty | −1 ⚡ |
-| Energy regen | +1 ⚡ every 5 correct in a row (Marathon Momentum) |
-| Run over | 0 ⚡ → Continue (coins/ad) OR instant new run |
+| Starting energy | 5 ⚡ | <!-- ✅ -->
+| Time per question | 15s → 8s (adaptive) | <!-- ✅ -->
+| Wrong answer penalty | −1 ⚡ | <!-- ✅ -->
+| Energy regen | +1 ⚡ every 5 correct in a row (Marathon Momentum) | <!-- ✅ -->
+| Run over | 0 ⚡ → Continue (coins/ad) OR instant new run | <!-- ✅ NO waiting -->
 | Score | Correct answers count (best run per week) |
 
 ## Core Loop
@@ -44,29 +47,29 @@ Daily Challenge → Earn Bonuses → Use in Marathon → Set Record → Compete 
 
 | Bonus | Icon | Effect | Use Case |
 |-------|------|--------|----------|
-| Shield | 🛡️ | 1 free mistake (no life loss) | Uncertain answer |
-| 50/50 | 🔀 | Remove 2 wrong answers | 50/50 guess |
-| Skip | ⏭️ | Skip question (no penalty) | Unknown topic |
-| Freeze | ❄️ | +10 seconds to timer | Late-game time pressure |
+| Shield | 🛡️ | 1 free mistake (no life loss) | Uncertain answer | <!-- ✅ -->
+| 50/50 | 🔀 | Remove 2 wrong answers | 50/50 guess | <!-- ✅ -->
+| Skip | ⏭️ | Skip question (no penalty) | Unknown topic | <!-- ✅ -->
+| Freeze | ❄️ | +10 seconds to timer | Late-game time pressure | <!-- ⚠️ Backend DTO correct (+10), but frontend adds only +5 (MarathonPlayView.vue:267) -->
 
 ### 3. Adaptive Difficulty
 Questions get harder over time:
-- Timer decreases (15s → 8s)
+- Timer decreases (15s → 8s) <!-- ✅ -->
 - Topics become narrower
-- Questions become more complex
+- Questions become more complex <!-- ✅ -->
 
 ### 4. Continue Mechanic (optional monetization)
 At 0 energy:
-- **Continue:** 200 coins OR Rewarded Ad → energy resets to 1 ⚡ (resume same run)
-- **New run:** Free → 5 ⚡ fresh start (best run per week goes to leaderboard)
+- **Continue:** 200 coins OR Rewarded Ad → energy resets to 1 ⚡ (resume same run) <!-- ✅ Formula implemented, but coins NOT actually deducted (TODO stub) -->
+- **New run:** Free → 5 ⚡ fresh start (best run per week goes to leaderboard) <!-- ✅ -->
 
 ## Leaderboards
 
 | Type | Period | Top Rewards |
 |------|--------|-------------|
-| Weekly | Monday-Sunday UTC | Top 100: coins, bonuses |
-| All-Time | Forever | Hall of Fame only |
-| Friends | Current week | Social comparison |
+| Weekly | Monday-Sunday UTC | Top 100: coins, bonuses | <!-- ❌ Not implemented, only all-time via PostgreSQL -->
+| All-Time | Forever | Hall of Fame only | <!-- ⚠️ Exists via PostgreSQL, not Redis -->
+| Friends | Current week | Social comparison | <!-- ❌ No friends system -->
 
 Weekly resets → Fresh competition every week.
 
@@ -74,11 +77,11 @@ Weekly resets → Fresh competition every week.
 
 | Feature | Cost | Effect |
 |---------|------|--------|
-| Continue (1st) | 200 coins / Ad | Lives reset to 1 |
-| Continue (2nd) | 400 coins / Ad | Lives reset to 1 |
-| Continue (3rd) | 600 coins / Ad | Lives reset to 1 |
-| Continue (4th+) | 800+ coins (no Ad) | Lives reset to 1 |
-| Bonus pack | 500 coins | 3 Shields, 5 Freezes |
+| Continue (1st) | 200 coins / Ad | Lives reset to 1 | <!-- ✅ Formula implemented, ❌ coins NOT deducted (TODO stub) -->
+| Continue (2nd) | 400 coins / Ad | Lives reset to 1 | <!-- ✅ Formula only -->
+| Continue (3rd) | 600 coins / Ad | Lives reset to 1 | <!-- ✅ Formula only -->
+| Continue (4th+) | 800+ coins (no Ad) | Lives reset to 1 | <!-- ✅ Formula only -->
+| Bonus pack | 500 coins | 3 Shields, 5 Freezes | <!-- ❌ No shop/pack system -->
 
 ## Success Metrics
 

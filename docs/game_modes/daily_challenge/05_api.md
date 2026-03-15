@@ -1,5 +1,8 @@
 # Daily Challenge - API Specification
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 2 | ⚠️ Расходится: 7 | ❌ Не реализовано: 0
+
 ## Architecture Note: Thin Client Pattern
 
 **Backend owns ALL game state and logic. Frontend is pure rendering layer.**
@@ -27,6 +30,8 @@ Authorization: tma <base64_encoded_init_data>
 ## Endpoints
 
 ### 1. Start Daily Challenge
+
+> ⚠️ **Расходится:** эндпоинт существует, возвращает 201, но вместо всех 10 вопросов сразу возвращает по одному вопросу за раз (`currentQuestion` + `firstQuestion`). Поля `currentStreak`, `streakBonus` в ответе отсутствуют.
 
 ```http
 POST /api/v1/daily-challenge/start
@@ -76,6 +81,8 @@ Content-Type: application/json
 ---
 
 ### 2. Submit Answer
+
+> ⚠️ **Расходится:** эндпоинт существует, возвращает 200, но структура ответа отличается. Код возвращает `isCorrect`, `correctAnswerId`, `nextQuestion`, `gameResults` — вместо `questionIndex`, `remainingQuestions`. В результатах игры отсутствуют `rankLabel`, `chestLabel`, `shareText` (фронт вычисляет локально).
 
 ```http
 POST /api/v1/daily-challenge/:gameId/answer
@@ -139,6 +146,8 @@ Content-Type: application/json
 
 ### 3. Get Daily Status
 
+> ⚠️ **Расходится:** эндпоинт существует, но ответ отличается. Код возвращает `timeRemaining`, `timeToExpire`, `totalPlayers` — но не возвращает `canRetry`, `retryCost`, `streakLabel`, `canPlayNow`. Thin-client labels отсутствуют в DTO.
+
 ```http
 GET /api/v1/daily-challenge/status?playerId=user_123&date=2026-01-28
 ```
@@ -197,6 +206,8 @@ GET /api/v1/daily-challenge/status?playerId=user_123&date=2026-01-28
 
 ### 4. Get Leaderboard
 
+> ✅ **Близко к спецификации.** Отсутствует поддержка параметра `type` (`global`/`friends`/`country`) — фильтрация не реализована.
+
 ```http
 GET /api/v1/daily-challenge/leaderboard?date=2026-01-28&limit=10&playerId=user_123
 ```
@@ -240,6 +251,8 @@ GET /api/v1/daily-challenge/leaderboard?date=2026-01-28&limit=10&playerId=user_1
 
 ### 5. Get Player Streak
 
+> ⚠️ **Расходится:** эндпоинт существует, но названия полей отличаются: `longestStreak` → `bestStreak`, `streakBonus` → `bonusPercent` в коде.
+
 ```http
 GET /api/v1/daily-challenge/streak?playerId=user_123
 ```
@@ -263,6 +276,8 @@ GET /api/v1/daily-challenge/streak?playerId=user_123
 ---
 
 ### 6. Open Chest (Get Rewards)
+
+> ⚠️ **Расходится:** эндпоинт существует, но поле `bonuses` в под-объекте `rewards` имеет тип `marathonBonuses: string[]` вместо `bonuses: [{type, quantity}]` по спецификации.
 
 ```http
 POST /api/v1/daily-challenge/:gameId/chest/open
@@ -295,6 +310,8 @@ POST /api/v1/daily-challenge/:gameId/chest/open
 
 ### 7. Retry Challenge (Second Attempt)
 
+> ✅ **Реализовано.** Эндпоинт существует, возвращает 201, ответ соответствует спецификации с дополнительными полями `firstQuestion`, `timeLimit`.
+
 ```http
 POST /api/v1/daily-challenge/:gameId/retry
 Content-Type: application/json
@@ -325,6 +342,8 @@ Content-Type: application/json
 ---
 
 ## Domain Events (Server-side)
+
+> ⚠️ **Расходится:** код использует доменные value objects (`GameID`, `UserID`) вместо строк. Функционально эквивалентно, но типы полей отличаются от спецификации.
 
 Published to event bus on completion:
 
@@ -368,6 +387,8 @@ type StreakMilestoneReachedEvent struct {
 ```
 
 ## Error Codes
+
+> ⚠️ **Расходится:** `ErrAlreadyAnswered` возвращает 500 вместо 409. `ErrInvalidTimeTaken` и `INSUFFICIENT_COINS` не реализованы.
 
 | HTTP Status | Error Code | Description |
 |-------------|------------|-------------|

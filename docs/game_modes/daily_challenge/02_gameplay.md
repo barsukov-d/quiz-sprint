@@ -1,5 +1,8 @@
 # Daily Challenge - Gameplay Flow
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 6 | ⚠️ Расходится: 6 | ❌ Не реализовано: 2
+
 ## Changes
 
 | Date | Change | Reason |
@@ -26,6 +29,8 @@ Home screen → "Daily Challenge" button → Shows:
 
 ### 1a. Card — Not Played (Home Screen)
 
+> ⚠️ **Расходится:** данные доступны через `/status` API, но точное соответствие UI карточки не верифицировано
+
 ```
 ┌─────────────────────────────────────┐
 │  📅 Today's Challenge               │
@@ -47,6 +52,8 @@ Home screen → "Daily Challenge" button → Shows:
 - Meta: reset timer + players (small, bottom)
 
 ### 1b. Card — Completed (Home Screen)
+
+> ⚠️ **Расходится:** данные доступны через `/status` API, но точное соответствие UI карточки не верифицировано
 
 ```
 ┌─────────────────────────────────────┐
@@ -72,6 +79,8 @@ Home screen → "Daily Challenge" button → Shows:
 
 ### 1c. Card — In Progress (Home Screen)
 
+> ⚠️ **Расходится:** данные доступны через `/status` API, но точное соответствие UI карточки не верифицировано
+
 ```
 ┌─────────────────────────────────────┐
 │  📅 Today's Challenge        🕐     │
@@ -92,6 +101,8 @@ Home screen → "Daily Challenge" button → Shows:
 - Meta: same
 
 ### 2. Question Screen
+
+> ⚠️ **Расходится:** счётчик и заголовок в одной строке, но таймер реализован как отдельная градиентная полоса снизу, а не inline UProgress как в спеке
 
 **Layout priority (top → bottom):** compact header → question text (primary) → answers
 
@@ -120,10 +131,12 @@ Home screen → "Daily Challenge" button → Shows:
 **Behavior:**
 - Timer counts down from 15
 - Answer locks after selection (no change)
-- Auto-submit at 0:00 (counts as wrong)
+- Auto-submit at 0:00 (counts as wrong) — ⚠️ **Расходится:** авто-сабмит отправляет ПЕРВЫЙ вариант ответа вместо пустого — первый вариант может оказаться правильным
 - **Instant feedback** after each answer (see 2b)
 
 ### 2b. Feedback State (after answer selected)
+
+> ✅ **Реализовано:** все 4 состояния кнопок, блокировка кнопок, остановка таймера, авто-переход
 
 Example: user selected C (wrong), correct is A:
 ```
@@ -139,7 +152,7 @@ Example: user selected C (wrong), correct is A:
 └─────────────────────────────────────┘
 ```
 
-**Feedback rules (4 states per button):**
+**Feedback rules (4 states per button):** ✅
 
 | Condition | Style | Icon |
 |-----------|-------|------|
@@ -148,10 +161,10 @@ Example: user selected C (wrong), correct is A:
 | Not selected + not correct | `opacity-40`, no border change | none |
 | Selected + correct | `bg-green`, `border-green`, full opacity | `✓` checkmark |
 
-**Timing:**
-- All answer buttons **disabled** during feedback
-- Timer **stops** during feedback
-- Auto-transition to next question after **1.5s**
+**Timing:** ✅
+- All answer buttons **disabled** during feedback ✅
+- Timer **stops** during feedback ✅
+- Auto-transition to next question after **1.5s** ✅
 - Backend `submitAnswer` returns `{ isCorrect, correctAnswerId }` — frontend renders feedback from this
 
 ### 3. Progress Indicator
@@ -160,6 +173,9 @@ Example: user selected C (wrong), correct is A:
 - Timer always visible, color-coded (green > 5s, orange <= 5s, red = 0)
 
 ### 4. Completion Screen
+
+> ⚠️ **Расходится:** экран результатов показывает счёт, ранг и тип сундука, но отдельная кнопка "Открыть сундук" и её анимация отсутствуют
+
 ```
 ┌─────────────────────────────────────┐
 │  📅 РЕЗУЛЬТАТЫ ДНЯ                  │
@@ -186,6 +202,9 @@ Example: user selected C (wrong), correct is A:
 ```
 
 ### 5. Chest Opening
+
+> ❌ **Не реализовано:** компонент `ChestOpening.vue` отсутствует, анимация открытия сундука не реализована
+
 Animation → Shows rewards:
 ```
 ┌─────────────────────────────────────┐
@@ -204,12 +223,12 @@ Animation → Shows rewards:
 
 ## Navigation
 
-- Question screen: NO back button (can't change answers)
-- Can quit mid-game → Shows "abandon" warning → Game saved as incomplete
-- Return within 24h → Can continue from same question
-- After 24h → Game auto-abandoned
+- Question screen: NO back button (can't change answers) ✅
+- Can quit mid-game → Shows "abandon" warning → Game saved as incomplete — ❌ **Не реализовано:** диалог предупреждения об abandon отсутствует, route guard не установлен
 
 ## States
+
+> ⚠️ **Расходится:** статус `ABANDONED` отсутствует в коде — только `in_progress` и `completed`
 
 ```
 NOT_STARTED → IN_PROGRESS → COMPLETED

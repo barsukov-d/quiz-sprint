@@ -1,5 +1,12 @@
 # PvP Duel - Domain Model
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 18 | ⚠️ Расходится: 15 | ❌ Не реализовано: 2
+>
+> ✅ DuelGame aggregate, SubmitAnswer (с anti-cheat), DuelGameRepository (FindByID/FindActiveByPlayer/Save), DuelChallenge aggregate (все статусы), AcceptWaiting, Accept/Decline/SetMatchID, PlayerRating, GetLeagueLabel, CanDemote, SeasonReset (формула совпадает), Referral (referral.go с milestones), DuelPlayer (immutable, AddScore/SetConnected/UpdateElo), League/GetLeagueFromMMR (league.go совпадает), domain events (полный набор в events.go), таблицы: duel_games, player_ratings, duel_challenges, referrals
+> ⚠️ Bounded context называется `quick_duel` (не `pvp_duel`); GetCurrentQuestion — нет метода, доступ через QuestionIDs()[currentRound-1]; GetWinner — приватный determineWinner, возвращает *UserID (не (*PlayerID, WinReason)); CalculateMMRChanges — MMR через EloRating.CalculateNewRating, не отдельный метод; Forfeit — нет метода, HandlePlayerDisconnect ставит abandoned; ApplyMatchResult — называется ApplyGameResult, принимает GameResult struct; PlayerAnswer — называется RoundAnswer, другая структура (есть поле points); GameStatus константы — waiting_start/in_progress/finished/abandoned (не waiting/countdown/in_progress/completed/cancelled); WinReason — нет типа, победитель по сравнению счёта; MMRCalculator — логика внутри EloRating.CalculateNewRating и PlayerRating.ApplyGameResult; MatchmakingService — use case (use_cases.go), не domain service; ChallengeService — логика в use_cases.go; ReferralService — базовый tracking, нет claiming rewards; Redis active matches — duel_round_cache.go хранит round data, не полный match state; Redis seasonal leaderboard — не реализован
+> ❌ PlayerTickets/TicketService — не реализован; таблица seasons — нет отдельной таблицы
+
 ## Bounded Context
 `pvp_duel` - Real-time 1v1 competitive quiz mode with ranking and social features.
 

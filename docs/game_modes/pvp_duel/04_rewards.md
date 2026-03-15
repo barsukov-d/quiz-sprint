@@ -1,5 +1,8 @@
 # PvP Duel - Rewards & Seasons
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 3 | ⚠️ Расходится: 2 | ❌ Не реализовано: 16
+
 ## Seasonal Structure
 
 ### Season Duration
@@ -7,6 +10,8 @@
 - **Start:** First Monday 00:00 UTC
 - **End:** Last Sunday 23:59 UTC
 - **Reset window:** ~5 minutes for reward distribution
+
+> ✅ **Реализовано:** Метод SeasonReset существует.
 
 ### Season Naming
 ```
@@ -32,6 +37,8 @@ Season 2: February 2026
 
 **Peak rank:** Highest rank achieved during season (cannot lose).
 
+> ❌ **Не реализовано:** Система распределения сезонных наград (reward distribution) отсутствует.
+
 ---
 
 ## Referral Rewards (Virality Focus)
@@ -45,6 +52,8 @@ Season 2: February 2026
 | **Reaches Silver** | 10 🎟️ + 500 coins + 🏷️ "Гуру" badge | 300 coins |
 | **Reaches Gold** | 20 🎟️ + 1,000 coins + Exclusive avatar | 500 coins |
 | **Reaches Platinum** | 50 🎟️ + 3,000 coins + Legendary title | 1,000 coins |
+
+> ⚠️ **Расходится:** Доменная модель (referral.go) отслеживает milestone-флаги, но механизм выдачи/начисления наград не реализован.
 
 ---
 
@@ -61,6 +70,8 @@ Play duels with friends → Earn bonus rewards:
 | 20 | 10 🎟️ + 500 coins + "Дружелюбный" badge |
 | 50 | 20 🎟️ + 1,000 coins + Exclusive emote |
 
+> ❌ **Не реализовано.**
+
 ### Friend Victory Streak
 
 Win consecutive duels against same friend:
@@ -70,6 +81,8 @@ Win consecutive duels against same friend:
 10 wins → 1,000 coins + Bragging rights notification to friend
 ```
 
+> ❌ **Не реализовано.**
+
 ### Revenge Bonus
 
 Beat someone who beat you last time:
@@ -77,6 +90,8 @@ Beat someone who beat you last time:
 Revenge win → +50% coins from match
 Super revenge (3+ losses then win) → +100% coins + "Мстительный" badge
 ```
+
+> ❌ **Не реализовано.**
 
 ---
 
@@ -92,6 +107,8 @@ Super revenge (3+ losses then win) → +100% coins + "Мстительный" ba
 | Win against friend | 200 coins |
 | Share 1 victory | 50 coins |
 
+> ❌ **Не реализовано.**
+
 ### Weekly Missions
 
 | Mission | Reward |
@@ -101,6 +118,8 @@ Super revenge (3+ losses then win) → +100% coins + "Мстительный" ba
 | Invite 1 new player | 500 coins + 5 🎟️ |
 | Reach new rank | 1,000 coins |
 | Win 3 revenge matches | 400 coins + "Мститель" badge |
+
+> ❌ **Не реализовано.**
 
 ---
 
@@ -121,6 +140,8 @@ Super revenge (3+ losses then win) → +100% coins + "Мстительный" ba
 | ⚔️ Duel Master | 100 total wins |
 | 🏆 Champion | #1 weekly leaderboard |
 
+> ❌ **Не реализовано.**
+
 ### Titles
 
 | Title | How to Unlock |
@@ -134,6 +155,8 @@ Super revenge (3+ losses then win) → +100% coins + "Мстительный" ba
 | "Непобедимый" | 20 win streak |
 | "Чемпион друзей" | Win weekly friend tournament |
 
+> ❌ **Не реализовано.**
+
 ### Emotes (in-duel reactions)
 
 | Emote | How to Unlock |
@@ -145,6 +168,8 @@ Super revenge (3+ losses then win) → +100% coins + "Мстительный" ba
 | 👑 Crown | Reach Legend |
 | 🤝 Handshake | 20 friend duels |
 | 😈 Devil | Win revenge match |
+
+> ❌ **Не реализовано.**
 
 ---
 
@@ -158,6 +183,8 @@ Super revenge (3+ losses then win) → +100% coins + "Мстительный" ba
 | Friend clicks shared link | 50 coins |
 | Friend registers via link | 100 coins + 3 🎟️ |
 | Friend plays first duel via link | 200 coins |
+
+> ❌ **Не реализовано.**
 
 ### Viral Challenges
 
@@ -178,6 +205,8 @@ Monthly special events:
 
 [ Вызвать друга ]
 ```
+
+> ❌ **Не реализовано.**
 
 ---
 
@@ -204,6 +233,8 @@ Monthly special events:
 | Friend duel weekly | 2-20 | Weekly |
 | Shop purchase | 5-50 | Anytime |
 
+> ❌ **Не реализовано:** Система билетов (ticket economy) полностью отсутствует.
+
 ### Ticket Shop
 
 | Pack | Price | Bonus |
@@ -214,6 +245,8 @@ Monthly special events:
 | 5 tickets | $0.99 | — |
 | 25 tickets | $3.99 | 20% off |
 | 100 tickets | $9.99 | 50% off |
+
+> ❌ **Не реализовано.**
 
 ---
 
@@ -229,12 +262,16 @@ Monthly special events:
 | Top 1% | 1,000 coins |
 | Top 10% | 500 coins |
 
+> ⚠️ **Расходится:** Глобальная таблица лидеров существует, но ограничена: нет перцентильной разбивки (top 1%/10%), нет сезонного скоупинга.
+
 ### Friends Leaderboard
 
 | Rank | Reward |
 |------|--------|
 | #1 among friends | "Чемпион друзей" badge (weekly) |
 | Improvement award | Most MMR gained this week → 500 coins |
+
+> ❌ **Не реализовано:** Таблица лидеров среди друзей отсутствует.
 
 ### Referral Leaderboard
 
@@ -253,6 +290,8 @@ Shown monthly:
 │  [ Пригласить друга ]               │
 └─────────────────────────────────────┘
 ```
+
+> ❌ **Не реализовано:** Таблица лидеров по рефералам отсутствует.
 
 ---
 
@@ -287,6 +326,8 @@ Shown monthly:
 [ Забрать награды ]
 ```
 
+> ❌ **Не реализовано:** Поток распределения наград по итогам сезона отсутствует.
+
 ---
 
 ## Database Schema
@@ -314,6 +355,8 @@ CREATE TABLE referrals (
 );
 ```
 
+> ✅ **Реализовано:** referral_repository.go существует.
+
 ### Seasonal Stats
 ```sql
 CREATE TABLE player_seasons (
@@ -335,6 +378,8 @@ CREATE TABLE player_seasons (
 );
 ```
 
+> ❌ **Не реализовано:** Таблица player_seasons отсутствует. Сезонные данные хранятся в таблице player_ratings вместо отдельной таблицы.
+
 ---
 
 ## Fraud Prevention
@@ -349,3 +394,5 @@ CREATE TABLE player_seasons (
 - Same 2 players alternating wins → No streak bonus
 - >20 duels/day with same friend → Diminishing rewards
 - 50/50 win rate over 100 games → Review for win trading
+
+> ❌ **Не реализовано:** Система предотвращения мошенничества (fraud prevention) отсутствует.

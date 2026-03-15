@@ -1,8 +1,11 @@
 # Daily Challenge - Rewards System
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 5 | ⚠️ Расходится: 1 | ❌ Не реализовано: 2
+
 ## Chest Types & Contents
 
-### 🪵 Wooden Chest (0-4 correct)
+### 🪵 Wooden Chest (0-4 correct) ✅
 
 | Resource | Amount | Notes |
 |----------|--------|-------|
@@ -22,7 +25,7 @@
 30d streak → 75-150 coins
 ```
 
-### 🥈 Silver Chest (5-7 correct)
+### 🥈 Silver Chest (5-7 correct) ✅
 
 | Resource | Amount | Notes |
 |----------|--------|-------|
@@ -42,7 +45,7 @@
 30d → 225-375 coins
 ```
 
-### 🏆 Golden Chest (8-10 correct)
+### 🏆 Golden Chest (8-10 correct) ✅
 
 | Resource | Amount | Notes |
 |----------|--------|-------|
@@ -62,7 +65,7 @@
 30d → 450-750 coins
 ```
 
-## Marathon Bonuses (4 types)
+## Marathon Bonuses (4 types) ✅
 
 | Bonus | Effect in Marathon | Rarity Weight |
 |-------|-------------------|---------------|
@@ -167,7 +170,7 @@ func selectBonuses(chestType ChestType) []BonusType {
 }
 ```
 
-## Premium Subscription Effects
+## Premium Subscription Effects ❌ Не реализовано
 
 **Chest Upgrade:**
 ```
@@ -190,7 +193,9 @@ Applied AFTER streak multiplier:
 finalCoins = (baseCoins + premiumBonus) * streakMultiplier
 ```
 
-## Reward Distribution Timeline
+## Reward Distribution Timeline ⚠️ Расходится
+
+> Rewards calculated on completion and stored in `daily_games`, but NOT added to any user inventory (no inventory system exists).
 
 1. Game completed → Chest type determined
 2. Results screen → Shows chest type
@@ -199,7 +204,9 @@ finalCoins = (baseCoins + premiumBonus) * streakMultiplier
 5. Player taps "Collect" → **Resources added to inventory**
 6. Database updated (atomic transaction)
 
-## Database Schema
+## Database Schema ❌ Не реализовано
+
+> `user_inventory` and `reward_history` tables do not exist. Rewards stored in `daily_games` columns only.
 
 ```sql
 -- User inventory

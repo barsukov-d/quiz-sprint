@@ -1,5 +1,26 @@
 # Solo Marathon - Edge Cases & Error Handling
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 8 | ⚠️ Расходится: 6 | ❌ Не реализовано: 3
+>
+> - ✅ Shield + correct: shield NOT consumed (деактивируется)
+> - ✅ Last life + shield + wrong: game continues
+> - ✅ Continue: lives reset to 1
+> - ✅ Continue after quit: not allowed
+> - ✅ Disconnect: state saved after each answer
+> - ✅ Duplicate submission prevention (via currentQuestion validation)
+> - ✅ New record equals old: not new (strictly greater check)
+> - ✅ Abandoned game status = ABANDONED
+> - ⚠️ Multiple bonuses same question: разные типы разрешены, но взаимодействие Skip+Shield отличается от документа
+> - ⚠️ Timer NOT paused server-side — нет server-side паузы, frontend обрабатывает timeout локально
+> - ⚠️ Tied scores tiebreaker — используется best_streak DESC первым (не score), затем best_score, затем achieved_at
+> - ⚠️ Abandoned game NOT in leaderboard — код ОБНОВЛЯЕТ personal best при abandon (баг)
+> - ⚠️ Error format — возвращается plain text, не `{error: {code, message, details}}`
+> - ⚠️ Bonus usage history — `marathon_bonus_usage` таблица не реализована, история не пишется
+> - ❌ Network timeout auto-submit 30s — нет server-side timeout
+> - ❌ Multiple games same week: only best — нет weekly scoping
+> - ❌ Abandon timeout 30+ min — нет background cleanup
+
 ## Lives System Edge Cases
 
 ### Shield activated but answer correct
@@ -42,6 +63,8 @@ if shieldActive {
 ## Bonus Combinations
 
 ### Multiple bonuses same question
+
+> ⚠️ Разные типы разрешены (ErrBonusAlreadyUsed предотвращает повтор одного типа). Взаимодействие Skip+Shield отличается от документа: Shield деактивируется при Skip, но не потребляется — инвентарь не уменьшается.
 
 **Allowed:**
 ```
@@ -152,6 +175,9 @@ Frontend shows:
 - Can continue playing
 
 ### Network timeout on answer submit
+
+> ❌ Server-side auto-submit не реализован. Frontend обрабатывает timeout локально.
+
 **Server behavior:**
 - If no answer received within 30s after timer: Auto-submit empty
 - Counts as wrong answer (NO special treatment)
@@ -175,6 +201,9 @@ HTTP: `409 Conflict`
 ## Leaderboard Edge Cases
 
 ### Tied scores
+
+> ⚠️ Реализован, но порядок tiebreaker отличается: используется `best_streak DESC` первым, затем `best_score`, затем `achieved_at` — не score/efficiency как в документе.
+
 **Example:**
 ```
 Player A: 87 correct, 87 total
@@ -197,6 +226,9 @@ redisScore = correctAnswers * 1000000 - totalQuestions
 **When Redis scores are equal** (same correct + same total), tiebreak by `completedAt ASC` (earlier = better) — resolved at application level when querying.
 
 ### Player plays multiple times same week
+
+> ❌ Не реализовано. Нет weekly scoping — все игры в одном leaderboard без разбивки по неделям.
+
 **Only best score counts.**
 
 **Leaderboard shows:**
@@ -244,6 +276,9 @@ redisScore = correctAnswers * 1000000 - totalQuestions
 - Harder to achieve high score
 
 ### Bonus usage history
+
+> ⚠️ Таблица `marathon_bonus_usage` не реализована. История использования бонусов не записывается.
+
 **Tracked for analytics:**
 ```sql
 INSERT INTO marathon_bonus_usage (
@@ -309,7 +344,12 @@ Game 4: Score 120 → Milestones 100 ✓ (+500 coins)
 - Score saved to history (but NOT personal best)
 - NOT in leaderboard (incomplete run)
 
+> ⚠️ Баг: код ОБНОВЛЯЕТ personal best при abandon в `AbandonMarathonUseCase`. Правильное поведение — НЕ обновлять.
+
 ### Abandon due to timeout
+
+> ❌ Не реализовано. Нет background cleanup для неактивных игр.
+
 **Trigger:** No activity for 30+ minutes.
 
 **Behavior:**

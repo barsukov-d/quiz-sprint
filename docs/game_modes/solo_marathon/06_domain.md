@@ -1,5 +1,31 @@
 # Solo Marathon - Domain Model
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 10 | ⚠️ Расходится: 8 | ❌ Не реализовано: 3
+>
+> - ✅ MarathonGameV2 aggregate (все поля)
+> - ✅ Factory NewMarathonGameV2
+> - ✅ Key methods (LoadNextQuestion, AnswerQuestion, UseBonus, ActivateShield, Continue, CompleteGame, Abandon)
+> - ✅ Repository (FindByID, FindActiveByPlayer, Save)
+> - ✅ BonusInventory
+> - ✅ GameStatus + transitions
+> - ✅ PaymentMethod
+> - ✅ ContinueCostCalculator (как value object, не отдельный сервис)
+> - ✅ DifficultyProgression
+> - ✅ Milestones
+> - ✅ QuestionSelector
+> - ✅ Error types (все + дополнительные)
+> - ⚠️ LivesSystem (max 5) — комментарий в коде говорит max 3 на строке 68, но константа MaxLives=5
+> - ⚠️ LivesSystem.RegenerateLives — реализован, но не используется в marathon; TimeToNextLife захардкожен в 0
+> - ⚠️ DifficultyCalculator как отдельный сервис — встроен в DifficultyProgression, не отдельный
+> - ⚠️ PersonalBestTracker как сервис — логика встроена в AbandonMarathonUseCase, не отдельный
+> - ⚠️ DB marathon_games — имена колонок отличаются от документа (individual columns vs session_data JSONB)
+> - ⚠️ DB marathon_personal_bests — есть дополнительные колонки: category_id, updated_at
+> - ⚠️ Repository — Delete метод не задокументирован, но реализован
+> - ❌ DB marathon_bonus_usage — не реализована
+> - ❌ Redis structures — не реализованы
+> - ❌ Repository.Delete — отсутствует в интерфейсе (задокументировано без него)
+
 ## Bounded Context
 `solo_marathon` - PvE endless mode with lives and bonuses.
 
@@ -107,6 +133,8 @@ type Repository interface {
 ## Value Objects
 
 ### LivesSystem
+
+> ⚠️ Константа MaxLives=5 верная, но комментарий в коде (строка 68) говорит max 3 — расхождение в комментарии. `RegenerateLives` реализован, но не используется в marathon; `TimeToNextLife` захардкожен в 0.
 
 ```go
 type LivesSystem struct {
@@ -226,6 +254,8 @@ const (
 
 ### DifficultyCalculator
 
+> ⚠️ Логика встроена в `DifficultyProgression`, не реализована как отдельный сервис.
+
 ```go
 type DifficultyCalculator struct{}
 
@@ -266,6 +296,8 @@ func (ccc *ContinueCostCalculator) HasAdOption(continueCount int) bool {
 ---
 
 ### PersonalBestTracker
+
+> ⚠️ Логика встроена в `AbandonMarathonUseCase`, не реализована как отдельный сервис.
 
 ```go
 type PersonalBestTracker struct {
@@ -379,6 +411,9 @@ Daily Chest → BonusInventory (source of bonuses)
 ## Database Schema
 
 ### Table: marathon_games
+
+> ⚠️ Таблица существует, но имена колонок отличаются от документа: используются отдельные колонки вместо `session_data JSONB`.
+
 ```sql
 CREATE TABLE marathon_games (
     id VARCHAR(36) PRIMARY KEY,
@@ -408,6 +443,9 @@ CREATE TABLE marathon_games (
 ```
 
 ### Table: marathon_personal_best
+
+> ⚠️ Таблица существует, но содержит дополнительные колонки: `category_id`, `updated_at`.
+
 ```sql
 CREATE TABLE marathon_personal_best (
     player_id VARCHAR(36) PRIMARY KEY,
@@ -420,6 +458,9 @@ CREATE TABLE marathon_personal_best (
 ```
 
 ### Table: marathon_bonus_usage
+
+> ❌ Не реализована.
+
 ```sql
 CREATE TABLE marathon_bonus_usage (
     id VARCHAR(36) PRIMARY KEY,
@@ -436,6 +477,8 @@ CREATE TABLE marathon_bonus_usage (
 ---
 
 ## Redis Structures
+
+> ❌ Не реализованы. Leaderboard хранится в PostgreSQL, не в Redis.
 
 ### Weekly Leaderboard
 ```

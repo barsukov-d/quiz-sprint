@@ -1,5 +1,8 @@
 # Daily Challenge - Concept
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 6 | ⚠️ Расходится: 2 | ❌ Не реализовано: 3
+
 ## Changes
 
 | Date | Change | Reason |
@@ -7,11 +10,11 @@
 | 2026-01-31 | Feedback: `after completion only` → `instant (after each answer)` | UX: player sees correct/incorrect immediately after answering |
 
 ## What?
-Central daily event where all players answer same 10 questions.
+Central daily event where all players answer same 10 questions. <!-- ✅ -->
 
 ## Why?
 **Primary goal:** Earn resources (PvP tickets, coins, bonuses) for other game modes.
-**Secondary:** Global competition, streak building.
+**Secondary:** Global competition, streak building. <!-- ✅ Реализовано через leaderboard -->
 
 ## For Whom?
 - Core players: daily resource farming
@@ -20,13 +23,13 @@ Central daily event where all players answer same 10 questions.
 
 ## Key Mechanics
 
-| Parameter | Value |
-|-----------|-------|
-| Questions | 10 |
-| Time per question | 15 sec |
-| Attempts (free) | 1/day |
-| Reset | 00:00 UTC daily |
-| Feedback | Instant (after each answer) |
+| Parameter | Value | Status |
+|-----------|-------|--------|
+| Questions | 10 | <!-- ✅ --> |
+| Time per question | 15 sec | <!-- ✅ --> |
+| Attempts (free) | 1/day | <!-- ✅ --> |
+| Reset | 00:00 UTC daily | <!-- ✅ --> |
+| Feedback | Instant (after each answer) | <!-- ✅ --> |
 
 ## Core Loop
 ```
@@ -35,7 +38,7 @@ Play Daily → Earn Chest → Get Resources → Use in PvP/Marathon → Return T
 
 ## Main Reward: Daily Chest
 
-3 types based on performance:
+3 types based on performance: <!-- ✅ -->
 
 | Correct Answers | Chest Type | Contains |
 |-----------------|------------|----------|
@@ -44,7 +47,7 @@ Play Daily → Earn Chest → Get Resources → Use in PvP/Marathon → Return T
 | 8-10 / 10 | 🏆 Golden | Many coins, 4-5 tickets, guaranteed bonuses |
 
 ## Streak System
-Consecutive days played → multiplier to chest rewards.
+Consecutive days played → multiplier to chest rewards. <!-- ⚠️ расходится: код содержит 5 градаций (добавлена 14d=+40%), документ описывает только 3. Полная таблица в 03_rules.md -->
 
 | Days | Bonus |
 |------|-------|
@@ -54,11 +57,11 @@ Consecutive days played → multiplier to chest rewards.
 
 ## Monetization
 
-| Feature | Cost | Effect |
-|---------|------|--------|
-| Second attempt | 100 coins / Ad | Better chest chance |
-| Streak recovery | 50 coins / Ad | Don't lose streak |
-| Premium subscription | Monthly | Auto-upgrade chest +1 tier |
+| Feature | Cost | Effect | Status |
+|---------|------|--------|--------|
+| Second attempt | 100 coins / Ad | Better chest chance | <!-- ⚠️ расходится: use case существует, но монеты НЕ списываются (TODO stub), реклама не верифицирована (TODO stub) --> |
+| Streak recovery | 50 coins / Ad | Don't lose streak | <!-- ❌ не реализовано --> |
+| Premium subscription | Monthly | Auto-upgrade chest +1 tier | <!-- ❌ не реализовано (premium захардкожен как false) --> |
 
 ## Success Metrics
 

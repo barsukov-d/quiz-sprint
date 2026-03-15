@@ -1,5 +1,8 @@
 # Daily Challenge - Frontend Integration
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 4 | ⚠️ Расходится: 4 | ❌ Не реализовано: 2
+
 ## Changes
 
 | Date | Change | Reason |
@@ -102,6 +105,8 @@ const submitAnswer = async (answerId: string) => {
 
 ### ResultsScreen.vue
 
+> ⚠️ Расходится: компонент называется DailyChallengeResultsView.vue. Вычисляет scorePercentage, streakMultiplier, performanceLevel локально — нарушение thin client.
+
 **Only does:**
 - Fetch results from completion response
 - Display exactly what backend sent:
@@ -134,6 +139,8 @@ const results = {
 ---
 
 ### ChestOpening.vue
+
+> ❌ Не реализовано: компонент ChestOpening.vue отсутствует.
 
 **Only does:**
 - Call `POST /api/v1/daily-challenge/:gameId/chest/open`
@@ -181,6 +188,8 @@ const { data: status } = useQuery({
 // - canRetry: true/false
 // - results: { score, chest, rank }
 ```
+
+> ⚠️ Расходится: ResultsView вычисляет scorePercentage, streakMultiplier, performanceLevel на фронтенде — нарушение thin client.
 
 ### NO Pinia/Vuex for game state
 
@@ -287,6 +296,9 @@ await api.post('/daily/:gameId/answer', { answerId })
 ```
 
 **Server ALWAYS validates:**
+
+> ⚠️ Расходится: фронтенд отправляет timeTaken, но сервер НЕ валидирует его.
+
 - Time taken valid (0-15s)
 - Question not already answered
 - Game still active
@@ -297,6 +309,8 @@ await api.post('/daily/:gameId/answer', { answerId })
 ## Real-time Updates
 
 ### Leaderboard
+
+> ⚠️ Расходится: ни polling, ни WebSocket не реализованы. Лидерборд приходит только в ответе на завершение игры.
 
 **Option 1: Polling**
 ```typescript

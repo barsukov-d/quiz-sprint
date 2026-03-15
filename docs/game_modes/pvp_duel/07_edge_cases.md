@@ -1,5 +1,12 @@
 # PvP Duel - Edge Cases & Error Handling
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 8 | ⚠️ Расходится: 14 | ❌ Не реализовано: 5
+>
+> ✅ Challenge expired при открытии ссылки (IsExpired check в AcceptWaiting); challenge link wrong person (challengerID validation); challenge link 24h expiry (LinkChallengeExpirySeconds=86400); оба игрока отвечают одновременно (оба ответа записываются, раунд завершается после обоих); повторная отправка ответа (hasPlayerAnsweredRound → ErrPlayerAlreadyAnswered); MMR не уходит в минус (MinMMR=0); защита от демоции (реализована); формула season reset (совпадает точно)
+> ⚠️ Атомарное создание игры — matchmaking использует Redis sorted set, не SETNX; дисконнект из очереди — есть TTL, но нет явного heartbeat timeout 10s; вызов offline другу — push notification не реализован, но challenge link работает; оба вызывают друг друга — нет auto-convert логики; ответ ровно в 0 секунд (500ms tolerance) — нет server-side time validation; ответ на неверный вопрос — нет явной проверки, currentRound определяет вопрос; один дисконнектится mid-question — HandlePlayerDisconnect есть, но нет 10s grace timer и 3-timeout forfeit логики; дисконнект во время countdown — оба дисконнектятся → abandoned, но нет refund билетов; reconnect после завершения — HandlePlayerReconnect есть, но нет логики "показать результаты"; ничья по очкам (time tiebreaker) — код возвращает nil (draw), а не tiebreaker по времени; оба 0 правильных — оба 0 очков, возвращает draw (nil winner); perfect tie — нет "first correct" или playerID fallback; self-referral — базовая проверка есть, но нет device fingerprint; rematch timeout 15s — use case есть, но нет enforcement таймаута
+> ❌ Нет соперника 60s → бот — bot games не реализованы; предотвращение матча двух одних игроков подряд — не реализовано; bot game edge cases — бот-система отсутствует; API error format — ошибки как plain text, не structured JSON с code/message/action/details; мониторинг/алерты — системы мониторинга нет
+
 ## Matchmaking Edge Cases
 
 ### Both players find each other simultaneously

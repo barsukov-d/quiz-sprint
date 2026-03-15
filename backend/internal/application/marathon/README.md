@@ -267,6 +267,6 @@ See **[ARCHITECTURE.md](./ARCHITECTURE.md)** for detailed V2 architecture.
 ## 📚 Связанные документы
 
 - **Domain model**: `backend/internal/domain/solo_marathon/`
-- **Specification**: `docs/03_solo_marathon.md`
+- **Specification**: `docs/game_modes/solo_marathon/`
 - **Glossary**: `docs/GLOSSARY.md`
 - **Architecture**: `CLAUDE.md`

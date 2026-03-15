@@ -1,18 +1,23 @@
 # PvP Duel - Gameplay Flow
 
+> **Статус реализации (аудит 2026-03-15)**
+> ✅ Реализовано: 13 | ⚠️ Расходится: 6 | ❌ Не реализовано: 7
+
 ## Entry Point
-Home → "Дуэль" → Shows:
+Home → "Дуэль" → Shows: <!-- ⚠️ DuelLobbyView exists but tickets not enforced -->
 - Current league + MMR (e.g., "🥇 Gold III — 1,650 MMR")
-- PvP tickets available: 🎟️×3
+- PvP tickets available: 🎟️×3 <!-- ❌ Ticket count shown but not enforced on entry -->
 - Win/Loss record this season
-- **Two main buttons:** "Случайный соперник" / "Вызвать друга"
-- Friends online indicator
+- **Two main buttons:** "Случайный соперник" / "Вызвать друга" <!-- ✅ -->
+- Friends online indicator <!-- ✅ Redis OnlineTracker -->
+
+> ⚠️ **Расхождение:** DuelLobbyView существует, но тикеты не списываются при входе в дуэль.
 
 ---
 
 ## Invite Link Flow (Friend Challenge по ссылке)
 
-### Технический механизм
+### Технический механизм <!-- ✅ Well implemented, matching doc flow -->
 
 ```
 POST /api/v1/duel/challenge/link → { challengeLink: "t.me/bot?startapp=duel_abc123" }
@@ -43,7 +48,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
   → Оба переходят в DuelPlay
 ```
 
-### UX Flow — Invitee (принимающий)
+### UX Flow — Invitee (принимающий) <!-- ✅ -->
 
 | Шаг | Экран | Действие |
 |-----|-------|---------|
@@ -55,7 +60,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 | 6 | DuelLobby | "Ждём инвайтера..." |
 | 7 | DuelPlay | Инвайтер нажал "Начать" → игра |
 
-### UX Flow — Inviter (создавший ссылку)
+### UX Flow — Inviter (создавший ссылку) <!-- ✅ -->
 
 | Шаг | Экран | Действие |
 |-----|-------|---------|
@@ -66,7 +71,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 | 5 | (фон) | `POST /duel/challenge/:id/start` → `{ gameId }` |
 | 6 | DuelPlay | 3...2...1 → игра |
 
-### Состояния модала подтверждения (Invitee)
+### Состояния модала подтверждения (Invitee) <!-- ✅ DuelLobbyView handles challenge param -->
 
 ```
 ┌───────────────────────────────────┐
@@ -85,7 +90,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 └───────────────────────────────────┘
 ```
 
-### Карточки исходящих вызовов (Inviter, в DuelLobby)
+### Карточки исходящих вызовов (Inviter, в DuelLobby) <!-- ✅ -->
 
 ```
 ┌──────────────────────────────────────┐
@@ -100,7 +105,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 └──────────────────────────────────────┘
 ```
 
-### Edge Cases
+### Edge Cases <!-- ✅ All validated in domain -->
 
 | Ситуация | HTTP | UI |
 |----------|------|----|
@@ -115,7 +120,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 
 ## Game Flow
 
-### 1. Pre-Game Screen
+### 1. Pre-Game Screen <!-- ⚠️ DuelLobbyView exists but tickets not enforced -->
 ```
 ┌─────────────────────────────────────┐
 │  ⚔️ РЕЙТИНГОВАЯ ДУЭЛЬ        🎟️ × 3│
@@ -143,7 +148,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 
 ---
 
-### 1b. Friend Challenge Flow
+### 1b. Friend Challenge Flow <!-- ✅ -->
 ```
 ┌─────────────────────────────────────┐
 │  👥 ВЫЗВАТЬ ДРУГА                   │
@@ -199,7 +204,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 
 ---
 
-### 2. Matchmaking Screen (Random)
+### 2. Matchmaking Screen (Random) <!-- ✅ In DuelLobbyView -->
 ```
 ┌─────────────────────────────────────┐
 │                                     │
@@ -215,17 +220,20 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 └─────────────────────────────────────┘
 ```
 
-**Queue expansion:**
+**Queue expansion:** <!-- ⚠️ Code has 4 tiers (5s/10s/15s/15s+), not 5 tiers; after 15s matches anyone -->
 - 0-10s: ±50 MMR
 - 10-20s: ±100 MMR
 - 20-30s: ±200 MMR
 - 30-45s: ±300 MMR
 - 45-60s: ±500 MMR
-- 60s+: Offer bot game
+- 60s+: Offer bot game <!-- ❌ Bot game fallback not implemented -->
+
+> ⚠️ **Расхождение:** Код реализует 4 тира (5с/10с/15с/15с+), после 15с матчит любого. Документ специфицирует 5 тиров с постепенным расширением до ±500 MMR.
+> ❌ **Не реализовано:** Bot game fallback по истечении 60с.
 
 ---
 
-### 3. Opponent Found Screen
+### 3. Opponent Found Screen <!-- ✅ WebSocket game_ready with startsIn -->
 ```
 ┌─────────────────────────────────────┐
 │                                     │
@@ -247,7 +255,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 
 ---
 
-### 4. Question Screen (In-Duel)
+### 4. Question Screen (In-Duel) <!-- ✅ DuelPlayView.vue with WebSocket -->
 ```
 ┌─────────────────────────────────────┐
 │  ⚔️ Дуэль                    ⏱️ 7   │
@@ -277,20 +285,22 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
   - ⬜ = not answered yet
   - ⏳ = opponent still answering current question
 
-**Real-time opponent status:**
+**Real-time opponent status:** <!-- ✅ Via WebSocket answer_result -->
 - Show when opponent answers (⏳ → ✅/❌)
 - Do NOT show which answer they selected
 - Create tension without revealing strategy
 
-**Emotes (in-game reactions):**
+**Emotes (in-game reactions):** <!-- ❌ Not implemented -->
 - Emote button in top corner → pick from unlocked set
 - Max 1 emote per question, max 3 per game
 - Appears briefly (~1.5s) on opponent's screen
 - Default: 👋. More unlocked via achievements (see `04_rewards.md`)
 
+> ❌ **Не реализовано:** Emotes — реакции в процессе игры не реализованы.
+
 ---
 
-### 5. Answer Feedback (Brief)
+### 5. Answer Feedback (Brief) <!-- ✅ -->
 ```
 ┌─────────────────────────────────────┐
 │                                     │
@@ -313,7 +323,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 
 ---
 
-### 6. Game Result Screen
+### 6. Game Result Screen <!-- ✅ DuelResultsView.vue -->
 ```
 ┌─────────────────────────────────────┐
 │                                     │
@@ -348,12 +358,12 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 - Per-question breakdown
 - MMR change (+/-)
 - New rank if promoted/demoted
-- **Rematch button** (if opponent accepts)
-- **Share button** (generates victory card)
+- **Rematch button** (if opponent accepts) <!-- ✅ RequestRematchUseCase exists -->
+- **Share button** (generates victory card) <!-- ❌ No image generation -->
 
 ---
 
-### 6b. Share Victory Card
+### 6b. Share Victory Card <!-- ❌ Not implemented — no image generation -->
 ```
 ┌─────────────────────────────────────┐
 │  📤 ПОДЕЛИТЬСЯ ПОБЕДОЙ              │
@@ -378,6 +388,8 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 └─────────────────────────────────────┘
 ```
 
+> ❌ **Не реализовано:** Share Victory Card — генерация изображения не реализована.
+
 **Share link behavior:**
 - Clicking link → Opens TMA directly with `?startapp=duel_xxx` parameter
 - TMA extracts `startParam`, authenticates user, navigates to duel lobby
@@ -388,7 +400,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 
 ---
 
-### 7. Defeat Screen
+### 7. Defeat Screen <!-- ✅ -->
 ```
 ┌─────────────────────────────────────┐
 │                                     │
@@ -408,7 +420,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 
 ---
 
-### 8. Tiebreaker Result
+### 8. Tiebreaker Result <!-- ⚠️ Code returns nil (draw) when points tied; no explicit time tiebreaker -->
 ```
 ┌─────────────────────────────────────┐
 │                                     │
@@ -426,9 +438,11 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 └─────────────────────────────────────┘
 ```
 
+> ⚠️ **Расхождение:** Когда очки равны, код возвращает nil (ничья), а не применяет тайбрейкер по времени. Документ специфицирует победу более быстрого игрока.
+
 ---
 
-## Rematch Flow
+## Rematch Flow <!-- ✅ RequestRematchUseCase exists, 15s window -->
 
 ### Rematch Request
 ```
@@ -454,7 +468,7 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 
 ---
 
-## Rank Promotion/Demotion
+## Rank Promotion/Demotion <!-- ⚠️ Events exist but frontend promotion/demotion animations not verified -->
 
 ### Promotion Animation
 ```
@@ -486,11 +500,13 @@ Inviter видит карточку "✅ Vasya готов к дуэли!" (GET /
 └─────────────────────────────────────┘
 ```
 
-**Protection zone:** No demotion at division floor for first 3 games at new rank.
+**Protection zone:** No demotion at division floor for first 3 games at new rank. <!-- ✅ DemotionProtection=3 in player_rating.go -->
+
+> ⚠️ **Расхождение:** События повышения/понижения ранга существуют в бэкенде, но анимации на фронтенде не верифицированы.
 
 ---
 
-## State Management (Backend)
+## State Management (Backend) <!-- ⚠️ Code uses waiting_start/in_progress/finished/abandoned — no COUNTDOWN state -->
 
 **Duel states:**
 ```
@@ -498,6 +514,8 @@ MATCHMAKING → COUNTDOWN → IN_PROGRESS → COMPLETED
       ↓
    CANCELLED (player quit queue)
 ```
+
+> ⚠️ **Расхождение:** Код использует состояния `waiting_start / in_progress / finished / abandoned`. Состояние `COUNTDOWN` отсутствует — код переходит напрямую из матчмейкинга в `in_progress`.
 
 **Player states in duel:**
 ```
@@ -526,16 +544,18 @@ WAITING_QUESTION → ANSWERING → ANSWERED → WAITING_OPPONENT
 - Answer submission includes client-side time measurement
 - Server validates time against server clock (anti-cheat)
 
-### Disconnect Handling
+### Disconnect Handling <!-- ⚠️ HandlePlayerDisconnect exists, tracks status, but no 10s timer or 3-timeout forfeit in domain -->
 **During matchmaking:**
 - Disconnect → Auto-cancel queue
 - Ticket refunded
 
 **During duel:**
-- 10s grace period to reconnect
+- 10s grace period to reconnect <!-- ⚠️ HandlePlayerDisconnect exists but 10s grace timer not implemented -->
 - If reconnected → Resume (timer continues)
 - If timeout → Auto-lose current question (no answer = wrong)
-- 3 consecutive timeouts → Forfeit game, opponent wins
+- 3 consecutive timeouts → Forfeit game, opponent wins <!-- ⚠️ 3-timeout forfeit logic not implemented in domain -->
+
+> ⚠️ **Расхождение:** `HandlePlayerDisconnect` существует и отслеживает статус соединения, но 10-секундный таймер переподключения и логика форфейта после 3 таймаутов в домене не реализованы.
 
 **Reconnect UI:**
 ```
@@ -551,7 +571,7 @@ WAITING_QUESTION → ANSWERING → ANSWERED → WAITING_OPPONENT
 
 ---
 
-## Bot Game (Fallback)
+## Bot Game (Fallback) <!-- ❌ Not implemented -->
 
 If queue timeout (60s):
 ```
@@ -567,9 +587,18 @@ If queue timeout (60s):
 └─────────────────────────────────────┘
 ```
 
+> ❌ **Не реализовано:** Bot game fallback — бот-игры не реализованы.
+
 **Bot behavior:**
 - Answers with realistic timing (3-8s)
 - Accuracy based on player's league (harder in higher ranks)
 - Clearly labeled as "🤖 Bot"
 - NO MMR change for bot games
 - **Ticket handling:** Ticket is never consumed for bot games (player keeps their ticket)
+
+---
+
+## Additional Missing Features
+
+> ❌ **Не реализовано:** Surrender button — кнопка сдаться после Q3 (нет endpoint'а).
+> ❌ **Не реализовано:** Emotes — реакции в процессе игры.
