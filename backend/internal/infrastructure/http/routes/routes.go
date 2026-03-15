@@ -277,6 +277,7 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			personalBestRepo,
 			questionRepo,
 			marathonEventBus,
+			inventoryService,
 		)
 		useMarathonBonusUC = appMarathon.NewUseMarathonBonusUseCase(
 			marathonRepo,

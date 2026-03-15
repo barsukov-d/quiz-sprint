@@ -413,7 +413,7 @@ func (f *marathonFixture) newStartUC() *StartMarathonUseCase {
 
 func (f *marathonFixture) newSubmitAnswerUC() *SubmitMarathonAnswerUseCase {
 	return NewSubmitMarathonAnswerUseCase(
-		f.marathonRepo, f.personalBestRepo, f.questionRepo, f.eventBus,
+		f.marathonRepo, f.personalBestRepo, f.questionRepo, f.eventBus, nil,
 	)
 }
 

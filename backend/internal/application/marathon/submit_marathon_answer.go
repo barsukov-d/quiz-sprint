@@ -14,6 +14,7 @@ type SubmitMarathonAnswerUseCase struct {
 	personalBestRepo solo_marathon.PersonalBestRepository
 	questionRepo     quiz.QuestionRepository
 	eventBus         EventBus
+	inventoryService InventoryService
 }
 
 // NewSubmitMarathonAnswerUseCase creates a new SubmitMarathonAnswerUseCase
@@ -22,14 +23,27 @@ func NewSubmitMarathonAnswerUseCase(
 	personalBestRepo solo_marathon.PersonalBestRepository,
 	questionRepo quiz.QuestionRepository,
 	eventBus EventBus,
+	inventoryService InventoryService,
 ) *SubmitMarathonAnswerUseCase {
 	return &SubmitMarathonAnswerUseCase{
 		marathonRepo:     marathonRepo,
 		personalBestRepo: personalBestRepo,
 		questionRepo:     questionRepo,
 		eventBus:         eventBus,
+		inventoryService: inventoryService,
 	}
 }
+
+// milestoneRewards defines coins and bonuses awarded at each milestone
+var milestoneRewards = map[int]map[string]int{
+	10:  {"coins": 50},
+	25:  {"coins": 100, "shield": 1},
+	50:  {"coins": 250, "fifty_fifty": 1},
+	75:  {"coins": 400, "freeze": 1},
+	100: {"coins": 500, "shield": 1, "fifty_fifty": 1},
+}
+
+const personalBestBonusCoins = 500
 
 // Execute submits an answer for a marathon game question
 func (uc *SubmitMarathonAnswerUseCase) Execute(input SubmitMarathonAnswerInput) (SubmitMarathonAnswerOutput, error) {
@@ -129,12 +143,27 @@ func (uc *SubmitMarathonAnswerUseCase) Execute(input SubmitMarathonAnswerInput) 
 		}
 	}
 
-	// 8. Persist game
+	// 8. Credit milestone rewards and personal best bonus
+	if uc.inventoryService != nil && result.IsGameOver && result.GameOverData != nil {
+		playerIDStr := input.PlayerID
+		// Personal best bonus
+		if result.GameOverData.IsNewRecord {
+			_ = uc.inventoryService.Credit(playerIDStr, "personal_best", map[string]int{"coins": personalBestBonusCoins})
+		}
+		// Milestone rewards for all milestones reached in this game
+		for milestone, rewards := range milestoneRewards {
+			if result.GameOverData.FinalScore >= milestone {
+				_ = uc.inventoryService.Credit(playerIDStr, "marathon_milestone", rewards)
+			}
+		}
+	}
+
+	// 9. Persist game
 	if err := uc.marathonRepo.Save(game); err != nil {
 		return SubmitMarathonAnswerOutput{}, err
 	}
 
-	// 9. Update PersonalBest if game is over and it's a new record
+	// 10. Update PersonalBest if game is over and it's a new record
 	// Note: PersonalBest is updated when game transitions to completed (not game_over)
 	// This happens in CompleteGame or Abandon use case
 
