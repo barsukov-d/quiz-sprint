@@ -486,6 +486,15 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 				duelRoundCache,
 				inventoryService,
 			)
+			requestRematchUC = appDuel.NewRequestRematchUseCase(
+				duelGameRepo,
+				challengeRepo,
+				playerRatingRepo,
+				seasonRepo,
+				duelQuestionRepo,
+				userRepo,
+				duelEventBus,
+			)
 		}
 		createChallengeLinkUC = appDuel.NewCreateChallengeLinkUseCase(
 			challengeRepo,
@@ -501,11 +510,6 @@ func SetupRoutes(app *fiber.App, db *sql.DB) {
 			referralRepo,
 			seasonRepo,
 			userRepo,
-		)
-		requestRematchUC = appDuel.NewRequestRematchUseCase(
-			duelGameRepo,
-			challengeRepo,
-			duelEventBus,
 		)
 		getGameResultUC = appDuel.NewGetGameResultUseCase(
 			duelGameRepo,

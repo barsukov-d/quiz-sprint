@@ -865,7 +865,7 @@ func (f *duelFixture) newSubmitDuelAnswerUC() *SubmitDuelAnswerUseCase {
 }
 
 func (f *duelFixture) newRequestRematchUC() *RequestRematchUseCase {
-	return NewRequestRematchUseCase(f.duelGameRepo, f.challengeRepo, f.eventBus)
+	return NewRequestRematchUseCase(f.duelGameRepo, f.challengeRepo, f.playerRatingRepo, f.seasonRepo, f.questionRepo, f.userRepo, f.eventBus)
 }
 
 func (f *duelFixture) newGetOnlineFriendsUC() *GetOnlineFriendsUseCase {

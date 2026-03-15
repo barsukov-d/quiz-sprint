@@ -1676,20 +1676,32 @@ func max(a, b int) int {
 // ========================================
 
 type RequestRematchUseCase struct {
-	duelGameRepo  quick_duel.DuelGameRepository
-	challengeRepo quick_duel.ChallengeRepository
-	eventBus      EventBus
+	duelGameRepo     quick_duel.DuelGameRepository
+	challengeRepo    quick_duel.ChallengeRepository
+	playerRatingRepo quick_duel.PlayerRatingRepository
+	seasonRepo       quick_duel.SeasonRepository
+	questionRepo     QuestionRepository
+	userRepo         domainUser.UserRepository
+	eventBus         EventBus
 }
 
 func NewRequestRematchUseCase(
 	duelGameRepo quick_duel.DuelGameRepository,
 	challengeRepo quick_duel.ChallengeRepository,
+	playerRatingRepo quick_duel.PlayerRatingRepository,
+	seasonRepo quick_duel.SeasonRepository,
+	questionRepo QuestionRepository,
+	userRepo domainUser.UserRepository,
 	eventBus EventBus,
 ) *RequestRematchUseCase {
 	return &RequestRematchUseCase{
-		duelGameRepo:  duelGameRepo,
-		challengeRepo: challengeRepo,
-		eventBus:      eventBus,
+		duelGameRepo:     duelGameRepo,
+		challengeRepo:    challengeRepo,
+		playerRatingRepo: playerRatingRepo,
+		seasonRepo:       seasonRepo,
+		questionRepo:     questionRepo,
+		userRepo:         userRepo,
+		eventBus:         eventBus,
 	}
 }
 
@@ -1728,16 +1740,22 @@ func (uc *RequestRematchUseCase) Execute(input RequestRematchInput) (RequestRema
 		opponentID = game.Player1().UserID()
 	}
 
-	// Check if opponent already requested rematch (auto-accept)
+	// Check if opponent already requested rematch (auto-accept + create game)
 	existingChallenges, err := uc.challengeRepo.FindPendingByChallenger(opponentID)
 	if err == nil {
 		for _, c := range existingChallenges {
-			// If opponent sent a rematch challenge to this player
 			if c.ChallengedID() != nil && c.ChallengedID().String() == input.PlayerID {
-				// Auto-accept the rematch
 				if err := c.Accept(playerID, now); err != nil {
-					continue // expired or invalid state, skip
+					continue
 				}
+
+				// Create the game immediately
+				gameID, err := uc.createRematchGame(c.ChallengerID(), playerID, now)
+				if err != nil {
+					return RequestRematchOutput{}, err
+				}
+
+				c.SetMatchID(quick_duel.NewGameIDFromString(gameID))
 				if err := uc.challengeRepo.Save(c); err != nil {
 					return RequestRematchOutput{}, err
 				}
@@ -1750,7 +1768,7 @@ func (uc *RequestRematchUseCase) Execute(input RequestRematchInput) (RequestRema
 					RematchID: c.ID().String(),
 					Status:    "accepted",
 					ExpiresIn: 0,
-					GameID:    nil, // Would be set when game starts
+					GameID:    &gameID,
 				}, nil
 			}
 		}
@@ -1778,6 +1796,59 @@ func (uc *RequestRematchUseCase) Execute(input RequestRematchInput) (RequestRema
 		Status:    "pending",
 		ExpiresIn: quick_duel.DirectChallengeExpirySeconds,
 	}, nil
+}
+
+func (uc *RequestRematchUseCase) createRematchGame(player1ID, player2ID quick_duel.UserID, now int64) (string, error) {
+	seasonID, _ := uc.seasonRepo.GetCurrentSeason()
+
+	rating1, err := uc.playerRatingRepo.FindOrCreate(player1ID, seasonID, now)
+	if err != nil {
+		return "", err
+	}
+	rating2, err := uc.playerRatingRepo.FindOrCreate(player2ID, seasonID, now)
+	if err != nil {
+		return "", err
+	}
+
+	name1 := player1ID.String()
+	if u, err := uc.userRepo.FindByID(player1ID); err == nil {
+		if n := u.Username().String(); n != "" {
+			name1 = n
+		}
+	}
+	name2 := player2ID.String()
+	if u, err := uc.userRepo.FindByID(player2ID); err == nil {
+		if n := u.Username().String(); n != "" {
+			name2 = n
+		}
+	}
+
+	questions, err := uc.questionRepo.FindRandomByDifficulty(quick_duel.QuestionsPerDuel, "medium")
+	if err != nil {
+		return "", err
+	}
+
+	questionIDs := make([]quick_duel.QuestionID, 0, len(questions))
+	for _, q := range questions {
+		qid, _ := quiz.NewQuestionIDFromString(q.ID)
+		questionIDs = append(questionIDs, qid)
+	}
+
+	p1 := quick_duel.NewDuelPlayer(player1ID, name1, quick_duel.ReconstructEloRating(rating1.MMR(), 0))
+	p2 := quick_duel.NewDuelPlayer(player2ID, name2, quick_duel.ReconstructEloRating(rating2.MMR(), 0))
+
+	game, err := quick_duel.NewDuelGame(p1, p2, questionIDs, now)
+	if err != nil {
+		return "", err
+	}
+	if err := game.Start(now); err != nil {
+		return "", err
+	}
+	if err := uc.duelGameRepo.Save(game); err != nil {
+		return "", err
+	}
+
+	return game.ID().String(), nil
 }
 
 // ========================================
